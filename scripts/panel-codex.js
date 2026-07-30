@@ -1,7 +1,7 @@
 import { MODULE, SQUIRE, TEMPLATES, getCodexCategoryIcon } from './const.js';
 import { CodexParser } from './utility-codex-parser.js';
 import { CODEX_PAGE_TYPE } from './data/codex-page-model.js';
-import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, escapeHtml, getPartyActors } from './helpers.js';
+import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, escapeHtml, getPartyActors, showBlacksmithWait } from './helpers.js';
 import { trackModuleTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
 import {
@@ -1041,9 +1041,12 @@ export class CodexPanel {
                                 name: 'Delete Entry',
                                 icon: 'fa-solid fa-trash',
                                 callback: async () => {
-                                    const confirmed = await Dialog.confirm({
+                                    const confirmed = await getBlacksmith().dialog.confirm({
                                         title: 'Delete Entry',
-                                        content: '<p>Delete this codex entry? This cannot be undone.</p>'
+                                        content: '<p>Delete this codex entry? This cannot be undone.</p>',
+                                        confirmLabel: 'Delete Entry',
+                                        confirmIcon: 'fa-solid fa-trash',
+                                        destructive: true
                                     });
                                     if (!confirmed) return;
                                     if (hasPinId) await deleteCodexPin(uuid);
@@ -1566,7 +1569,7 @@ export class CodexPanel {
         } catch (e) {
             template = 'Failed to load prompt-codex.txt.';
         }
-        new Dialog({
+        await showBlacksmithWait({
             title: 'Import Codex from JSON',
             width: 600,
             resizable: true,
@@ -1788,7 +1791,7 @@ export class CodexPanel {
                     });
                 }
             }
-        }, { classes: ['import-export-dialog'], id: 'import-export-dialog-codex-import' }).render(true);
+        }, { classes: ['import-export-dialog'], id: 'import-export-dialog-codex-import' });
     }
 
     /**
@@ -1847,66 +1850,23 @@ export class CodexPanel {
             }
         }
         const jsonString = JSON.stringify(exportData, null, 2);
-        new Dialog({
+        const sanitizeWindowsFilename = name => name
+            .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_')
+            .replace(/\s+$/g, '')
+            .replace(/\.+$/g, '')
+            .slice(0, 150);
+        const stamp = new Date().toISOString().replace(/[:]/g, '-');
+        const { openDataExportWindow } = await import('./window-data-export.js');
+        openDataExportWindow({
             title: 'Export Codex as JSON',
-            width: 600,
-            resizable: true,
-            content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
-                type: 'codex',
-                isImport: false,
-                isExport: true,
-                jsonOutputId: 'codex-export-json',
-                exportData: jsonString,
-                exportSummary: { totalItems: exportData.length, exportVersion: "1.0", timestamp: new Date().toLocaleString() }
-            }),
-            buttons: {
-                close: { icon: '<i class="fa-solid fa-times"></i>', label: 'Cancel Export' },
-                download: {
-                    icon: '<i class="fa-solid fa-download"></i>',
-                    label: 'Download JSON',
-                    callback: () => {
-                        try {
-                            const sanitizeWindowsFilename = (name) => name.replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_").replace(/\s+$/g, "").replace(/\.+$/g, "").slice(0, 150);
-                            const stamp = new Date().toISOString().replace(/[:]/g, "-");
-                            const filename = sanitizeWindowsFilename(`COFFEEPUB-SQUIRE-codex-export-${stamp}.json`);
-                            if (typeof saveDataToFile === 'function') {
-                                saveDataToFile(jsonString, "application/json;charset=utf-8", filename);
-                                ui.notifications.info(`Codex export saved as ${filename}`);
-                            } else {
-                                const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement("a");
-                                a.href = url;
-                                a.download = filename;
-                                a.style.display = 'none';
-                                a.rel = "noopener";
-                                document.body.appendChild(a);
-                                a.click();
-                                a.remove();
-                                trackModuleTimeout(() => URL.revokeObjectURL(url), 0);
-                                ui.notifications.info(`Codex export downloaded as ${filename}`);
-                            }
-                        } catch (error) {
-                            copyToClipboard(jsonString);
-                            ui.notifications.warn('Download failed. Export data copied to clipboard instead.');
-                            console.error('Export download failed:', error);
-                        }
-                    }
-                }
-            },
-            default: 'download'
-        }, {
-            classes: ['import-export-dialog'],
-            id: 'import-export-dialog-codex-export',
-            render: (html) => {
-                let nativeDlgHtml = html;
-                if (html && (html.jquery || typeof html.find === 'function')) nativeDlgHtml = html[0] || html.get?.(0) || html;
-                const closeButton = nativeDlgHtml.querySelector('[data-button="close"]');
-                if (closeButton) closeButton.classList.add('squire-cancel-button');
-                const downloadButton = nativeDlgHtml.querySelector('[data-button="download"]');
-                if (downloadButton) downloadButton.classList.add('squire-submit-button');
-            }
-        }).render(true);
+            data: jsonString,
+            filename: sanitizeWindowsFilename(`COFFEEPUB-SQUIRE-codex-export-${stamp}.json`),
+            summary: [
+                { label: 'Total Exported', value: `${exportData.length} codex entries` },
+                { label: 'Format', value: 'Codex export v1.0' },
+                { label: 'Created', value: new Date().toLocaleString() }
+            ]
+        });
     }
 
     /**

@@ -1,8 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { FavoritesPanel } from './panel-favorites.js';
-import { CharactersWindow } from './window-characters.js';
-import { getNativeElement, renderTemplate, getActivityList } from './helpers.js';
+import { getNativeElement, renderTemplate, getActivityList, showBlacksmithWait } from './helpers.js';
 import { TransferUtils } from './transfer-utils.js';
 import { LightUtility } from './utility-lights.js';
 
@@ -457,6 +456,7 @@ export class InventoryPanel {
         }
         
         // Create character selection window with the selected quantity
+        const { CharactersWindow } = await import('./window-characters.js');
         const characterWindow = new CharactersWindow({
             item: item,
             sourceActor: this.actor,
@@ -491,14 +491,7 @@ export class InventoryPanel {
 
     async _showTransferQuantityDialog(sourceItem, sourceActor, targetActor, maxQuantity, hasQuantity) {
         const timestamp = Date.now();
-        
-        // Check if a dialog with this ID already exists
-        const existingDialog = document.querySelector(`#transfer-item-${timestamp}`);
-        if (existingDialog) {
-            // Dialog already exists, don't create another
-            return 0;
-        }
-        
+
         // Prepare template data for sender's dialog
         const senderTemplateData = {
             sourceItem,
@@ -516,7 +509,7 @@ export class InventoryPanel {
         
         // Initiate the transfer process
         const selectedQuantity = await new Promise(resolve => {
-            const dialog = new Dialog({
+            void showBlacksmithWait({
                 title: "Transfer Item",
                 content: senderContent,
                 buttons: {
@@ -566,8 +559,6 @@ export class InventoryPanel {
                 width: 320,
                 height: "auto"
             });
-            
-            dialog.render(true);
         });
         
         return selectedQuantity;

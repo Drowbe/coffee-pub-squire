@@ -145,14 +145,16 @@ All helpers should:
 
 - Use Foundry `DialogV2`.
 - Never reject for ordinary dismissal.
-- Support async callbacks.
-- Disable submitted actions while callbacks run.
-- Prevent duplicate submission.
+- Invoke consumer callbacks after the dialog closes, with the captured form available for reading.
 - Support destructive button treatment.
-- Support inline validation.
+- Implement prompt validation as a bounded reopen loop that preserves the entered value and presents the error.
 - Accept HTML strings or DOM.
 - Use Blacksmith dialog styles and action conventions.
 - Restore focus appropriately after closing.
+
+DialogV2 closes when an action is activated, so in-place validation, disabling a submitted
+button while work runs, and duplicate-click prevention are not dialog guarantees. Workflows
+that must remain visible after a failed operation belong in a Tool window.
 
 ### Blacksmith verification
 
@@ -160,7 +162,7 @@ The same Blacksmith change should:
 
 1. Add `styles/dialog.css`.
 2. Import it from Blacksmith's `default.css`.
-3. Convert the twelve-dialog cluster in `window-pin-layers.js`.
+3. Convert the thirteen-dialog cluster in `window-pin-layers.js` (eleven confirmations and two prompts).
 
 That proves semantics, styling, and real-world use before Squire adopts the API.
 
@@ -280,30 +282,19 @@ Consumers own:
 - Domain validation.
 - What the resulting number means.
 
-### Illustrative markup
+### Contributed implementation
 
-Final naming belongs to Blacksmith, but the shared component needs the equivalent of:
+Squire's exact contribution is now packaged under `contributions/blacksmith/`:
 
-```html
-<div class="blacksmith-quantity-split"
-     data-min="1"
-     data-max="7"
-     data-value="1">
-  <div class="blacksmith-quantity-value">
-    <strong data-quantity-give>1</strong>
-    <span>Give</span>
-  </div>
-  <input class="blacksmith-slider"
-         type="range"
-         min="1"
-         max="7"
-         value="1">
-  <div class="blacksmith-quantity-value">
-    <strong data-quantity-keep>6</strong>
-    <span>Keep</span>
-  </div>
-</div>
-```
+- `quantity-split-control.hbs`
+- `quantity-split-control.css`
+- `quantity-split-control.js`
+- `README-quantity-split.md`
+
+It preserves the Give/Keep interaction while replacing the old template-injected script
+with an attachable per-instance controller suitable for ApplicationV2. Blacksmith may align
+final filenames with its component registry, but the behavior and accessibility contract
+should remain intact.
 
 ### Blacksmith verification
 
@@ -361,15 +352,19 @@ await transfer.render(true);
 
 ### Multi-instance event safety
 
-The sender tool and an incoming approval tool may be open at the same time. Blacksmith's current `ACTION_HANDLERS` delegation uses per-class static `_ref` and `_delegationAttached` state, so two instances of the same class can route actions to the most recently rendered instance. Closing that instance can also leave the older instance's buttons inert.
+The sender tool and an incoming approval tool may be open at the same time. Blacksmith has
+replaced its class-static dispatcher with per-instance frame delegation and passes the
+instance as the third handler argument (and as `this`).
 
 For `TransferTool`:
 
-- Do not define or use static `ACTION_HANDLERS`.
-- Bind listeners per instance against `this.element` in `_onRender`.
+- Use the handler instance argument or bind listeners per instance against `this.element`.
 - Remove or naturally discard those listeners with the instance DOM.
 - Never resolve a button action through class-static instance state.
 - Live-test two simultaneous TransferTool instances and confirm each instance mutates only its own transfer state.
+
+The Squire harness now includes a two-instance Tool probe that clicks one action in each
+instance and asserts that both receive exactly one hit.
 
 ### Squire use cases
 
@@ -464,17 +459,19 @@ All Squire JSON imports should migrate to Blacksmith's existing robust importer:
 - `window-json-import.js`
 - `registry-json-import-*.js`
 
-This is independent of the dialog and component work and can proceed immediately.
+Begin this batch after the integrated Blacksmith source exposes the authoritative `api.dialog`
+contract at runtime. A public release/version bump is not required during suite integration.
+It does not require the later entity-picker, quantity-control, or action-delegation work.
 
 ---
 
 ## Delivery Sequence
 
-1. Blacksmith implements and verifies `api.dialog` against `window-pin-layers.js`.
-2. Blacksmith verifies the selectable-entity component in single-select mode through `MenuBar.showLeaderDialog` using `api.dialog`.
-3. Blacksmith verifies the same component in multi-select mode through `window-toast-send.js`.
-4. Blacksmith verifies the entity component inside a scratch Tool window in Light, Dark, and Glass.
-5. Squire contributes its quantity/split markup and CSS upstream; Blacksmith documents and verifies it.
+1. **Complete:** Blacksmith exposes `api.dialog`; Squire consumes the public runtime namespace and has migrated all 22 legacy Dialog sites.
+2. **Implemented, verify live:** Blacksmith `api.entityList` single-select behavior.
+3. **Implemented, verify live:** Blacksmith `api.entityList` multi-select behavior.
+4. **Harness ready, verify live:** Entity List inside a Tool window cycling Light, Dark, and Glass.
+5. **Contribution ready:** Squire's quantity/split markup, CSS, controller, and verification contract are under `contributions/blacksmith/`; Blacksmith integrates and documents them.
 6. Squire builds its ephemeral Transfer tool with per-instance listeners, no registration, and no position persistence.
 7. Squire live-tests simultaneous sender and approval instances plus a large recipient list.
 8. Squire migrates simple legacy dialogs to `api.dialog`.

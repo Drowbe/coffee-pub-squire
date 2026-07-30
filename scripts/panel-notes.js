@@ -20,7 +20,6 @@ import {
     showJournalPicker
 } from './utility-journal.js';
 import { NotesParser } from './utility-notes-parser.js';
-import { UsersWindow } from './window-users.js';
 
 /** Plain-text preview for Foundry `data-tooltip` (no enrich). */
 const NOTE_PREVIEW_MAX_CHARS = 350;
@@ -865,12 +864,11 @@ export class NotesPanel {
                         name: 'Clean up missing pins',
                         icon: 'fa-solid fa-broom',
                         callback: async () => {
-                            const confirmed = await Dialog.confirm({
+                            const confirmed = await getBlacksmith().dialog.confirm({
                                 title: 'Clean Up Missing Pins',
                                 content: '<p>Scan notes and clear pin flags when the pin no longer exists?</p>',
-                                yes: () => true,
-                                no: () => false,
-                                defaultYes: false
+                                confirmLabel: 'Clean Up',
+                                confirmIcon: 'fa-solid fa-broom'
                             });
                             if (!confirmed) return;
                             await this._cleanupMissingPins();
@@ -881,24 +879,24 @@ export class NotesPanel {
                         name: 'Delete all note pins',
                         icon: 'fa-solid fa-trash-can',
                         callback: async () => {
-                            const choice = await Dialog.wait({
+                            const choiceResult = await getBlacksmith().dialog.choose({
                                 title: 'Delete Note Pins',
                                 content: '<p>Delete note pins for this scene, or all scenes?</p>',
-                                buttons: {
-                                    scene: { label: 'This Scene', callback: () => 'scene' },
-                                    all: { label: 'All Scenes', callback: () => 'all' },
-                                    cancel: { label: 'Cancel', callback: () => null }
-                                },
-                                default: 'cancel',
-                                close: () => null
+                                choices: [
+                                    { id: 'scene', label: 'This Scene', icon: 'fa-solid fa-map' },
+                                    { id: 'all', label: 'All Scenes', icon: 'fa-solid fa-globe' }
+                                ],
+                                closeValue: null,
+                                cancelValue: null
                             });
+                            const choice = choiceResult.action === 'submit' ? choiceResult.value : null;
                             if (!choice) return;
-                            const confirmed = await Dialog.confirm({
+                            const confirmed = await getBlacksmith().dialog.confirm({
                                 title: 'Confirm Deletion',
                                 content: choice === 'scene' ? '<p>Delete all note pins for this scene?</p>' : '<p>Delete all note pins across all scenes?</p>',
-                                yes: () => true,
-                                no: () => false,
-                                defaultYes: false
+                                confirmLabel: 'Delete Pins',
+                                confirmIcon: 'fa-solid fa-trash',
+                                destructive: true
                             });
                             if (!confirmed) return;
                             await this._deleteAllPins(choice);
@@ -1179,12 +1177,12 @@ export class NotesPanel {
      * @private
      */
     async _deleteNote(uuid) {
-        const confirmed = await Dialog.confirm({
+        const confirmed = await getBlacksmith().dialog.confirm({
             title: 'Delete Note',
             content: '<p>Are you sure you want to delete this note?</p>',
-            yes: () => true,
-            no: () => false,
-            defaultYes: false
+            confirmLabel: 'Delete Note',
+            confirmIcon: 'fa-solid fa-trash',
+            destructive: true
         });
         if (!confirmed) return;
         const page = await foundry.utils.fromUuid(uuid);
@@ -1225,6 +1223,7 @@ export class NotesPanel {
             return;
         }
 
+        const { UsersWindow } = await import('./window-users.js');
         new UsersWindow({
             onUserSelected: async (user) => {
                 if (!user) return;

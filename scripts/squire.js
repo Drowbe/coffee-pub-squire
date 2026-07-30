@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager, _updateHealthPanelFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings } from './settings.js';
-import { registerHelpers, renderTemplate } from './helpers.js';
+import { registerHelpers, renderTemplate, showBlacksmithWait } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
 import { QuestParser, migrateQuestJournalData } from './utility-quest-parser.js';
 // Legacy PIXI-based quest pins - TO BE REMOVED
@@ -2367,7 +2367,7 @@ async function handleTransferRequest(transferData) {
         
         // Create a dialog to approve/reject the transfer
         let response = await new Promise(resolve => {
-            new Dialog({
+            void showBlacksmithWait({
                 title: "Item Transfer Request",
                 content: receiverContent,
                 buttons: {
@@ -2381,6 +2381,7 @@ async function handleTransferRequest(transferData) {
                         icon: '<i class="fa-solid fa-times"></i>',
                         label: "Decline",
                         cssClass: "decline",
+                        destructive: true,
                         callback: () => resolve(false)
                     }
                 },
@@ -2391,7 +2392,7 @@ async function handleTransferRequest(transferData) {
                 id: `transfer-item-request-${timestamp}`,
                 width: 320,
                 height: "auto"
-            }).render(true);
+            });
         });
         
         // Send response back through socketlib

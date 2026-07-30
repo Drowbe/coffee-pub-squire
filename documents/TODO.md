@@ -4,8 +4,8 @@
 
 | Item | Priority | LOE | Status |
 |------|----------|-----|--------|
-| Migrate 2 remaining legacy V1 `Application` windows to the Blacksmith window framework | **Critical** | M | Open |
-| v14/v15 readiness: migrate remaining V1 `Dialog`/`Dialog.confirm` call sites to `DialogV2` (`ImagePopout` ✓ done — all 4 sites on AppV2 signature) | High | M | Open |
+| Migrate remaining legacy V1 `Application` windows to the Blacksmith window framework | **Critical** | M | Done (13.3.19) |
+| v14/v15 readiness: migrate remaining V1 Dialog call sites to Blacksmith `api.dialog` | High | M | Done (13.3.19) |
 | Codex data model: custom `JournalEntryPage` subtype, no migration — re-import converts (see `plan-codex-datamodel.md`) | High | L | Planned |
 | Notes tab: shared note + character note (scratchpad scrapped) | Medium | L | Open |
 | Notes tray: drop card view; list + hover tooltip preview | Medium | M | Done (13.3.11) |
@@ -38,6 +38,7 @@
 | Investigate expand animation (slide vs fade regression) | Medium | S | Open |
 | Init order tests / load-condition panel behavior | Medium | L | Open |
 | Integration tests with other Coffee Pub modules | Medium | M | Open |
+| Maintain the pasteable GM integration harness (`testing/test-harness-macro.js`) as workflows evolve | Medium | S | Implemented (13.3.19) |
 | Monitor init timing / event efficiency during load | Medium | M | Open |
 
 **Priority:** urgency scale from **Critical** down to **Low** (matches section intent below).
@@ -63,36 +64,15 @@
 
 ### V14/V15 READINESS (audited July 13, 2026 — world moves to v14 within weeks)
 - [x] **AUDIT** v14 removes the *v12*-deprecated globals (AudioHelper, Sound, grid/dice/canvas-source classes, etc.) — grep confirms **zero uses** in this module. helpers.js already namespaces `renderTemplate`/`TextEditor`/`ContextMenu` (v13 style, v14-safe). The codex data model, page subtype, and sheet use v13+ AppV2 APIs that carry into v14 unchanged. module.json already declares `maximum: 14`.
-- [ ] **REFACTOR** The *v13*-deprecated APIs still run in v14 with console warnings but are removed in v15/16. The remaining work is the V1 `Dialog`/`Dialog.confirm` call sites (heaviest: panel-quest, panel-codex, panel-notes, and utility-journal); migrate them to `foundry.applications.api.DialogV2`. The custom V1 `Application` windows are now fully migrated. (`ImagePopout` ✓ completed July 14, 2026; Status Effects ✓ 13.3.17; Dice Tray, Macros, and Health ✓ 13.3.18; Character and User pickers ✓ 13.3.19.)
+- [x] **REFACTOR (13.3.19)** Removed all 22 legacy V1 Dialog call sites. Simple confirmations, short choices, clipboard fallback, journal selection, current JSON import forms, and current transfer quantity/approval forms now route through Blacksmith `api.dialog`. Codex and Quest exports share Squire's new multi-instance-safe `DataExportWindow` on `BlacksmithWindowBaseV2`. The duplicate 32 KB Quest import/export listener block was removed. A source audit now finds zero `new Dialog`, `Dialog.confirm`, `Dialog.wait`, or `Dialog.prompt` calls in `scripts/`.
 
-  | File / line | Legacy API | Purpose | V2 migration | Migrate to window? | Notes |
-  |---|---|---|---|---|---|
-  | `scripts/helpers.js:487` | `new Dialog` | Manual-copy fallback when clipboard access fails | `DialogV2.wait` with Copy/Close actions | No | A short, exceptional fallback with no persistent state; a window would add weight without value. |
-  | `scripts/manager-panel.js:997` | `new Dialog` | Select item quantity before a tray transfer | Squire Transfer window | Yes—unified | Fold into one Squire-owned V2 **Transfer Item** window built from Blacksmith's shared entity picker and quantity/split control. Preserve the current quantity interaction exactly. |
-  | `scripts/manager-pins.js:1912` | `Dialog.confirm` | Confirm deleting a note from its canvas pin | `DialogV2.confirm` | No | A destructive yes/no confirmation is the correct use of a dialog. |
-  | `scripts/panel-codex.js:1044` | `Dialog.confirm` | Confirm codex-entry deletion | `DialogV2.confirm` | No | Keep as a focused destructive confirmation. |
-  | `scripts/panel-codex.js:1569` | `new Dialog` | Import codex JSON | Blacksmith importer | Yes—Blacksmith | Migrate to the robust Blacksmith importer instead of recreating Squire's textarea-based JSON importer in DialogV2. |
-  | `scripts/panel-codex.js:1850` | `new Dialog` | Preview/copy/download exported codex JSON | Shared export workflow | Yes—unified | Build or adopt a reusable V2 data-export window with preview, copy, and download actions; pair it conceptually with the Blacksmith import workflow. |
-  | `scripts/panel-inventory.js:519` | `new Dialog` | Select inventory transfer quantity | Squire Transfer window | Yes—unified | Use the shared Squire V2 **Transfer Item** window and Blacksmith form components; preserve the existing high-quality quantity controls. |
-  | `scripts/panel-notes.js:868` | `Dialog.confirm` | Confirm cleanup of missing note pins | `DialogV2.confirm` | No | A single maintenance confirmation does not warrant a window. |
-  | `scripts/panel-notes.js:884` | `Dialog.wait` | Choose current-scene or all-scenes note-pin deletion | Notes pin-maintenance flow | Maybe—unified | Could join cleanup and deletion in one small **Manage Note Pins** V2 window if more pin-maintenance actions emerge; otherwise keep this as a scope-choice DialogV2. |
-  | `scripts/panel-notes.js:896` | `Dialog.confirm` | Confirm the selected note-pin deletion scope | `DialogV2.confirm` | No | Keep the destructive confirmation separate even if scope selection moves into a unified maintenance window. |
-  | `scripts/panel-notes.js:1182` | `Dialog.confirm` | Confirm deleting a note | `DialogV2.confirm` | No | A destructive yes/no confirmation is appropriate. |
-  | `scripts/panel-party.js:642` | `new Dialog` | Select item quantity for a party-panel transfer | Squire Transfer window | Yes—unified | Use the same Squire V2 **Transfer Item** window; do not maintain a party-specific copy. |
-  | `scripts/panel-quest.js:848` | `new Dialog` | Choose the scene scope when clearing quest pins | Quest pin-maintenance flow | Maybe—unified | Keep as DialogV2 unless quest-pin cleanup/configuration grows enough to justify one **Manage Quest Pins** window. |
-  | `scripts/panel-quest.js:894` | `new Dialog` | Import quests and scene pins from JSON | Blacksmith importer | Yes—Blacksmith | Migrate to the robust Blacksmith importer. Preserve quest/pin validation, progress feedback, error reporting, and scene-pin handling through its extension points. |
-  | `scripts/panel-quest.js:1099` | `new Dialog` | Preview/copy/download exported quests and pins | Shared export workflow | Yes—unified | Use the same reusable V2 data-export window proposed for Codex. |
-  | `scripts/panel-quest.js:2986` | `new Dialog` | Duplicate quest/pin JSON import flow | Remove duplicate, then Blacksmith importer | Yes—Blacksmith | Delete the duplicate path and route the single retained quest import through the robust Blacksmith importer. |
-  | `scripts/panel-quest.js:3432` | `new Dialog` | Duplicate quest/pin JSON export flow | Remove duplicate, then shared exporter | Yes—unified | Delete the duplicate path and route the retained export through the reusable V2 data-export window. |
-  | `scripts/panel-weapons.js:541` | `new Dialog` | Select weapon transfer quantity | Squire Transfer window | Yes—unified | Use the shared Squire V2 **Transfer Item** window with Blacksmith's quantity/split control. |
-  | `scripts/squire.js:2370` | `new Dialog` | Recipient approves or rejects an item-transfer request | Squire Transfer window | Yes—unified | Squire opens its own approval-state Transfer window on the recipient client and retains socket, authorization, and revalidation ownership. |
-  | `scripts/utility-journal.js:491` | `new Dialog` | Select a configured journal | Shared journal picker | Yes—unified | Create one compact Blacksmith V2 **Journal Picker** that can operate in journal-only or journal-page mode. |
-  | `scripts/utility-journal.js:556` | `new Dialog` | Select a journal page or open the parent journal | Shared journal picker | Yes—unified | Use the same **Journal Picker** in page-selection mode, retaining the Open Journal escape hatch. |
-  | `scripts/window-quest.js:1630` | `Dialog.confirm` | Confirm quest deletion from the V2 quest editor | `DialogV2.confirm` | No | Keep as a destructive confirmation owned by the Quest window. |
+  **Follow-ups intentionally remain:**
+  - Replace Squire's current Codex/Quest JSON import implementation when Blacksmith publishes the presently proposed `api.importer` namespace. Do not deep-import Blacksmith internals.
+  - Replace the five current transfer DialogV2 surfaces with one ephemeral Squire `BlacksmithToolWindowBaseV2` Transfer tool after live verification of Blacksmith's implemented `api.entityList` and per-instance action delegation, and after Blacksmith integrates Squire's quantity/split contribution from `contributions/blacksmith/`. Until then the existing transfer layout and lock behavior are preserved through `api.dialog`.
+  - The shared Export window and journal picker are Squire-owned surfaces; they do not expand Blacksmith's scope.
 
-  **Resolved Blacksmith proposal:** See `documents/proposal-blacksmith-transfer-dialog-api.md`. Blacksmith accepted the DialogV2 helpers and counter-proposed shared entity-picker and quantity/split components. Squire will own an ephemeral, non-menubar `BlacksmithToolWindowBaseV2` Transfer tool and its sender/recipient socket workflow. It must use per-instance `_onRender` listeners instead of static `ACTION_HANDLERS`, set `rememberPosition: false`, change themes only through `setToolTheme()`, and verify the shared entity list under Light/Dark/Glass plus large-party viewport constraints.
+  **Resolved Blacksmith proposal:** See `documents/proposal-blacksmith-transfer-dialog-api.md`. The authoritative dialog behavior comes from Blacksmith's local `documentation/api/api-dialog.md`: DialogV2 closes on activation; prompt validation is a bounded reopen loop; `choose` and `wait` callbacks run after close; only a Tool window may promise in-place failure recovery and duplicate-submit protection.
 
-  **Migration order:** wait for Blacksmith's dialog and form components, including single-select, multi-select, and scratch Tool-theme verification; contribute the existing quantity/split interaction upstream; then build Squire's unregistered Transfer Item tool without degrading it. Live-test simultaneous sender/approval instances and large parties. Convert simple confirmations next; consolidate Notes/Quest pin maintenance only where it produces a genuinely better tool; build the shared Journal Picker and data-export window; finally remove duplicate Quest import/export paths and move all JSON imports to Blacksmith's robust importer.
 - [ ] **VERIFY** First v14 session: watch the console for deprecation warnings from Squire paths and log any not already covered by the two items above.
 
 ### CODEX DATA MODEL (custom page subtype)

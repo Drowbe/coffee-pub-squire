@@ -116,14 +116,6 @@ export class MacrosPanel {
         // Track if we're currently dragging internally (from a macro slot)
         let isInternalDrag = false;
         
-        // Find the panel container and window for visual feedback
-        let windowElement = null;
-        if (this.isWindowOpen && this.window && this.window.element) {
-            // FoundryVTT Application.element is the window content, we need the .app wrapper
-            windowElement = this.window.element.closest('.app') || 
-                           document.querySelector(`#${this.window.id || 'squire-macros-window'}`);
-        }
-        
         // Helper function to get the last slot element
         const getLastSlot = () => {
             if (!macrosGrid) return null;
@@ -133,11 +125,8 @@ export class MacrosPanel {
         
         // Helper function to show drop target visual feedback
         const showDropTarget = () => {
-            // Add drop target class to window (the .app element)
-            if (windowElement && windowElement.classList) {
-                windowElement.classList.add('macro-drop-target');
-            }
-            // Also add to panel container for tray view
+            // Keep drag feedback on Squire's content element. Changing styles
+            // on an ApplicationV2 frame can disrupt Foundry's positioned UI.
             if (panelContainer && panelContainer.classList) {
                 panelContainer.classList.add('macro-drop-target');
             }
@@ -150,11 +139,6 @@ export class MacrosPanel {
         
         // Helper function to hide drop target visual feedback
         const hideDropTarget = () => {
-            // Remove drop target class from window
-            if (windowElement && windowElement.classList) {
-                windowElement.classList.remove('macro-drop-target');
-            }
-            // Remove from panel container
             if (panelContainer && panelContainer.classList) {
                 panelContainer.classList.remove('macro-drop-target');
             }
@@ -165,134 +149,121 @@ export class MacrosPanel {
             }
         };
         
+        const getDragData = (event) => {
+            const textEditor = globalThis.foundry?.applications?.ux?.TextEditor?.implementation
+                || globalThis.TextEditor?.implementation
+                || globalThis.TextEditor;
+            if (typeof textEditor?.getDragEventData === 'function') {
+                try {
+                    const data = textEditor.getDragEventData(event);
+                    if (data && Object.keys(data).length) return data;
+                } catch (error) {
+                    console.warn('Coffee Pub Squire | Foundry could not decode macro drag data:', error);
+                }
+            }
+
+            for (const type of ['text/plain', 'application/json', 'text']) {
+                const raw = event.dataTransfer?.getData(type);
+                if (!raw) continue;
+                try {
+                    return JSON.parse(raw);
+                } catch (error) {
+                    // Try the next MIME type.
+                }
+            }
+            return {};
+        };
+
+        const resolveDroppedMacro = async (data) => {
+            if (!data || data.type === 'internal-macro') return null;
+            if (data.type !== 'Macro' && data.data?.type !== 'Macro' && !data.uuid?.startsWith('Macro.')) {
+                return null;
+            }
+
+            const macroId = data.id || data.data?._id || data.data?.id || data.uuid?.split('.').pop();
+            let macro = macroId ? game.macros.get(macroId) : null;
+            if (!macro && data.uuid && typeof globalThis.fromUuid === 'function') {
+                macro = await globalThis.fromUuid(data.uuid);
+            }
+            return macro?.documentName === 'Macro' ? macro : null;
+        };
+
+        let dropInProgress = false;
+        const addDroppedMacro = async (data) => {
+            if (dropInProgress) return false;
+            dropInProgress = true;
+            try {
+                const macro = await resolveDroppedMacro(data);
+                if (!macro) return false;
+
+                let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
+                macros = macros.filter(m => m && typeof m === 'object');
+                macros.push({ id: macro.id, name: macro.name, img: macro.img });
+                await game.settings.set(MODULE.ID, 'userMacros', macros);
+                await this.render();
+                return true;
+            } finally {
+                dropInProgress = false;
+            }
+        };
+
         // Helper function to handle external macro drop
         const handleExternalMacroDrop = async (e) => {
             hideDropTarget();
-            
-            // Check if this is an external macro drop
-            let data;
-            try {
-                data = JSON.parse(e.dataTransfer.getData('text/plain'));
-            } catch (error) {
-                // Not JSON, might be external macro - check Foundry's drag data format
-                const textData = e.dataTransfer.getData('text/plain');
-                if (textData) {
-                    // Foundry macro drags use format like: {"type":"Macro","uuid":"Macro.xxx"}
-                    try {
-                        const foundryData = JSON.parse(textData);
-                        if (foundryData.type === 'Macro' && foundryData.uuid) {
-                            const macroId = foundryData.uuid.split('Macro.')[1];
-                            const macro = game.macros.get(macroId);
-                            if (macro) {
-                                let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-                                macros = macros.filter(m => m && typeof m === 'object');
-                                macros.push({ id: macro.id, name: macro.name, img: macro.img });
-                                await game.settings.set(MODULE.ID, 'userMacros', macros);
-                                if (this.isWindowOpen && this.window) {
-                                    this.window.macros = macros;
-                                    await this.window.render(false);
-                                }
-                                await this.render();
-                                return true;
-                            }
-                        }
-                    } catch (e2) {
-                        // Not Foundry format either
-                    }
-                }
-                return false;
-            }
-            
-            // If it's internal reorder, don't handle here
-            if (data.type === 'internal-macro') {
-                return false;
-            }
-            
-            // External macro drop - add to last slot
-            const macroId = data.id || data.data?.id || data.uuid?.split('.').pop();
-            const isMacro = data.type === 'Macro' || data.data?.type === 'Macro' || data.uuid?.startsWith('Macro.');
-            if (isMacro && macroId) {
-                const macro = game.macros.get(macroId);
-                if (macro) {
-                    let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-                    macros = macros.filter(m => m && typeof m === 'object');
-                    macros.push({ id: macro.id, name: macro.name, img: macro.img });
-                    await game.settings.set(MODULE.ID, 'userMacros', macros);
-                    if (this.isWindowOpen && this.window) {
-                        this.window.macros = macros;
-                        await this.window.render(false);
-                    }
-                    await this.render();
-                    return true;
-                }
-            }
-            return false;
+            return addDroppedMacro(getDragData(e));
         };
         
-        // Helper function to check if drag is external macro (not internal reorder)
-        const isExternalMacroDrag = () => {
-            // Use the tracked flag to determine if it's an internal drag
-            return !isInternalDrag;
-        };
-        
-        // Add drag handlers to panel container (so dragging anywhere shows drop target)
+        // AppV2 windows share Foundry's global drag/drop surface. Capture an
+        // external macro drop at our content boundary so canvas and sidebar
+        // handlers cannot also process it. Internal reordering still bubbles to
+        // the individual slot handlers below.
         if (panelContainer) {
             panelContainer.addEventListener('dragenter', (e) => {
+                if (isInternalDrag) return;
                 e.preventDefault();
                 e.stopPropagation();
-                // Only show drop target for external macro drags
-                if (isExternalMacroDrag(e)) {
-                    showDropTarget();
-                }
-            });
+                showDropTarget();
+            }, true);
             
             panelContainer.addEventListener('dragover', (e) => {
+                if (isInternalDrag) return;
                 e.preventDefault();
                 e.stopPropagation();
-                e.dataTransfer.dropEffect = 'move';
-                // Only show drop target for external macro drags
-                if (isExternalMacroDrag(e)) {
-                    showDropTarget();
-                }
-            });
+                if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+                showDropTarget();
+            }, true);
             
             panelContainer.addEventListener('dragleave', (e) => {
+                if (isInternalDrag) return;
                 e.preventDefault();
                 e.stopPropagation();
-                // Only hide if leaving the container
                 const relatedTarget = e.relatedTarget;
                 if (!relatedTarget || !panelContainer.contains(relatedTarget)) {
                     hideDropTarget();
                 }
-            });
+            }, true);
             
-            // Drop handler on panel container
             panelContainer.addEventListener('drop', async (e) => {
+                const data = getDragData(e);
+                if (data?.type === 'internal-macro') return;
                 e.preventDefault();
                 e.stopPropagation();
-                // Reset internal drag flag
+                e.stopImmediatePropagation();
                 isInternalDrag = false;
-                await handleExternalMacroDrop(e);
-            });
+                hideDropTarget();
+                try {
+                    const added = await addDroppedMacro(data);
+                    if (!added) ui.notifications.warn('Only macros can be dropped here.');
+                } catch (error) {
+                    console.error('Coffee Pub Squire | Failed to add dropped macro:', error);
+                    ui.notifications.error('Failed to add macro.');
+                }
+            }, true);
             
             // Reset internal drag flag on dragend (in case drag ends outside)
             panelContainer.addEventListener('dragend', (e) => {
                 isInternalDrag = false;
                 hideDropTarget();
-            });
-        }
-        
-        // Add drag and drop handlers for the macros grid
-        if (macrosGrid) {
-            // Clone to remove old listeners
-            const newGrid = macrosGrid.cloneNode(true);
-            macrosGrid.parentNode?.replaceChild(newGrid, macrosGrid);
-            
-            // Drop handler on grid itself - handle external macro drops
-            newGrid.addEventListener('drop', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                await handleExternalMacroDrop(e);
             });
         }
 
@@ -310,6 +281,7 @@ export class MacrosPanel {
             // Drag & drop events
             slot.addEventListener('dragstart', function(e) {
                 if (!slot.classList.contains('empty')) {
+                    e.stopPropagation();
                     // Mark as internal drag
                     isInternalDrag = true;
                     e.dataTransfer.setData('text/plain', JSON.stringify({
@@ -324,7 +296,9 @@ export class MacrosPanel {
             
             // Reset internal drag flag when drag ends
             slot.addEventListener('dragend', function(e) {
+                e.stopPropagation();
                 isInternalDrag = false;
+                hideDropTarget();
             });
             slot.setAttribute('draggable', !slot.classList.contains('empty'));
 
@@ -351,10 +325,8 @@ export class MacrosPanel {
                 e.stopPropagation();
                 slot.classList.remove('dragover');
                 
-                let data;
-                try {
-                    data = JSON.parse(e.dataTransfer.getData('text/plain'));
-                } catch (error) {
+                const data = getDragData(e);
+                if (!data || !Object.keys(data).length) {
                     ui.notifications.warn('Invalid drag data.');
                     return;
                 }
@@ -370,10 +342,6 @@ export class MacrosPanel {
                     const [moved] = macros.splice(data.fromIndex, 1);
                     macros.splice(idx, 0, moved);
                     await game.settings.set(MODULE.ID, 'userMacros', macros);
-                    if (self.isWindowOpen && self.window) {
-                        self.window.macros = macros;
-                        await self.window.render(false);
-                    }
                     await self.render();
                     // Update handle in case favorites order changed
                     const panelManager = PanelManager.instance;
@@ -384,26 +352,7 @@ export class MacrosPanel {
                 }
                 
                 // External drop - always add to last slot regardless of where dropped
-                const macroId = data.id || data.data?.id || data.uuid?.split('.').pop();
-                const isMacro = data.type === 'Macro' || data.data?.type === 'Macro' || data.uuid?.startsWith('Macro.');
-                if (isMacro && macroId) {
-                    const macro = game.macros.get(macroId);
-                    if (macro) {
-                        let macros = game.settings.get(MODULE.ID, 'userMacros') || [];
-                        // Preserve array structure
-                        macros = macros.filter(m => m && typeof m === 'object');
-                        // Always add to the end (last slot)
-                        macros.push({ id: macro.id, name: macro.name, img: macro.img });
-                        await game.settings.set(MODULE.ID, 'userMacros', macros);
-                        if (self.isWindowOpen && self.window) {
-                            self.window.macros = macros;
-                            await self.window.render(false);
-                        }
-                        await self.render();
-                    } else {
-                        ui.notifications.warn('Macro not found.');
-                    }
-                } else {
+                if (!await addDroppedMacro(data)) {
                     ui.notifications.warn('Only macros can be dropped here.');
                 }
             });
@@ -450,10 +399,6 @@ export class MacrosPanel {
                     favoriteMacroIds.push(macroId);
                 }
                 await game.settings.set(MODULE.ID, 'userFavoriteMacros', favoriteMacroIds);
-                if (self.isWindowOpen && self.window) {
-                    self.window.macros = macros;
-                    await self.window.render(false);
-                }
                 await self.render();
                 const panelManager = PanelManager.instance;
                 if (panelManager) {
@@ -493,10 +438,6 @@ export class MacrosPanel {
                             favoriteMacroIds = favoriteMacroIds.filter(id => id !== removedMacroId);
                             await game.settings.set(MODULE.ID, 'userFavoriteMacros', favoriteMacroIds);
                         }
-                    }
-                    if (self.isWindowOpen && self.window) {
-                        self.window.macros = macros;
-                        await self.window.render(false);
                     }
                     await self.render();
                     const panelManager = PanelManager.instance;

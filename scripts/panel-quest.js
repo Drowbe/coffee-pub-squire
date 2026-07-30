@@ -20,7 +20,7 @@ import {
     reconcileQuestPins,
     focusQuestInPanel
 } from './manager-pins.js';
-import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, getPartyActors } from './helpers.js';
+import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, getPartyActors, showBlacksmithWait } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
 import { resolveEntries, reportResolution } from './utility-resolver.js';
@@ -844,38 +844,20 @@ export class QuestPanel {
      * Open the Clear All Quest Pins dialog (titlebar menu).
      * @private
      */
-    _openClearAllQuestPinsDialog() {
-        new Dialog({
+    async _openClearAllQuestPinsDialog() {
+        const result = await getBlacksmith().dialog.choose({
             title: 'Clear All Quest Pins',
-            content: `
-                <p>Choose which scenes to clear quest pins from:</p>
-                <div style="margin: 10px 0;">
-                    <label><input type="radio" name="clearScope" value="thisScene" checked> This Scene Only</label>
-                </div>
-                <div style="margin: 10px 0;">
-                    <label><input type="radio" name="clearScope" value="allScenes"> All Scenes</label>
-                </div>
-            `,
-            buttons: {
-                clear: {
-                    icon: '<i class="fa-solid fa-trash-alt"></i>',
-                    label: 'Clear Pins',
-                    callback: async (dlgHtml) => {
-                        let nativeDlgHtml = dlgHtml;
-                        if (dlgHtml && (dlgHtml.jquery || typeof dlgHtml.find === 'function')) {
-                            nativeDlgHtml = dlgHtml[0] || dlgHtml.get?.(0) || dlgHtml;
-                        }
-                        const checkedInput = nativeDlgHtml.querySelector('input[name="clearScope"]:checked');
-                        const scope = checkedInput?.value;
-                        if (scope) await this._clearAllQuestPins(scope);
-                    }
-                },
-                cancel: {
-                    icon: '<i class="fa-solid fa-times"></i>',
-                    label: 'Cancel'
-                }
-            }
-        }).render(true);
+            content: '<p>Choose which scenes to clear quest pins from:</p>',
+            choices: [
+                { id: 'thisScene', label: 'This Scene', icon: 'fa-solid fa-map' },
+                { id: 'allScenes', label: 'All Scenes', icon: 'fa-solid fa-globe', destructive: true }
+            ],
+            closeValue: null,
+            cancelValue: null
+        });
+        if (result.action === 'submit' && result.value) {
+            await this._clearAllQuestPins(result.value);
+        }
     }
 
     /**
@@ -891,7 +873,7 @@ export class QuestPanel {
         } catch (e) {
             template = 'Failed to load prompt-quests.txt.';
         }
-        new Dialog({
+        await showBlacksmithWait({
             title: 'Import Quests and Scene Pins from JSON',
             width: 600,
             resizable: true,
@@ -1034,7 +1016,7 @@ export class QuestPanel {
                     });
                 }
             }
-        }).render(true);
+        });
     }
 
     /**
@@ -1096,73 +1078,26 @@ export class QuestPanel {
             }
         };
         const exportData = JSON.stringify(enhancedExportData, null, 2);
-        new Dialog({
+        const sanitizeWindowsFilename = name => name
+            .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_')
+            .replace(/\s+$/g, '')
+            .replace(/\.+$/g, '')
+            .slice(0, 150);
+        const filename = `quests-export-${sanitizeWindowsFilename(game.world?.name || 'export')}-${Date.now()}.json`;
+        const { openDataExportWindow } = await import('./window-data-export.js');
+        openDataExportWindow({
             title: 'Export Quests and Scene Pins to JSON',
-            width: 600,
-            resizable: true,
-            content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
-                type: 'quests',
-                isImport: false,
-                isExport: true,
-                jsonOutputId: 'export-quests-json-output',
-                exportData,
-                exportSummary: {
-                    totalItems: exportQuests.length,
-                    totalScenes: Object.keys(scenePins).length,
-                    totalPins: Object.values(scenePins).reduce((sum, scene) => sum + (scene.questPins ? scene.questPins.length : 0), 0),
-                    exportVersion: enhancedExportData.exportVersion,
-                    timestamp: enhancedExportData.timestamp
-                },
-                hasScenePins: Object.keys(scenePins).length > 0,
-                scenePins: Object.keys(scenePins).length > 0 ? Object.values(scenePins).map(scene => ({ sceneName: scene.sceneName })) : []
-            }),
-            buttons: {
-                close: { icon: '<i class="fa-solid fa-times"></i>', label: 'Cancel Export' },
-                download: {
-                    icon: '<i class="fa-solid fa-download"></i>',
-                    label: 'Download JSON',
-                    callback: () => {
-                        try {
-                            const sanitizeWindowsFilename = (name) => name.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_').replace(/\s+$/g, '').replace(/\.+$/g, '').slice(0, 150);
-                            const filename = `quests-export-${sanitizeWindowsFilename(game.world?.name || 'export')}-${Date.now()}.json`;
-                            if (typeof saveDataToFile === 'function') {
-                                saveDataToFile(exportData, "application/json;charset=utf-8", filename);
-                                ui.notifications.info(`Quest export saved as ${filename}`);
-                            } else {
-                                const blob = new Blob([exportData], { type: 'application/json;charset=utf-8' });
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement("a");
-                                a.href = url;
-                                a.download = filename;
-                                a.rel = "noopener";
-                                a.style.display = 'none';
-                                document.body.appendChild(a);
-                                a.click();
-                                a.remove();
-                                trackModuleTimeout(() => URL.revokeObjectURL(url), 0);
-                                ui.notifications.info(`Quest export downloaded as ${filename}`);
-                            }
-                        } catch (error) {
-                            copyToClipboard(exportData);
-                            ui.notifications.warn('Download failed. Export data copied to clipboard instead.');
-                            console.error('Export download failed:', error);
-                        }
-                    }
-                }
-            },
-            classes: ['import-export-dialog'],
-            id: 'import-export-dialog-quest-export',
-            render: (html) => {
-                let nativeDlgHtml = html;
-                if (html && (html.jquery || typeof html.find === 'function')) {
-                    nativeDlgHtml = html[0] || html.get?.(0) || html;
-                }
-                const closeButton = nativeDlgHtml.querySelector('[data-button="close"]');
-                if (closeButton) closeButton.classList.add('squire-cancel-button');
-                const downloadButton = nativeDlgHtml.querySelector('[data-button="download"]');
-                if (downloadButton) downloadButton.classList.add('squire-submit-button');
-            }
-        }).render(true);
+            data: exportData,
+            filename,
+            summary: [
+                { label: 'Quests', value: exportQuests.length },
+                { label: 'Scenes with Pins', value: Object.keys(scenePins).length },
+                { label: 'Pins', value: enhancedExportData.metadata.totalPins },
+                { label: 'Format', value: `Quest export v${enhancedExportData.exportVersion}` },
+                { label: 'Created', value: new Date(enhancedExportData.timestamp).toLocaleString() }
+            ],
+            sceneNames: Object.values(scenePins).map(scene => scene.sceneName).filter(Boolean)
+        });
     }
 
     /**
@@ -2960,569 +2895,6 @@ export class QuestPanel {
                         zones
                     });
                 });
-            });
-        }
-
-        // Import Quests from JSON - now in titlebar menu; handler below uses _openImportQuestsDialog
-        // v13: Use nativeHtml instead of html
-        const importQuestsButton = nativeHtml.querySelector('.import-quests-json');
-        if (importQuestsButton) {
-            const newButton = importQuestsButton.cloneNode(true);
-            importQuestsButton.parentNode?.replaceChild(newButton, importQuestsButton);
-            newButton.addEventListener('click', async () => {
-                if (!game.user.isGM) return;
-            // Load the template from prompts/prompt-quests.txt
-            let template = '';
-            try {
-                const response = await fetch('modules/coffee-pub-squire/prompts/prompt-quests.txt');
-                if (response.ok) {
-                    template = await response.text();
-                } else {
-                    template = 'Failed to load prompt-quests.txt.';
-                }
-            } catch (e) {
-                template = 'Failed to load prompt-quests.txt.';
-            }
-            new Dialog({
-                title: 'Import Quests and Scene Pins from JSON',
-                width: 600,
-                resizable: true,
-                content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
-                    type: 'quests',
-                    isImport: true,
-                    isExport: false,
-                    jsonInputId: 'import-quests-json-input'
-                }),
-                buttons: {
-                    cancel: {
-                        icon: '<i class="fa-solid fa-times"></i>',
-                        label: 'Cancel Import'
-                    },
-                    import: {
-                        icon: '<i class="fa-solid fa-file-import"></i>',
-                        label: 'Import JSON',
-                        callback: async (dlgHtml) => {
-                            // v13: Detect and convert jQuery to native DOM if needed
-                            let nativeDlgHtml = dlgHtml;
-                            if (dlgHtml && (dlgHtml.jquery || typeof dlgHtml.find === 'function')) {
-                                nativeDlgHtml = dlgHtml[0] || dlgHtml.get?.(0) || dlgHtml;
-                            }
-                            const input = nativeDlgHtml.querySelector('#import-quests-json-input');
-                            const inputValue = input?.value || '';
-                            let importData;
-                            try {
-                                importData = JSON.parse(inputValue);
-                            } catch (e) {
-                                ui.notifications.error('Invalid JSON: ' + e.message);
-                                return;
-                            }
-                            
-                            // Set import flag to prevent panel refreshes during import
-                            this.isImporting = true;
-                            
-                            // Show progress bar
-                            this._showProgressBar();
-                            
-                            try {
-                                // Handle both legacy and enhanced formats
-                                let quests, scenePins;
-                                if (Array.isArray(importData)) {
-                                    // Legacy format: direct array of quests
-                                    quests = importData;
-                                    scenePins = {};
-                                } else if (importData.quests && Array.isArray(importData.quests)) {
-                                    // Enhanced format: object with quests and scenePins
-                                    quests = importData.quests;
-                                    scenePins = importData.scenePins || {};
-                                    
-                                    // Show enhanced import info
-                                    if (importData.exportVersion) {
-                                        ui.notifications.info(`Importing enhanced export (v${importData.exportVersion}) with ${quests.length} quests and ${Object.keys(scenePins).length} scenes with pins.`);
-                                    }
-                                } else {
-                                    ui.notifications.error('Invalid format: JSON must be either an array of quests or an object with quests and scenePins properties.');
-                                    return;
-                                }
-                                
-                                // Ensure categories include all required categories
-                                let categories = game.settings.get(MODULE.ID, 'questCategories') || [];
-                                let changed = false;
-                                for (const cat of QUEST_CATEGORIES) {
-                                    if (!categories.includes(cat)) { categories.push(cat); changed = true; }
-                                }
-                                if (changed) await game.settings.set(MODULE.ID, 'questCategories', categories);
-                                const journalId = game.settings.get(MODULE.ID, 'questJournal');
-                                if (!journalId || journalId === 'none') {
-                                    ui.notifications.error('No quest journal selected.');
-                                    return;
-                                }
-                                const journal = game.journal.get(journalId);
-                                if (!journal) {
-                                    ui.notifications.error('Selected quest journal not found.');
-                                    return;
-                                }
-                                
-                                // Update progress for validation phase
-                                this._updateProgressBar(10, 'Validating import data...');
-                                
-                                // Check for duplicate names in the import data itself
-                                const importNameCounts = {};
-                                const duplicateNames = [];
-                                quests.forEach(q => {
-                                    if (q.name) {
-                                        importNameCounts[q.name] = (importNameCounts[q.name] || 0) + 1;
-                                        if (importNameCounts[q.name] > 1 && !duplicateNames.includes(q.name)) {
-                                            duplicateNames.push(q.name);
-                                        }
-                                    }
-                                });
-                                
-                                if (duplicateNames.length > 0) {
-                                    ui.notifications.warn(`Warning: Import data contains duplicate quest names: ${duplicateNames.join(', ')}. These will be merged with existing quests.`);
-                                }
-                                
-                                // Update progress for quest processing phase
-                                this._updateProgressBar(20, `Processing ${quests.length} quests...`);
-                                
-                                let imported = 0;
-                                let updated = 0;
-                                let duplicatesMerged = 0;
-                                // Filled by the content builders as they resolve names; reported once below.
-                                this._resolveReports = [];
-                                const totalQuests = quests.length;
-                                
-                                for (let i = 0; i < quests.length; i++) {
-                                    const quest = quests[i];
-                                    if (!quest.name) continue;
-                                    
-                                    // Update progress for each quest
-                                    const questProgress = 20 + ((i / totalQuests) * 60); // 20-80% range for quest processing
-                                    this._updateProgressBar(questProgress, `Processing: ${quest.name}`);
-                                    
-                                    // Check if a quest with this UUID already exists (UUID takes priority)
-                                    let existingPage = null;
-                                    let matchType = 'none';
-                                    
-                                    if (quest.uuid) {
-                                        existingPage = journal.pages.find(p => p.getFlag(MODULE.ID, 'questUuid') === quest.uuid);
-                                        if (existingPage) matchType = 'uuid';
-                                    }
-                                    
-                                    // If no UUID match, check by name as fallback
-                                    if (!existingPage) {
-                                        existingPage = journal.pages.find(p => p.name === quest.name);
-                                        if (existingPage) matchType = 'name';
-                                    }
-                                    
-                                    // Quest import duplicate detection
-                                    
-                                    if (existingPage) {
-                                        // Update existing quest - PRESERVE EXISTING STATE
-                                        const existingContent = existingPage.text.content;
-                                        const updatedContent = await this._mergeJournalContent(existingContent, quest);
-                                        
-                                        await existingPage.update({
-                                            text: {
-                                                content: updatedContent
-                                            }
-                                        });
-                                        // Update flags if necessary
-                                        if (quest.visible !== undefined) {
-                                            await existingPage.setFlag(MODULE.ID, 'visible', quest.visible !== false);
-                                        }
-                                        // Make sure the questUuid flag is set
-                                        const uuid = quest.uuid || existingPage.getFlag(MODULE.ID, 'questUuid') || foundry.utils.randomID();
-                                        if (uuid !== existingPage.getFlag(MODULE.ID, 'questUuid')) {
-                                            await existingPage.setFlag(MODULE.ID, 'questUuid', uuid);
-                                        }
-                                        
-                                        // Update the page name if it's different (in case of name changes)
-                                        if (quest.name && quest.name !== existingPage.name) {
-                                            await existingPage.update({ name: quest.name });
-                                        }
-                                        // Set original category flag if status is Complete or Failed
-                                        if (quest.status === 'Complete' || quest.status === 'Failed') {
-                                            // Only set if not already set and the quest has a category
-                                            if (!await existingPage.getFlag(MODULE.ID, 'originalCategory') && quest.category) {
-                                                await existingPage.setFlag(MODULE.ID, 'originalCategory', quest.category);
-                                            }
-                                        }
-                                        updated++;
-                                        if (matchType === 'name') {
-                                            duplicatesMerged++;
-                                        }
-                                    } else {
-                                        // Create new quest
-                                        const uuid = quest.uuid || foundry.utils.randomID();
-                                        const pageData = {
-                                            name: quest.name,
-                                            type: 'text',
-                                            text: {
-                                                content: await this._generateJournalContentFromImport(quest)
-                                            },
-                                            flags: {
-                                                [MODULE.ID]: {
-                                                    questUuid: uuid
-                                                }
-                                            }
-                                        };
-                                        const created = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-                                        const page = created[0];
-                                        if (page) {
-                                            await page.setFlag(MODULE.ID, 'visible', quest.visible !== false);
-                                            // Set original category flag if status is Complete or Failed
-                                            if ((quest.status === 'Complete' || quest.status === 'Failed') && quest.category) {
-                                                await page.setFlag(MODULE.ID, 'originalCategory', quest.category);
-                                            }
-                                            imported++;
-                                        }
-                                    }
-                                    
-                                    // Small delay to make progress visible
-                                    if (i % 5 === 0) {
-                                        await moduleDelay(100);
-                                    }
-                                }
-                                
-                                // Update progress for scene pins import
-                                this._updateProgressBar(80, 'Importing scene pins...');
-                                
-                                // Import scene pins if available
-                                if (Object.keys(scenePins).length > 0) {
-                                    try {
-                                        await this._importScenePins(scenePins);
-                                    } catch (error) {
-                                        console.error('Error during scene pin import:', error);
-                                        ui.notifications.warn('Scene pins import failed, but quests were imported successfully. Check console for details.');
-                                    }
-                                }
-                                
-                                // Update progress for completion
-                                this._updateProgressBar(90, 'Finalizing import...');
-                                
-                                let message = `Quest import complete: ${imported} added, ${updated} updated.`;
-                                if (duplicatesMerged > 0) {
-                                    message += ` ${duplicatesMerged} duplicates were merged.`;
-                                }
-                                ui.notifications.info(message);
-                                reportResolution(this._resolveReports, 'Quest import');
-                                this._resolveReports = null;
-                                
-                                // Show completion message in progress bar
-                                this._updateProgressBar(100, 'Import complete!');
-                                
-                                // Keep completion message visible for a moment
-                                await moduleDelay(2000);
-                                
-                                // Hide progress bar
-                                this._hideProgressBar();
-                                
-                                // Clear import flag and refresh panel once at the end
-                                this.isImporting = false;
-                                await this._refreshData();
-                                this.render(this.element);
-                                
-                            } catch (error) {
-                                // Hide progress bar on error
-                                this._hideProgressBar();
-                                
-                                // Clear import flag on error
-                                this.isImporting = false;
-                                
-                                console.error('Error during quest import:', error);
-                                ui.notifications.error(`Quest import failed: ${error.message}`);
-                            }
-                        }
-                    }
-                },
-                default: 'import',
-                render: (html) => {
-                    // v13: Detect and convert jQuery to native DOM if needed
-                    let nativeDlgHtml = html;
-                    if (html && (html.jquery || typeof html.find === 'function')) {
-                        nativeDlgHtml = html[0] || html.get?.(0) || html;
-                    }
-                    
-                    // Apply custom button classes
-                    const cancelButton = nativeDlgHtml.querySelector('[data-button="cancel"]');
-                    if (cancelButton) cancelButton.classList.add('squire-cancel-button');
-                    const importButton = nativeDlgHtml.querySelector('[data-button="import"]');
-                    if (importButton) importButton.classList.add('squire-submit-button');
-                    
-                    // Copy template button
-                    const copyTemplateButton = nativeDlgHtml.querySelector('.copy-template-button');
-                    if (copyTemplateButton) {
-                        copyTemplateButton.addEventListener('click', () => {
-                            let output = template;
-                            const rulebooks = game.settings.get(MODULE.ID, 'defaultRulebooks');
-                            if (rulebooks && rulebooks.trim()) {
-                                output = output.replace('[ADD-RULEBOOKS-HERE]', rulebooks);
-                            }
-                            copyToClipboard(output);
-                            ui.notifications.info('Template copied to clipboard!');
-                        });
-                    }
-                    
-                    // Browse file button
-                    const browseFileButton = nativeDlgHtml.querySelector('.browse-file-button');
-                    if (browseFileButton) {
-                        browseFileButton.addEventListener('click', () => {
-                            const fileInput = nativeDlgHtml.querySelector('#import-file-input');
-                            if (fileInput) fileInput.click();
-                        });
-                    }
-                    
-                    // File input change handler
-                    const fileInput = nativeDlgHtml.querySelector('#import-file-input');
-                    if (fileInput) {
-                        fileInput.addEventListener('change', async (event) => {
-                            const file = event.target.files[0];
-                            if (!file) return;
-                            
-                            try {
-                                // Check file type
-                                if (!file.name.toLowerCase().endsWith('.json')) {
-                                    ui.notifications.error('Please select a JSON file.');
-                                    return;
-                                }
-                                
-                                // Read file content
-                                const text = await file.text();
-                                let importData;
-                                
-                                try {
-                                    importData = JSON.parse(text);
-                                } catch (e) {
-                                    ui.notifications.error('Invalid JSON in file: ' + e.message);
-                                    return;
-                                }
-                                
-                                // Validate format
-                                let quests, scenePins;
-                                if (Array.isArray(importData)) {
-                                    quests = importData;
-                                    scenePins = {};
-                                } else if (importData.quests && Array.isArray(importData.quests)) {
-                                    quests = importData.quests;
-                                    scenePins = importData.scenePins || {};
-                                    
-                                    if (importData.exportVersion) {
-                                        ui.notifications.info(`File contains enhanced export (v${importData.exportVersion}) with ${quests.length} quests and ${Object.keys(scenePins).length} scenes with pins.`);
-                                    }
-                                } else {
-                                    ui.notifications.error('Invalid file format: Must be either an array of quests or an object with quests and scenePins properties.');
-                                    return;
-                                }
-                                
-                                // Auto-populate the textarea with the file content
-                                const jsonInput = nativeDlgHtml.querySelector('#import-quests-json-input');
-                                if (jsonInput) {
-                                    jsonInput.value = text;
-                                }
-                                
-                                // Show success message
-                                ui.notifications.info(`File "${file.name}" loaded successfully! Review the content below and click Import when ready.`);
-                                
-                                // Reset file input
-                                event.target.value = '';
-                                
-                            } catch (error) {
-                                console.error('Error reading file:', { error, fileName: file.name });
-                                ui.notifications.error(`Error reading file: ${error.message}`);
-                            }
-                        });
-                    }
-                }
-            }, {
-                classes: ['import-export-dialog'],
-                id: 'import-export-dialog-quest-import',
-            }).render(true);
-            });
-        }
-
-        // Export Quests to JSON (GM only)
-        // Export Quests to JSON (GM only)
-        // v13: Use nativeHtml instead of html
-        const exportQuestsButton = nativeHtml.querySelector('.export-quests-json');
-        if (exportQuestsButton) {
-            const newButton = exportQuestsButton.cloneNode(true);
-            exportQuestsButton.parentNode?.replaceChild(newButton, exportQuestsButton);
-            newButton.addEventListener('click', async () => {
-                if (!game.user.isGM) return;
-            
-            // Make sure data is refreshed
-            await this._refreshData();
-            
-            // Collect all quests from all categories
-            const allQuests = [];
-            for (const category of this.categories) {
-                allQuests.push(...this.data[category] || []);
-            }
-            
-            // Remove duplicates by UUID
-            const uniqueQuests = [];
-            const seenUUIDs = new Set();
-            allQuests.forEach(quest => {
-                if (quest.uuid && !seenUUIDs.has(quest.uuid)) {
-                    seenUUIDs.add(quest.uuid);
-                    uniqueQuests.push(quest);
-                }
-            });
-            
-            if (uniqueQuests.length === 0) {
-                ui.notifications.warn("No quests to export");
-                return;
-            }
-            
-            // Convert quests to a simpler exportable format
-            const exportQuests = uniqueQuests.map(q => {
-                const quest = {
-                    name: q.name,
-                    uuid: q.uuid,
-                    img: q.img || "",
-                    category: q.category || "Side Quest",
-                    description: q.description || "",
-                    plotHook: q.plotHook || "",
-                    status: q.status || "Not Started",
-                    visible: q.visible !== false,
-                    timeframe: q.timeframe || { duration: "" },
-                    tasks: q.tasks?.map(t => ({
-                        text: t.text,
-                        completed: t.completed || false,
-                        state: t.state || "active",
-                        gmnotes: t.gmHint || "",
-                        tasktreasure: t.treasureUnlocks || [],
-                        originalText: t.originalText || ""
-                    })) || [],
-                    reward: {
-                        xp: q.reward?.xp || 0,
-                        treasure: q.reward?.treasure || []
-                    },
-                    participants: q.participants || [],
-                    tags: q.tags || [],
-                    location: q.location || ""
-                };
-                if (quest.img && typeof quest.img === 'string') {
-                    const origin = window.location.origin + '/';
-                    if (quest.img.startsWith(origin)) {
-                        quest.img = quest.img.slice(origin.length);
-                    }
-                }
-                return quest;
-            });
-            
-            // Export scene pins data
-            const scenePins = await this._exportScenePins();
-            
-            // Create enhanced export data with both quests and scene pins
-            const enhancedExportData = {
-                quests: exportQuests,
-                scenePins: scenePins,
-                exportVersion: "1.1",
-                timestamp: new Date().toISOString(),
-                metadata: {
-                    totalQuests: exportQuests.length,
-                    totalScenesWithPins: Object.keys(scenePins).length,
-                    totalPins: Object.values(scenePins).reduce((sum, scene) => sum + (scene.questPins ? scene.questPins.length : 0), 0)
-                }
-            };
-            
-            // Create a download dialog with the enhanced JSON
-            const exportData = JSON.stringify(enhancedExportData, null, 2);
-            new Dialog({
-                title: 'Export Quests and Scene Pins to JSON',
-                width: 600,
-                resizable: true,
-                content: await renderTemplate('modules/coffee-pub-squire/templates/window-import-export.hbs', {
-                    type: 'quests',
-                    isImport: false,
-                    isExport: true,
-                    jsonOutputId: 'export-quests-json-output',
-                    exportData: exportData,
-                    exportSummary: {
-                        totalItems: exportQuests.length,
-                        totalScenes: Object.keys(scenePins).length,
-                        totalPins: Object.values(scenePins).reduce((sum, scene) => sum + (scene.questPins ? scene.questPins.length : 0), 0),
-                        exportVersion: enhancedExportData.exportVersion,
-                        timestamp: enhancedExportData.timestamp
-                    },
-                    hasScenePins: Object.keys(scenePins).length > 0,
-                    scenePins: Object.keys(scenePins).length > 0 ? Object.values(scenePins).map(scene => ({ sceneName: scene.sceneName })) : []
-                }),
-                buttons: {
-                    close: {
-                        icon: '<i class="fa-solid fa-times"></i>',
-                        label: 'Cancel Export'
-                    },
-                    download: {
-                        icon: '<i class="fa-solid fa-download"></i>',
-                        label: 'Download JSON',
-                        callback: () => {
-                            try {
-                                // Windows-safe filename sanitization
-                                const sanitizeWindowsFilename = (name) => {
-                                    return name
-                                        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_")
-                                        .replace(/\s+$/g, "")
-                                        .replace(/\.+$/g, "")
-                                        .slice(0, 150); // keep it reasonable
-                                };
-                                
-                                // Build a Windows-safe filename (avoid colons from timestamps!)
-                                const stamp = new Date().toISOString().replace(/[:]/g, "-"); // 2025-08-15T23-10-05.123Z
-                                const filename = sanitizeWindowsFilename(`COFFEEPUB-SQUIRE-quests-export-${stamp}.json`);
-                                
-                                // Use Foundry's built-in helper (v10+) - this handles Blob creation + anchor download correctly
-                                if (typeof saveDataToFile === 'function') {
-                                    saveDataToFile(exportData, "application/json;charset=utf-8", filename);
-                                    ui.notifications.info(`Quest export saved as ${filename}`);
-                                } else {
-                                    // Fallback: use the classic anchor approach with sanitized filename
-                                    const blob = new Blob([exportData], { 
-                                        type: 'application/json;charset=utf-8' 
-                                    });
-                                    const url = URL.createObjectURL(blob);
-                                    
-                                    const a = document.createElement("a");
-                                    a.href = url;
-                                    a.download = filename;
-                                    a.rel = "noopener"; // safety
-                                    a.style.display = 'none';
-                                    document.body.appendChild(a);
-                                    a.click();
-                                    a.remove();
-                                    
-                                    // Always revoke after a tick so the download starts
-                                    trackModuleTimeout(() => URL.revokeObjectURL(url), 0);
-                                    
-                                    ui.notifications.info(`Quest export downloaded as ${filename}`);
-                                }
-                            } catch (error) {
-                                // Last resort: copy to clipboard
-                                copyToClipboard(exportData);
-                                ui.notifications.warn('Download failed. Export data copied to clipboard instead.');
-                                console.error('Export download failed:', error);
-                            }
-                        }
-                    }
-                },
-                default: 'download'
-            }, {
-                classes: ['import-export-dialog'],
-                id: 'import-export-dialog-quest-export',
-                render: (html) => {
-                    // v13: Detect and convert jQuery to native DOM if needed
-                    let nativeDlgHtml = html;
-                    if (html && (html.jquery || typeof html.find === 'function')) {
-                        nativeDlgHtml = html[0] || html.get?.(0) || html;
-                    }
-                    // Apply custom button classes
-                    const closeButton = nativeDlgHtml.querySelector('[data-button="close"]');
-                    if (closeButton) closeButton.classList.add('squire-cancel-button');
-                    const downloadButton = nativeDlgHtml.querySelector('[data-button="download"]');
-                    if (downloadButton) downloadButton.classList.add('squire-submit-button');
-                }
-            }).render(true);
             });
         }
 

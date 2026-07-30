@@ -1,0 +1,46 @@
+/*
+ * Squire's Give / Keep quantity interaction, adapted to inherit Blacksmith
+ * Tool variables in Light, Dark, and Glass instead of styling the frame.
+ */
+.blacksmith-quantity-split {
+    display: grid;
+    grid-template-columns: 48px minmax(100px, 1fr) 48px;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 3px 8px;
+    width: 100%;
+}
+
+.blacksmith-quantity-split input[type="range"] {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+}
+
+.blacksmith-quantity-split-value {
+    min-width: 0;
+    padding: 4px;
+    border: 1px solid var(--blacksmith-tool-border, rgba(128, 128, 128, 0.6));
+    border-radius: 3px;
+    background: var(--blacksmith-tool-background, rgba(0, 0, 0, 0.12));
+    color: var(--blacksmith-tool-text, currentColor);
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+}
+
+.blacksmith-quantity-split-caption {
+    overflow: hidden;
+    color: var(--blacksmith-tool-text, currentColor);
+    opacity: 0.75;
+    font-size: 0.65em;
+    line-height: 1;
+    text-align: center;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.blacksmith-quantity-split-caption-amount {
+    font-size: 0.7em;
+}

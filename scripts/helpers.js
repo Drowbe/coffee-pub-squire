@@ -8,6 +8,61 @@ export function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
 }
 
+export function getBlacksmithDialog() {
+  const dialog = getBlacksmith()?.dialog;
+  if (!dialog) throw new Error('Coffee Pub Squire | Blacksmith api.dialog is unavailable');
+  return dialog;
+}
+
+/**
+ * Adapt Squire's two remaining complex JSON-import surfaces to Blacksmith's
+ * DialogV2 wait contract while their eventual importer replacement is blocked
+ * on the public Blacksmith Importer API.
+ */
+export async function showBlacksmithWait(config = {}, renderOptions = {}) {
+  const buttons = Object.entries(config.buttons || {}).map(([action, button]) => ({
+    action,
+    label: button?.label || action,
+    icon: String(button?.icon || '').match(/class=["'][^"']*?(fa-(?:solid|regular|brands)\s+fa-[\w-]+)[^"']*["']/)?.[1]
+      || String(button?.icon || '').match(/(fa-(?:solid|regular|brands)\s+fa-[\w-]+)/)?.[1]
+      || undefined,
+    default: config.default === action,
+    destructive: Boolean(button?.destructive),
+    disabled: Boolean(button?.disabled),
+    callback: typeof button?.callback === 'function' ? form => button.callback(form) : undefined
+  }));
+  const onRender = config.onRender || config.render || renderOptions.onRender || renderOptions.render;
+  const outcome = await getBlacksmithDialog().wait({
+    title: config.title || '',
+    content: config.content || '',
+    buttons,
+    onRender: root => {
+      if (typeof onRender === 'function') onRender(root);
+      root?.querySelectorAll?.('.transfer-dialog input[type="range"][name^="quantity_"]').forEach(input => {
+        const container = input.closest('.transfer-quantity');
+        const selected = container?.querySelector('.quantity-label');
+        const remaining = container?.querySelector('.range-value');
+        const update = () => {
+          const value = Number(input.value) || 1;
+          const maximum = Number(input.max) || value;
+          if (selected) selected.textContent = String(value);
+          if (remaining) remaining.textContent = String(Math.max(0, maximum - value));
+        };
+        input.addEventListener('input', update);
+        update();
+      });
+    },
+    closeValue: null,
+    cancelValue: null,
+    classes: [...(config.classes || []), ...(renderOptions.classes || [])],
+    position: config.position || { width: config.width || renderOptions.width || 600 }
+  });
+  if (outcome.action === 'close' && typeof config.close === 'function') {
+    await config.close();
+  }
+  return outcome;
+}
+
 /**
  * Resolve the shared semantic health-bar color class.
  * Party, handle, and Health tool surfaces all consume this same scale.
@@ -484,18 +539,23 @@ export async function copyToClipboard(text) {
     }
     
     // Method 3: Show dialog with text for manual copying
-    new Dialog({
+    const content = document.createElement('div');
+    const message = document.createElement('p');
+    message.textContent = 'Automatic clipboard copy failed. Please manually copy the text below:';
+    const manualCopy = document.createElement('textarea');
+    manualCopy.readOnly = true;
+    manualCopy.value = text;
+    manualCopy.style.cssText = 'width: 100%; height: 200px; margin-top: 10px;';
+    content.append(message, manualCopy);
+
+    await getBlacksmithDialog().wait({
         title: 'Copy to Clipboard',
-        content: `
-            <p>Automatic clipboard copy failed. Please manually copy the text below:</p>
-            <textarea style="width: 100%; height: 200px; margin-top: 10px;" readonly>${text}</textarea>
-        `,
-        buttons: {
-            close: {
-                label: 'Close'
-            }
-        }
-    }).render(true);
+        content,
+        buttons: [
+            { action: 'close', label: 'Close', icon: 'fa-solid fa-xmark', default: true }
+        ],
+        closeValue: null
+    });
     
     return false;
 }

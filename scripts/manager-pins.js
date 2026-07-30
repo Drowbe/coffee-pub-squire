@@ -1909,7 +1909,15 @@ function _registerContextMenuItems(pins) {
                     ui.notifications.warn('You do not have permission to delete this note.');
                     return;
                 }
-                const confirmed = await Dialog.confirm({ title: 'Delete Note', content: '<p>Delete this note?</p>', defaultYes: false });
+                const dialog = game.modules.get('coffee-pub-blacksmith')?.api?.dialog;
+                if (!dialog) throw new Error('Coffee Pub Squire | Blacksmith api.dialog is unavailable');
+                const confirmed = await dialog.confirm({
+                    title: 'Delete Note',
+                    content: '<p>Delete this note?</p>',
+                    confirmLabel: 'Delete Note',
+                    confirmIcon: 'fa-solid fa-trash',
+                    destructive: true
+                });
                 if (!confirmed) return;
                 await deleteNotePin(page);
                 await page.delete();

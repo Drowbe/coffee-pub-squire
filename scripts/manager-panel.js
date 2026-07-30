@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
-import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, renderTemplate } from './helpers.js';
+import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, renderTemplate, showBlacksmithWait } from './helpers.js';
 import { CharacterPanel } from './panel-character.js';
 import { GmPanel } from './panel-gm.js';
 import { SpellsPanel } from './panel-spells.js';
@@ -994,15 +994,15 @@ export class PanelManager {
                             
                             // Initiate the transfer process
                             let selectedQuantity = await new Promise(resolve => {
-                                new Dialog({
+                                void showBlacksmithWait({
                                     title: "Transfer Item",
                                     content: senderContent,
                                     buttons: {
                                         transfer: {
                                             icon: '<i class="fa-solid fa-exchange-alt"></i>',
                                             label: "Transfer",
-                                            callback: () => {
-                                                const quantityInput = document.querySelector(`#transfer-item-${timestamp} input[type="number"]`);
+                                            callback: form => {
+                                                const quantityInput = form?.querySelector?.(`input[name="quantity_${timestamp}"]`);
                                                 resolve(quantityInput ? parseInt(quantityInput.value) : 1);
                                             }
                                         },
@@ -1019,7 +1019,7 @@ export class PanelManager {
                                     id: `transfer-item-${timestamp}`,
                                     width: 320,
                                     height: "auto"
-                                }).render(true);
+                                });
                             });
                             
                             if (selectedQuantity <= 0) return; // User cancelled

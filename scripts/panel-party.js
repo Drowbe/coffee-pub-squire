@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
-import { getHealthbarStatusClass, getNativeElement, renderTemplate } from './helpers.js';
+import { getHealthbarStatusClass, getNativeElement, renderTemplate, showBlacksmithWait } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -639,7 +639,7 @@ export class PartyPanel {
         
         // Initiate the transfer process
         const selectedQuantity = await new Promise(resolve => {
-            new Dialog({
+            void showBlacksmithWait({
                 title: "Transfer Item",
                 content: senderContent,
                 buttons: {
@@ -680,7 +680,7 @@ export class PartyPanel {
                 id: `transfer-item-${timestamp}`,
                 width: 320,
                 height: "auto"
-            }).render(true);
+            });
         });
         
         return selectedQuantity;

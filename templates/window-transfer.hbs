@@ -1,5 +1,4 @@
-<form>
-    <div class="form-group transfer-dialog">
+<div class="form-group transfer-dialog">
         <div class="transfer-item-header">
             <div class="transfer-item-image">
                 <img src="{{sourceItem.img}}" alt="{{sourceItem.name}}">
@@ -35,30 +34,3 @@
         </div>
         {{/if}}
     </div>
-</form>
-<script>
-    (function() {
-        // Wait for DOM to be fully loaded
-        setTimeout(() => {
-            const rangeEl = document.querySelector('#transfer-item-{{timestamp}} input[name="quantity_{{timestamp}}"]');
-            const displayEl = document.querySelector('#transfer-item-{{timestamp}} .range-value');
-            const labelEl = document.querySelector('#transfer-item-{{timestamp}} .quantity-label');
-            
-            if (rangeEl && displayEl && labelEl) {
-                // Set initial values
-                labelEl.textContent = rangeEl.value;
-                displayEl.textContent = {{maxQuantity}};
-                
-                // Add event listener
-                rangeEl.addEventListener('input', (ev) => {
-                    const selectedQty = parseInt(ev.target.value);
-                    const remainingQty = {{maxQuantity}} - selectedQty;
-                    
-                    // Update labels: left shows selected amount, right shows remaining
-                    labelEl.textContent = selectedQty;
-                    displayEl.textContent = remainingQty;
-                });
-            }
-        }, 10);
-    })();
-</script> 

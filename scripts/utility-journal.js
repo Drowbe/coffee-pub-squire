@@ -453,7 +453,7 @@ export async function renderJournalContent(container, page, options = {}) {
  * @param {() => void} [options.reRender] - Called after selection to refresh the panel
  * @param {string} [options.hint] - Short plain-text hint, rendered in Foundry's native hint style
  */
-export function showJournalPicker(options) {
+export async function showJournalPicker(options) {
     const {
         title = 'Select Journal',
         choices = null,
@@ -488,25 +488,24 @@ export function showJournalPicker(options) {
         `<option value="${escapeHtml(id)}"${id === currentId ? ' selected' : ''}>${escapeHtml(name)}</option>`
     ).join('');
 
-    new Dialog({
+    const dialog = game.modules.get('coffee-pub-blacksmith')?.api?.dialog;
+    if (!dialog) throw new Error('Coffee Pub Squire | Blacksmith api.dialog is unavailable');
+    await dialog.prompt({
         title,
-        width: 600,
-        content: `<form>${hint ? `<p class="notes">${escapeHtml(hint)}</p>` : ''}<div class="form-group"><label>Journal:</label><select name="journal">${optionsHtml}</select></div></form>`,
-        buttons: {
-            save: {
-                icon: '<i class="fa-solid fa-save"></i>',
-                label: 'Save',
-                callback: async (html) => {
-                    const el = getNativeElement(html);
-                    const id = el?.querySelector?.('select[name="journal"]')?.value ?? null;
-                    if (onSelect && id != null) await onSelect(id);
-                    if (reRender) reRender();
-                }
-            },
-            cancel: { icon: '<i class="fa-solid fa-times"></i>', label: 'Cancel' }
+        content: `${hint ? `<p class="notes">${escapeHtml(hint)}</p>` : ''}<div class="form-group"><label>Journal:</label><select name="journal">${optionsHtml}</select></div>`,
+        submitLabel: 'Save',
+        submitIcon: 'fa-solid fa-floppy-disk',
+        focusSelector: 'select[name="journal"]',
+        getValue: form => form.elements.journal?.value ?? null,
+        onSubmit: async id => {
+            if (onSelect && id != null) await onSelect(id);
+            if (reRender) reRender();
+            return id;
         },
-        default: 'save'
-    }).render(true);
+        cancelValue: null,
+        closeValue: null,
+        position: { width: 600 }
+    });
 }
 
 
@@ -515,7 +514,7 @@ export function showJournalPicker(options) {
  * @param {JournalEntry} journal - The journal
  * @param {Object} options - { onSelect(pageId), reRender, permLevels }
  */
-export function showPagePicker(journal, options = {}) {
+export async function showPagePicker(journal, options = {}) {
     if (!journal || !game.user.isGM) return;
     const permLevels = options.permLevels ?? PERMISSION_LEVELS;
     const onSelect = options.onSelect;
@@ -530,52 +529,41 @@ export function showPagePicker(journal, options = {}) {
     }));
     pages.sort((a, b) => a.name.localeCompare(b.name));
 
-    const gridHtml = pages.length === 0
-        ? `<div class="no-pages-message" style="text-align: center; padding: 20px;">
-            <i class="fa-solid fa-exclamation-circle" style="font-size: 2em; margin-bottom: 10px; color: #aa0000;"></i>
-            <p>No pages found in this journal.</p>
-            <p>You need to add at least one page to the journal first.</p>
-          </div>`
-        : `<div class="page-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 15px;">
-            ${pages.map(p => `
-            <div class="page-item" data-id="${p.id}" style="cursor: pointer; text-align: center; border: 1px solid #666; border-radius: 5px; padding: 10px; background: rgba(0,0,0,0.2);">
-                <div class="page-image" style="height: 80px; display: flex; align-items: center; justify-content: center; background-size: contain; background-position: center; background-repeat: no-repeat; ${p.type === 'image' ? `background-image: url('${p.img}');` : ''}">
-                    ${p.type !== 'image' ? `<i class="fas ${p.type === 'text' ? 'fa-book-open' : 'fa-file'}" style="font-size: 2em; color: #666;"></i>` : ''}
-                </div>
-                <div class="page-name" style="margin-top: 5px; font-weight: bold;">${p.name}</div>
-                <div class="page-info" style="display: flex; justify-content: space-between; font-size: 0.8em; color: #999;">
-                    <span style="text-transform: capitalize;">${p.type}</span>
-                    <span title="Page permissions">${p.permissions}</span>
-                </div>
-            </div>
-            `).join('')}
-          </div>`;
-
-    const content = `<h2 style="text-align: center; margin-bottom: 5px;">${journal.name}</h2><p style="text-align: center; margin-bottom: 15px; color: #999;">Select a page to display</p>${gridHtml}<div class="dialog-buttons" style="display: flex; justify-content: space-between; margin-top: 15px;"><button class="cancel-button" style="flex: 1; margin-right: 5px;">Cancel</button><button class="open-journal-button" style="flex: 1; margin-left: 5px;">Open Journal</button></div>`;
-
-    const dialog = new Dialog({
+    const pageOptions = pages.map(page =>
+        `<option value="${escapeHtml(page.id)}">${escapeHtml(page.name)} — ${escapeHtml(page.type)} · ${escapeHtml(page.permissions)}</option>`
+    ).join('');
+    const content = pages.length
+        ? `<p><strong>${escapeHtml(journal.name)}</strong></p><div class="form-group"><label>Journal Page:</label><select name="page">${pageOptions}</select></div>`
+        : `<p><strong>${escapeHtml(journal.name)}</strong> has no pages. Open the journal to add one.</p>`;
+    const dialog = game.modules.get('coffee-pub-blacksmith')?.api?.dialog;
+    if (!dialog) throw new Error('Coffee Pub Squire | Blacksmith api.dialog is unavailable');
+    const outcome = await dialog.wait({
         title: 'Select Journal Page',
         content,
-        buttons: {},
-        render: html => {
-            const dlg = getNativeElement(html);
-            dlg.querySelectorAll('.page-item').forEach(item => {
-                item.addEventListener('click', async () => {
-                    const pageId = item.dataset.id;
-                    if (onSelect) await onSelect(pageId);
-                    ui.notifications.info('Journal page selected.');
-                    dialog.close();
-                    if (reRender) reRender();
-                });
-            });
-            const cancelBtn = dlg.querySelector('.cancel-button');
-            if (cancelBtn) cancelBtn.addEventListener('click', () => dialog.close());
-            const openBtn = dlg.querySelector('.open-journal-button');
-            if (openBtn) openBtn.addEventListener('click', () => { journal.sheet?.render(true); dialog.close(); });
-        },
-        default: '',
-        close: () => {}
+        buttons: [
+            { action: 'cancel', label: 'Cancel', icon: 'fa-solid fa-xmark' },
+            {
+                action: 'open',
+                label: 'Open Journal',
+                icon: 'fa-solid fa-book-open',
+                callback: async () => journal.sheet?.render(true)
+            },
+            ...(pages.length ? [{
+                action: 'select',
+                label: 'Select Page',
+                icon: 'fa-solid fa-check',
+                default: true,
+                callback: form => form.elements.page?.value ?? null
+            }] : [])
+        ],
+        cancelValue: null,
+        closeValue: null,
+        position: { width: 600 }
     });
-    dialog.render(true);
+    if (outcome.action === 'submit' && outcome.value === 'select' && outcome.result) {
+        if (onSelect) await onSelect(outcome.result);
+        ui.notifications.info('Journal page selected.');
+        if (reRender) reRender();
+    }
 }
 

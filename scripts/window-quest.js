@@ -1646,13 +1646,15 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
     }
 
     async _confirmDelete(name) {
-        if (globalThis.Dialog?.confirm) {
-            return Dialog.confirm({
-                title: 'Delete Quest',
-                content: `<p>Delete <strong>${this._escapeHtml(name)}</strong>?</p>`
-            });
-        }
-        return globalThis.confirm?.(`Delete "${name}"?`) ?? false;
+        const dialog = getBlacksmith()?.dialog;
+        if (!dialog) throw new Error('Coffee Pub Squire | Blacksmith api.dialog is unavailable');
+        return dialog.confirm({
+            title: 'Delete Quest',
+            content: `<p>Delete <strong>${this._escapeHtml(name)}</strong>?</p>`,
+            confirmLabel: 'Delete Quest',
+            confirmIcon: 'fa-solid fa-trash',
+            destructive: true
+        });
     }
 
     _clearEventHandlers() {

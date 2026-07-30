@@ -21,8 +21,7 @@ function getBlacksmith() {
 function getPinsApi() { return getBlacksmith()?.pins || null; }
 
 const BlacksmithWindowBaseV2 = getBlacksmith()?.BlacksmithWindowBaseV2
-    || getBlacksmith()?.getWindowBaseV2?.()
-    || (await import('/modules/coffee-pub-blacksmith/scripts/window-base.js')).BlacksmithWindowBaseV2;
+    || getBlacksmith()?.getWindowBaseV2?.();
 if (!BlacksmithWindowBaseV2) {
     throw new Error('Coffee Pub Squire | BlacksmithWindowBaseV2 is unavailable for NoteWindow');
 }

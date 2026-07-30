@@ -1,246 +1,107 @@
-/* ----- VARIABLES ----- */
-:root {
-    --border-color: #222;
-    --accent-color: #9f9275;
-    --background-color: rgba(30, 30, 30, 0.95);
-    --header-background: rgb(0, 0, 0);
+/* Transfer content only. Blacksmith api.dialog owns the frame and buttons. */
+.blacksmith-dialog.transfer-item .transfer-dialog {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+    padding: 4px;
 }
 
-/* ----- WINDOW STRUCTURE ----- */
-
-/* Window Container - target by ID */
-[id^="transfer-item-"] {
-    background: var(--background-color) !important;
-    border: 2px solid var(--border-color) !important;
-    border-radius: 6px !important;
-    box-shadow: 0 0 20px #000 !important;
+.blacksmith-dialog.transfer-item .transfer-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-/* Window header */
-[id^="transfer-item-"] .window-header {
-    background: var(--header-background) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-    padding: 0 8px !important;
-    height: 30px !important;
-    line-height: 30px !important;
+.blacksmith-dialog.transfer-item .transfer-item-image {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    overflow: hidden;
+    border: 1px solid var(--color-border-light-primary, rgba(128, 128, 128, 0.6));
+    border-radius: 4px;
 }
 
-[id^="transfer-item-"] .window-header .window-title {
-    color: #BBB !important;
-    text-align: left !important;
-    font-size: 16px !important;
-    font-weight: normal !important;
-    text-shadow: 1px 1px 0px #000 !important;
+.blacksmith-dialog.transfer-item .transfer-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-/* Window content */
-[id^="transfer-item-"] .window-content {
-    background: rgba(50, 50, 50, 0.8) !important;
-    padding: 0 !important;
+.blacksmith-dialog.transfer-item .transfer-text {
+    min-width: 0;
+    flex: 1 1 auto;
 }
 
-/* Dialog content */
-.transfer-dialog {
-    display: flex !important;
-    flex-direction: column !important;
-    padding: 10px !important;
-    width: 100% !important;
+.blacksmith-dialog.transfer-item .item-title {
+    overflow: hidden;
+    font-size: 1.1em;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* Item header section */
-.transfer-item-header {
-    display: flex !important;
-    margin-bottom: 15px !important;
-    align-items: center !important;
-    gap: 10px !important;
+.blacksmith-dialog.transfer-item .item-description,
+.blacksmith-dialog.transfer-item .transfer-message p {
+    margin: 3px 0 0;
+    color: var(--color-text-secondary, currentColor);
+    line-height: 1.3;
 }
 
-.transfer-item-image {
-    width: 48px !important;
-    height: 48px !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 4px !important;
-    overflow: hidden !important;
-    flex-shrink: 0 !important;
+.blacksmith-dialog.transfer-item .transfer-message {
+    padding: 8px;
+    border: 1px solid var(--color-border-light-primary, rgba(128, 128, 128, 0.6));
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.08);
 }
 
-.transfer-item-image img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
-    background: rgba(0, 0, 0, 0.2) !important;
+.blacksmith-dialog.transfer-item .transfer-quantity {
+    display: grid;
+    grid-template-columns: 48px minmax(100px, 1fr) 48px;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 3px 8px;
 }
 
-.transfer-text {
-    flex-grow: 1 !important;
+.blacksmith-dialog.transfer-item .transfer-quantity::before {
+    grid-column: 2;
+    grid-row: 2;
+    content: "TRANSFER AMOUNT";
+    color: var(--color-text-secondary, currentColor);
+    font-size: 0.7em;
+    text-align: center;
 }
 
-.transfer-dialog .item-title {
-    font-size: 1.2em !important;
-    font-weight: bold !important;
-    color: #e0e0e0 !important;
-    margin-bottom: 5px !important;
-    text-shadow: 1px 1px 0px #000 !important;
+.blacksmith-dialog.transfer-item .quantity-label,
+.blacksmith-dialog.transfer-item .range-value {
+    position: relative;
+    min-width: 0;
+    padding: 4px;
+    border: 1px solid var(--color-border-light-primary, rgba(128, 128, 128, 0.6));
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.12);
+    font-weight: 700;
+    text-align: center;
 }
 
-.transfer-dialog .item-description {
-    font-size: 0.8em !important;
-    color: #BBB !important;
-    margin: 0 !important;
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
-    line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+.blacksmith-dialog.transfer-item .quantity-label::after,
+.blacksmith-dialog.transfer-item .range-value::after {
+    display: block;
+    margin-top: 2px;
+    color: var(--color-text-secondary, currentColor);
+    font-size: 0.65em;
+    font-weight: 400;
 }
 
-/* Transfer message for receiving requests */
-.transfer-message {
-    background: rgba(30, 30, 30, 0.7) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 4px !important;
-    padding: 10px !important;
-    margin-bottom: 10px !important;
-    text-align: center !important;
+.blacksmith-dialog.transfer-item .quantity-label::after {
+    content: "GIVE";
 }
 
-.transfer-message p {
-    color: #e0e0e0 !important;
-    font-size: 0.9em !important;
-    margin: 0 !important;
-    line-height: 1.3 !important;
+.blacksmith-dialog.transfer-item .range-value::after {
+    content: "KEEP";
 }
 
-/* Quantity controls */
-.transfer-quantity {
-    display: flex !important;
-    align-items: center !important;
-    margin-bottom: 10px !important;
-    gap: 10px !important;
-    position: relative !important;
+.blacksmith-dialog.transfer-item input[type="range"] {
+    width: 100%;
+    margin: 0;
 }
-
-/* Add label above range slider */
-.transfer-quantity::before {
-    content: "TRANSFER AMOUNT" !important;
-    position: absolute !important;
-    top: 26px !important;
-    left: 0 !important;
-    width: 100% !important;
-    text-align: center !important;
-    font-size: 0.7em !important;
-    color: #BBB !important;
-}
-
-.transfer-quantity .quantity-label {
-    width: 60px !important;
-    height: 24px !important;
-    line-height: 24px !important;
-    text-align: center !important;
-    font-weight: bold !important;
-    color: #FFF !important;
-    background: rgba(30, 30, 30, 0.8) !important;
-    border-radius: 3px !important;
-    border: 1px solid var(--border-color) !important;
-    position: relative !important;
-}
-
-/* Add "give" text below left number */
-.transfer-quantity .quantity-label::after {
-    content: "GIVE" !important;
-    position: absolute !important;
-    bottom: -22px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    white-space: nowrap !important;
-    font-size: 0.7em !important;
-    font-weight: normal !important;
-    color: #BBB !important;
-}
-
-.transfer-quantity input[type="range"] {
-    flex-grow: 1 !important;
-    height: 6px !important;
-    background: #333 !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 3px !important;
-    margin: 0 4px !important;
-}
-
-.transfer-quantity .range-value {
-    width: 60px !important;
-    height: 24px !important;
-    line-height: 24px !important;
-    text-align: center !important;
-    font-weight: bold !important;
-    color: #FFF !important;
-    background: rgba(30, 30, 30, 0.8) !important;
-    border-radius: 3px !important;
-    border: 1px solid var(--border-color) !important;
-    position: relative !important;
-}
-
-/* Add "keep" text below right number */
-.transfer-quantity .range-value::after {
-    content: "KEEP" !important;
-    position: absolute !important;
-    bottom: -22px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    white-space: nowrap !important;
-    font-size: 0.7em !important;
-    font-weight: normal !important;
-    color: #BBB !important;
-}
-
-/* Dialog button styling */
-[id^="transfer-item-"] .dialog-buttons {
-    display: flex !important;
-    justify-content: space-between !important;
-    padding: 10px !important;
-    margin: 0 !important;
-    background: var(--header-background) !important;
-    border-top: 1px solid var(--border-color) !important;
-}
-
-[id^="transfer-item-"] .dialog-button {
-    flex: 1 !important;
-    background: rgba(50, 50, 50, 0.8) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 3px !important;
-    color: #e0e0e0 !important;
-    font-size: 14px !important;
-    line-height: 28px !important;
-    text-align: center !important;
-    text-shadow: 1px 1px 0px #000 !important;
-    transition: all 0.2s ease !important;
-    margin: 0 5px !important;
-}
-
-/* Style accept/decline buttons differently */
-[id^="transfer-item-"] .dialog-button.accept {
-    border-color: #4a6 !important;
-    background: rgba(40, 100, 60, 0.8) !important;
-}
-
-[id^="transfer-item-"] .dialog-button.accept:hover {
-    background: rgba(60, 140, 80, 0.9) !important;
-    box-shadow: 0 0 5px rgba(40, 160, 60, 0.5) !important;
-}
-
-[id^="transfer-item-"] .dialog-button.decline {
-    border-color: #a46 !important;
-    background: rgba(100, 40, 60, 0.8) !important;
-}
-
-[id^="transfer-item-"] .dialog-button.decline:hover {
-    background: rgba(140, 60, 80, 0.9) !important;
-    box-shadow: 0 0 5px rgba(160, 40, 60, 0.5) !important;
-}
-
-[id^="transfer-item-"] .dialog-button:hover {
-    background: rgba(60, 60, 60, 0.9) !important;
-    color: #FFF !important;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5) !important;
-} 

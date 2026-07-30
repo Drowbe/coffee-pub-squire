@@ -24,22 +24,9 @@
     margin: 0;
 }
 
-.squire-macros-tool-window.macro-drop-target {
-    position: relative;
-}
-
-.squire-macros-tool-window.macro-drop-target::before,
-.squire-macros-tool-window #macros-content.macro-drop-target::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 1000;
-    border: 3px dashed #48a000;
-    border-radius: 6px;
-    box-shadow: 0 0 15px rgba(72, 160, 0, 0.6);
-    pointer-events: none;
-}
-
 .squire-macros-tool-window #macros-content.macro-drop-target {
-    position: relative;
+    outline: 3px dashed #48a000;
+    outline-offset: -3px;
+    border-radius: 6px;
+    box-shadow: inset 0 0 15px rgba(72, 160, 0, 0.35);
 }

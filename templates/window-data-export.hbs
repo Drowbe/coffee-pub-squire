@@ -1,0 +1,31 @@
+<div class="blacksmith-window-template-root squire-data-export-window" data-app-id="{{appId}}">
+    <section class="squire-data-export-content">
+        <label class="squire-template-title" for="{{appId}}-json">JSON Preview</label>
+        <textarea id="{{appId}}-json" class="squire-export-textarea" readonly>{{data}}</textarea>
+
+        {{#if summary.length}}
+        <div class="squire-export-summary">
+            <div class="squire-export-summary-title">Export Summary</div>
+            <ul class="squire-export-summary-list">
+                {{#each summary}}<li><strong>{{this.label}}:</strong> {{this.value}}</li>{{/each}}
+            </ul>
+        </div>
+        {{/if}}
+
+        {{#if sceneNames.length}}
+        <div class="squire-scene-pins-section">
+            <div class="squire-scene-pins-title">Scenes with Pins</div>
+            <div>{{#each sceneNames}}<span class="squire-scene-pins-label squire-scene-pins-success">{{this}}</span>{{/each}}</div>
+        </div>
+        {{/if}}
+    </section>
+    <footer class="blacksmith-window-footer">
+        <button type="button" class="blacksmith-window-btn-secondary" data-action="close">Close</button>
+        <button type="button" class="blacksmith-window-btn-secondary" data-action="copy">
+            <i class="fa-solid fa-copy"></i> Copy
+        </button>
+        <button type="button" class="blacksmith-window-btn-primary" data-action="download">
+            <i class="fa-solid fa-download"></i> Download JSON
+        </button>
+    </footer>
+</div>

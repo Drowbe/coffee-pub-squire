@@ -76,7 +76,6 @@
     "scripts/panel-character-summary.js",
     "scripts/panel-party.js",
     "scripts/panel-party-stats.js",
-    "scripts/window-note.js",
     "scripts/panel-notes.js",
     "scripts/manager-pins.js",
     "scripts/utility-lights.js"
