@@ -284,7 +284,7 @@ Consumers own:
 
 ### Contributed implementation
 
-Squire's exact contribution is now packaged under `contributions/blacksmith/`:
+Squire originally delivered the exact contribution as four temporary files:
 
 - `quantity-split-control.hbs`
 - `quantity-split-control.css`
@@ -292,9 +292,10 @@ Squire's exact contribution is now packaged under `contributions/blacksmith/`:
 - `README-quantity-split.md`
 
 It preserves the Give/Keep interaction while replacing the old template-injected script
-with an attachable per-instance controller suitable for ApplicationV2. Blacksmith may align
+with an attachable per-instance controller suitable for ApplicationV2. Blacksmith aligned
 final filenames with its component registry, but the behavior and accessibility contract
-should remain intact.
+remained intact. Those temporary Squire files were deleted after Blacksmith verified and
+assumed ownership of the component.
 
 ### Blacksmith verification
 
@@ -468,13 +469,13 @@ It does not require the later entity-picker, quantity-control, or action-delegat
 ## Delivery Sequence
 
 1. **Complete:** Blacksmith exposes `api.dialog`; Squire consumes the public runtime namespace and has migrated all 22 legacy Dialog sites.
-2. **Implemented, verify live:** Blacksmith `api.entityList` single-select behavior.
-3. **Implemented, verify live:** Blacksmith `api.entityList` multi-select behavior.
-4. **Harness ready, verify live:** Entity List inside a Tool window cycling Light, Dark, and Glass.
-5. **Implemented upstream, verify live:** Blacksmith integrated Squire's quantity/split interaction as generated markup alongside `api.entityList`, retained the contributed layout and Tool-theme CSS, and added `aria-valuetext`, integer clamping, a consistent controller return, and silent initial attachment. Keep `contributions/blacksmith/` until Blacksmith's quantity harness passes, then delete the local duplicate.
-6. **Verify live:** Run Blacksmith's combined harness: 11 headless checks across Entity List, per-instance delegation, and Quantity Split, followed by the Entity List and Quantity Split interactive Tool-theme checks.
-7. Squire builds its ephemeral Transfer tool with per-instance listeners, no registration, and no position persistence.
+2. **Complete:** Blacksmith verified `api.entityList` single-select behavior.
+3. **Complete:** Blacksmith verified `api.entityList` multi-select behavior.
+4. **Complete:** Entity List verified inside a Tool window under Light, Dark, and Glass.
+5. **Complete:** Blacksmith integrated and verified Squire's quantity/split interaction as generated markup alongside `api.entityList`, retained the contributed layout and Tool-theme CSS, and added `aria-valuetext`, integer clamping, a consistent controller return, and silent initial attachment. Squire deleted the local duplicate after verification.
+6. **Complete upstream:** Blacksmith's combined harness passed 83 headless assertions across four suites plus every interactive and live UI check.
+7. **Implemented in Squire, verify live:** The ephemeral Transfer Tool uses unique ids, no registration, no position persistence, verified `ACTION_HANDLERS`, `api.entityList`, and `api.quantitySplit`.
 8. Squire live-tests simultaneous sender and approval instances plus a large recipient list.
-9. Squire migrates simple legacy dialogs to `api.dialog`.
+9. **Complete:** Squire migrated all simple legacy dialogs to `api.dialog`.
 10. Squire removes duplicate Quest import/export paths and moves JSON imports to Blacksmith's robust importer.
 11. Reconsider a dialog-opening picker helper or shared workflow shell only if multiple real consumers still duplicate meaningful code after these steps.

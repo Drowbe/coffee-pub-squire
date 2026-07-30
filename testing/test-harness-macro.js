@@ -240,11 +240,11 @@ const SCENARIOS = [
     },
     {
         tab: 'dialogs',
-        label: 'Prompt validation/reopen',
+        label: 'Prompt validation/reopen + Enter',
         run: async () => {
             const result = await blacksmith.dialog.prompt({
                 title: 'Harness: Prompt',
-                content: ({ value }) => `<div class="form-group"><label>Required value</label><input name="value" value="${escapeHtml(value)}"></div>`,
+                content: ({ value }) => `<div class="form-group"><label>Required value</label><input name="value" value="${escapeHtml(value)}"><p>Type a value and press Enter. It must submit Validate, not Cancel.</p></div>`,
                 submitLabel: 'Validate',
                 focusSelector: '[name="value"]',
                 getValue: form => form.elements.value.value.trim(),

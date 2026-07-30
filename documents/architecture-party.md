@@ -89,7 +89,7 @@ Buttons/cards are cloned before attaching listeners to avoid duplicates on re-re
 ### Helpers and Cleanup
 
 - **`_calculateHealthbarStatus(hp)`** – Returns CSS class: `squire-tray-healthbar-dead` | `-critical` | `-bloodied` | `-injured` | `-healthy` from settings thresholds.
-- **`_showTransferQuantityDialog(...)`** – Opens the shared fixed-recipient Transfer Tool and resolves its verified `api.quantitySplit` value (0 if cancelled).
+- **`_showTransferQuantityTool(...)`** – Opens the shared fixed-recipient Transfer Tool and resolves its verified `api.quantitySplit` value (0 if cancelled).
 - **`_executeTransferWithPermissions`** – If both permissions, `_completeItemTransfer`; else socketlib `executeAsGM('executeItemTransfer', …)`.
 - **`_completeItemTransfer`** – Create item on target, update/delete on source, set `newlyAddedItems` and `isNew` flag; create transfer-complete chat (socket or direct) for sender/receiver/GM.
 - **`destroy()`** – `_cleanupTransferTimers()`, `element = null`.

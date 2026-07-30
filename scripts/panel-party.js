@@ -366,7 +366,7 @@ export class PartyPanel {
                             const hasTargetPermission = targetActor.isOwner;
                             
                             // Show quantity selection dialog
-                            const selectedQuantity = await this._showTransferQuantityDialog(sourceItem, sourceActor, targetActor, maxQuantity, hasQuantity);
+                            const selectedQuantity = await this._showTransferQuantityTool(sourceItem, sourceActor, targetActor);
                             if (selectedQuantity <= 0) return; // User cancelled
                             
                             if (!hasSourcePermission || !hasTargetPermission) {
@@ -460,7 +460,7 @@ export class PartyPanel {
                         const hasTargetPermission = targetActor.isOwner;
                         
                         // Show quantity selection dialog
-                        const selectedQuantity = await this._showTransferQuantityDialog(sourceItem, sourceActor, targetActor, maxQuantity, hasQuantity);
+                        const selectedQuantity = await this._showTransferQuantityTool(sourceItem, sourceActor, targetActor);
                         if (selectedQuantity <= 0) return; // User cancelled
                         
                         if (!hasSourcePermission || !hasTargetPermission) {
@@ -611,15 +611,13 @@ export class PartyPanel {
      */
 
     /**
-     * Show quantity selection dialog for item transfer
+     * Show the fixed-recipient Transfer Tool for an item transfer.
      * @param {Item} sourceItem - Item being transferred
      * @param {Actor} sourceActor - Source actor
      * @param {Actor} targetActor - Target actor
-     * @param {number} maxQuantity - Maximum quantity available
-     * @param {boolean} hasQuantity - Whether item has quantity property
      * @returns {Promise<number>} - Selected quantity (0 if cancelled)
      */
-    async _showTransferQuantityDialog(sourceItem, sourceActor, targetActor, maxQuantity, hasQuantity) {
+    async _showTransferQuantityTool(sourceItem, sourceActor, targetActor) {
         const { selectTransferQuantityWithTool } = await import('./window-transfer-tool.js');
         return selectTransferQuantityWithTool({
             sourceActor,

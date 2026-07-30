@@ -35,9 +35,10 @@ export class TransferUtils {
                 // Send directly to receiver
                 await this._sendTransferReceiverMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData);
             }
+            return true;
         } else {
             // User has permission to both actors - use direct transfer (same as drag-and-drop)
-            await this.executeTransferWithPermissions(sourceActor, targetActor, item, quantity, hasQuantity);
+            return this.executeTransferWithPermissions(sourceActor, targetActor, item, quantity, hasQuantity);
         }
     }
 
@@ -282,15 +283,15 @@ export class TransferUtils {
         
         if (hasSourcePermission && hasTargetPermission) {
             // Direct transfer - user has permissions on both actors
-            await this._completeItemTransfer(sourceActor, targetActor, item, quantity, hasQuantity);
+            return this._completeItemTransfer(sourceActor, targetActor, item, quantity, hasQuantity);
         } else {
             // Use socket for GM-mediated transfer
             const socket = game.modules.get(MODULE.ID)?.socket;
             if (!socket) {
                 ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
-                return;
+                return false;
             }
-            await socket.executeAsGM('executeItemTransfer', {
+            return socket.executeAsGM('executeItemTransfer', {
                 sourceActorId: sourceActor.id,
                 targetActorId: targetActor.id,
                 sourceItemId: item.id,
@@ -332,6 +333,7 @@ export class TransferUtils {
         
         // Send completion messages
         await this._sendTransferCompletionMessages(sourceActor, targetActor, item, quantity, hasQuantity);
+        return true;
     }
 
     /**

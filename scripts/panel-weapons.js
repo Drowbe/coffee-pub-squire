@@ -463,13 +463,14 @@ export class WeaponsPanel {
                 onSubmit: async ({ targetActor, quantity }) => {
                     const liveItem = this.actor?.items?.get(item.id);
                     if (!liveItem) throw new Error(`${item.name} is no longer available.`);
-                    await TransferUtils.executeTransfer({
+                    const completed = await TransferUtils.executeTransfer({
                         sourceActor: this.actor,
                         targetActor,
                         item: liveItem,
                         quantity,
                         hasQuantity: liveItem.system.quantity !== undefined && liveItem.system.quantity > 1
                     });
+                    if (completed === false) throw new Error('The transfer could not be started.');
                 },
                 onClose: () => {
                     this._transferDialogOpen = false;
