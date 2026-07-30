@@ -21,7 +21,8 @@ The Party tab shows all player-owned tokens on the current scene (and, for GMs, 
 | `templates/panel-party.hbs` | Party panel markup (health card, party cards, GM NPC section) |
 | `templates/panel-party-stats.hbs` | Party stats / MVP table markup |
 | `templates/handle-party.hbs` | Handle content for party view (party name, portraits, health, macros) |
-| `templates/window-transfer.hbs` | Transfer quantity dialog |
+| `scripts/window-transfer-tool.js` | Shared ephemeral Transfer Tool and Blacksmith entity/quantity controllers |
+| `templates/window-transfer-tool.hbs` | Transfer details, optional quantity, recipient, and approval content |
 | `templates/chat-cards.hbs` | Transfer request/complete/reject/expired chat cards |
 | `styles/panel-party.css` | Party panel styles |
 | `styles/panel-party-stats.css` | Party stats styles |
@@ -59,7 +60,7 @@ The Party tab shows all player-owned tokens on the current scene (and, for GMs, 
 - **`.party-card.party-card-clickable`** – Clone, click (ignore if target is open-sheet or portrait) → if `token.actor.isOwner`, `token.control({ releaseOthers: !event.shiftKey })`.
 - **`.party-health-card`** – Clone, click → select all party tokens, `healthPanel.updateTokens(partyTokens)`, then `healthPanel._onPopOut()` if not already popped.
 - **`.party-card`** – Drag/drop: `dragenter`/`dragleave`/`dragover` (drop target styling, sound); `drop` parses `text/plain` JSON and handles:
-  - **Item (from actor)**: UUID/actorId+itemId → quantity dialog → `TransferUtils.executeTransfer` or `executeTransferWithPermissions` (or direct create + chat card for world item).
+  - **Item (from actor)**: UUID/actorId+itemId → fixed-recipient Transfer Tool → `TransferUtils.executeTransfer` or `executeTransferWithPermissions` (or direct create + chat card for world item).
   - **ItemDirectory**: Create item on target actor, chat card, `newlyAddedItems` flag.
   - **Actor**: Same transfer flow as Item from actor.
   After drop: `this.render(this.element)`; if current tray actor is involved, refresh inventory panel.
@@ -88,7 +89,7 @@ Buttons/cards are cloned before attaching listeners to avoid duplicates on re-re
 ### Helpers and Cleanup
 
 - **`_calculateHealthbarStatus(hp)`** – Returns CSS class: `squire-tray-healthbar-dead` | `-critical` | `-bloodied` | `-injured` | `-healthy` from settings thresholds.
-- **`_showTransferQuantityDialog(...)`** – Renders `TEMPLATES.TRANSFER_DIALOG`, returns selected quantity via `Dialog` (0 if cancel).
+- **`_showTransferQuantityDialog(...)`** – Opens the shared fixed-recipient Transfer Tool and resolves its verified `api.quantitySplit` value (0 if cancelled).
 - **`_executeTransferWithPermissions`** – If both permissions, `_completeItemTransfer`; else socketlib `executeAsGM('executeItemTransfer', …)`.
 - **`_completeItemTransfer`** – Create item on target, update/delete on source, set `newlyAddedItems` and `isNew` flag; create transfer-complete chat (socket or direct) for sender/receiver/GM.
 - **`destroy()`** – `_cleanupTransferTimers()`, `element = null`.

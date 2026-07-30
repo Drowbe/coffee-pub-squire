@@ -96,7 +96,7 @@ Character panel updates are driven by Blacksmith HookManager:
 
 ## Related UI
 
-- **CharactersWindow** (`window-characters.js`): Blacksmith Application V2 “Select Character” picker used by Inventory and Weapons panels (e.g. give an item to another character). It is not part of the Character tab.
+- **TransferToolWindow** (`window-transfer-tool.js`): Ephemeral Blacksmith Tool window used by Inventory and Weapons to select a recipient and, for stacks, a Give/Keep quantity. It is not part of the Character tab.
 - **PrintCharacterSheet** (`utility-print-character.js`): Used by the character panel’s print button.
 
 ## Technical Notes

@@ -15,6 +15,7 @@ The harness intentionally calls real public windows and workflow entry points ra
 reimplementing their logic. Update it whenever a migration adds a reusable workflow that
 would otherwise require repetitive manual setup.
 
-The Audit tab also contains the two Blacksmith acceptance checks required before Squire's
-final Transfer Tool: Entity List readability in Light/Dark/Glass and two-instance Tool
-action delegation.
+The Audit tab includes Entity List readability in Light/Dark/Glass and two-instance Tool
+action delegation. The Transfers tab previews every final Transfer Tool shape without
+moving data: selectable item recipient, selectable note recipient, fixed-recipient
+quantity split, and incoming approval.

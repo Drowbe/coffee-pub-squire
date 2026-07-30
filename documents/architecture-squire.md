@@ -102,12 +102,10 @@ coffee-pub-squire/
 | Notes | window-note.js | NotesForm – note editor, pin creation |
 | Status Effects | window-status-effects.js | Blacksmith V2 condition toggles, other-effect removal, enriched description pane |
 | Quest | window-quest.js | QuestWindow – Blacksmith V2 quest create/edit |
-| Characters | window-characters.js | Blacksmith V2 character picker |
-| Users | window-users.js | Blacksmith V2 user picker |
+| Transfer Tool | window-transfer-tool.js | Ephemeral Blacksmith Tool for item/note recipients, quantity splits, fixed-target drops, and approvals |
 | Health | window-health.js | Blacksmith Application V2 Micro tool with portrait bars, Party/NPC aggregate rows and selection actions, persistent adjustment amount, multi-token controls, registration against every displayed Actor, and shared party/handle/tool health-status colors |
 | Dice Tray | window-dicetray.js | Blacksmith Application V2 Micro tool window with a fixed compact body and history-only scrolling, registered through the Window API |
 | Macros | window-macros.js | Blacksmith Application V2 Micro tool window with a dedicated body template and preserved macro drag/drop behavior, registered through the Window API |
-| Transfer | (panel-party.js, transfer-utils.js) | Transfer dialog (window-transfer.hbs) |
 
 ### Utilities
 
