@@ -1,11 +1,16 @@
 {{#if (eq position "left")}}
-<div class="tray-title-small">GLOBAL FILTERS</div>
-<div class="control-search{{#if canAddFromCompendiums}} has-add{{/if}}">
+<div class="tray-title-small">
+    <span>Character Sheet</span>
+    {{#if canAddFromCompendiums}}
+    <div class="control-mode-toggles">
+        <i class="fa-solid fa-user control-mode-toggle" data-mode="sheet" title="Show This Character's Items"></i>
+        <i class="fa-solid fa-magnifying-glass control-mode-toggle" data-mode="search" title="Search Compendiums to Add Items"></i>
+    </div>
+    {{/if}}
+</div>
+<div class="control-search">
     <input type="text" class="global-search" placeholder="Search All Sections...">
     <i class="fa-solid fa-times search-clear" title="Clear Search"></i>
-    {{#if canAddFromCompendiums}}
-    <i class="fa-solid fa-circle-plus compendium-search-toggle" title="Add From Compendiums"></i>
-    {{/if}}
 </div>
 <div class="control-icons">
     <i class="fa-solid fa-heart control-toggle" data-toggle-panel="favorites" title="Toggle Favorites Panel"></i>
@@ -14,4 +19,4 @@
     <i class="fa-solid fa-stars control-toggle" data-toggle-panel="features" title="Toggle Features Panel"></i>
     <i class="fa-solid fa-backpack control-toggle" data-toggle-panel="inventory" title="Toggle Inventory Panel"></i>
 </div>
-{{/if}} 
+{{/if}}

@@ -117,8 +117,13 @@ export class ControlPanel {
             ?.classList.toggle('visible', this._compendiumMode);
 
         const controlEl = this.element.querySelector('[data-panel="control"]');
-        controlEl?.querySelector('.compendium-search-toggle')
-            ?.classList.toggle('active', this._compendiumMode);
+
+        // Two-state mode switch: the selected side is active, the other dimmed.
+        controlEl?.querySelectorAll('.control-mode-toggle').forEach(toggle => {
+            const selected = (toggle.dataset.mode === 'search') === this._compendiumMode;
+            toggle.classList.toggle('active', selected);
+            toggle.classList.toggle('faded', !selected);
+        });
 
         // The panel toggles have nothing to toggle in quick-add mode, so the row
         // collapses rather than sitting there greyed out — it's pure dead space
@@ -341,14 +346,19 @@ export class ControlPanel {
             });
         });
 
-        // Compendium quick-add mode toggle
-        const modeToggle = controlPanel.querySelector('.compendium-search-toggle');
-        if (modeToggle) {
-            const newToggle = modeToggle.cloneNode(true);
-            modeToggle.parentNode?.replaceChild(newToggle, modeToggle);
+        // Sheet / search mode switch. Delegated on the container rather than
+        // bound per icon, so the header markup can change without rewiring.
+        const modeToggles = controlPanel.querySelector('.control-mode-toggles');
+        if (modeToggles) {
+            const newToggles = modeToggles.cloneNode(true);
+            modeToggles.parentNode?.replaceChild(newToggles, modeToggles);
 
-            newToggle.addEventListener('click', async () => {
-                await this.setCompendiumMode(!this._compendiumMode);
+            newToggles.addEventListener('click', async (event) => {
+                const toggle = event.target.closest('.control-mode-toggle');
+                if (!toggle) return;
+                // Idempotent: clicking the already-selected side is a no-op
+                // rather than a toggle, which is what a two-state switch means.
+                await this.setCompendiumMode(toggle.dataset.mode === 'search');
             });
         }
 
@@ -361,6 +371,28 @@ export class ControlPanel {
             
             newInput.addEventListener('input', (event) => {
                 this._handleSearch(event.target.value);
+            });
+
+            // Escape backs out one step: from compendium search to the sheet
+            // (setCompendiumMode clears the box on the way), or from a filtered
+            // sheet back to the unfiltered one.
+            //
+            // stopPropagation because Foundry binds Escape globally — without it
+            // the keypress also closes the topmost application or opens the game
+            // menu, so backing out of a search would shut something else.
+            newInput.addEventListener('keydown', async (event) => {
+                if (event.key !== 'Escape') return;
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (this._compendiumMode) {
+                    await this.setCompendiumMode(false);
+                    return;
+                }
+                if (newInput.value !== '') {
+                    newInput.value = '';
+                    this._handleSearch('');
+                }
             });
         }
 

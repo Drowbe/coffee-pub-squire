@@ -879,41 +879,41 @@
     opacity: 1;
 }
 
-/* ---------- Compendium quick-add ---------- */
+/* ---------- Sheet / compendium-search mode switch ---------- */
 
-/* The + sits beside the field rather than inside it, so the clear button keeps
-   its position inside the input and the two never overlap. */
-.squire-tray[data-position="left"] [data-panel="control"] .control-search.has-add {
+/* Lives in the title bar's right zone, the same slot the GM Details and
+   Character Summary chevrons occupy — so a right-edge icon consistently means
+   "this header has an action". */
+.squire-tray[data-position="left"] [data-panel="control"] .control-mode-toggles {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .control-search.has-add .global-search {
-    flex: 1;
-    min-width: 0;
-}
-
-/* Clear the width of the + plus the gap. */
-.squire-tray[data-position="left"] [data-panel="control"] .control-search.has-add .search-clear {
-    right: 38px;
-}
-
-.squire-tray[data-position="left"] [data-panel="control"] .compendium-search-toggle {
-    flex: 0 0 auto;
+.squire-tray[data-position="left"] [data-panel="control"] .control-mode-toggle {
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 16px;
-    transition: color 0.2s ease, transform 0.2s ease;
+    color: rgba(159, 146, 117, 1.0);
+    font-size: 0.85em;
+    padding: 3px 5px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .compendium-search-toggle:hover {
-    color: rgba(231, 91, 1, 1.0);
+/* Selected side lit, the other dimmed — same active/faded vocabulary as the
+   panel toggles below, at header scale. */
+.squire-tray[data-position="left"] [data-panel="control"] .control-mode-toggle.active {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(145, 133, 107, 0.4);
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .compendium-search-toggle.active {
-    color: rgba(231, 91, 1, 1.0);
-    transform: rotate(45deg);
+.squire-tray[data-position="left"] [data-panel="control"] .control-mode-toggle.faded {
+    opacity: 0.4;
+}
+
+.squire-tray[data-position="left"] [data-panel="control"] .control-mode-toggle:hover {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(183, 82, 58, 0.9);
+    opacity: 1;
 }
 
 /* Panel toggles have nothing to act on while quick-add is showing, so the whole
