@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getContextMenu, getActivityList } from './helpers.js';
+import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared } from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 
 // Helper function to safely get Blacksmith API
@@ -12,19 +12,51 @@ function getBlacksmith() {
 // table extras. When an actions compendium drops these onto NPC sheets they
 // all carry usable activities, which would flood auto-favorites with rules
 // reminders (see: 25 hearts on one CR 9 caster). Matched by lowercased name.
-const GENERIC_ACTIONS = new Set([
-    'attack', 'cast a spell', 'check cover', 'climb', 'crawl', 'dash',
-    'disengage', 'dodge', 'drop prone', 'escape', 'fall', 'grapple', 'help',
-    'hide', 'improvise', 'influence', 'interact', 'magic', 'opportunity attack',
-    'overrun', 'ready', 'ready action', 'ready spell', 'search', 'shove',
-    'squeeze', 'stand up', 'study', 'tumble', 'two-weapon fighting',
-    'underwater', 'use an object', 'utilize'
-]);
+const GENERIC_ACTIONS_DEFAULT = [
+    'activate an item', 'attack', 'break an object', 'cast a spell',
+    'check cover', 'climb', 'crawl', 'dash', 'delay', 'difficult terrain',
+    'disengage', 'dismount', 'dodge', 'drop prone', 'end concentration',
+    'escape', 'fall', 'falling', 'forced march', 'grapple', 'help',
+    'hide', 'high jump', 'holding breath', 'improvise', 'influence',
+    'interact', 'interact with an object', 'jump', 'long jump', 'magic',
+    'mount', 'move', 'opportunity attack', 'overrun', 'ready', 'ready action',
+    'ready spell', 'search', 'shove', 'squeeze', 'stand up', 'study',
+    'suffocating', 'swim', 'travel pace', 'tumble', 'two-weapon fighting',
+    'underwater', 'underwater combat', 'use an object', 'utilize'
+];
 
-// The generic actions worth quick access in play — these still auto-favorite.
-const GENERIC_ACTIONS_FAVORITED = new Set([
-    'dash', 'disengage', 'grapple', 'ready', 'ready action', 'ready spell', 'shove'
-]);
+// The generic actions worth a scarce favorite slot. Everything else on the
+// list above is a rules reminder the player already knows they can take —
+// Jump and Mount don't earn a heart just because the compendium made them
+// clickable. Ready and Disengage are the two that come up mid-turn often
+// enough to want one click away.
+const GENERIC_ACTIONS_FAVORITED_DEFAULT = [
+    'disengage', 'ready', 'ready action', 'ready spell'
+];
+
+// Parse a comma/newline separated setting into a lowercased name Set, falling
+// back to the built-in list when the setting is blank or unregistered.
+function parseNameListSetting(settingKey, defaults) {
+    let raw = '';
+    try {
+        raw = game.settings.get(MODULE.ID, settingKey) || '';
+    } catch (error) {
+        // Setting not registered yet (early boot) — fall back to defaults.
+    }
+    const names = String(raw)
+        .split(/[,\n]/)
+        .map(n => n.toLowerCase().trim())
+        .filter(n => n.length > 0);
+    return new Set(names.length ? names : defaults);
+}
+
+function getGenericActions() {
+    return parseNameListSetting('autoFavoriteGenericActions', GENERIC_ACTIONS_DEFAULT);
+}
+
+function getFavoritedGenericActions() {
+    return parseNameListSetting('autoFavoriteGenericActionsKept', GENERIC_ACTIONS_FAVORITED_DEFAULT);
+}
 
 export class FavoritesPanel {
     static getPanelFavorites(actor) {
@@ -53,9 +85,30 @@ export class FavoritesPanel {
         if (isFromCompendium) {
             return;
         }
+        // Handle favorites are a subset of panel favorites — the handle sorts by
+        // panel order and the panel is where you manage them, so an orphaned
+        // handle entry would be unremovable from the UI. Promote it instead.
+        await this.addPanelFavorite(actor, itemId);
         const ids = new Set(this.getHandleFavorites(actor));
         ids.add(itemId);
         await this.setHandleFavorites(actor, Array.from(ids));
+    }
+
+    /**
+     * Idempotently add an item to the panel favorites, preserving order.
+     * Unlike manageFavorite this never removes — use it for automation paths
+     * where a toggle would silently undo itself on a repeat event.
+     * @returns {Promise<boolean>} true if the item was newly added
+     */
+    static async addPanelFavorite(actor, itemId) {
+        if (!actor || !itemId) return false;
+        const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
+        if (isFromCompendium) return false;
+
+        const current = this.getPanelFavorites(actor).filter(id => id !== null && id !== undefined);
+        if (current.includes(itemId)) return false;
+        await actor.setFlag(MODULE.ID, 'favoritePanel', [...current, itemId]);
+        return true;
     }
 
     static async removeHandleFavorite(actor, itemId) {
@@ -141,6 +194,10 @@ export class FavoritesPanel {
         await actor.unsetFlag(MODULE.ID, 'favoritePanel');
         // Also clear handle favorites when clearing all favorites
         await actor.unsetFlag(MODULE.ID, 'favoriteHandle');
+        // Mark everything currently on the sheet as already considered, so the
+        // next auto-favorite pass doesn't undo the clear. Without this, simply
+        // re-selecting the token would repopulate the whole list.
+        await FavoritesPanel.markItemsAutoFavoriteSeen(actor, actor.items.map(i => i.id));
         if (PanelManager.instance) {
             // Update just the handle to reflect the cleared favorites
             await PanelManager.instance.updateHandle();
@@ -258,30 +315,70 @@ export class FavoritesPanel {
     }
 
     /**
-     * Automatically adds equipped weapons and prepared spells to favorites for monster/NPC actors
+     * Items auto-favorite has already considered for this actor. Anything in
+     * here is never auto-favorited again, which is what makes manual removals
+     * (and Clear All) stick across token re-selection.
+     */
+    static getAutoFavoriteSeen(actor) {
+        if (!actor) return [];
+        return actor.getFlag(MODULE.ID, 'autoFavoriteSeen') || [];
+    }
+
+    static async markItemsAutoFavoriteSeen(actor, itemIds) {
+        if (!actor) return;
+        const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
+        if (isFromCompendium) return;
+        const seen = new Set(this.getAutoFavoriteSeen(actor));
+        for (const id of itemIds) seen.add(id);
+        await actor.setFlag(MODULE.ID, 'autoFavoriteSeen', Array.from(seen));
+    }
+
+    /**
+     * Auto-favorite an NPC's usable statblock content: attacks, castable spells,
+     * and activated features.
+     *
+     * Incremental rather than all-or-nothing. Every item on the sheet is recorded
+     * in the `autoFavoriteSeen` flag once considered, so a later pass only looks
+     * at items it has never seen. That gives three behaviours at once: a fresh
+     * NPC gets seeded, an item added later gets picked up, and anything the user
+     * unfavorites by hand (or clears wholesale) stays gone.
+     *
      * @param {Actor} actor - The actor to check and update favorites for
      * @returns {Promise<boolean>} - Returns true if any changes were made
      */
-    static async initializeNpcFavorites(actor) {
+    static async syncNpcAutoFavorites(actor) {
         if (!actor) return false;
 
         // Only process for non-player characters (monsters/NPCs)
         if (actor.type === "character") return false;
-        
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+
+        try {
+            if (!game.settings.get(MODULE.ID, 'autoFavoriteNpcs')) return false;
+        } catch (error) {
+            // Setting not registered yet — nothing sensible to do this early.
+            return false;
+        }
+
         try {
             // Check if actor is from a compendium (more robust check)
             const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
             if (isFromCompendium) {
-                            return false;
+                return false;
             }
-            
-            // Get current panel favorites
-            const currentPanelFavorites = FavoritesPanel.getPanelFavorites(actor);
-            
-            // If panel favorites already exist, don't override them
-            if (currentPanelFavorites.length > 0) return false;
-            
+
+            // Migration: actors favorited under the old all-or-nothing rule have
+            // no seen list. Adopt their sheet as already-considered so this pass
+            // doesn't re-add items they curated away, then let future items flow
+            // through normally.
+            const hasSeenFlag = actor.getFlag(MODULE.ID, 'autoFavoriteSeen') !== undefined;
+            if (!hasSeenFlag && FavoritesPanel.getPanelFavorites(actor).length > 0) {
+                await FavoritesPanel.markItemsAutoFavoriteSeen(actor, actor.items.map(i => i.id));
+                return false;
+            }
+
+            const seen = new Set(FavoritesPanel.getAutoFavoriteSeen(actor));
+            const isUnseen = (item) => !seen.has(item.id);
+
             // Weapons: anything already equipped, plus anything with an attack
             // activity — a weapon with an attack is part of the statblock's action
             // list whether or not the importer remembered to equip it.
@@ -294,6 +391,7 @@ export class FavoritesPanel {
                 getActivityList(item).some(a => a?.type === "attack");
             const weapons = actor.items.filter(item =>
                 item.type === "weapon" &&
+                isUnseen(item) &&
                 (item.system.equipped === true || hasAttackActivity(item))
             );
 
@@ -302,6 +400,7 @@ export class FavoritesPanel {
             // pact — favorite anything the actor can actually cast.
             const spells = actor.items.filter(item =>
                 item.type === "spell" &&
+                isUnseen(item) &&
                 (item.system.prepared > 0 ||
                  ["atwill", "innate", "pact"].includes(item.system.method))
             );
@@ -315,14 +414,17 @@ export class FavoritesPanel {
             // drag-copied abilities never carry it. On an NPC, usable = statblock
             // content. 2024-style statblocks express attacks as these feat items
             // rather than weapon items, so this filter carries most modern monsters.
-            const isGenericAction = (item) => GENERIC_ACTIONS.has(item.name.toLowerCase().trim());
+            const genericActionNames = getGenericActions();
+            const keptGenericActionNames = getFavoritedGenericActions();
+            const isGenericAction = (item) => genericActionNames.has(item.name.toLowerCase().trim());
             const feats = actor.items.filter(item => {
                 if (item.type !== "feat") return false;
+                if (!isUnseen(item)) return false;
                 if (!getActivityList(item).some(a => a?.activation?.type)) return false;
                 // Generic actions: only the curated few make the cut; real
                 // statblock features (Multiattack, breath weapons) pass through.
                 if (isGenericAction(item)) {
-                    return GENERIC_ACTIONS_FAVORITED.has(item.name.toLowerCase().trim());
+                    return keptGenericActionNames.has(item.name.toLowerCase().trim());
                 }
                 return true;
             });
@@ -334,20 +436,36 @@ export class FavoritesPanel {
             // Get the IDs of all items to favorite
             const itemsToFavorite = [...weapons, ...spells, ...statblockFeatures, ...genericActions].map(item => item.id);
 
-            // If no items to favorite, don't do anything
+            if (itemsToFavorite.length > 0) {
+                // Append to whatever the user already has rather than replacing it,
+                // so a top-up pass can't reorder or drop their curated list.
+                const existingPanel = FavoritesPanel.getPanelFavorites(actor)
+                    .filter(id => id !== null && id !== undefined);
+                const newPanelFavorites = [...existingPanel, ...itemsToFavorite.filter(id => !existingPanel.includes(id))];
+                await actor.setFlag(MODULE.ID, 'favoritePanel', newPanelFavorites);
+
+                // Also add these items to handle favorites for quick access — minus
+                // the generic actions: handle slots are scarce, and Ready/Disengage
+                // belong to every creature, not this one's kit.
+                const handleToAdd = [...weapons, ...spells, ...statblockFeatures].map(item => item.id);
+                const existingHandle = FavoritesPanel.getHandleFavorites(actor)
+                    .filter(id => id !== null && id !== undefined);
+                const newHandleFavorites = [...existingHandle, ...handleToAdd.filter(id => !existingHandle.includes(id))];
+                await actor.setFlag(MODULE.ID, 'favoriteHandle', newHandleFavorites);
+            }
+
+            // Record every item on the sheet as considered, even the ones that
+            // didn't qualify — a passive trait shouldn't get re-evaluated on
+            // every token select, and this is what makes removals stick. Written
+            // after the favorites land so a failed write doesn't burn the items.
+            //
+            // Set to exactly the current item IDs rather than unioned in: a seen
+            // ID that's no longer on the sheet belongs to a deleted item and can
+            // never recur, so this doubles as a prune and keeps the flag bounded.
+            await actor.setFlag(MODULE.ID, 'autoFavoriteSeen', actor.items.map(i => i.id));
+
             if (itemsToFavorite.length === 0) return false;
 
-            // Save the new panel favorites
-            await actor.setFlag(MODULE.ID, 'favoritePanel', itemsToFavorite);
-
-            // Also add these items to handle favorites for quick access — minus
-            // the generic actions: handle slots are scarce, and Dash/Disengage
-            // belong to every creature, not this one's kit.
-            const handleFavorites = [...weapons, ...spells, ...statblockFeatures].map(item => item.id);
-            await actor.setFlag(MODULE.ID, 'favoriteHandle', handleFavorites);
-            
-
-            
             // Force refresh of items collection to ensure up-to-date data
             if (actor.items && typeof actor.items._flush === 'function') {
                 await actor.items._flush();
@@ -374,7 +492,7 @@ export class FavoritesPanel {
             }
             return true;
         } catch (error) {
-            console.error("Error in initializeNpcFavorites:", error);
+            console.error("Error in syncNpcAutoFavorites:", error);
             return false;
         }
     }
@@ -458,18 +576,9 @@ export class FavoritesPanel {
             }
         }];
         
-        // Auto-favorite for NPC/Monster
-        // (No longer auto-adds to handle; only user can set isHandleFavorite)
-        if (this.actor && this.actor.type !== "character") {
-            // Check if actor is from a compendium before trying to modify it
-            const isFromCompendium = this.actor.pack || (this.actor.collection && this.actor.collection.locked);
-            if (isFromCompendium) {
-                // Skipping auto-favorites initialization for actor from compendium
-            } else {
-                FavoritesPanel.initializeNpcFavorites(this.actor);
-            }
-        }
-        
+        // Auto-favorite is driven by PanelManager on actor init and by the
+        // createItem hook — both of which await it. Firing it from the
+        // constructor too raced those writes for the same flag.
 
     }
 
@@ -510,6 +619,7 @@ export class FavoritesPanel {
                     hasEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
                     showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
                     showStarIcon: item.type === 'feat',
+                    isPrepared: isSpellPrepared(item),
                     isHandleFavorite: isHandleFavorite,
                     isLightSource: isLightSource,
                     isLightActive: isLightActive
@@ -831,13 +941,16 @@ export class FavoritesPanel {
             const itemId = favoriteItem.dataset.itemId;
             const item = this.actor.items.get(itemId);
             if (item) {
-                const newPrepared = !item.system.prepared;
+                // dnd5e 5.x models `prepared` as a number (0 unprepared /
+                // 1 prepared / 2 always prepared), not a boolean.
+                const isPrepared = Number(item.system.prepared) > 0;
+                const newPrepared = isPrepared ? 0 : 1;
                 await item.update({
                     'system.prepared': newPrepared
                 });
                 // Update the UI immediately
-                favoriteItem.classList.toggle('prepared', newPrepared);
-                sunButton.classList.toggle('faded', !newPrepared);
+                favoriteItem.classList.toggle('prepared', !isPrepared);
+                sunButton.classList.toggle('faded', isPrepared);
 
                 // Sync handle favorites and update the handle to reflect the new prepared state
                 if (PanelManager.instance) {

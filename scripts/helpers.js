@@ -269,6 +269,43 @@ function getDamageInfo(item) {
     return null;
 }
 
+/**
+ * Whether a spell is castable right now.
+ *
+ * dnd5e 5.x stores `prepared` as a number (0 unprepared / 1 prepared / 2 always
+ * prepared), so a truthiness test happens to work — but at-will, innate, and
+ * pact spells sit at `prepared: 0` and are castable regardless. Those are
+ * exactly the spells NPC auto-favorites picks up, so testing `prepared` alone
+ * greyed out most of a caster's handle.
+ */
+export function isSpellPrepared(item) {
+    if (!item || item.type !== 'spell') return false;
+    if (['atwill', 'innate', 'pact'].includes(item.system?.method)) return true;
+    return Number(item.system?.prepared) > 0;
+}
+
+/**
+ * Whether a handle favorite should render as usable rather than greyed out.
+ * Features are always available; gear has to be equipped; spells have to be
+ * castable.
+ */
+function isHandleFavoriteAvailable(item, isPrepared) {
+    if (!item) return false;
+    switch (item.type) {
+        case 'feat':
+            return true;
+        case 'spell':
+            return isPrepared ?? isSpellPrepared(item);
+        case 'weapon':
+        case 'equipment':
+        case 'consumable':
+        case 'tool':
+            return !!item.system?.equipped;
+        default:
+            return false;
+    }
+}
+
 // Helper function to get quest number from UUID
 function getQuestNumber(questUuid) {
     let hash = 0;
@@ -437,15 +474,20 @@ export const registerHelpers = function() {
         return sortedHandleFavorites
             .map(id => itemsById.get(id))
             .filter(item => item) // Remove any undefined items
-            .map(item => ({
-                id: item.id,
-                name: item.name,
-                img: item.img || 'icons/svg/item-bag.svg',
-                type: item.type,
-                system: item.system,
-                weaponType: item.type === 'weapon' ? getWeaponType(item) : null,
-                damageInfo: getDamageInfo(item)
-            }));
+            .map(item => {
+                const isPrepared = isSpellPrepared(item);
+                return {
+                    id: item.id,
+                    name: item.name,
+                    img: item.img || 'icons/svg/item-bag.svg',
+                    type: item.type,
+                    system: item.system,
+                    isPrepared,
+                    isAvailable: isHandleFavoriteAvailable(item, isPrepared),
+                    weaponType: item.type === 'weapon' ? getWeaponType(item) : null,
+                    damageInfo: getDamageInfo(item)
+                };
+            });
     });
 
     // Helper to format numbers (e.g., 1000 -> 1K, 1000000 -> 1M)

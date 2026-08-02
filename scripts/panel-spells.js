@@ -350,13 +350,16 @@ export class SpellsPanel {
             const spellId = spellItem.dataset.itemId;
             const spell = this.actor.items.get(spellId);
             if (spell) {
-                const newPrepared = !spell.system.prepared;
+                // dnd5e 5.x models `prepared` as a number (0 unprepared /
+                // 1 prepared / 2 always prepared), not a boolean.
+                const isPrepared = Number(spell.system.prepared) > 0;
+                const newPrepared = isPrepared ? 0 : 1;
                 await spell.update({
                     'system.prepared': newPrepared
                 });
                 // Update the UI immediately
-                spellItem.classList.toggle('prepared', newPrepared);
-                sunIcon.classList.toggle('faded', !newPrepared);
+                spellItem.classList.toggle('prepared', !isPrepared);
+                sunIcon.classList.toggle('faded', isPrepared);
                 // Update visibility in case we're filtering by prepared
                 this._updateVisibility(nativeHtml);
             }

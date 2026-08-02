@@ -149,23 +149,10 @@ export class HandleManager {
                 };
             });
 
-        // Fetch handle favorites
-        const handleFavoriteIds = FavoritesPanel.getHandleFavorites(this.actor);
-        const handleFavorites = handleFavoriteIds.map(id => {
-            const item = this.actor?.items.get(id);
-            return item ? {
-                id: item.id,
-                name: item.name,
-                img: item.img || 'icons/svg/item-bag.svg',
-                type: item.type,
-                system: item.system,
-                equipped: item.system.equipped,
-                hasEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
-                showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
-                showStarIcon: item.type === 'feat',
-                isHandleFavorite: true
-            } : null;
-        }).filter(Boolean);
+        // Handle favorites are shaped by the `getHandleFavorites` Handlebars
+        // helper, which the handle-favorites partial calls directly — it sorts
+        // by panel order and computes availability. A second copy built here
+        // was never read by any template.
 
         // Build handle data object
         const handleData = {
@@ -196,8 +183,7 @@ export class HandleManager {
             showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros'),
             isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
             defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
-            favoriteMacros,
-            handleFavorites
+            favoriteMacros
         };
 
         // If party view, add party context for handle-party
@@ -488,7 +474,6 @@ export class HandleManager {
                 if (!itemId) return;
                 
                 // Toggle the favorite state using the FavoritesPanel
-                const { FavoritesPanel } = await import('./panel-favorites.js');
                 await FavoritesPanel.manageFavorite(this.actor, itemId);
             }
         });

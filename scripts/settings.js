@@ -487,6 +487,48 @@ export const registerSettings = function() {
 
 
     // --------------------------------
+    // ---   AUTO-FAVORITE Settings  ---
+    // --------------------------------
+
+	// ---------- Auto-Favorite Heading ----------
+	game.settings.register(MODULE.ID, "headingH3AutoFavorites", {
+		name: 'NPC Auto-Favorites',
+		hint: 'When an NPC or monster token is first seen, Squire can favorite its usable statblock content (attacks, castable spells, activated features) so it is one click away in the tray and handle.',
+		scope: "world",
+		config: true,
+		default: "",
+		type: String,
+	});
+
+    game.settings.register(MODULE.ID, 'autoFavoriteNpcs', {
+        name: 'Auto-Favorite NPC Statblock Content',
+        hint: 'Automatically favorite an NPC\'s attacks, castable spells, and activated features. Newly added items are favorited too; anything you unfavorite by hand stays unfavorited.',
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'autoFavoriteGenericActions', {
+        name: 'Generic Actions to Ignore',
+        hint: 'Comma-separated feature names treated as rules reminders rather than statblock content, so they are not auto-favorited. Matched case-insensitively against the feature name. Leave blank to use the built-in list.',
+        scope: 'world',
+        config: true,
+        type: String,
+        default: ''
+    });
+
+    game.settings.register(MODULE.ID, 'autoFavoriteGenericActionsKept', {
+        name: 'Generic Actions to Keep',
+        hint: 'Comma-separated exceptions to the list above — generic actions common enough to be worth a favorite slot anyway. Leave blank to use the built-in list (Ready, Disengage).',
+        scope: 'world',
+        config: true,
+        type: String,
+        default: ''
+    });
+
+
+    // --------------------------------
     // ---      HEALTH Settings      ---
     // --------------------------------
 

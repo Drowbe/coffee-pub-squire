@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Fixed
+- **Auto-favorites no longer undo themselves**: Auto-favoriting is now incremental instead of all-or-nothing. Each NPC records which items it has already considered in an `autoFavoriteSeen` flag, so re-selecting a token no longer repopulates a list the user cleared, and an item added to an NPC after the first pass is now picked up instead of being ignored because favorites already existed. Manual removals stick. Actors favorited under the old rule adopt their current sheet as already-considered on first sync, so existing curation is preserved.
+- **Equipping an NPC weapon could un-favorite it**: The `updateItem` auto-favorite path called `manageFavorite`, which toggles, and tested the item's current state rather than the change payload. Any unrelated edit to an already-equipped weapon (a description tweak) therefore silently removed it from favorites, and a second edit added it back. It now fires only on the actual equip/prepare transition and only ever adds. The same path's prepared check compared against `true`, which never matched dnd5e 5.x's numeric `prepared`, so preparing an NPC spell never favorited it at all.
+- **At-will, innate, and pact spells showed as unavailable**: The handle greyed out any spell whose `system.prepared` was falsy. Those three casting methods sit at `prepared: 0` and are castable regardless — and are exactly what NPC auto-favorites selects — so most of a monster caster's handle rendered dimmed. Availability is now computed in the view model via a shared `isSpellPrepared` helper, which the favorites panel's prepared indicator also uses.
+- **Prepared toggles wrote a boolean into a numeric field**: The sun icons in the Favorites and Spells panels set `system.prepared` to `true`/`false`; dnd5e 5.x models it as 0 (unprepared) / 1 (prepared) / 2 (always prepared). Both now read and write numbers.
+- **Racing auto-favorite calls**: `FavoritesPanel`'s constructor fired auto-favoriting without awaiting it, racing the awaited calls in `PanelManager` and the `createItem` hook for the same actor flag. The constructor call is removed; the two awaited entry points remain.
+- **Orphaned handle favorites**: `addHandleFavorite` no longer creates a handle entry for an item that isn't a panel favorite. The handle sorts by panel order and the panel is the only place to manage favorites, so such an entry was unremovable from the UI; the item is promoted to a panel favorite instead.
+
+### Changed
+- **Fewer generic actions auto-favorited**: The built-in actions an actions-compendium drops onto NPC sheets are rules reminders, not statblock content. `Jump`, `Mount`, `Dismount`, `Swim`, `Long Jump`, `High Jump`, `Break an Object`, `End Concentration`, `Travel Pace`, and others were missing from the ignore list and were being favorited as though they were creature features. They are now recognized, and the set kept anyway has been narrowed from seven to the two that actually come up mid-turn — Ready and Disengage. Dash, Grapple, and Shove no longer take a favorite slot.
+- **Auto-favorites are configurable**: Added a world-scoped **NPC Auto-Favorites** settings section — an on/off toggle plus editable comma-separated lists for which feature names count as generic actions and which of those are kept anyway. Both lists fall back to the built-in defaults when left blank.
+- **Removed dead handle-favorites pipeline**: `HandleManager` built a second, differently-shaped `handleFavorites` array into its template context that no template ever read; the handle partial calls the `getHandleFavorites` Handlebars helper directly. Removed it along with a redundant dynamic import of `FavoritesPanel` that shadowed the module's static one.
+
 ## [13.4.0]
 
 ### Fixed

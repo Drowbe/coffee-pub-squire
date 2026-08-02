@@ -297,7 +297,7 @@ export class PanelManager {
                         false
                     );
                 } else {
-                    await FavoritesPanel.initializeNpcFavorites(actor);
+                    await FavoritesPanel.syncNpcAutoFavorites(actor);
                 }
             }
 

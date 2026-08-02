@@ -531,8 +531,9 @@ Hooks.once('ready', async () => {
                         // Check if actor is from a compendium before trying to modify it
                         const isFromCompendium = item.parent.pack || (item.parent.collection && item.parent.collection.locked);
                         if (!isFromCompendium) {
-                            // Try to initialize NPC favorites (will only work if actor has no favorites yet)
-                            await FavoritesPanel.initializeNpcFavorites(item.parent);
+                            // Pick up the new item if it qualifies; existing
+                            // favorites and manual removals are left alone.
+                            await FavoritesPanel.syncNpcAutoFavorites(item.parent);
                         }
                     }
                     
@@ -570,23 +571,29 @@ Hooks.once('ready', async () => {
                     return;
                 }
                 
-                // Check if this is an NPC/monster and the item is a weapon being equipped
-                // or a spell being prepared
+                // An NPC weapon being equipped, or a spell being prepared, becomes
+                // part of its usable kit — favorite it.
+                //
+                // Gated on the *change* payload, not the item's current state: this
+                // hook fires for every edit, so testing `item.system.equipped === true`
+                // matched on unrelated edits (a description tweak) to an already-equipped
+                // weapon. Paired with manageFavorite — which toggles — that silently
+                // un-favorited the weapon. Add-only, and only on the transition.
                 if (item.parent.type !== "character") {
                     // Check if actor is from a compendium before trying to modify it
                     const isFromCompendium = item.parent.pack || (item.parent.collection && item.parent.collection.locked);
                     if (isFromCompendium) {
                         // Skip auto-favoriting for actors from compendiums
-                    } else {
-                        // For weapons, check if equipped status changed to true
-                        if (item.type === "weapon" && item.system.equipped === true) {
-                            // Add to favorites if it's now equipped
-                            await FavoritesPanel.manageFavorite(item.parent, item.id);
-                        }
-                        // For spells, check if prepared status changed to true
-                        else if (item.type === "spell" && item.system.method === "prepared" && item.system.prepared === true) {
-                            // Add to favorites if it's now prepared
-                            await FavoritesPanel.manageFavorite(item.parent, item.id);
+                    } else if (game.settings.get(MODULE.ID, 'autoFavoriteNpcs')) {
+                        const equippedChange = changes.system?.equipped;
+                        // dnd5e 5.x: `prepared` is a number (0/1/2), not a boolean.
+                        const preparedChange = changes.system?.prepared;
+                        const nowEquipped = item.type === "weapon" && equippedChange === true;
+                        const nowPrepared = item.type === "spell" && preparedChange !== undefined && Number(preparedChange) > 0;
+
+                        if (nowEquipped || nowPrepared) {
+                            await FavoritesPanel.addPanelFavorite(item.parent, item.id);
+                            await FavoritesPanel.markItemsAutoFavoriteSeen(item.parent, [item.id]);
                         }
                     }
                 }
