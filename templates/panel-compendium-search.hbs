@@ -52,6 +52,12 @@
         </div>
         {{/each}}
         {{/each}}
+        {{#if truncated}}
+        <div class="compendium-search-truncated">
+            <i class="fa-solid fa-circle-info"></i>
+            Showing the first {{total}} matches. Lower-priority compendiums may not be listed — narrow the search to see them.
+        </div>
+        {{/if}}
         {{else}}
         <div class="compendium-search-message">
             <i class="fa-solid fa-magnifying-glass"></i>

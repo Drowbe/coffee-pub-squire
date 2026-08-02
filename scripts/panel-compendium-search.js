@@ -18,7 +18,13 @@ export class CompendiumSearchPanel {
         this.actor = actor;
         this.query = '';
         this.searching = false;
-        this.results = { available: CompendiumSearchUtility.isAvailable(), tooShort: true, groups: [], total: 0 };
+        this.results = {
+            available: CompendiumSearchUtility.isAvailable(),
+            tooShort: true,
+            groups: [],
+            total: 0,
+            truncated: false
+        };
         this._listenerController = null;
         this._debounceHandle = null;
         // Guards against an earlier slow search overwriting a later fast one.
@@ -46,7 +52,8 @@ export class CompendiumSearchPanel {
                 available: CompendiumSearchUtility.isAvailable(),
                 tooShort: true,
                 groups: [],
-                total: 0
+                total: 0,
+                truncated: false
             };
             this.render(this.element);
             return;
@@ -80,7 +87,9 @@ export class CompendiumSearchPanel {
             minLength: CompendiumSearchUtility.getMinQueryLength(),
             available: this.results.available,
             tooShort: this.results.tooShort,
-            groups: this.results.groups
+            groups: this.results.groups,
+            total: this.results.total,
+            truncated: this.results.truncated
         };
 
         const content = await renderTemplate(TEMPLATES.PANEL_COMPENDIUM_SEARCH, templateData);

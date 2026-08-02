@@ -967,6 +967,20 @@
     opacity: 0.9;
 }
 
+.compendium-search-panel .compendium-search-truncated {
+    padding: 8px 10px;
+    margin-top: 4px;
+    font-size: 11px;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.55);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.compendium-search-panel .compendium-search-truncated i {
+    margin-right: 4px;
+    opacity: 0.7;
+}
+
 .compendium-search-panel .compendium-search-add {
     color: #6fbf5f;
 }

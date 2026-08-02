@@ -74,7 +74,7 @@ export class CompendiumSearchUtility {
      */
     static _normalize(entry, fallbackType) {
         if (!entry?.uuid) return null;
-        const source = entry.source ?? entry.packId ?? 'world';
+        const source = entry.source ?? 'world';
         return {
             uuid: entry.uuid,
             name: entry.name ?? 'Unknown',
@@ -83,19 +83,14 @@ export class CompendiumSearchUtility {
             type: entry.type ?? fallbackType ?? '',
             img: entry.img || 'icons/svg/item-bag.svg',
             source,
-            sourceLabel: entry.sourceLabel || this._getSourceLabel(source),
+            // Never derive this. Source-aggregated mapping types (Spell, Feature,
+            // Class, Species, Background, Subclass) key getChoices() by source id
+            // rather than pack id, so looking the label up ourselves returns
+            // undefined for exactly those types. search() already resolves
+            // choices → pack metadata label → raw id, so take what it gives.
+            sourceLabel: entry.sourceLabel || source,
             matchType: entry.matchType ?? ''
         };
-    }
-
-    /** Display name for a source, falling back to the raw pack id. */
-    static _getSourceLabel(source) {
-        if (source === 'world') return 'World Items';
-        try {
-            return game.packs.get(source)?.metadata?.label ?? source;
-        } catch (error) {
-            return source;
-        }
     }
 
     /**
@@ -111,14 +106,21 @@ export class CompendiumSearchUtility {
         const trimmed = String(query ?? '').trim();
 
         if (!this.isAvailable()) {
-            return { available: false, tooShort: false, groups: [], total: 0 };
+            return { available: false, tooShort: false, groups: [], total: 0, truncated: false };
         }
         if (trimmed.length < MIN_QUERY_LENGTH) {
-            return { available: true, tooShort: true, groups: [], total: 0 };
+            return { available: true, tooShort: true, groups: [], total: 0, truncated: false };
         }
 
         const api = this.getApi();
         const types = this.getSearchableTypes();
+
+        // `limit` stops the scan, not just the output: once reached, remaining
+        // packs are never indexed, so the tail of the priority order can drop out
+        // entirely rather than being sampled. A type that comes back exactly at
+        // the limit was almost certainly truncated, and the panel says so — a
+        // silent cap would read as "that's everything".
+        let truncated = false;
 
         const settled = await Promise.all(types.map(async type => {
             try {
@@ -127,9 +129,9 @@ export class CompendiumSearchUtility {
                     minLength: MIN_QUERY_LENGTH,
                     fuzzy: true
                 });
-                return Array.isArray(results)
-                    ? results.map(entry => this._normalize(entry, type)).filter(Boolean)
-                    : [];
+                if (!Array.isArray(results)) return [];
+                if (results.length >= RESULT_LIMIT) truncated = true;
+                return results.map(entry => this._normalize(entry, type)).filter(Boolean);
             } catch (error) {
                 console.error(`${MODULE.ID}: Compendium search failed for type ${type}:`, error);
                 return [];
@@ -157,7 +159,7 @@ export class CompendiumSearchUtility {
             group.items.push(entry);
         }
 
-        return { available: true, tooShort: false, groups, total };
+        return { available: true, tooShort: false, groups, total, truncated };
     }
 
     /* ---------------------------------------------------------------- */
