@@ -1,0 +1,63 @@
+<div class="compendium-search-panel">
+    {{#if (eq position "left")}}
+    <div class="section-header">
+        <div class="header-left">
+            <i class="fa-solid fa-circle-plus"></i> Add From Compendiums
+        </div>
+        <div class="header-right">
+            <i class="fa-solid fa-xmark compendium-search-close" title="Back to Panels"></i>
+        </div>
+    </div>
+    {{/if}}
+    <div class="compendium-search-list">
+        {{#unless available}}
+        <div class="compendium-search-message">
+            <i class="fa-solid fa-plug-circle-xmark"></i>
+            <p>Compendium search is unavailable.</p>
+            <p class="compendium-search-hint">This needs a version of Coffee Pub Blacksmith that provides the Compendiums search API.</p>
+        </div>
+        {{else if tooShort}}
+        <div class="compendium-search-message">
+            <i class="fa-solid fa-keyboard"></i>
+            <p>Type at least {{minLength}} characters to search.</p>
+            <p class="compendium-search-hint">Results come from the compendiums configured in Blacksmith, in their configured order.</p>
+        </div>
+        {{else if searching}}
+        <div class="compendium-search-message">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Searching&hellip;</p>
+        </div>
+        {{else if groups}}
+        {{#each groups}}
+        <div class="category-header">{{this.sourceLabel}}</div>
+        {{#each this.items}}
+        <div class="panel-item compendium-search-item" data-uuid="{{this.uuid}}">
+            <div class="panel-item-row">
+                <div class="panel-item-image-container">
+                    <img draggable="false" class="panel-item-image" src="{{this.img}}" alt="{{this.name}}"/>
+                </div>
+                <div class="panel-item-name">
+                    {{this.name}}
+                    {{#if this.type}}
+                    <span class="panel-item-context">
+                        <span class="panel-item-badge context-count">{{this.type}}</span>
+                    </span>
+                    {{/if}}
+                </div>
+                <div class="tray-buttons">
+                    <i class="fa-solid fa-feather compendium-search-view" title="View Details"></i>
+                    <i class="fa-solid fa-circle-plus compendium-search-add" title="Add to Character"></i>
+                </div>
+            </div>
+        </div>
+        {{/each}}
+        {{/each}}
+        {{else}}
+        <div class="compendium-search-message">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <p>No matches for &ldquo;{{query}}&rdquo;.</p>
+            <p class="compendium-search-hint">Only compendiums configured in Blacksmith are searched.</p>
+        </div>
+        {{/unless}}
+    </div>
+</div>

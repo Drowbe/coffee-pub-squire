@@ -1,11 +1,15 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { getNativeElement, renderTemplate } from './helpers.js';
+import { CompendiumSearchUtility } from './utility-compendium-search.js';
 
 export class ControlPanel {
     constructor(actor) {
         this.actor = actor;
         this._searchTerm = '';
+        // When true the stacked panels are hidden and the quick-add results
+        // panel takes their place; the same search box drives both.
+        this._compendiumMode = false;
     }
 
     async render(html) {
@@ -16,7 +20,8 @@ export class ControlPanel {
         if (!this.element) return;
 
         const templateData = {
-            position: game.settings.get(MODULE.ID, 'trayPosition')
+            position: game.settings.get(MODULE.ID, 'trayPosition'),
+            canAddFromCompendiums: CompendiumSearchUtility.canAdd(this.actor)
         };
 
         const content = await renderTemplate(TEMPLATES.PANEL_CONTROL, templateData);
@@ -45,9 +50,64 @@ export class ControlPanel {
         this._handleSearch(this._searchTerm);
     }
 
+    /**
+     * Enter or leave compendium quick-add mode.
+     *
+     * The stacked panels and the results panel are mutually exclusive: the tray
+     * column isn't tall enough to show both, and the search box means something
+     * different in each mode (filter what you have vs. find what you don't).
+     */
+    async setCompendiumMode(enabled) {
+        if (this._compendiumMode === enabled) return;
+        this._compendiumMode = enabled;
+
+        const searchPanel = PanelManager.instance?.compendiumSearchPanel;
+        if (searchPanel) {
+            // The panel asks to be closed via its own × button.
+            searchPanel.onRequestClose = () => this.setCompendiumMode(false);
+        }
+
+        this._updateVisibility();
+
+        const controlPanel = this.element?.querySelector('[data-panel="control"]');
+        const searchInput = controlPanel?.querySelector('.global-search');
+        if (searchInput) {
+            searchInput.placeholder = enabled ? 'Search Compendiums...' : 'Search All Sections...';
+        }
+
+        if (enabled) {
+            await searchPanel?.render(this.element);
+            searchPanel?.setQuery(this._searchTerm);
+            searchInput?.focus();
+        } else {
+            // Restore the filter the stacked panels were showing before.
+            this._handleSearch(this._searchTerm);
+        }
+    }
+
     _updateVisibility() {
         if (!this.element) return;
-        
+
+        // Swap the stack and the quick-add results panel.
+        const stack = this.element.querySelector('.panel-containers.stacked');
+        if (stack) stack.style.display = this._compendiumMode ? 'none' : '';
+
+        // Class only — the stylesheet owns hidden vs shown for this container,
+        // so there's no inline style racing the CSS.
+        this.element
+            .querySelector('.panel-container[data-panel="compendium-search"]')
+            ?.classList.toggle('visible', this._compendiumMode);
+
+        const controlEl = this.element.querySelector('[data-panel="control"]');
+        controlEl?.querySelector('.compendium-search-toggle')
+            ?.classList.toggle('active', this._compendiumMode);
+
+        // Panel toggle icons do nothing in quick-add mode; fade them so that
+        // reads as disabled rather than broken.
+        controlEl?.querySelectorAll('.control-toggle').forEach(toggle => {
+            toggle.classList.toggle('mode-disabled', this._compendiumMode);
+        });
+
         // v13: Use native DOM methods instead of jQuery
         ['favorites', 'weapons', 'spells', 'features', 'inventory'].forEach(panel => {
             const isVisible = game.settings.get(MODULE.ID, `show${panel.charAt(0).toUpperCase() + panel.slice(1)}Panel`);
@@ -84,6 +144,13 @@ export class ControlPanel {
         if (!this.element) return;
 
         this._searchTerm = searchTerm;
+
+        // In quick-add mode the box searches compendiums instead of filtering
+        // the panels, which are hidden anyway.
+        if (this._compendiumMode) {
+            PanelManager.instance?.compendiumSearchPanel?.setQuery(searchTerm);
+            return;
+        }
 
         // Convert search term to lowercase for case-insensitive comparison
         const normalizedTerm = searchTerm.toLowerCase();
@@ -249,10 +316,24 @@ export class ControlPanel {
             button.parentNode?.replaceChild(newButton, button);
             
             newButton.addEventListener('click', async (event) => {
+                // Toggling a hidden panel would silently change state the user
+                // can't see; the icons are faded to say so.
+                if (this._compendiumMode) return;
                 const panelType = event.currentTarget.dataset.togglePanel;
                 await this._togglePanel(panelType);
             });
         });
+
+        // Compendium quick-add mode toggle
+        const modeToggle = controlPanel.querySelector('.compendium-search-toggle');
+        if (modeToggle) {
+            const newToggle = modeToggle.cloneNode(true);
+            modeToggle.parentNode?.replaceChild(newToggle, modeToggle);
+
+            newToggle.addEventListener('click', async () => {
+                await this.setCompendiumMode(!this._compendiumMode);
+            });
+        }
 
         // Add search input listener
         const searchInput = controlPanel.querySelector('.global-search');

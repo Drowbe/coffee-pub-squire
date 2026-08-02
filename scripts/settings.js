@@ -528,6 +528,15 @@ export const registerSettings = function() {
     });
 
 
+    game.settings.register(MODULE.ID, 'compendiumAddPlayers', {
+        name: 'Let Players Add From Compendiums',
+        hint: 'Allow players to use the tray\'s compendium quick-add on characters they own. Off by default — who may pull arbitrary compendium content onto a sheet is a table policy question. The GM can always use it.',
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        default: false
+    });
+
     game.settings.register(MODULE.ID, 'handleFavoritesMax', {
         name: 'Maximum Handle Favorites',
         hint: 'How many items can sit on the tray handle at once. The handle is a narrow strip, so a small number keeps every icon big enough to hit; adding another once the limit is reached asks you to remove one first.',

@@ -117,6 +117,7 @@ export const TEMPLATES = {
     PANEL_CHARACTER: `modules/${MODULE.ID}/templates/panel-character.hbs`,
     PANEL_GM: `modules/${MODULE.ID}/templates/panel-gm.hbs`,
     PANEL_CONTROL: `modules/${MODULE.ID}/templates/panel-control.hbs`,
+    PANEL_COMPENDIUM_SEARCH: `modules/${MODULE.ID}/templates/panel-compendium-search.hbs`,
     PANEL_SPELLS: `modules/${MODULE.ID}/templates/panel-spells.hbs`,
     PANEL_WEAPONS: `modules/${MODULE.ID}/templates/panel-weapons.hbs`,
     PANEL_INVENTORY: `modules/${MODULE.ID}/templates/panel-inventory.hbs`,

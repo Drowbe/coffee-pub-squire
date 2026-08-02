@@ -1,8 +1,11 @@
 {{#if (eq position "left")}}
 <div class="tray-title-small">GLOBAL FILTERS</div>
-<div class="control-search">
+<div class="control-search{{#if canAddFromCompendiums}} has-add{{/if}}">
     <input type="text" class="global-search" placeholder="Search All Sections...">
     <i class="fa-solid fa-times search-clear" title="Clear Search"></i>
+    {{#if canAddFromCompendiums}}
+    <i class="fa-solid fa-circle-plus compendium-search-toggle" title="Add From Compendiums"></i>
+    {{/if}}
 </div>
 <div class="control-icons">
     <i class="fa-solid fa-heart control-toggle" data-toggle-panel="favorites" title="Toggle Favorites Panel"></i>

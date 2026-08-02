@@ -7,6 +7,7 @@ import { WeaponsPanel } from './panel-weapons.js';
 import { InventoryPanel } from './panel-inventory.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { ControlPanel } from './panel-control.js';
+import { CompendiumSearchPanel } from './panel-compendium-search.js';
 import { FeaturesPanel } from './panel-features.js';
 import { DiceTrayPanel } from './panel-dicetray.js';
 import { HealthPanel } from './panel-health.js';
@@ -91,6 +92,7 @@ export class PanelManager {
                 this.gmPanel = new GmPanel(actor);
             }
             this.controlPanel = new ControlPanel(actor);
+            this.compendiumSearchPanel = new CompendiumSearchPanel(actor);
             this.favoritesPanel = new FavoritesPanel(actor);
             this.spellsPanel = new SpellsPanel(actor);
             this.weaponsPanel = new WeaponsPanel(actor);
@@ -541,6 +543,7 @@ export class PanelManager {
         // Create new panel instances with updated element references
         this.characterPanel = new CharacterPanel(this.actor);
         this.controlPanel = new ControlPanel(this.actor);
+        this.compendiumSearchPanel = new CompendiumSearchPanel(this.actor);
         this.favoritesPanel = new FavoritesPanel(this.actor);
         this.spellsPanel = new SpellsPanel(this.actor);
         this.weaponsPanel = new WeaponsPanel(this.actor);
@@ -571,6 +574,7 @@ export class PanelManager {
             this.gmPanel.element = PanelManager.element;
         }
         this.controlPanel.element = PanelManager.element;
+        this.compendiumSearchPanel.element = PanelManager.element;
         this.favoritesPanel.element = PanelManager.element;
         this.spellsPanel.element = PanelManager.element;
         this.weaponsPanel.element = PanelManager.element;

@@ -879,6 +879,106 @@
     opacity: 1;
 }
 
+/* ---------- Compendium quick-add ---------- */
+
+/* The + sits beside the field rather than inside it, so the clear button keeps
+   its position inside the input and the two never overlap. */
+.squire-tray[data-position="left"] [data-panel="control"] .control-search.has-add {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.squire-tray[data-position="left"] [data-panel="control"] .control-search.has-add .global-search {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Clear the width of the + plus the gap. */
+.squire-tray[data-position="left"] [data-panel="control"] .control-search.has-add .search-clear {
+    right: 38px;
+}
+
+.squire-tray[data-position="left"] [data-panel="control"] .compendium-search-toggle {
+    flex: 0 0 auto;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 16px;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.squire-tray[data-position="left"] [data-panel="control"] .compendium-search-toggle:hover {
+    color: rgba(231, 91, 1, 1.0);
+}
+
+.squire-tray[data-position="left"] [data-panel="control"] .compendium-search-toggle.active {
+    color: rgba(231, 91, 1, 1.0);
+    transform: rotate(45deg);
+}
+
+/* Panel toggles do nothing while quick-add is showing. */
+.squire-tray[data-position="left"] [data-panel="control"] .control-toggle.mode-disabled {
+    opacity: 0.2;
+    pointer-events: none;
+}
+
+/* Hidden until quick-add mode is entered. Declared here as well as set inline by
+   the control panel so there's no flash of an empty results panel on first
+   render, before _updateVisibility has run. */
+.panel-container[data-panel="compendium-search"] {
+    display: none;
+}
+
+.panel-container[data-panel="compendium-search"].visible {
+    display: block;
+}
+
+.compendium-search-panel .compendium-search-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.compendium-search-panel .compendium-search-message {
+    text-align: center;
+    padding: 18px 12px;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 12px;
+}
+
+.compendium-search-panel .compendium-search-message i {
+    font-size: 22px;
+    display: block;
+    margin-bottom: 8px;
+    opacity: 0.5;
+}
+
+.compendium-search-panel .compendium-search-message p {
+    margin: 0 0 4px 0;
+}
+
+.compendium-search-panel .compendium-search-hint {
+    font-size: 11px;
+    opacity: 0.6;
+    font-style: italic;
+}
+
+/* Results are read-only previews until added — no roll overlay on the image. */
+.compendium-search-panel .compendium-search-item .panel-item-image {
+    opacity: 0.9;
+}
+
+.compendium-search-panel .compendium-search-add {
+    color: #6fbf5f;
+}
+
+.compendium-search-panel .compendium-search-add:hover {
+    color: #9fe88f;
+}
+
+.compendium-search-panel .compendium-search-close {
+    cursor: pointer;
+}
+
 
 /* Panel Visibility */
 .panel-containers.stacked .panel-container[data-panel] {
