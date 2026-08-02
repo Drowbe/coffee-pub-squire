@@ -23,7 +23,8 @@ import {
     initTransientNotifications,
     recordCreatedPageBaseline,
     routeTransientJournalUpdate,
-    notifyEffectApplied
+    notifyEffectApplied,
+    notifyQuantityChanged
 } from './manager-notifications.js';
 import { CodexPageModel, CODEX_PAGE_TYPE } from './data/codex-page-model.js';
 import { CodexPageSheet } from './sheets/codex-page-sheet.js';
@@ -557,9 +558,16 @@ Hooks.once('ready', async () => {
             description: "Coffee Pub Squire: Handle global item updates for tray updates and auto-favoriting",
             context: MODULE.ID,
             priority: 2,
-            callback: async (item, changes) => {
+            callback: async (item, changes, options, userId) => {
                 if (!item.parent) return;
-                
+
+                // Before the currentActor gate below, which only governs panel
+                // refreshes — the GM should hear about a player's edit whether
+                // or not their own tray happens to be showing that actor.
+                if (options?.squireQuantityEdit && changes?.system?.quantity !== undefined) {
+                    notifyQuantityChanged(item, userId, changes.system.quantity);
+                }
+
                 const panelManager = getPanelManager();
                 // Only process if this item belongs to the actor currently being managed by Squire
                 if (panelManager?.currentActor?.id !== item.parent?.id) {
@@ -640,7 +648,12 @@ Hooks.once('ready', async () => {
             description: "Coffee Pub Squire: Handle global item deletion for tray updates",
             context: MODULE.ID,
             priority: 2,
-            callback: async (item) => {
+            callback: async (item, options, userId) => {
+                // Before the currentActor gate, same reasoning as updateItem.
+                if (options?.squireQuantityEdit) {
+                    notifyQuantityChanged(item, userId, null);
+                }
+
                 const panelManager = getPanelManager();
                 // Only process if this item belongs to the actor currently being managed by Squire
                 if (panelManager?.currentActor?.id !== item.parent?.id) {

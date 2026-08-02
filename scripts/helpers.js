@@ -306,6 +306,23 @@ function isHandleFavoriteAvailable(item, isPrepared) {
     }
 }
 
+/**
+ * How many favorites the tray handle may show at once.
+ *
+ * Lives here rather than on FavoritesPanel so the Handlebars helper can read it
+ * without helpers.js importing a panel — panels already import helpers, and the
+ * cycle would be gratuitous. FavoritesPanel delegates here.
+ */
+export function getHandleFavoriteLimit() {
+    try {
+        const limit = Number(game.settings.get(MODULE.ID, 'handleFavoritesMax'));
+        if (Number.isFinite(limit) && limit > 0) return Math.floor(limit);
+    } catch (error) {
+        // Settings not registered yet — fall back to the default.
+    }
+    return 5;
+}
+
 // Helper function to get quest number from UUID
 function getQuestNumber(questUuid) {
     let hash = 0;
@@ -451,45 +468,31 @@ export const registerHelpers = function() {
         // Create a map of items by ID for quick lookup
         const itemsById = new Map(actor.items.map(item => [item.id, item]));
         
-        // Sort handle favorites based on their position in panel favorites
-        // Since the handle is rotated 180 degrees, we need to reverse the order
-        const sortedHandleFavorites = handleFavorites.sort((a, b) => {
+        // Sort handle favorites to match the Favorites panel order exactly.
+        //
+        // The handle's 180° rotation is cancelled in CSS (`flex-direction:
+        // row-reverse` on .handle-favorites), the same way pinned quests already
+        // handle it — so DOM order is now visual order and this sort can be a
+        // plain ascending one. It used to sort descending to compensate, which
+        // rendered correctly but left the array backwards, so "keep the top N"
+        // silently kept the bottom N.
+        const sortedHandleFavorites = [...handleFavorites].sort((a, b) => {
             const aIndex = panelFavorites.indexOf(a);
             const bIndex = panelFavorites.indexOf(b);
-            
-            // If both are in panel favorites, sort by their position (reversed for rotation)
-            if (aIndex !== -1 && bIndex !== -1) {
-                return bIndex - aIndex; // Reversed: bIndex - aIndex instead of aIndex - bIndex
-            }
-            
-            // If only one is in panel favorites, prioritize it
+
+            if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+
+            // Anything in the panel list outranks an orphan.
             if (aIndex !== -1) return -1;
             if (bIndex !== -1) return 1;
-            
-            // If neither is in panel favorites, maintain original order
             return 0;
         });
-        
-        // Cap what the handle renders. The flag itself is left alone: a world
-        // that predates the limit keeps its data, and silently deleting entries
-        // during an unrelated render would be worse than showing fewer. The add
-        // path refuses past the limit, so lists normalize as they're managed.
-        let limit = 5;
-        try {
-            const configured = Number(game.settings.get(MODULE.ID, 'handleFavoritesMax'));
-            if (Number.isFinite(configured) && configured > 0) limit = Math.floor(configured);
-        } catch (error) {
-            // Settings not ready — fall back to the default.
-        }
 
-        // Map handle favorites in the sorted order.
-        //
-        // slice(-limit), not slice(0, limit): the sort above is descending by
-        // panel position to compensate for the handle being rotated 180°, so
-        // the highest-priority favorites sit at the END of this array. Taking
-        // from the front would keep the user's five *least* important picks.
+        // Map handle favorites in the sorted order, capped at the configured
+        // limit. Normalization writes the truncation back to the flag on actor
+        // init; this slice keeps the render correct in between.
         return sortedHandleFavorites
-            .slice(-limit)
+            .slice(0, getHandleFavoriteLimit())
             .map(id => itemsById.get(id))
             .filter(item => item) // Remove any undefined items
             .map(item => {

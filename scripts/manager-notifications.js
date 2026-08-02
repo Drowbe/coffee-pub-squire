@@ -29,6 +29,7 @@ import { MODULE } from './const.js';
 import { focusQuestInPanel, focusCodexInPanel } from './manager-pins.js';
 import { CODEX_PAGE_TYPE } from './data/codex-page-model.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
+import { showSquireToast } from './helpers.js';
 
 const NOTIFICATION_SECONDS = 5;
 
@@ -271,6 +272,48 @@ function _handleNoteUpdate(page, changes, userId) {
     _notify(`Note updated: ${page.name}`, 'fa-solid fa-note-sticky', {
         onClick: () => _getPanelManagerInstance()?.notesPanel?.showNote?.(page.uuid)
     });
+}
+
+/**
+ * Notify the GM when a player changes an item's quantity from the tray.
+ *
+ * Called from the updateItem and deleteItem hooks in squire.js. No socket is
+ * involved: the document hooks already fire on every client, and the hook's
+ * `userId` says who did it — so the GM's own client decides to notify itself.
+ *
+ * Fires only for deliberate tray edits, which the editor tags via update
+ * options. Hooking every quantity change would toast on each arrow dnd5e
+ * consumes during a ranged attack.
+ *
+ * Uses the toast surface rather than `_notify`'s menubar notification like the
+ * rest of this file: an inventory change the GM didn't make should be visible
+ * without looking at the menubar.
+ *
+ * @param {Item} item
+ * @param {string} userId - the user who made the change
+ * @param {number|null} quantity - the new quantity, or null when deleted
+ */
+export function notifyQuantityChanged(item, userId, quantity) {
+    try {
+        if (!game.user.isGM) return;      // GM-facing only
+        if (userId === game.user.id) return; // your own edit
+        const actor = item?.parent;
+        if (!(actor instanceof Actor)) return;
+
+        const who = game.users.get(userId)?.name ?? 'Someone';
+        const removed = quantity === null;
+
+        showSquireToast(`${actor.name}: ${item.name}`, {
+            subtitle: removed ? `${who} removed this item` : `${who} set the quantity to ${quantity}`,
+            icon: removed ? 'fa-solid fa-trash' : 'fa-solid fa-cubes-stacked',
+            color: removed ? '#e05c3c' : '#ffb020',
+            // Repeated edits to the same item replace in place instead of
+            // stacking; edits to different items still queue separately.
+            stackKey: `squire-quantity-${item.id}`
+        });
+    } catch (error) {
+        console.error('Coffee Pub Squire | Error sending quantity notification:', error);
+    }
 }
 
 /**

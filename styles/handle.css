@@ -411,6 +411,14 @@
     flex-direction: row-reverse;
 }
 
+/* Same correction for favorites, so the handle reads in the same order as the
+   Favorites panel. This replaces a reversed sort in the getHandleFavorites
+   helper, which achieved the same visual result but left DOM order backwards —
+   making "keep the top 5" mean slicing from the wrong end of the array. */
+.squire-tray[data-position="left"] .handle-favorites {
+    flex-direction: row-reverse;
+}
+
 /* Icon Container */
 
 .squire-tray[data-position="left"] .handle-pinnedquest-icon,

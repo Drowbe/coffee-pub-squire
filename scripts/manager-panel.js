@@ -277,6 +277,11 @@ export class PanelManager {
             // Always create a new instance to ensure clean state
             PanelManager.instance = new PanelManager(actor);
 
+            // Bring pre-cap handle favorites down to the limit. Applies to every
+            // actor type, unlike auto-favoriting, since characters accumulated
+            // these too.
+            if (actor) await FavoritesPanel.normalizeHandleFavorites(actor);
+
             // Check if this is a monster/NPC and auto-favorite items
             if (actor && actor.type !== "character") {
                 // Check if actor is from a compendium before trying to modify it

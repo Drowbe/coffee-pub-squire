@@ -103,11 +103,13 @@ export class QuantityEditor {
                 });
                 if (!confirmed) return false;
             }
-            await item.delete();
+            // Tagged so the GM-facing notification can tell a deliberate tray
+            // edit from dnd5e consuming ammunition during an attack.
+            await item.delete({ squireQuantityEdit: true });
             return true;
         }
 
-        await item.update({ 'system.quantity': next });
+        await item.update({ 'system.quantity': next }, { squireQuantityEdit: true });
         return true;
     }
 

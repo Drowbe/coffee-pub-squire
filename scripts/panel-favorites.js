@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, showSquireToast } from './helpers.js';
+import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, showSquireToast, getHandleFavoriteLimit } from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { QuantityEditor } from './utility-quantity.js';
@@ -87,12 +87,45 @@ export class FavoritesPanel {
      * click target, so this is a real constraint rather than a preference.
      */
     static getHandleFavoriteLimit() {
-        try {
-            const limit = Number(game.settings.get(MODULE.ID, 'handleFavoritesMax'));
-            return Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 5;
-        } catch (error) {
-            return 5;
-        }
+        return getHandleFavoriteLimit();
+    }
+
+    /**
+     * Drop handle favorites past the limit, keeping the ones highest in the
+     * Favorites panel order.
+     *
+     * Worlds that predate the cap can hold more than the handle will show. Rather
+     * than leaving the flag permanently disagreeing with the display, this
+     * truncates it on actor init so what's stored is what's rendered.
+     *
+     * @returns {Promise<boolean>} whether anything was removed
+     */
+    static async normalizeHandleFavorites(actor) {
+        if (!actor) return false;
+        const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
+        if (isFromCompendium) return false;
+        if (!actor.isOwner) return false;
+
+        const handle = this.getHandleFavorites(actor).filter(id => id !== null && id !== undefined);
+        const limit = this.getHandleFavoriteLimit();
+        if (handle.length <= limit) return false;
+
+        // Same ordering the handle renders in, so the survivors are the ones the
+        // user was actually looking at.
+        const panel = this.getPanelFavorites(actor);
+        const kept = [...handle]
+            .sort((a, b) => {
+                const aIndex = panel.indexOf(a);
+                const bIndex = panel.indexOf(b);
+                if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+                if (aIndex !== -1) return -1;
+                if (bIndex !== -1) return 1;
+                return 0;
+            })
+            .slice(0, limit);
+
+        await actor.setFlag(MODULE.ID, 'favoriteHandle', kept);
+        return true;
     }
 
     /**
