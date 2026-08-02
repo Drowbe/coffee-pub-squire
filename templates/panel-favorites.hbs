@@ -27,6 +27,9 @@
                 </div>
                 <div class="panel-item-name">{{this.name}}</div>
                 <div class="tray-buttons">
+                    {{#if this.statblockIssue}}
+                    <i class="fa-solid fa-triangle-exclamation statblock-warning {{#unless this.statblockIssue.canFix}}no-fix{{/unless}}" data-tooltip="{{{this.statblockIssue.tooltip}}}"></i>
+                    {{/if}}
                     {{#if this.isLightSource}}
                     <i class="fa-solid fa-lightbulb {{#unless this.isLightActive}}faded{{/unless}} {{#if this.isLightActive}}light-active{{/if}}" title="Toggle Light"></i>
                     {{/if}}

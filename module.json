@@ -78,7 +78,8 @@
     "scripts/panel-party-stats.js",
     "scripts/panel-notes.js",
     "scripts/manager-pins.js",
-    "scripts/utility-lights.js"
+    "scripts/utility-lights.js",
+    "scripts/utility-statblock.js"
   ],
   "packs": [],
 

@@ -614,6 +614,44 @@
 }
 
 
+/* Statblock problem badge — GM-only, click to repair. Pulses so it reads as
+   an actionable defect rather than another state toggle. */
+.tray-buttons .statblock-warning {
+    color: #ffb020;
+    text-shadow: 0 0 6px rgba(255, 176, 32, 0.5);
+    animation: squire-statblock-pulse 2s ease-in-out infinite;
+}
+
+.tray-buttons .statblock-warning:hover {
+    color: #ffd873;
+    text-shadow: 0 0 8px rgba(255, 216, 115, 0.8);
+    animation: none;
+}
+
+/* Detected but not repairable from one field — still worth surfacing, but it
+   must not look clickable. */
+.tray-buttons .statblock-warning.no-fix {
+    color: #9f9275;
+    text-shadow: none;
+    cursor: help;
+    animation: none;
+}
+
+.tray-buttons .statblock-warning.no-fix:hover {
+    color: #c4b896;
+}
+
+@keyframes squire-statblock-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tray-buttons .statblock-warning {
+        animation: none;
+    }
+}
+
 .tray-buttons .fa-heart {
     color: #ff4444;
 }

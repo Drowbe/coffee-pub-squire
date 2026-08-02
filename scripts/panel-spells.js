@@ -2,6 +2,7 @@ import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
 import { getNativeElement, renderTemplate, getActivityList } from './helpers.js';
+import { StatblockUtility } from './utility-statblock.js';
 
 export class SpellsPanel {
     constructor(actor) {
@@ -20,7 +21,10 @@ export class SpellsPanel {
         
         // Get spells
         const spells = this.actor.items.filter(item => item.type === 'spell');
-        
+
+        // Built once per render — detection walks the whole actor.
+        const issueMap = StatblockUtility.getIssueMap(this.actor);
+
         // Map spells with favorite state
         const mappedSpells = spells.map(spell => {
             const isFavorite = favorites.includes(spell.id);
@@ -35,7 +39,8 @@ export class SpellsPanel {
                 type: spell.type,
                 actionType: this._getActionType(spell),
                 isFavorite: isFavorite,
-                categoryId: isAtWill ? 'category-spell-at-will' : `category-spell-level-${level}`
+                categoryId: isAtWill ? 'category-spell-at-will' : `category-spell-level-${level}`,
+                statblockIssue: StatblockUtility.getBadge(issueMap.get(spell.id))
             };
         });
 
@@ -271,6 +276,9 @@ export class SpellsPanel {
         this._removeEventListeners(panel);
         this._listenerController = new AbortController();
         const listenerSignal = this._listenerController.signal;
+
+        // Statblock warning badge — click to repair
+        StatblockUtility.activateBadgeListener(panel, this.actor, listenerSignal);
 
         // Category filter toggles - v13: Convert to native DOM event delegation
         // TODO: Convert panel.on() event delegation to native DOM addEventListener

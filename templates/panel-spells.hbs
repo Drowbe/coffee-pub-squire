@@ -154,6 +154,9 @@
                                     </span>
                                 </div>
                                 <div class="tray-buttons">
+                                    {{#if spell.statblockIssue}}
+                                    <i class="fa-solid fa-triangle-exclamation statblock-warning {{#unless spell.statblockIssue.canFix}}no-fix{{/unless}}" data-tooltip="{{{spell.statblockIssue.tooltip}}}"></i>
+                                    {{/if}}
                                     <i class="fa-solid fa-sun {{#unless spell.system.prepared}}faded{{/unless}}" title="Prepared"></i>
                                     <i class="fa-solid fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                                     <i class="fa-solid fa-feather"></i>
@@ -187,6 +190,9 @@
                         </span>
                     </div>
                     <div class="tray-buttons">
+                        {{#if this.statblockIssue}}
+                        <i class="fa-solid fa-triangle-exclamation statblock-warning {{#unless this.statblockIssue.canFix}}no-fix{{/unless}}" data-tooltip="{{{this.statblockIssue.tooltip}}}"></i>
+                        {{/if}}
                         <i class="fa-solid fa-sun {{#unless this.prepared}}faded{{/unless}}" title="Prepared"></i>
                         <i class="fa-solid fa-heart {{#unless this.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                         <i class="fa-solid fa-feather"></i>

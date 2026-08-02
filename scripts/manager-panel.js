@@ -18,6 +18,7 @@ import { CodexPanel } from './panel-codex.js';
 import { QuestPanel } from './panel-quest.js';
 import { MacrosPanel } from './panel-macros.js';
 import { PrintCharacterSheet } from './utility-print-character.js';
+import { StatblockUtility } from './utility-statblock.js';
 // REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
 import { HandleManager } from './manager-handle.js';
 import { trackModuleInterval, trackModuleTimeout, registerTimeoutId, registerIntervalId, clearTrackedInterval, clearTrackedTimeout } from './timer-utils.js';
@@ -297,6 +298,10 @@ export class PanelManager {
                         false
                     );
                 } else {
+                    // Repair before favoriting: a weapon that gains ammunition
+                    // is the same item either way, but the GM sees one coherent
+                    // pass rather than a warning that clears a moment later.
+                    await StatblockUtility.autoFixIfEnabled(actor);
                     await FavoritesPanel.syncNpcAutoFavorites(actor);
                 }
             }

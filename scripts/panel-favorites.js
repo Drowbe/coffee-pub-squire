@@ -2,6 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared } from './helpers.js';
 import { LightUtility } from './utility-lights.js';
+import { StatblockUtility } from './utility-statblock.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -594,6 +595,10 @@ export class FavoritesPanel {
         // Get active light source ID for this actor (from actor flag - most reliable)
         // This is similar to how favorites work - direct flag check
         const effectiveActiveLightSourceId = LightUtility.getActiveLightSourceId(this.actor);
+
+        // Built once per render rather than per row — detection walks the whole
+        // actor, so doing it inside the map would be quadratic.
+        const issueMap = StatblockUtility.getIssueMap(this.actor);
         
         // Map panel favorites in their original order
         const favoritedItems = await Promise.all(panelFavorites
@@ -620,6 +625,7 @@ export class FavoritesPanel {
                     showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
                     showStarIcon: item.type === 'feat',
                     isPrepared: isSpellPrepared(item),
+                    statblockIssue: StatblockUtility.getBadge(issueMap.get(item.id)),
                     isHandleFavorite: isHandleFavorite,
                     isLightSource: isLightSource,
                     isLightActive: isLightActive
@@ -1094,6 +1100,9 @@ export class FavoritesPanel {
                 }, 500);
             }
         }, { signal: listenerSignal });
+
+        // Statblock warning badge — click to repair
+        StatblockUtility.activateBadgeListener(panel, this.actor, listenerSignal);
 
         // Add clear all button listener
         // v13: Use nativeHtml instead of html

@@ -4,6 +4,7 @@ import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
 import { getNativeElement, renderTemplate, getActivityList } from './helpers.js';
 import { LightUtility } from './utility-lights.js';
+import { StatblockUtility } from './utility-statblock.js';
 
 export class WeaponsPanel {
     constructor(actor) {
@@ -27,6 +28,9 @@ export class WeaponsPanel {
         
         // Get active light source ID for this actor (from actor flag - most reliable)
         const effectiveActiveLightSourceId = LightUtility.getActiveLightSourceId(this.actor);
+
+        // Built once per render — detection walks the whole actor.
+        const issueMap = StatblockUtility.getIssueMap(this.actor);
         
         // Map weapons with favorite state and additional data
         const mappedWeapons = await Promise.all(weapons.map(async weapon => {
@@ -49,7 +53,8 @@ export class WeaponsPanel {
                 isFavorite: favorites.includes(weapon.id),
                 categoryId: `category-weapon-${weaponType}`,
                 isLightSource: isLightSource,
-                isLightActive: isLightActive
+                isLightActive: isLightActive,
+                statblockIssue: StatblockUtility.getBadge(issueMap.get(weapon.id))
             };
         }));
 
@@ -273,6 +278,12 @@ export class WeaponsPanel {
         };
         panel.addEventListener('click', categoryFilterHandler);
         this._eventHandlers.push({ element: panel, event: 'click', handler: categoryFilterHandler });
+
+        // Statblock warning badge — click to repair
+        const statblockHandler = StatblockUtility.activateBadgeListener(panel, this.actor);
+        if (statblockHandler) {
+            this._eventHandlers.push({ element: panel, event: 'click', handler: statblockHandler });
+        }
 
         // Add filter toggle handler
         // v13: Use native DOM event delegation

@@ -19,6 +19,9 @@
             </span>
         </div>
         <div class="tray-buttons">
+            {{#if statblockIssue}}
+            <i class="fa-solid fa-triangle-exclamation statblock-warning {{#unless statblockIssue.canFix}}no-fix{{/unless}}" data-tooltip="{{{statblockIssue.tooltip}}}"></i>
+            {{/if}}
             {{#if isLightSource}}
             <i class="fa-solid fa-lightbulb {{#unless isLightActive}}faded{{/unless}} {{#if isLightActive}}light-active{{/if}}" title="Toggle Light" data-item-id="{{id}}"></i>
             {{/if}}

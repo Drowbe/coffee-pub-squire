@@ -529,6 +529,53 @@ export const registerSettings = function() {
 
 
     // --------------------------------
+    // ---  STATBLOCK CHECK Settings ---
+    // --------------------------------
+
+	// ---------- Statblock Heading ----------
+	game.settings.register(MODULE.ID, "headingH3Statblock", {
+		name: 'NPC Statblock Checks',
+		hint: 'GM-only checks for statblocks that cannot actually be used in play — a bow with no arrows, a crossbow with no bolts, or a slot-casting spell list with no spell slots. Problems show as a warning badge on the affected item; click the badge to repair it.',
+		scope: "world",
+		config: true,
+		default: "",
+		type: String,
+	});
+
+    game.settings.register(MODULE.ID, 'statblockShowWarnings', {
+        name: 'Show Statblock Warnings',
+        hint: 'Display a clickable warning badge on NPC weapons and spells that cannot be used as configured. GM only — players never see these.',
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'statblockAutoFix', {
+        name: 'Repair Statblocks Automatically',
+        hint: 'Repair these problems as soon as an NPC is selected, instead of waiting for a click. Adds missing ammunition and grants the spell slots the creature\'s own spell list requires. Never removes or changes anything else.',
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        default: false
+    });
+
+    game.settings.register(MODULE.ID, 'statblockAmmoQuantity', {
+        name: 'Ammunition Restock Quantity',
+        hint: 'How many arrows, bolts, bullets, or needles to give an NPC when repairing missing or depleted ammunition.',
+        scope: 'world',
+        config: true,
+        type: Number,
+        default: 20,
+        range: {
+            min: 1,
+            max: 100,
+            step: 1,
+        },
+    });
+
+
+    // --------------------------------
     // ---      HEALTH Settings      ---
     // --------------------------------
 
