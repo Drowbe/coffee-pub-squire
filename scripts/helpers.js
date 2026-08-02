@@ -470,8 +470,26 @@ export const registerHelpers = function() {
             return 0;
         });
         
-        // Map handle favorites in the sorted order
+        // Cap what the handle renders. The flag itself is left alone: a world
+        // that predates the limit keeps its data, and silently deleting entries
+        // during an unrelated render would be worse than showing fewer. The add
+        // path refuses past the limit, so lists normalize as they're managed.
+        let limit = 5;
+        try {
+            const configured = Number(game.settings.get(MODULE.ID, 'handleFavoritesMax'));
+            if (Number.isFinite(configured) && configured > 0) limit = Math.floor(configured);
+        } catch (error) {
+            // Settings not ready — fall back to the default.
+        }
+
+        // Map handle favorites in the sorted order.
+        //
+        // slice(-limit), not slice(0, limit): the sort above is descending by
+        // panel position to compensate for the handle being rotated 180°, so
+        // the highest-priority favorites sit at the END of this array. Taking
+        // from the front would keep the user's five *least* important picks.
         return sortedHandleFavorites
+            .slice(-limit)
             .map(id => itemsById.get(id))
             .filter(item => item) // Remove any undefined items
             .map(item => {

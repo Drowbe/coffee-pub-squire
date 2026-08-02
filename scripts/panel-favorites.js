@@ -1,8 +1,9 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared } from './helpers.js';
+import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, showSquireToast } from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
+import { QuantityEditor } from './utility-quantity.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -80,19 +81,54 @@ export class FavoritesPanel {
         await actor.setFlag(MODULE.ID, 'favoriteHandle', ids);
     }
 
+    /**
+     * How many items may sit on the handle at once. The handle is a narrow
+     * vertical strip; past a handful the icons shrink below a comfortable
+     * click target, so this is a real constraint rather than a preference.
+     */
+    static getHandleFavoriteLimit() {
+        try {
+            const limit = Number(game.settings.get(MODULE.ID, 'handleFavoritesMax'));
+            return Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 5;
+        } catch (error) {
+            return 5;
+        }
+    }
+
+    /**
+     * @returns {Promise<boolean>} false if the handle is full and nothing was added
+     */
     static async addHandleFavorite(actor, itemId) {
         // Check if actor is from a compendium (more robust check)
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
         if (isFromCompendium) {
-            return;
+            return false;
         }
+
+        const ids = new Set(this.getHandleFavorites(actor));
+        if (ids.has(itemId)) return true;
+
+        // Refuse rather than silently evicting someone else's pick — which one
+        // to drop is the user's call, and a slot vanishing without being asked
+        // is worse than being told to free one.
+        const limit = this.getHandleFavoriteLimit();
+        if (ids.size >= limit) {
+            const item = actor.items.get(itemId);
+            showSquireToast(`The handle is full (${limit} maximum).`, {
+                subtitle: `Remove one before adding ${item?.name ?? 'another item'}.`,
+                icon: 'fa-solid fa-circle-exclamation',
+                color: '#ffb020'
+            });
+            return false;
+        }
+
         // Handle favorites are a subset of panel favorites — the handle sorts by
         // panel order and the panel is where you manage them, so an orphaned
         // handle entry would be unremovable from the UI. Promote it instead.
         await this.addPanelFavorite(actor, itemId);
-        const ids = new Set(this.getHandleFavorites(actor));
         ids.add(itemId);
         await this.setHandleFavorites(actor, Array.from(ids));
+        return true;
     }
 
     /**
@@ -448,10 +484,16 @@ export class FavoritesPanel {
                 // Also add these items to handle favorites for quick access — minus
                 // the generic actions: handle slots are scarce, and Ready/Disengage
                 // belong to every creature, not this one's kit.
+                //
+                // Truncated to the same limit the manual toggle enforces. A big
+                // statblock has far more usable content than the handle can show,
+                // so the first few in statblock order win and the rest stay in
+                // the favorites panel where there's room for them.
                 const handleToAdd = [...weapons, ...spells, ...statblockFeatures].map(item => item.id);
                 const existingHandle = FavoritesPanel.getHandleFavorites(actor)
                     .filter(id => id !== null && id !== undefined);
-                const newHandleFavorites = [...existingHandle, ...handleToAdd.filter(id => !existingHandle.includes(id))];
+                const newHandleFavorites = [...existingHandle, ...handleToAdd.filter(id => !existingHandle.includes(id))]
+                    .slice(0, FavoritesPanel.getHandleFavoriteLimit());
                 await actor.setFlag(MODULE.ID, 'favoriteHandle', newHandleFavorites);
             }
 
@@ -599,6 +641,7 @@ export class FavoritesPanel {
         // Built once per render rather than per row — detection walks the whole
         // actor, so doing it inside the map would be quadratic.
         const issueMap = StatblockUtility.getIssueMap(this.actor);
+        const canEditQuantity = QuantityEditor.canEdit(this.actor);
         
         // Map panel favorites in their original order
         const favoritedItems = await Promise.all(panelFavorites
@@ -626,6 +669,7 @@ export class FavoritesPanel {
                     showStarIcon: item.type === 'feat',
                     isPrepared: isSpellPrepared(item),
                     statblockIssue: StatblockUtility.getBadge(issueMap.get(item.id)),
+                    canEditQuantity: canEditQuantity && item.system?.quantity !== undefined,
                     isHandleFavorite: isHandleFavorite,
                     isLightSource: isLightSource,
                     isLightActive: isLightActive
@@ -1037,17 +1081,19 @@ export class FavoritesPanel {
             if (current) {
                 await FavoritesPanel.removeHandleFavorite(this.actor, itemId);
             } else {
+                // May refuse when the handle is full; it reports that itself.
                 await FavoritesPanel.addHandleFavorite(this.actor, itemId);
             }
             // Update the handle to reflect the change
             if (PanelManager.instance) {
                 await PanelManager.instance.updateHandle();
             }
-            
+
             // Refresh the favorites data to update isHandleFavorite properties
             this.favorites = await this._getFavorites();
-            
-            // Update the visual state of the dagger icon immediately
+
+            // Read the state back rather than assuming the toggle took, so a
+            // refused add leaves the icon faded instead of lying about it.
             const newState = FavoritesPanel.isHandleFavorite(this.actor, itemId);
             daggerButton.classList.toggle('faded', !newState);
         }, { signal: listenerSignal });
@@ -1103,6 +1149,9 @@ export class FavoritesPanel {
 
         // Statblock warning badge — click to repair
         StatblockUtility.activateBadgeListener(panel, this.actor, listenerSignal);
+
+        // Inline quantity editing on the count badge
+        QuantityEditor.activateListener(panel, this.actor, listenerSignal);
 
         // Add clear all button listener
         // v13: Use nativeHtml instead of html

@@ -528,6 +528,35 @@ export const registerSettings = function() {
     });
 
 
+    game.settings.register(MODULE.ID, 'handleFavoritesMax', {
+        name: 'Maximum Handle Favorites',
+        hint: 'How many items can sit on the tray handle at once. The handle is a narrow strip, so a small number keeps every icon big enough to hit; adding another once the limit is reached asks you to remove one first.',
+        scope: 'world',
+        config: true,
+        type: Number,
+        default: 5,
+        range: {
+            min: 1,
+            max: 12,
+            step: 1,
+        },
+    });
+
+    game.settings.register(MODULE.ID, 'quantityConfirmValue', {
+        name: 'Confirm Deleting Items Worth More Than',
+        hint: 'Setting an item\'s quantity to zero deletes it. Deletion is always confirmed for magical, attuned, or better-than-common items; this adds a confirmation for anything whose total value in gold exceeds this amount. Set to 0 to confirm on value never.',
+        scope: 'world',
+        config: true,
+        type: Number,
+        default: 50,
+        range: {
+            min: 0,
+            max: 1000,
+            step: 10,
+        },
+    });
+
+
     // --------------------------------
     // ---  STATBLOCK CHECK Settings ---
     // --------------------------------

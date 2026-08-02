@@ -5,6 +5,7 @@ import { TransferUtils } from './transfer-utils.js';
 import { getNativeElement, renderTemplate, getActivityList } from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
+import { QuantityEditor } from './utility-quantity.js';
 
 export class WeaponsPanel {
     constructor(actor) {
@@ -31,6 +32,7 @@ export class WeaponsPanel {
 
         // Built once per render — detection walks the whole actor.
         const issueMap = StatblockUtility.getIssueMap(this.actor);
+        const canEditQuantity = QuantityEditor.canEdit(this.actor);
         
         // Map weapons with favorite state and additional data
         const mappedWeapons = await Promise.all(weapons.map(async weapon => {
@@ -54,7 +56,8 @@ export class WeaponsPanel {
                 categoryId: `category-weapon-${weaponType}`,
                 isLightSource: isLightSource,
                 isLightActive: isLightActive,
-                statblockIssue: StatblockUtility.getBadge(issueMap.get(weapon.id))
+                statblockIssue: StatblockUtility.getBadge(issueMap.get(weapon.id)),
+                canEditQuantity: canEditQuantity && weapon.system?.quantity !== undefined
             };
         }));
 
@@ -283,6 +286,12 @@ export class WeaponsPanel {
         const statblockHandler = StatblockUtility.activateBadgeListener(panel, this.actor);
         if (statblockHandler) {
             this._eventHandlers.push({ element: panel, event: 'click', handler: statblockHandler });
+        }
+
+        // Inline quantity editing on the count badge
+        const quantityHandler = QuantityEditor.activateListener(panel, this.actor);
+        if (quantityHandler) {
+            this._eventHandlers.push({ element: panel, event: 'click', handler: quantityHandler });
         }
 
         // Add filter toggle handler

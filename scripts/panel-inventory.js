@@ -4,6 +4,7 @@ import { FavoritesPanel } from './panel-favorites.js';
 import { getNativeElement, renderTemplate, getActivityList } from './helpers.js';
 import { TransferUtils } from './transfer-utils.js';
 import { LightUtility } from './utility-lights.js';
+import { QuantityEditor } from './utility-quantity.js';
 
 export class InventoryPanel {
     constructor(actor) {
@@ -48,6 +49,8 @@ export class InventoryPanel {
         // This is similar to how favorites work - direct flag check
         const effectiveActiveLightSourceId = LightUtility.getActiveLightSourceId(this.actor);
 
+        const canEditQuantity = QuantityEditor.canEdit(this.actor);
+
         // Map items with favorite state and action type
         const mappedItems = await Promise.all(items.map(async item => {
             const isLightSource = await LightUtility.isLightSource(item);
@@ -70,7 +73,10 @@ export class InventoryPanel {
                 flags: item.flags || {},
                 isNew: item.getFlag(MODULE.ID, 'isNew') || false,
                 isLightSource: isLightSource,
-                isLightActive: isLightActive
+                isLightActive: isLightActive,
+                // Only stackable items have a quantity to edit; showing the badge
+                // for everything else would offer an edit that means nothing.
+                canEditQuantity: canEditQuantity && item.system?.quantity !== undefined
             };
         }));
 
@@ -272,6 +278,12 @@ export class InventoryPanel {
         };
         panel.addEventListener('click', categoryFilterHandler);
         this._eventHandlers.push({ element: panel, event: 'click', handler: categoryFilterHandler });
+
+        // Inline quantity editing on the count badge
+        const quantityHandler = QuantityEditor.activateListener(panel, this.actor);
+        if (quantityHandler) {
+            this._eventHandlers.push({ element: panel, event: 'click', handler: quantityHandler });
+        }
 
         // Add filter toggle handler
         // v13: Use native DOM event delegation

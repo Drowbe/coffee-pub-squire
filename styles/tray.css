@@ -528,6 +528,54 @@
     padding: 2px 4px 2px 4px;
 }
 
+/* Click-to-edit quantity. Only hints at being interactive on hover so a list
+   of counts doesn't read as a row of buttons. */
+.panel-item-badge.context-count.editable {
+    cursor: text;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.panel-item-badge.context-count.editable:hover {
+    background: rgba(231, 91, 1, 0.55);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+/* Sized to the badge so the row doesn't reflow when the field appears. */
+.panel-item-badge.context-count .quantity-edit-input {
+    width: 3.5ch;
+    min-width: 3.5ch;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-bottom: 1px solid rgba(231, 91, 1, 0.9);
+    border-radius: 0;
+    background: transparent;
+    color: #fff;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    text-align: center;
+    box-shadow: none;
+}
+
+.panel-item-badge.context-count .quantity-edit-input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* The spinners are too small to hit at this size and steal width. */
+.panel-item-badge.context-count .quantity-edit-input::-webkit-inner-spin-button,
+.panel-item-badge.context-count .quantity-edit-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.panel-item-badge.context-count .quantity-edit-input {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
 
 
 

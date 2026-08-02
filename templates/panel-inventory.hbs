@@ -18,7 +18,9 @@
             {{#if isNew}}<span class="new-tag">NEW</span>{{/if}}
             <span class="panel-item-context">
                 {{> action-badge actionType=actionType}}
-                {{#if quantity}}
+                {{#if canEditQuantity}}
+                <span class="panel-item-badge context-count editable" data-quantity-edit title="Quantity — click to edit, 0 removes the item">x{{quantity}}</span>
+                {{else if quantity}}
                 <span class="panel-item-badge context-count" title="Quantity">x{{quantity}}</span>
                 {{/if}}
             </span>
@@ -75,6 +77,7 @@
                 actionType=item.actionType 
                 system=item.system 
                 quantity=item.system.quantity 
+                canEditQuantity=item.canEditQuantity
                 isFavorite=item.isFavorite 
                 categoryId="category-inventory-equipment"
                 type=item.type
@@ -94,6 +97,7 @@
                 actionType=item.actionType 
                 system=item.system 
                 quantity=item.system.quantity 
+                canEditQuantity=item.canEditQuantity
                 isFavorite=item.isFavorite 
                 categoryId="category-inventory-consumable"
                 type=item.type
@@ -111,7 +115,8 @@
                 name=item.name 
                 actionType=item.actionType 
                 system=item.system 
-                quantity=item.system.quantity
+                quantity=item.system.quantity 
+                canEditQuantity=item.canEditQuantity
                 isFavorite=item.isFavorite 
                 categoryId="category-inventory-tool"
                 type=item.type
@@ -130,6 +135,7 @@
                 actionType=item.actionType 
                 system=item.system 
                 quantity=item.system.quantity 
+                canEditQuantity=item.canEditQuantity
                 isFavorite=item.isFavorite 
                 categoryId="category-inventory-loot"
                 type=item.type
@@ -148,6 +154,7 @@
                 actionType=item.actionType 
                 system=item.system 
                 quantity=item.system.quantity 
+                canEditQuantity=item.canEditQuantity
                 isFavorite=item.isFavorite 
                 categoryId="category-inventory-container"
                 type=item.type

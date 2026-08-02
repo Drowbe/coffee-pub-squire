@@ -16,6 +16,9 @@
             {{name}}
             <span class="panel-item-context">
                 {{> action-badge actionType=actionType}}
+                {{#if canEditQuantity}}
+                <span class="panel-item-badge context-count editable" data-quantity-edit title="Quantity — click to edit, 0 removes the item">x{{system.quantity}}</span>
+                {{/if}}
             </span>
         </div>
         <div class="tray-buttons">
@@ -62,6 +65,8 @@
                 name=weapon.name 
                 actionType=weapon.actionType 
                 system=weapon.system 
+                canEditQuantity=weapon.canEditQuantity 
+                statblockIssue=weapon.statblockIssue 
                 isFavorite=weapon.isFavorite 
                 isLightSource=weapon.isLightSource
                 isLightActive=weapon.isLightActive
@@ -79,6 +84,8 @@
                 name=weapon.name 
                 actionType=weapon.actionType 
                 system=weapon.system 
+                canEditQuantity=weapon.canEditQuantity 
+                statblockIssue=weapon.statblockIssue 
                 isFavorite=weapon.isFavorite 
                 isLightSource=weapon.isLightSource
                 isLightActive=weapon.isLightActive
@@ -96,6 +103,8 @@
                 name=weapon.name 
                 actionType=weapon.actionType 
                 system=weapon.system 
+                canEditQuantity=weapon.canEditQuantity 
+                statblockIssue=weapon.statblockIssue 
                 isFavorite=weapon.isFavorite 
                 isLightSource=weapon.isLightSource
                 isLightActive=weapon.isLightActive
@@ -113,6 +122,8 @@
                 name=weapon.name 
                 actionType=weapon.actionType 
                 system=weapon.system 
+                canEditQuantity=weapon.canEditQuantity 
+                statblockIssue=weapon.statblockIssue 
                 isFavorite=weapon.isFavorite 
                 isLightSource=weapon.isLightSource
                 isLightActive=weapon.isLightActive
@@ -130,6 +141,8 @@
                 name=weapon.name 
                 actionType=weapon.actionType 
                 system=weapon.system 
+                canEditQuantity=weapon.canEditQuantity 
+                statblockIssue=weapon.statblockIssue 
                 isFavorite=weapon.isFavorite 
                 isLightSource=weapon.isLightSource
                 isLightActive=weapon.isLightActive
