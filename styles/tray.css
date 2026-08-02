@@ -922,6 +922,33 @@
     display: none;
 }
 
+/* The inverse: this option only means anything while searching compendiums, so
+   it appears with that mode rather than sitting inert on the sheet. */
+.squire-tray[data-position="left"] [data-panel="control"] .control-search-option {
+    display: none;
+}
+
+.squire-tray[data-position="left"] [data-panel="control"].compendium-mode .control-search-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    cursor: pointer;
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.55);
+    user-select: none;
+}
+
+.squire-tray[data-position="left"] [data-panel="control"] .control-search-option:hover {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.squire-tray[data-position="left"] [data-panel="control"] .control-search-option input {
+    margin: 0;
+    flex: 0 0 auto;
+    cursor: pointer;
+}
+
 /* Hidden until quick-add mode is entered.
    Must carry the same `.squire-tray[data-position="left"]` scoping as the base
    .panel-container rule above, which sets `display: block` at (0,3,0). Without
@@ -966,6 +993,30 @@
 /* Results are read-only previews until added — no roll overlay on the image. */
 .compendium-search-panel .compendium-search-item .panel-item-image {
     opacity: 0.9;
+}
+
+/* Momentary "here" after scrolling a freshly added item into view. The NEW badge
+   from the createItem hook is the lasting marker; this just lands the eye. */
+.squire-tray[data-position="left"] .panel-item.just-added {
+    animation: squire-just-added 2.5s ease-out;
+}
+
+@keyframes squire-just-added {
+    0%, 60% {
+        background: rgba(231, 91, 1, 0.35);
+        box-shadow: 0 0 8px rgba(231, 91, 1, 0.5);
+    }
+    100% {
+        background: transparent;
+        box-shadow: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .squire-tray[data-position="left"] .panel-item.just-added {
+        animation: none;
+        outline: 2px solid rgba(231, 91, 1, 0.6);
+    }
 }
 
 /* Rows drag onto a sheet or the canvas as well as offering the add button. */

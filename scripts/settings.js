@@ -821,6 +821,15 @@ export const registerSettings = function() {
         default: false
     });
 
+    // Remembered per-user state for the compendium quick-add checkbox. Not in
+    // the config UI — it's toggled inline where it takes effect.
+    game.settings.register(MODULE.ID, 'compendiumClearOnAdd', {
+        scope: 'user',
+        config: false,
+        type: Boolean,
+        default: true
+    });
+
     // Panel Visibility Settings
 
     game.settings.register(MODULE.ID, 'showFavoritesPanel', {

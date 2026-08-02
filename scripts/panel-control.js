@@ -2,6 +2,7 @@ import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { getNativeElement, renderTemplate } from './helpers.js';
 import { CompendiumSearchUtility } from './utility-compendium-search.js';
+import { trackModuleTimeout } from './timer-utils.js';
 
 export class ControlPanel {
     constructor(actor) {
@@ -21,7 +22,8 @@ export class ControlPanel {
 
         const templateData = {
             position: game.settings.get(MODULE.ID, 'trayPosition'),
-            canAddFromCompendiums: CompendiumSearchUtility.canAdd(this.actor)
+            canAddFromCompendiums: CompendiumSearchUtility.canAdd(this.actor),
+            clearOnAdd: game.settings.get(MODULE.ID, 'compendiumClearOnAdd')
         };
 
         const content = await renderTemplate(TEMPLATES.PANEL_CONTROL, templateData);
@@ -45,7 +47,64 @@ export class ControlPanel {
      */
     _bindSearchPanelClose() {
         const searchPanel = PanelManager.instance?.compendiumSearchPanel;
-        if (searchPanel) searchPanel.onRequestClose = () => this.setCompendiumMode(false);
+        if (!searchPanel) return;
+        searchPanel.onRequestClose = () => this.setCompendiumMode(false);
+        // The results panel doesn't own the search box, so it asks for the reset
+        // rather than reaching across to clear it.
+        searchPanel.onRequestClearSearch = () => this.clearSearch();
+        searchPanel.onRequestRevealItem = (item) => this.revealAddedItem(item);
+    }
+
+    /**
+     * Leave search mode and scroll the freshly added item into view.
+     *
+     * The alternative to staying in search: you added the one thing you came
+     * for, so the useful next view is the sheet with that item in front of you.
+     */
+    async revealAddedItem(item) {
+        if (!item) return;
+        await this.setCompendiumMode(false);
+
+        // The item arrives via createItem hooks that re-render whichever panel
+        // holds it, and those run independently of this call — so poll briefly
+        // for the row rather than guessing which render wins the race.
+        const row = await this._waitForItemRow(item.id);
+        if (!row) return;
+
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Items already get a NEW badge from the createItem hook; this is just a
+        // momentary "here" so the eye lands in the right place after the scroll.
+        row.classList.add('just-added');
+        trackModuleTimeout(() => row.classList.remove('just-added'), 2500);
+    }
+
+    /**
+     * Poll for an item's row, bounded so a hidden or unrendered panel gives up
+     * quietly rather than looping. Returns null if it never appears — which is
+     * the normal outcome when the panel holding it is toggled off.
+     */
+    async _waitForItemRow(itemId, attempts = 12) {
+        for (let i = 0; i < attempts; i++) {
+            const row = this.element?.querySelector(
+                `.panel-containers.stacked .panel-item[data-item-id="${itemId}"]`
+            );
+            // offsetParent is null for anything inside a display:none panel.
+            if (row?.offsetParent) return row;
+            await new Promise(resolve => requestAnimationFrame(resolve));
+        }
+        return null;
+    }
+
+    /** Empty the search box and reset whatever it was driving. */
+    clearSearch() {
+        const searchInput = this.element
+            ?.querySelector('[data-panel="control"]')
+            ?.querySelector('.global-search');
+        if (searchInput) searchInput.value = '';
+        this._handleSearch('');
+        // The point of clearing after an add is to type the next lookup, so put
+        // the caret back rather than making the user click the box again.
+        searchInput?.focus();
     }
 
     /**
@@ -345,6 +404,17 @@ export class ControlPanel {
                 await this._togglePanel(panelType);
             });
         });
+
+        // "Clear search after adding" — remembered per user.
+        const clearOnAdd = controlPanel.querySelector('.compendium-clear-on-add');
+        if (clearOnAdd) {
+            const newClearOnAdd = clearOnAdd.cloneNode(true);
+            clearOnAdd.parentNode?.replaceChild(newClearOnAdd, clearOnAdd);
+
+            newClearOnAdd.addEventListener('change', async (event) => {
+                await game.settings.set(MODULE.ID, 'compendiumClearOnAdd', event.target.checked);
+            });
+        }
 
         // Sheet / search mode switch. Delegated on the container rather than
         // bound per icon, so the header markup can change without rewiring.

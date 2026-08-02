@@ -12,6 +12,12 @@
     <input type="text" class="global-search" placeholder="Search All Sections...">
     <i class="fa-solid fa-times search-clear" title="Clear Search"></i>
 </div>
+{{#if canAddFromCompendiums}}
+<label class="control-search-option" title="On: adding empties the search box and stays here, for adding several things. Off: adding returns to the character sheet and scrolls to the new item.">
+    <input type="checkbox" class="compendium-clear-on-add" {{#if clearOnAdd}}checked{{/if}}>
+    <span>Clear search and keep open on add</span>
+</label>
+{{/if}}
 <div class="control-icons">
     <i class="fa-solid fa-heart control-toggle" data-toggle-panel="favorites" title="Toggle Favorites Panel"></i>
     <i class="fa-solid fa-swords control-toggle" data-toggle-panel="weapons" title="Toggle Weapons Panel"></i>

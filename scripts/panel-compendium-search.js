@@ -130,7 +130,19 @@ export class CompendiumSearchPanel {
             button.classList.add('faded');
 
             try {
-                await CompendiumSearchUtility.addToActor(this.actor, uuid, 1);
+                const created = await CompendiumSearchUtility.addToActor(this.actor, uuid, 1);
+                // Both branches only fire on a successful add: after a failure
+                // the query is what you need to retry with, and there is no item
+                // to go and look at.
+                if (created) {
+                    if (game.settings.get(MODULE.ID, 'compendiumClearOnAdd')) {
+                        // Adding several things: empty the box, stay here.
+                        this.onRequestClearSearch?.();
+                    } else {
+                        // Adding one thing: go look at it on the sheet.
+                        this.onRequestRevealItem?.(created);
+                    }
+                }
             } finally {
                 button.dataset.processing = 'false';
                 button.classList.remove('faded');
