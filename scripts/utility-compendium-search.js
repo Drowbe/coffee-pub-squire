@@ -8,7 +8,7 @@ import { showSquireToast } from './helpers.js';
  * upstream signature change is one file to reconcile — the panel below only
  * ever sees the normalized shape defined by `_normalize()`.
  *
- *   api.compendiums.searchDetailed(query, type, {
+ *   api.compendiums.searchDetailed(query, types[], {
  *       itemType, limit, sources, minLength, fuzzy
  *   }) -> Promise<{
  *       results: Array<{ uuid, name, type, documentClass, img,
@@ -18,6 +18,9 @@ import { showSquireToast } from './helpers.js';
  *
  * `search()` returns the same thing as `.results` alone; we use the detailed
  * form so the truncation notice can state a fact instead of inferring one.
+ *
+ * The type parameter takes an array, and passing all of them in one call is
+ * load-bearing rather than a convenience — see the comment in search().
  *
  * When the API is absent `isAvailable()` is false and the panel says so rather
  * than silently returning nothing. Deliberately no local fallback that reads
@@ -32,8 +35,16 @@ import { showSquireToast } from './helpers.js';
 // its own configured packs, so grouping results by source separates them anyway.
 const SEARCHABLE_TYPES = ['Item', 'Spell', 'Feature'];
 
-// Below this, a query matches most of the SRD and isn't worth running.
-const MIN_QUERY_LENGTH = 2;
+// Below this, a query matches most of the SRD and isn't worth running. Matches
+// Blacksmith's own minimum, raised to 3 to cut per-keystroke churn — a
+// multi-type search opens every mapped pack, so short queries are expensive as
+// well as useless.
+//
+// This is passed explicitly on every call, which means a change to the API's
+// default does NOT reach us. Deliberate — the same number gates the local
+// short-circuit and the "type at least N characters" prompt, so it has to be a
+// value we hold. Update it here when the upstream minimum moves.
+const MIN_QUERY_LENGTH = 3;
 
 // Per-type cap. The panel renders into a narrow tray column, and a two-letter
 // query against a full pack set is thousands of hits.
@@ -56,7 +67,7 @@ export class CompendiumSearchUtility {
 
     /**
      * Types this world actually has mappings for, intersected with the ones we
-     * care about — searching a type with no configured packs just wastes a call.
+     * care about. Passed to the API as a single array.
      */
     static getSearchableTypes() {
         const api = this.getApi();
@@ -76,15 +87,16 @@ export class CompendiumSearchUtility {
      * Tolerant about field names so a small upstream naming difference doesn't
      * break the panel — this is the seam that absorbs it.
      */
-    static _normalize(entry, fallbackType) {
+    static _normalize(entry) {
         if (!entry?.uuid) return null;
         const source = entry.source ?? 'world';
         return {
             uuid: entry.uuid,
             name: entry.name ?? 'Unknown',
-            // Blacksmith's index entries carry the document subtype; the API
-            // type is the fallback when a result omits it.
-            type: entry.type ?? fallbackType ?? '',
+            // Document subtype, shown as the row badge. With one multi-type call
+            // there's no per-call type to fall back on, and none is needed —
+            // index entries carry it.
+            type: entry.type ?? '',
             // The document CLASS, for Foundry's native drag payload — distinct
             // from `type`, which is the subtype shown on the row badge. Not
             // derivable from the type token we searched: a Spell result is
@@ -127,56 +139,59 @@ export class CompendiumSearchUtility {
         const api = this.getApi();
         const types = this.getSearchableTypes();
 
-        // `limit` stops the scan, not just the output: once reached, remaining
-        // packs are never indexed, so the tail of the priority order can drop
-        // out entirely rather than being sampled. The API reports this directly.
+        // One call with every type, never one call per type.
         //
-        // Deliberately not inferred from `results.length === limit`: a scan that
-        // fills the cap exactly with the last available candidate is complete,
-        // so that test raises a false "content is missing" on any query that
-        // happens to land on a round number.
-        let truncated = false;
-        const skipped = new Set();
-        const detailed = typeof api.searchDetailed === 'function';
-
+        // Synthetic types have no packs of their own — spells and features live
+        // in Item packs, reached by subtype filter. So a pack mapped to both
+        // Item and Spell returns its spells through both passes (the Item pass
+        // unfiltered, the Spell pass subtype-filtered over the same entries),
+        // and merging those listed every such row twice. Whether that happened
+        // depended on the GM's mapping rather than on anything here.
+        //
+        // The single call also keeps the grouping intact: per-call results are
+        // grouped by source, but merging three of them re-interleaves the packs,
+        // undoing the source-then-tier ordering the API provides. And `limit`
+        // becomes one shared budget rather than three, so a 40-cap means 40 rows
+        // and not 120.
+        //
+        // `limit` stops the scan, not just the output: once reached, remaining
+        // packs are never opened, so the tail of the priority order drops out
+        // rather than being sampled. The API reports that directly — deliberately
+        // not inferred from a full result page, since a scan that fills the cap
+        // with the last available candidate is complete and that test would
+        // raise a false "content is missing" on any round-numbered result set.
         const options = {
             limit: RESULT_LIMIT,
             minLength: MIN_QUERY_LENGTH,
             fuzzy: true
         };
 
-        const settled = await Promise.all(types.map(async type => {
-            try {
-                const raw = detailed
-                    ? await api.searchDetailed(trimmed, type, options)
-                    : { results: await api.search(trimmed, type, options) };
+        let entries = [];
+        let truncated = false;
+        let skippedCount = 0;
 
-                const results = raw?.results;
-                if (!Array.isArray(results)) return [];
+        try {
+            const detailed = typeof api.searchDetailed === 'function';
+            const raw = detailed
+                ? await api.searchDetailed(trimmed, types, options)
+                : { results: await api.search(trimmed, types, options) };
 
-                if (raw.truncated) truncated = true;
-                // A source skipped for one type may have been scanned for
-                // another, so this counts sources where some content went
-                // unsearched — which is what the notice claims.
-                for (const source of raw.skippedSources ?? []) skipped.add(source);
-
-                return results.map(entry => this._normalize(entry, type)).filter(Boolean);
-            } catch (error) {
-                console.error(`${MODULE.ID}: Compendium search failed for type ${type}:`, error);
-                return [];
+            if (Array.isArray(raw?.results)) {
+                // Deduped upstream at bucketing time, so a doubled entry can't
+                // even occupy two result slots.
+                entries = raw.results.map(entry => this._normalize(entry)).filter(Boolean);
             }
-        }));
+            truncated = raw?.truncated === true;
+            skippedCount = Array.isArray(raw?.skippedSources) ? raw.skippedSources.length : 0;
+        } catch (error) {
+            console.error(`${MODULE.ID}: Compendium search failed:`, error);
+        }
 
-        // Merge, dropping any uuid seen twice — a pack mapped to more than one
-        // type would otherwise show the same item in two groups.
-        const seen = new Set();
         const groups = [];
         const groupsBySource = new Map();
         let total = 0;
 
-        for (const entry of settled.flat()) {
-            if (seen.has(entry.uuid)) continue;
-            seen.add(entry.uuid);
+        for (const entry of entries) {
             total++;
 
             // Keyed on source, never on sourceLabel: two packs can share a label
@@ -199,7 +214,7 @@ export class CompendiumSearchUtility {
             group.items.push(entry);
         }
 
-        return { available: true, tooShort: false, groups, total, truncated, skippedCount: skipped.size };
+        return { available: true, tooShort: false, groups, total, truncated, skippedCount };
     }
 
     /* ---------------------------------------------------------------- */

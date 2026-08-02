@@ -124,13 +124,16 @@ export class CompendiumSearchPanel {
             // A compendium round-trip is slow enough to double-click through.
             if (button.dataset.processing === 'true') return;
             button.dataset.processing = 'true';
-            button.classList.add('fa-spin');
+            // `.faded` is the tray's existing in-flight/inactive vocabulary.
+            // Spinning a plus is close to invisible — it's near enough to
+            // radially symmetric that it reads as nothing happening.
+            button.classList.add('faded');
 
             try {
                 await CompendiumSearchUtility.addToActor(this.actor, uuid, 1);
             } finally {
                 button.dataset.processing = 'false';
-                button.classList.remove('fa-spin');
+                button.classList.remove('faded');
             }
         }, { signal });
 

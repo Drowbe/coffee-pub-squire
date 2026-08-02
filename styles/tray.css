@@ -916,10 +916,10 @@
     transform: rotate(45deg);
 }
 
-/* Panel toggles do nothing while quick-add is showing. */
-.squire-tray[data-position="left"] [data-panel="control"] .control-toggle.mode-disabled {
-    opacity: 0.2;
-    pointer-events: none;
+/* Panel toggles have nothing to act on while quick-add is showing, so the whole
+   row collapses instead of sitting greyed out and eating vertical space. */
+.squire-tray[data-position="left"] [data-panel="control"].compendium-mode .control-icons {
+    display: none;
 }
 
 /* Hidden until quick-add mode is entered.
@@ -1022,13 +1022,10 @@
     opacity: 0.7;
 }
 
-.compendium-search-panel .compendium-search-add {
-    color: #6fbf5f;
-}
-
-.compendium-search-panel .compendium-search-add:hover {
-    color: #9fe88f;
-}
+/* Add and view are action icons, so they inherit the standard .tray-buttons
+   treatment (muted gold, orange on hover). No colour override here on purpose:
+   in this tray a coloured glyph means state — equipped, prepared, favorited,
+   lit — and colouring an action makes it read as a status it doesn't have. */
 
 .compendium-search-panel .compendium-search-close {
     cursor: pointer;

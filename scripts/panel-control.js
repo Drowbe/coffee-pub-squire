@@ -120,11 +120,10 @@ export class ControlPanel {
         controlEl?.querySelector('.compendium-search-toggle')
             ?.classList.toggle('active', this._compendiumMode);
 
-        // Panel toggle icons do nothing in quick-add mode; fade them so that
-        // reads as disabled rather than broken.
-        controlEl?.querySelectorAll('.control-toggle').forEach(toggle => {
-            toggle.classList.toggle('mode-disabled', this._compendiumMode);
-        });
+        // The panel toggles have nothing to toggle in quick-add mode, so the row
+        // collapses rather than sitting there greyed out — it's pure dead space
+        // in a column where vertical room is the scarce thing.
+        controlEl?.classList.toggle('compendium-mode', this._compendiumMode);
 
         // v13: Use native DOM methods instead of jQuery
         ['favorites', 'weapons', 'spells', 'features', 'inventory'].forEach(panel => {
