@@ -922,14 +922,15 @@
     pointer-events: none;
 }
 
-/* Hidden until quick-add mode is entered. Declared here as well as set inline by
-   the control panel so there's no flash of an empty results panel on first
-   render, before _updateVisibility has run. */
-.panel-container[data-panel="compendium-search"] {
+/* Hidden until quick-add mode is entered.
+   Must carry the same `.squire-tray[data-position="left"]` scoping as the base
+   .panel-container rule above, which sets `display: block` at (0,3,0). Without
+   it this rule loses on specificity and the panel can never be hidden. */
+.squire-tray[data-position="left"] .panel-container[data-panel="compendium-search"] {
     display: none;
 }
 
-.panel-container[data-panel="compendium-search"].visible {
+.squire-tray[data-position="left"] .panel-container[data-panel="compendium-search"].visible {
     display: block;
 }
 
@@ -965,6 +966,46 @@
 /* Results are read-only previews until added — no roll overlay on the image. */
 .compendium-search-panel .compendium-search-item .panel-item-image {
     opacity: 0.9;
+}
+
+/* Rows drag onto a sheet or the canvas as well as offering the add button. */
+.compendium-search-panel .compendium-search-item {
+    cursor: grab;
+}
+
+.compendium-search-panel .compendium-search-item:active {
+    cursor: grabbing;
+}
+
+/* Pack name leads; package name is the quiet right-aligned half. Two elements
+   rather than one concatenated string: "Equipment" alone is ambiguous (several
+   packages ship a pack by that name) and "Package: Pack" is a mouthful in a
+   narrow column. */
+.compendium-search-panel .compendium-search-group {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.compendium-search-panel .compendium-search-group-pack {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.compendium-search-panel .compendium-search-group-package {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.68rem;
+    opacity: 0.5;
+    font-weight: normal;
+    text-transform: none;
 }
 
 .compendium-search-panel .compendium-search-truncated {

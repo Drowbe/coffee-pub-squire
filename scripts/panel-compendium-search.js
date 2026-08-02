@@ -89,7 +89,8 @@ export class CompendiumSearchPanel {
             tooShort: this.results.tooShort,
             groups: this.results.groups,
             total: this.results.total,
-            truncated: this.results.truncated
+            truncated: this.results.truncated,
+            skippedCount: this.results.skippedCount
         };
 
         const content = await renderTemplate(TEMPLATES.PANEL_COMPENDIUM_SEARCH, templateData);
@@ -145,6 +146,29 @@ export class CompendiumSearchPanel {
             if (!uuid) return;
             const doc = await fromUuid(uuid);
             doc?.sheet?.render(true);
+        }, { signal });
+
+        // Drag straight onto a sheet, the canvas, or a journal.
+        //
+        // `{type, uuid}` on `text/plain` is what TextEditor.getDragEventData
+        // parses and every core _onDrop* handler expects. `type` here is the
+        // document CLASS from the API, not the row's subtype badge — a spell
+        // result is class 'Item', so deriving this from the searched type token
+        // would build payloads no sheet accepts, and only for spell rows.
+        panel.addEventListener('dragstart', (event) => {
+            const row = event.target.closest?.('.compendium-search-item');
+            if (!row?.dataset.uuid || !row.dataset.documentClass) return;
+
+            event.dataTransfer.setData('text/plain', JSON.stringify({
+                type: row.dataset.documentClass,
+                uuid: row.dataset.uuid
+            }));
+            event.dataTransfer.effectAllowed = 'copy';
+
+            // Drag the icon, not the row: a full-width row ghost covers the
+            // sheet you're aiming at.
+            const thumb = row.querySelector('.panel-item-image');
+            if (thumb) event.dataTransfer.setDragImage(thumb, 16, 16);
         }, { signal });
 
         // Leave search mode

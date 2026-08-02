@@ -4,22 +4,26 @@ import { showSquireToast } from './helpers.js';
 /**
  * Adapter over Blacksmith's Compendiums API for the tray's quick-add search.
  *
- * Everything that touches the upstream API is funnelled through here, so when
- * the shipped `search()` differs from the requested signature there is exactly
- * one file to reconcile — the panel below it only ever sees the normalized
- * shape defined by `_normalize()`.
+ * Everything that touches the upstream API is funnelled through here, so an
+ * upstream signature change is one file to reconcile — the panel below only
+ * ever sees the normalized shape defined by `_normalize()`.
  *
- * Requested signature (see the API request; not yet shipped at time of writing):
- *
- *   api.compendiums.search(query, type, {
+ *   api.compendiums.searchDetailed(query, type, {
  *       itemType, limit, sources, minLength, fuzzy
- *   }) -> Promise<Array<{ uuid, name, type, img, source, sourceLabel, matchType }>>
+ *   }) -> Promise<{
+ *       results: Array<{ uuid, name, type, documentClass, img,
+ *                        source, sourceLabel, sourcePackage, matchType }>,
+ *       truncated, searchOrder, scannedSources, skippedSources
+ *   }>
  *
- * Until it exists, `isAvailable()` is false and the panel says so rather than
- * silently returning nothing. Deliberately no local fallback that reads pack
- * indexes directly: that would build a second index cache alongside Blacksmith's
- * with independent invalidation, which is the whole reason the search belongs
- * upstream.
+ * `search()` returns the same thing as `.results` alone; we use the detailed
+ * form so the truncation notice can state a fact instead of inferring one.
+ *
+ * When the API is absent `isAvailable()` is false and the panel says so rather
+ * than silently returning nothing. Deliberately no local fallback that reads
+ * pack indexes directly: that would build a second index cache alongside
+ * Blacksmith's with independent invalidation, which is the whole reason the
+ * search belongs upstream.
  */
 
 // Types worth offering in a character-facing quick-add. Blacksmith maps these
@@ -81,14 +85,22 @@ export class CompendiumSearchUtility {
             // Blacksmith's index entries carry the document subtype; the API
             // type is the fallback when a result omits it.
             type: entry.type ?? fallbackType ?? '',
+            // The document CLASS, for Foundry's native drag payload — distinct
+            // from `type`, which is the subtype shown on the row badge. Not
+            // derivable from the type token we searched: a Spell result is
+            // documentClass 'Item', because spells live in Item packs.
+            documentClass: entry.documentClass ?? '',
             img: entry.img || 'icons/svg/item-bag.svg',
             source,
-            // Never derive this. Source-aggregated mapping types (Spell, Feature,
-            // Class, Species, Background, Subclass) key getChoices() by source id
-            // rather than pack id, so looking the label up ourselves returns
-            // undefined for exactly those types. search() already resolves
-            // choices → pack metadata label → raw id, so take what it gives.
+            // Take both label fields as given. Never rebuild them from
+            // getChoices(), whose values are display strings for a settings
+            // dropdown rather than structured data.
+            //
+            // The pack name alone is ambiguous — several packages ship a pack
+            // called "Equipment" — so the package name is rendered alongside it
+            // as a quiet second element rather than concatenated into one string.
             sourceLabel: entry.sourceLabel || source,
+            sourcePackage: entry.sourcePackage ?? '',
             matchType: entry.matchType ?? ''
         };
     }
@@ -106,31 +118,48 @@ export class CompendiumSearchUtility {
         const trimmed = String(query ?? '').trim();
 
         if (!this.isAvailable()) {
-            return { available: false, tooShort: false, groups: [], total: 0, truncated: false };
+            return { available: false, tooShort: false, groups: [], total: 0, truncated: false, skippedCount: 0 };
         }
         if (trimmed.length < MIN_QUERY_LENGTH) {
-            return { available: true, tooShort: true, groups: [], total: 0, truncated: false };
+            return { available: true, tooShort: true, groups: [], total: 0, truncated: false, skippedCount: 0 };
         }
 
         const api = this.getApi();
         const types = this.getSearchableTypes();
 
         // `limit` stops the scan, not just the output: once reached, remaining
-        // packs are never indexed, so the tail of the priority order can drop out
-        // entirely rather than being sampled. A type that comes back exactly at
-        // the limit was almost certainly truncated, and the panel says so — a
-        // silent cap would read as "that's everything".
+        // packs are never indexed, so the tail of the priority order can drop
+        // out entirely rather than being sampled. The API reports this directly.
+        //
+        // Deliberately not inferred from `results.length === limit`: a scan that
+        // fills the cap exactly with the last available candidate is complete,
+        // so that test raises a false "content is missing" on any query that
+        // happens to land on a round number.
         let truncated = false;
+        const skipped = new Set();
+        const detailed = typeof api.searchDetailed === 'function';
+
+        const options = {
+            limit: RESULT_LIMIT,
+            minLength: MIN_QUERY_LENGTH,
+            fuzzy: true
+        };
 
         const settled = await Promise.all(types.map(async type => {
             try {
-                const results = await api.search(trimmed, type, {
-                    limit: RESULT_LIMIT,
-                    minLength: MIN_QUERY_LENGTH,
-                    fuzzy: true
-                });
+                const raw = detailed
+                    ? await api.searchDetailed(trimmed, type, options)
+                    : { results: await api.search(trimmed, type, options) };
+
+                const results = raw?.results;
                 if (!Array.isArray(results)) return [];
-                if (results.length >= RESULT_LIMIT) truncated = true;
+
+                if (raw.truncated) truncated = true;
+                // A source skipped for one type may have been scanned for
+                // another, so this counts sources where some content went
+                // unsearched — which is what the notice claims.
+                for (const source of raw.skippedSources ?? []) skipped.add(source);
+
                 return results.map(entry => this._normalize(entry, type)).filter(Boolean);
             } catch (error) {
                 console.error(`${MODULE.ID}: Compendium search failed for type ${type}:`, error);
@@ -150,16 +179,27 @@ export class CompendiumSearchUtility {
             seen.add(entry.uuid);
             total++;
 
+            // Keyed on source, never on sourceLabel: two packs can share a label
+            // but never an id, so grouping by name would silently merge the
+            // PHB's "Equipment" with the DMG's.
             let group = groupsBySource.get(entry.source);
             if (!group) {
-                group = { source: entry.source, sourceLabel: entry.sourceLabel, items: [] };
+                group = {
+                    source: entry.source,
+                    sourceLabel: entry.sourceLabel,
+                    // Suppressed when it just repeats the pack name.
+                    sourcePackage: entry.sourcePackage && entry.sourcePackage !== entry.sourceLabel
+                        ? entry.sourcePackage
+                        : '',
+                    items: []
+                };
                 groupsBySource.set(entry.source, group);
                 groups.push(group);
             }
             group.items.push(entry);
         }
 
-        return { available: true, tooShort: false, groups, total, truncated };
+        return { available: true, tooShort: false, groups, total, truncated, skippedCount: skipped.size };
     }
 
     /* ---------------------------------------------------------------- */

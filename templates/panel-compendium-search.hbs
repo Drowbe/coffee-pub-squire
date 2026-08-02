@@ -29,9 +29,15 @@
         </div>
         {{else if groups}}
         {{#each groups}}
-        <div class="category-header">{{this.sourceLabel}}</div>
+        <div class="category-header compendium-search-group">
+            <span class="compendium-search-group-pack">{{this.sourceLabel}}</span>
+            {{#if this.sourcePackage}}
+            <span class="compendium-search-group-package">{{this.sourcePackage}}</span>
+            {{/if}}
+        </div>
         {{#each this.items}}
-        <div class="panel-item compendium-search-item" data-uuid="{{this.uuid}}">
+        <div draggable="true" class="panel-item compendium-search-item"
+             data-uuid="{{this.uuid}}" data-document-class="{{this.documentClass}}">
             <div class="panel-item-row">
                 <div class="panel-item-image-container">
                     <img draggable="false" class="panel-item-image" src="{{this.img}}" alt="{{this.name}}"/>
@@ -55,7 +61,11 @@
         {{#if truncated}}
         <div class="compendium-search-truncated">
             <i class="fa-solid fa-circle-info"></i>
-            Showing the first {{total}} matches. Lower-priority compendiums may not be listed — narrow the search to see them.
+            {{#if skippedCount}}
+            {{skippedCount}} {{#if (eq skippedCount 1)}}compendium was{{else}}compendiums were{{/if}} not searched — narrow the search to reach {{#if (eq skippedCount 1)}}it{{else}}them{{/if}}.
+            {{else}}
+            More matches exist than are shown — narrow the search to see them.
+            {{/if}}
         </div>
         {{/if}}
         {{else}}

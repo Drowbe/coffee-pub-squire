@@ -33,6 +33,19 @@ export class ControlPanel {
         
         this._activateListeners(this.element);
         this._updateVisibility();
+        this._bindSearchPanelClose();
+    }
+
+    /**
+     * Point the results panel's × at this control panel.
+     *
+     * Bound on every render, not just on entering the mode: PanelManager builds
+     * fresh panel instances when the tray rebuilds, and a callback captured on a
+     * previous instance would leave the × doing nothing.
+     */
+    _bindSearchPanelClose() {
+        const searchPanel = PanelManager.instance?.compendiumSearchPanel;
+        if (searchPanel) searchPanel.onRequestClose = () => this.setCompendiumMode(false);
     }
 
     /**
@@ -62,10 +75,7 @@ export class ControlPanel {
         this._compendiumMode = enabled;
 
         const searchPanel = PanelManager.instance?.compendiumSearchPanel;
-        if (searchPanel) {
-            // The panel asks to be closed via its own × button.
-            searchPanel.onRequestClose = () => this.setCompendiumMode(false);
-        }
+        this._bindSearchPanelClose();
 
         this._updateVisibility();
 
@@ -73,15 +83,23 @@ export class ControlPanel {
         const searchInput = controlPanel?.querySelector('.global-search');
         if (searchInput) {
             searchInput.placeholder = enabled ? 'Search Compendiums...' : 'Search All Sections...';
+            searchInput.value = '';
         }
+
+        // The term means something different on each side — "longbow" as a panel
+        // filter hides everything you own, and as a compendium query it's a
+        // search you didn't ask for. Carrying it across is wrong in both
+        // directions, so each mode starts clean.
+        this._searchTerm = '';
 
         if (enabled) {
             await searchPanel?.render(this.element);
-            searchPanel?.setQuery(this._searchTerm);
+            searchPanel?.setQuery('');
             searchInput?.focus();
         } else {
-            // Restore the filter the stacked panels were showing before.
-            this._handleSearch(this._searchTerm);
+            // Clear the filter the panels were showing, and restore any category
+            // headers and "no matches" rows the previous search had hidden.
+            this._handleSearch('');
         }
     }
 
