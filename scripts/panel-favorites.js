@@ -16,15 +16,18 @@ function getBlacksmith() {
 // reminders (see: 25 hearts on one CR 9 caster). Matched by lowercased name.
 const GENERIC_ACTIONS_DEFAULT = [
     'activate an item', 'attack', 'break an object', 'cast a spell',
-    'check cover', 'climb', 'crawl', 'dash', 'delay', 'difficult terrain',
-    'disengage', 'dismount', 'dodge', 'drop prone', 'end concentration',
-    'escape', 'fall', 'falling', 'forced march', 'grapple', 'help',
-    'hide', 'high jump', 'holding breath', 'improvise', 'influence',
-    'interact', 'interact with an object', 'jump', 'long jump', 'magic',
+    'check cover', 'climb', 'climb onto a bigger creature', 'crawl', 'dash',
+    'delay', 'difficult terrain', 'disarm', 'disengage', 'dismount', 'dodge',
+    'doff armor', 'don armor', 'drop prone', 'end concentration', 'escape',
+    'fall', 'falling', 'forced march', 'grapple', 'help', 'hide', 'high jump',
+    'hold breath', 'holding breath', 'improvise', 'influence', 'interact',
+    'interact with an object', 'jump', 'long jump', 'long rest', 'magic',
     'mount', 'move', 'opportunity attack', 'overrun', 'ready', 'ready action',
-    'ready spell', 'search', 'shove', 'squeeze', 'stand up', 'study',
-    'suffocating', 'swim', 'travel pace', 'tumble', 'two-weapon fighting',
-    'underwater', 'underwater combat', 'use an object', 'utilize'
+    'ready an action', 'ready spell', 'search', 'shove', 'shove aside',
+    'short rest', 'squeeze', 'stabilize', 'stabilize a creature', 'stand up',
+    'study', 'suffocating', 'suffocation', 'swim', 'take cover', 'travel pace',
+    'tumble', 'two-weapon fighting', 'underwater', 'underwater combat',
+    'use a magic item', 'use an object', 'utilize'
 ];
 
 // The generic actions worth a scarce favorite slot. Everything else on the
@@ -36,28 +39,44 @@ const GENERIC_ACTIONS_FAVORITED_DEFAULT = [
     'disengage', 'ready', 'ready action', 'ready spell'
 ];
 
-// Parse a comma/newline separated setting into a lowercased name Set, falling
-// back to the built-in list when the setting is blank or unregistered.
-function parseNameListSetting(settingKey, defaults) {
+/** Parse a comma/newline separated setting into a lowercased name list. */
+function parseNameListSetting(settingKey) {
     let raw = '';
     try {
         raw = game.settings.get(MODULE.ID, settingKey) || '';
     } catch (error) {
-        // Setting not registered yet (early boot) — fall back to defaults.
+        // Setting not registered yet (early boot).
     }
-    const names = String(raw)
+    return String(raw)
         .split(/[,\n]/)
         .map(n => n.toLowerCase().trim())
         .filter(n => n.length > 0);
-    return new Set(names.length ? names : defaults);
 }
 
+/**
+ * Names treated as rules reminders rather than statblock content.
+ *
+ * The setting ADDS to the built-in list rather than replacing it. Matching is
+ * exact, so this list is only ever as good as its spelling coverage — every
+ * actions compendium names these slightly differently ("Suffocation" vs
+ * "Suffocating"), and an unlisted name silently becomes a favorite. Replacing
+ * would mean restating sixty names to add one, which is why a miss should cost
+ * a single word.
+ */
 function getGenericActions() {
-    return parseNameListSetting('autoFavoriteGenericActions', GENERIC_ACTIONS_DEFAULT);
+    return new Set([...GENERIC_ACTIONS_DEFAULT, ...parseNameListSetting('autoFavoriteGenericActions')]);
 }
 
+/**
+ * The generic actions kept as favorites anyway.
+ *
+ * This one REPLACES the built-in list, because the useful edit here is
+ * narrowing rather than extending — the default is already just Ready and
+ * Disengage, and there has to be a way to drop even those.
+ */
 function getFavoritedGenericActions() {
-    return parseNameListSetting('autoFavoriteGenericActionsKept', GENERIC_ACTIONS_FAVORITED_DEFAULT);
+    const configured = parseNameListSetting('autoFavoriteGenericActionsKept');
+    return new Set(configured.length ? configured : GENERIC_ACTIONS_FAVORITED_DEFAULT);
 }
 
 export class FavoritesPanel {

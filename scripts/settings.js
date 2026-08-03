@@ -521,8 +521,8 @@ export const registerSettings = function() {
     });
 
     game.settings.register(MODULE.ID, 'autoFavoriteGenericActions', {
-        name: 'Generic Actions to Ignore',
-        hint: 'Comma-separated feature names treated as rules reminders rather than statblock content, so they are not auto-favorited. Matched case-insensitively against the feature name. Leave blank to use the built-in list.',
+        name: 'Also Ignore These Actions',
+        hint: 'Comma-separated feature names to treat as rules reminders rather than statblock content, ADDED to the built-in list. Names are matched exactly (ignoring case), so if an actions compendium spells one differently — "Suffocation" where the built-in list has "Suffocating" — it slips through and gets favorited. Add the spelling you use here.',
         scope: 'world',
         config: true,
         type: String,
@@ -531,7 +531,7 @@ export const registerSettings = function() {
 
     game.settings.register(MODULE.ID, 'autoFavoriteGenericActionsKept', {
         name: 'Generic Actions to Keep',
-        hint: 'Comma-separated exceptions to the list above — generic actions common enough to be worth a favorite slot anyway. Leave blank to use the built-in list (Ready, Disengage).',
+        hint: 'Comma-separated exceptions to the list above — generic actions worth a favorite slot anyway. This REPLACES the built-in list rather than adding to it, so you can narrow it. Leave blank for the default: Ready and Disengage.',
         scope: 'world',
         config: true,
         type: String,
