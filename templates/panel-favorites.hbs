@@ -27,6 +27,7 @@
                 </div>
                 <div class="panel-item-name">
                     {{this.name}}
+                    {{#if this.isNew}}<span class="new-tag">NEW</span>{{/if}}
                     {{#if this.canEditQuantity}}
                     <span class="panel-item-context">
                         <span class="panel-item-badge context-count editable" data-quantity-edit title="Quantity — click to edit, 0 removes the item">x{{this.system.quantity}}</span>

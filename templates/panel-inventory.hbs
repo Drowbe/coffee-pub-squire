@@ -14,7 +14,6 @@
         </div>
         <div class="panel-item-name">
             {{{name}}}
-            {{#if (lookup ../newlyAddedItems id)}}<span class="new-tag">NEW</span>{{/if}}
             {{#if isNew}}<span class="new-tag">NEW</span>{{/if}}
             <span class="panel-item-context">
                 {{> action-badge actionType=actionType}}

@@ -703,6 +703,7 @@ export class FavoritesPanel {
                     isPrepared: isSpellPrepared(item),
                     statblockIssue: StatblockUtility.getBadge(issueMap.get(item.id)),
                     canEditQuantity: canEditQuantity && item.system?.quantity !== undefined,
+                    isNew: !!(item.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(item.id)),
                     isHandleFavorite: isHandleFavorite,
                     isLightSource: isLightSource,
                     isLightActive: isLightActive
@@ -821,10 +822,17 @@ export class FavoritesPanel {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
         
-        nativeHtml.querySelectorAll('.panel-item').forEach((item) => {
+        // Scope to this panel. Every favorite also renders in its source panel
+        // (spells, weapons, inventory, features) under the same data-item-id, so
+        // a tray-wide query would apply these type filters there too and stomp
+        // whatever filter that panel had applied.
+        const panel = nativeHtml.querySelector('[data-panel="favorites"]');
+        if (!panel) return;
+
+        panel.querySelectorAll('.panel-item').forEach((item) => {
             const itemId = item.dataset.itemId;
             const favoriteItem = this.favorites.find(f => f.id === itemId);
-            
+
             if (!favoriteItem) return;
 
             let shouldShow = false;
@@ -920,41 +928,23 @@ export class FavoritesPanel {
         
         // Filter toggles
         // v13: Use nativeHtml instead of html, native DOM methods
-        const spellToggle = nativeHtml.querySelector('.favorites-spell-toggle');
-        if (spellToggle) {
-            spellToggle.addEventListener('click', async (event) => {
-                await this._toggleFilter('spells');
-                event.currentTarget.classList.toggle('active', this.showSpells);
-                event.currentTarget.classList.toggle('faded', !this.showSpells);
+        // The icon element is captured before awaiting. `event.currentTarget` is
+        // nulled by the browser once dispatch finishes, so reading it after an
+        // await always throws — which is what every one of these did.
+        const bindFilterToggle = (selector, filterType, isEnabled) => {
+            const toggle = nativeHtml.querySelector(selector);
+            if (!toggle) return;
+            toggle.addEventListener('click', async () => {
+                await this._toggleFilter(filterType);
+                toggle.classList.toggle('active', isEnabled());
+                toggle.classList.toggle('faded', !isEnabled());
             }, { signal: listenerSignal });
-        }
+        };
 
-        const weaponToggle = nativeHtml.querySelector('.favorites-weapon-toggle');
-        if (weaponToggle) {
-            weaponToggle.addEventListener('click', async (event) => {
-                await this._toggleFilter('weapons');
-                event.currentTarget.classList.toggle('active', this.showWeapons);
-                event.currentTarget.classList.toggle('faded', !this.showWeapons);
-            }, { signal: listenerSignal });
-        }
-
-        const featuresToggle = nativeHtml.querySelector('.favorites-features-toggle');
-        if (featuresToggle) {
-            featuresToggle.addEventListener('click', async (event) => {
-                await this._toggleFilter('features');
-                event.currentTarget.classList.toggle('active', this.showFeatures);
-                event.currentTarget.classList.toggle('faded', !this.showFeatures);
-            }, { signal: listenerSignal });
-        }
-
-        const inventoryToggle = nativeHtml.querySelector('.favorites-inventory-toggle');
-        if (inventoryToggle) {
-            inventoryToggle.addEventListener('click', async (event) => {
-                await this._toggleFilter('inventory');
-                event.currentTarget.classList.toggle('active', this.showInventory);
-                event.currentTarget.classList.toggle('faded', !this.showInventory);
-            }, { signal: listenerSignal });
-        }
+        bindFilterToggle('.favorites-spell-toggle', 'spells', () => this.showSpells);
+        bindFilterToggle('.favorites-weapon-toggle', 'weapons', () => this.showWeapons);
+        bindFilterToggle('.favorites-features-toggle', 'features', () => this.showFeatures);
+        bindFilterToggle('.favorites-inventory-toggle', 'inventory', () => this.showInventory);
 
         // Roll/Use item — delegated to the panel (one listener regardless of list size)
         panel.addEventListener('click', async (event) => {

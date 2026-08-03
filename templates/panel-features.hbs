@@ -14,6 +14,7 @@
         </div>
         <div class="panel-item-name">
             {{name}}
+            {{#if isNew}}<span class="new-tag">NEW</span>{{/if}}
             <span class="panel-item-context">
                 {{> action-badge actionType=actionType}}
                 {{#if uses}}

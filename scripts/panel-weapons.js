@@ -57,7 +57,8 @@ export class WeaponsPanel {
                 isLightSource: isLightSource,
                 isLightActive: isLightActive,
                 statblockIssue: StatblockUtility.getBadge(issueMap.get(weapon.id)),
-                canEditQuantity: canEditQuantity && weapon.system?.quantity !== undefined
+                canEditQuantity: canEditQuantity && weapon.system?.quantity !== undefined,
+                isNew: !!(weapon.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(weapon.id))
             };
         }));
 
@@ -163,22 +164,28 @@ export class WeaponsPanel {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
         
-        nativeHtml.querySelectorAll('.panel-item').forEach((item) => {
+        // Scope to this panel: a favorited weapon renders here and in the
+        // favorites list under the same data-item-id, so a tray-wide query would
+        // apply this equipped filter to the favorites copy as well.
+        const panel = nativeHtml.querySelector('[data-panel="weapons"]');
+        if (!panel) return;
+
+        panel.querySelectorAll('.panel-item').forEach((item) => {
             const weaponId = item.dataset.itemId;
             const weapon = this.weapons.all.find(w => w.id === weaponId);
-            
+
             if (!weapon) return;
-            
+
             const categoryId = weapon.categoryId;
             const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
             const equippedMatch = !this.showOnlyEquipped || weapon.system.equipped;
-            
+
             item.style.display = (!isCategoryHidden && equippedMatch) ? '' : 'none';
         });
 
         // Update headers visibility using PanelManager
-        this.panelManager._updateHeadersVisibility(nativeHtml);
-        this.panelManager._updateEmptyMessage(nativeHtml);
+        this.panelManager._updateHeadersVisibility(panel);
+        this.panelManager._updateEmptyMessage(panel);
     }
 
     /**

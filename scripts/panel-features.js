@@ -34,7 +34,8 @@ export class FeaturesPanel {
             actionType: this._getActionType(feature),
             featureType: this._getFeatureType(feature),
             isFavorite: favorites.includes(feature.id),
-            categoryId: `category-feature-${this._getFeatureType(feature)}`
+            categoryId: `category-feature-${this._getFeatureType(feature)}`,
+            isNew: !!(feature.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(feature.id))
         }));
 
         // Group features by type and sort each group alphabetically
@@ -135,21 +136,27 @@ export class FeaturesPanel {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
         
-        nativeHtml.querySelectorAll('.panel-item').forEach((item) => {
+        // Scope to this panel: a favorited feature renders here and in the
+        // favorites list under the same data-item-id, so a tray-wide query would
+        // apply this category filter to the favorites copy as well.
+        const panel = nativeHtml.querySelector('[data-panel="features"]');
+        if (!panel) return;
+
+        panel.querySelectorAll('.panel-item').forEach((item) => {
             const featureId = item.dataset.itemId;
             const feature = this.features.all.find(f => f.id === featureId);
-            
+
             if (!feature) return;
-            
+
             const categoryId = feature.categoryId;
             const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
-            
+
             item.style.display = !isCategoryHidden ? '' : 'none';
         });
 
         // Update headers visibility using PanelManager
-        this.panelManager._updateHeadersVisibility(nativeHtml);
-        this.panelManager._updateEmptyMessage(nativeHtml);
+        this.panelManager._updateHeadersVisibility(panel);
+        this.panelManager._updateEmptyMessage(panel);
     }
 
     /**

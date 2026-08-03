@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getActivityList } from './helpers.js';
+import { getNativeElement, renderTemplate, getActivityList, isSpellPrepared } from './helpers.js';
 import { StatblockUtility } from './utility-statblock.js';
 
 export class SpellsPanel {
@@ -40,7 +40,8 @@ export class SpellsPanel {
                 actionType: this._getActionType(spell),
                 isFavorite: isFavorite,
                 categoryId: isAtWill ? 'category-spell-at-will' : `category-spell-level-${level}`,
-                statblockIssue: StatblockUtility.getBadge(issueMap.get(spell.id))
+                statblockIssue: StatblockUtility.getBadge(issueMap.get(spell.id)),
+                isNew: !!(spell.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(spell.id))
             };
         });
 
@@ -174,25 +175,37 @@ export class SpellsPanel {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
         
-        nativeHtml.querySelectorAll('.panel-item').forEach((item) => {
+        // Scope to this panel. A favorited spell renders here AND in the
+        // favorites list with the same data-item-id, so a tray-wide query would
+        // set display on both — and the favorites panel's own type filter would
+        // then overwrite this one, making the prepared filter apply or not
+        // depending on which panel rendered last.
+        const panel = nativeHtml.querySelector('[data-panel="spells"]');
+        if (!panel) return;
+
+        panel.querySelectorAll('.panel-item').forEach((item) => {
             const spellId = item.dataset.itemId;
             const spell = this.spells.find(s => s.id === spellId);
-            
+
             if (!spell) return;
-            
+
             const categoryId = spell.categoryId;
             const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
-            const preparedMatch = !this.showOnlyPrepared || 
-                spell.system.level === 0 || // Cantrips are always prepared
-                spell.system.method === 'atwill' || // At-will spells are always prepared
-                spell.system.prepared;
-            
+            // isSpellPrepared covers cantrips, at-will, innate, and pact, and
+            // reads dnd5e 5.x's numeric `prepared` correctly. Testing
+            // `system.prepared` directly hid innate and pact spells, which sit
+            // at 0 yet are always castable.
+            const preparedMatch = !this.showOnlyPrepared
+                || spell.system.level === 0
+                || isSpellPrepared(spell);
+
             item.style.display = (!isCategoryHidden && preparedMatch) ? '' : 'none';
         });
 
-        // Update headers visibility using PanelManager
-        this.panelManager._updateHeadersVisibility(nativeHtml);
-        this.panelManager._updateEmptyMessage(nativeHtml);
+        // Update headers visibility using PanelManager — panel-scoped for the
+        // same reason.
+        this.panelManager._updateHeadersVisibility(panel);
+        this.panelManager._updateEmptyMessage(panel);
     }
 
     /**

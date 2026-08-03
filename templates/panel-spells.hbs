@@ -76,6 +76,7 @@
                             </div>
                             <div class="panel-item-name">
                                 {{spell.name}}
+                                {{#if spell.isNew}}<span class="new-tag">NEW</span>{{/if}}
                                 <span class="panel-item-context">
                                     {{> action-badge actionType=spell.actionType}}
                                     {{> spell-components properties=spell.system.properties}}
@@ -109,6 +110,7 @@
                             </div>
                             <div class="panel-item-name">
                                 {{spell.name}}
+                                {{#if spell.isNew}}<span class="new-tag">NEW</span>{{/if}}
                                 <span class="panel-item-context">
                                     {{> action-badge actionType=spell.actionType}}
                                     {{> spell-components properties=spell.system.properties}}
@@ -148,6 +150,7 @@
                                 </div>
                                 <div class="panel-item-name">
                                     {{spell.name}}
+                                    {{#if spell.isNew}}<span class="new-tag">NEW</span>{{/if}}
                                     <span class="panel-item-context">
                                         {{> action-badge actionType=spell.actionType}}
                                         {{> spell-components properties=spell.system.properties}}
@@ -181,6 +184,7 @@
                     </div>
                     <div class="panel-item-name">
                         {{this.name}}
+                        {{#if this.isNew}}<span class="new-tag">NEW</span>{{/if}}
                         <span class="panel-item-context">
                             {{> action-badge actionType=this.actionType}}
                             {{> spell-components properties=this.system.properties}}

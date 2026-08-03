@@ -71,7 +71,10 @@ export class InventoryPanel {
                 categoryId: `category-inventory-${item.type === 'backpack' ? 'container' : item.type}`,
                 actionType: this._getActionType(item),
                 flags: item.flags || {},
-                isNew: item.getFlag(MODULE.ID, 'isNew') || false,
+                // Both sources: the persisted flag survives a reload, the session
+                // map covers the window before the flag write lands. The template
+                // used to test them separately and could render two badges.
+                isNew: !!(item.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(item.id)),
                 isLightSource: isLightSource,
                 isLightActive: isLightActive,
                 // Only stackable items have a quantity to edit; showing the badge
@@ -160,22 +163,28 @@ export class InventoryPanel {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
         
-        nativeHtml.querySelectorAll('.panel-item').forEach((item) => {
+        // Scope to this panel: a favorited item renders here and in the
+        // favorites list under the same data-item-id, so a tray-wide query would
+        // apply this equipped filter to the favorites copy as well.
+        const panel = nativeHtml.querySelector('[data-panel="inventory"]');
+        if (!panel) return;
+
+        panel.querySelectorAll('.panel-item').forEach((item) => {
             const itemId = item.dataset.itemId;
             const inventoryItem = this.items.all.find(i => i.id === itemId);
-            
+
             if (!inventoryItem) return;
-            
+
             const categoryId = inventoryItem.categoryId;
             const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
             const equippedMatch = !this.showOnlyEquipped || inventoryItem.system.equipped;
-            
+
             item.style.display = (!isCategoryHidden && equippedMatch) ? '' : 'none';
         });
 
         // Update headers visibility using PanelManager
-        this.panelManager._updateHeadersVisibility(nativeHtml);
-        this.panelManager._updateEmptyMessage(nativeHtml);
+        this.panelManager._updateHeadersVisibility(panel);
+        this.panelManager._updateEmptyMessage(panel);
     }
 
     /**
