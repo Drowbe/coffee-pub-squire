@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [13.5.0]
 
 ### Added
 - **Compendium quick-add**: A `+` beside the global search box swaps the stacked panels for a results view; typing searches the compendiums configured in Blacksmith and lists matches grouped by compendium in the GM's configured priority order, each with an add button and a details button. Adding copies the item onto the character at quantity 1 — adjust it afterwards with the inline count badge rather than filling the results list with quantity fields for a value that is almost always 1.
