@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
-import { getNativeElement, renderTemplate, getActivityList } from './helpers.js';
+import { getNativeElement, renderTemplate, getActivityList, getContainerInfo, activateContainerListener } from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { QuantityEditor } from './utility-quantity.js';
@@ -58,7 +58,8 @@ export class WeaponsPanel {
                 isLightActive: isLightActive,
                 statblockIssue: StatblockUtility.getBadge(issueMap.get(weapon.id)),
                 canEditQuantity: canEditQuantity && weapon.system?.quantity !== undefined,
-                isNew: !!(weapon.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(weapon.id))
+                isNew: !!(weapon.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(weapon.id)),
+                container: getContainerInfo(weapon, this.actor)
             };
         }));
 
@@ -299,6 +300,12 @@ export class WeaponsPanel {
         const quantityHandler = QuantityEditor.activateListener(panel, this.actor);
         if (quantityHandler) {
             this._eventHandlers.push({ element: panel, event: 'click', handler: quantityHandler });
+        }
+
+        // Open the container a weapon is stored inside
+        const containerHandler = activateContainerListener(panel, this.actor);
+        if (containerHandler) {
+            this._eventHandlers.push({ element: panel, event: 'click', handler: containerHandler });
         }
 
         // Add filter toggle handler

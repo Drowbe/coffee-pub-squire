@@ -23,6 +23,18 @@ export const registerSettings = function() {
     // -------------------------------------
 
 
+	// ================================
+	// ===        THE TRAY          ===
+	// ================================
+	game.settings.register(MODULE.ID, "headingH2Tray", {
+		name: 'The Tray',
+		hint: 'How the tray itself looks and behaves — which tabs and panels appear, what sits on the handle, and which Squire tools live in the menubar.',
+		scope: "world",
+		config: true,
+		default: "",
+		type: String,
+	});
+
 	// ---------- Tray Configuration ----------
 	game.settings.register(MODULE.ID, "headingH3TrayConfiguration", {
 		name: 'Tray Configuration',
@@ -476,6 +488,18 @@ export const registerSettings = function() {
     // --------------------------------
     // ---   AUTO-FAVORITE Settings  ---
     // --------------------------------
+
+	// ================================
+	// ===       RUN THE GAME       ===
+	// ================================
+	game.settings.register(MODULE.ID, "headingH2RunTheGame", {
+		name: 'Run the Game',
+		hint: 'What Squire does with actor content at the table — favoriting a monster\'s usable actions, repairing statblocks that cannot be used as written, adjusting health, and moving items between characters.',
+		scope: "world",
+		config: true,
+		default: "",
+		type: String,
+	});
 
 	// ---------- Auto-Favorite Heading ----------
 	game.settings.register(MODULE.ID, "headingH3AutoFavorites", {
@@ -983,8 +1007,8 @@ export const registerSettings = function() {
 
     // ---------- SUBHEADING ----------
     game.settings.register(MODULE.ID, "headingH2CampaignSettings", {
-        name: 'Campaign Settings',
-        hint: 'These settings are used to power both any AI generated content as well as augment any JSON imports for items, journal entries, characters, etc.',
+        name: 'Campaign',
+        hint: 'The shared, journal-backed records a party accumulates — notes, codex entries, and quests — plus the campaign details that power AI-generated content and JSON imports.',
         scope: "world",
         config: true,
         default: "",
@@ -1205,6 +1229,18 @@ export const registerSettings = function() {
 
 
 
+
+    // ================================
+    // ===          CANVAS          ===
+    // ================================
+    game.settings.register(MODULE.ID, "headingH2Canvas", {
+        name: 'Canvas',
+        hint: 'Things Squire does outside the tray, on the canvas itself.',
+        scope: "world",
+        config: true,
+        default: "",
+        type: String,
+    });
 
     // ---------- TOKEN LIGHTING ----------
     game.settings.register(MODULE.ID, "headingH3TokenLighting", {

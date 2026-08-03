@@ -662,6 +662,17 @@
 }
 
 
+/* "Stored in a container" marker. Dimmer than the action icons by default —
+   it's mostly informational, and a row of full-strength boxes would compete
+   with the controls. Inherits the standard hover. */
+.tray-buttons .item-container-open {
+    opacity: 0.55;
+}
+
+.tray-buttons .item-container-open:hover {
+    opacity: 1;
+}
+
 /* Statblock problem badge — GM-only, click to repair. Pulses so it reads as
    an actionable defect rather than another state toggle. */
 .tray-buttons .statblock-warning {

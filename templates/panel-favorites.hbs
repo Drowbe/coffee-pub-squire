@@ -41,6 +41,9 @@
                     {{#if this.isLightSource}}
                     <i class="fa-solid fa-lightbulb {{#unless this.isLightActive}}faded{{/unless}} {{#if this.isLightActive}}light-active{{/if}}" title="Toggle Light"></i>
                     {{/if}}
+                    {{#if this.container}}
+                    <i class="fa-solid fa-sack item-container-open" data-container-id="{{this.container.id}}" data-tooltip="Stored in <strong>{{this.container.name}}</strong><br><em>Click to open</em>"></i>
+                    {{/if}}
                     {{#if (eq this.type 'spell')}}
                     <i class="fa-solid fa-sun {{#unless this.isPrepared}}faded{{/unless}}" title="Prepared"></i>
                     {{else if (eq this.type 'feat')}}

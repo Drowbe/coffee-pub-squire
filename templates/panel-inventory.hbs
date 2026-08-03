@@ -28,6 +28,9 @@
             {{#if isLightSource}}
             <i class="fa-solid fa-lightbulb {{#unless isLightActive}}faded{{/unless}} {{#if isLightActive}}light-active{{/if}}" title="Toggle Light"></i>
             {{/if}}
+            {{#if container}}
+            <i class="fa-solid fa-sack item-container-open" data-container-id="{{container.id}}" data-tooltip="Stored in <strong>{{container.name}}</strong><br><em>Click to open</em>"></i>
+            {{/if}}
             {{#if (or (eq type "weapon") (eq type "equipment") (eq type "tool") (eq type "consumable"))}}
                 {{#if system.equipped}}
                 <i class="fa-solid fa-shield-alt" title="Toggle Equipped"></i>

@@ -307,6 +307,54 @@ function isHandleFavoriteAvailable(item, isPrepared) {
 }
 
 /**
+ * The container an item is stored inside, or null if it's carried directly.
+ *
+ * dnd5e keeps contained items in `actor.items` like everything else — membership
+ * is just a `system.container` id pointing at the container item. The tray lists
+ * items flat, so without this a bag's entire contents are indistinguishable from
+ * what the character is actually carrying.
+ *
+ * @returns {{id: string, name: string, img: string}|null}
+ */
+export function getContainerInfo(item, actor) {
+    const containerId = item?.system?.container;
+    if (!containerId || !actor) return null;
+    const container = actor.items.get(containerId);
+    if (!container) return null;
+    return {
+        id: container.id,
+        name: container.name,
+        img: container.img || 'icons/svg/item-bag.svg'
+    };
+}
+
+/**
+ * Attach the delegated "open the container this item is stored in" handler.
+ * Shared by every panel that renders the container icon so the behaviour and
+ * the double-click guard stay in one place.
+ *
+ * `signal` is optional — Favorites tears down with an AbortController, Weapons
+ * and Inventory with a handler array, so the handler is returned for the latter.
+ *
+ * @returns {Function|undefined} the attached listener
+ */
+export function activateContainerListener(panel, actor, signal) {
+    if (!panel || !actor) return;
+
+    const handler = (event) => {
+        const icon = event.target.closest('.item-container-open');
+        if (!icon) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const container = actor.items.get(icon.dataset.containerId);
+        container?.sheet?.render(true);
+    };
+
+    panel.addEventListener('click', handler, signal ? { signal } : undefined);
+    return handler;
+}
+
+/**
  * How many favorites the tray handle may show at once.
  *
  * Lives here rather than on FavoritesPanel so the Handlebars helper can read it

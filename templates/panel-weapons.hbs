@@ -29,6 +29,9 @@
             {{#if isLightSource}}
             <i class="fa-solid fa-lightbulb {{#unless isLightActive}}faded{{/unless}} {{#if isLightActive}}light-active{{/if}}" title="Toggle Light" data-item-id="{{id}}"></i>
             {{/if}}
+            {{#if container}}
+            <i class="fa-solid fa-sack item-container-open" data-container-id="{{container.id}}" data-tooltip="Stored in <strong>{{container.name}}</strong><br><em>Click to open</em>"></i>
+            {{/if}}
             <i class="fa-solid fa-shield-alt {{#unless system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
             <i class="fa-solid fa-heart {{#unless isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
             <i class="fa-solid fa-share weapons-send-item" title="Send Weapon" data-item-id="{{id}}"></i>

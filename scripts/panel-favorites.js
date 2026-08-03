@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, showSquireToast, getHandleFavoriteLimit } from './helpers.js';
+import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, showSquireToast, getHandleFavoriteLimit, getContainerInfo, activateContainerListener } from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { QuantityEditor } from './utility-quantity.js';
@@ -704,6 +704,7 @@ export class FavoritesPanel {
                     statblockIssue: StatblockUtility.getBadge(issueMap.get(item.id)),
                     canEditQuantity: canEditQuantity && item.system?.quantity !== undefined,
                     isNew: !!(item.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(item.id)),
+                    container: getContainerInfo(item, this.actor),
                     isHandleFavorite: isHandleFavorite,
                     isLightSource: isLightSource,
                     isLightActive: isLightActive
@@ -1175,6 +1176,9 @@ export class FavoritesPanel {
 
         // Inline quantity editing on the count badge
         QuantityEditor.activateListener(panel, this.actor, listenerSignal);
+
+        // Open the container an item is stored inside
+        activateContainerListener(panel, this.actor, listenerSignal);
 
         // Add clear all button listener
         // v13: Use nativeHtml instead of html

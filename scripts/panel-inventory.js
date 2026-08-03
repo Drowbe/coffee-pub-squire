@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { FavoritesPanel } from './panel-favorites.js';
-import { getNativeElement, renderTemplate, getActivityList } from './helpers.js';
+import { getNativeElement, renderTemplate, getActivityList, getContainerInfo, activateContainerListener } from './helpers.js';
 import { TransferUtils } from './transfer-utils.js';
 import { LightUtility } from './utility-lights.js';
 import { QuantityEditor } from './utility-quantity.js';
@@ -75,6 +75,7 @@ export class InventoryPanel {
                 // map covers the window before the flag write lands. The template
                 // used to test them separately and could render two badges.
                 isNew: !!(item.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(item.id)),
+                container: getContainerInfo(item, this.actor),
                 isLightSource: isLightSource,
                 isLightActive: isLightActive,
                 // Only stackable items have a quantity to edit; showing the badge
@@ -292,6 +293,12 @@ export class InventoryPanel {
         const quantityHandler = QuantityEditor.activateListener(panel, this.actor);
         if (quantityHandler) {
             this._eventHandlers.push({ element: panel, event: 'click', handler: quantityHandler });
+        }
+
+        // Open the container an item is stored inside
+        const containerHandler = activateContainerListener(panel, this.actor);
+        if (containerHandler) {
+            this._eventHandlers.push({ element: panel, event: 'click', handler: containerHandler });
         }
 
         // Add filter toggle handler
