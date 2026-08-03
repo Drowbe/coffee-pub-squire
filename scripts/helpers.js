@@ -307,6 +307,86 @@ function isHandleFavoriteAvailable(item, isPrepared) {
 }
 
 /**
+ * Campaign details, read from Blacksmith.
+ *
+ * Squire used to collect its own campaign name, party name/size/makeup/level,
+ * and rulebook list. Four of those six were never read by anything, and the two
+ * that were duplicated fields Blacksmith already owns — so a GM configured the
+ * same campaign twice and Squire's copy could silently disagree. Blacksmith's
+ * campaign data is now the only source; if it isn't configured, Squire simply
+ * doesn't have the value rather than offering a second place to set it.
+ *
+ * Read-only, and there is no change hook — values are picked up on the next
+ * render, which matches how Squire's own settings behaved.
+ *
+ * @returns {{name: string, party: string, rulebooks: string, prompt: object}}
+ */
+export function getCampaignContext() {
+    const empty = { name: '', party: '', rulebooks: '', prompt: {} };
+    try {
+        const campaign = getBlacksmith()?.campaign;
+        if (!campaign?.getCampaign) return empty;
+
+        const prompt = campaign.getPromptContext?.() ?? {};
+        const core = campaign.getCore?.() ?? {};
+        const party = campaign.getParty?.() ?? {};
+
+        // Rulebooks come back either as a list or an already-joined string
+        // depending on which accessor answers; normalize to display text.
+        const rawBooks = prompt.rulebooks ?? core.rulebooks ?? '';
+        const rulebooks = Array.isArray(rawBooks) ? rawBooks.filter(Boolean).join(', ') : String(rawBooks || '');
+
+        return {
+            name: core.name ?? prompt.campaignName ?? '',
+            party: party.name ?? prompt.partyName ?? '',
+            rulebooks,
+            prompt
+        };
+    } catch (error) {
+        console.warn('Coffee Pub Squire | Could not read campaign data from Blacksmith:', error);
+        return empty;
+    }
+}
+
+/**
+ * Fill an import template's `[ADD-*-HERE]` placeholders from campaign data.
+ *
+ * A placeholder whose value isn't configured in Blacksmith is left in place —
+ * the point of a placeholder is to show what's missing, and blanking it would
+ * hide the gap rather than prompt the GM to fill it.
+ *
+ * @param {string} template
+ * @returns {string}
+ */
+export function fillCampaignPlaceholders(template) {
+    if (typeof template !== 'string') return template;
+
+    const campaign = getCampaignContext();
+    const p = campaign.prompt ?? {};
+
+    const substitutions = {
+        '[ADD-RULEBOOKS-HERE]': campaign.rulebooks,
+        '[ADD-CAMPAIGN-HERE]': campaign.name,
+        '[ADD-PARTY-HERE]': campaign.party,
+        '[ADD-PARTY-SIZE-HERE]': p.partySize,
+        '[ADD-PARTY-LEVEL-HERE]': p.partyLevel,
+        '[ADD-PARTY-MAKEUP-HERE]': p.partyMakeup,
+        '[ADD-PARTY-CLASSES-HERE]': Array.isArray(p.partyClasses) ? p.partyClasses.join(', ') : p.partyClasses,
+        '[ADD-REALM-HERE]': p.realm,
+        '[ADD-REGION-HERE]': p.region,
+        '[ADD-SITE-HERE]': p.site,
+        '[ADD-AREA-HERE]': p.area
+    };
+
+    let output = template;
+    for (const [token, value] of Object.entries(substitutions)) {
+        const text = value === null || value === undefined ? '' : String(value).trim();
+        if (text) output = output.split(token).join(text);
+    }
+    return output;
+}
+
+/**
  * The container an item is stored inside, or null if it's carried directly.
  *
  * dnd5e keeps contained items in `actor.items` like everything else — membership

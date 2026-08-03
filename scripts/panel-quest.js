@@ -20,7 +20,7 @@ import {
     reconcileQuestPins,
     focusQuestInPanel
 } from './manager-pins.js';
-import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, getPartyActors, showBlacksmithWait } from './helpers.js';
+import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, getPartyActors, showBlacksmithWait, fillCampaignPlaceholders } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
 import { resolveEntries, reportResolution } from './utility-resolver.js';
@@ -959,9 +959,7 @@ export class QuestPanel {
                 const copyTemplateButton = nativeDlgHtml.querySelector('.copy-template-button');
                 if (copyTemplateButton) {
                     copyTemplateButton.addEventListener('click', () => {
-                        let output = template;
-                        const rulebooks = game.settings.get(MODULE.ID, 'defaultRulebooks');
-                        if (rulebooks && rulebooks.trim()) output = output.replace('[ADD-RULEBOOKS-HERE]', rulebooks);
+                        const output = fillCampaignPlaceholders(template);
                         copyToClipboard(output);
                         ui.notifications.info('Template copied to clipboard!');
                     });

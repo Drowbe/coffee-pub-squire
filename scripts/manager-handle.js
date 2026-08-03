@@ -4,7 +4,7 @@ import { QuestParser } from './utility-quest-parser.js';
 // REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
+import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getTextEditor, getCampaignContext } from './helpers.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
 // FoundryVTT function imports
@@ -169,7 +169,7 @@ export class HandleManager {
             showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
             showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
             showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
-            defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName')
+            defaultPartyName: getCampaignContext().party
         };
 
         // If party view, add party context for handle-party

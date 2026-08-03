@@ -1017,93 +1017,12 @@ export const registerSettings = function() {
     // -------------------------------------
 
 
-    // ---------- CAMPAIGN COMMON ----------
-    game.settings.register(MODULE.ID, "headingH3CampaignCommon", {
-        name: 'Campaign Common',
-        hint: 'General campaign settings that are common to all narratives.',
-        scope: "world",
-        config: true,
-        default: "",
-        type: String,
-    });
-    // -------------------------------------
-
-
-    // -- Default Campaign Name --
-    game.settings.register(MODULE.ID, 'defaultCampaignName', {
-        name:'Default Campaign Name',
-        hint: 'The default campaign name to use when creating new narratives.',
-        scope: "world",
-        config: true,
-        requiresReload: false,
-        type: String,
-        default: ''
-    });
-
-    // -- Default Party Name --
-    game.settings.register(MODULE.ID, 'defaultPartyName', {
-        name:'Default Party Name',
-        hint: 'The default party name to use when creating new narratives.',
-        scope: "world",
-        config: true,
-        requiresReload: false,
-        type: String,
-        default: ''
-    });
-
-    // -- Default Party Size --
-    game.settings.register(MODULE.ID, 'defaultPartySize', {
-        name:'Default Party Size',
-        hint: 'The default party size to use when creating new narratives.',
-        scope: "world",
-        config: true,
-        requiresReload: false,
-        type: Number,
-        default: 4,
-        range: {
-            min: 1,
-            max: 10,
-            step: 1,
-        },
-    });
-
-    // -- Default Party Makeup --
-    game.settings.register(MODULE.ID, 'defaultPartyMakeup', {
-        name:'Default Party Makeup',
-        hint: 'The default party makeup to use when creating new narratives. (e.g. 1 Fighter, 1 Rogue, 1 Wizard, 1 Cleric)',
-        scope: "world",
-        config: true,
-        requiresReload: false,
-        type: String,
-        default: ''
-    });
-
-    // -- Default Party Level --
-    game.settings.register(MODULE.ID, 'defaultPartyLevel', {
-        name:'Default Party Level',
-        hint: 'The default party level to use when creating new narratives.',
-        scope: "world",
-        config: true,
-        requiresReload: false,	
-        type: Number,
-        default: 1,
-        range: {
-            min: 1,
-            max: 20,
-            step: 1,		
-        },
-    });
-
-    // -- Default Rulebooks Folder --
-    game.settings.register(MODULE.ID, 'defaultRulebooks', {
-        name:'Default Rulebooks',
-        hint: 'A comma separated list of default rule books to use when creating new narratives. (e.g. 2024 Monster Manual, 2024 Player\'s Handbook, etc.)',
-        scope: "world",
-        config: true,
-        requiresReload: false,
-        type: String,
-        default: ''
-    });
+    // Campaign details — name, party name/size/level/makeup, and rulebooks —
+    // are read from Blacksmith rather than collected here. Squire registered its
+    // own six settings for these; four were never read by any code, and the two
+    // that were duplicated fields Blacksmith already owns, so a GM configured the
+    // same campaign twice and the copies could disagree. Blacksmith is the single
+    // source now: see getCampaignContext() in helpers.js.
 
 
     // --------------------------------

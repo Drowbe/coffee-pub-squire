@@ -1,7 +1,7 @@
 import { MODULE, SQUIRE, TEMPLATES, getCodexCategoryIcon } from './const.js';
 import { CodexParser } from './utility-codex-parser.js';
 import { CODEX_PAGE_TYPE } from './data/codex-page-model.js';
-import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, escapeHtml, getPartyActors, showBlacksmithWait } from './helpers.js';
+import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, escapeHtml, getPartyActors, showBlacksmithWait, fillCampaignPlaceholders } from './helpers.js';
 import { trackModuleTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
 import {
@@ -1744,9 +1744,7 @@ export class CodexPanel {
                 const copyTemplateButton = nativeDlgHtml.querySelector('.copy-template-button');
                 if (copyTemplateButton) {
                     copyTemplateButton.addEventListener('click', () => {
-                        let output = template;
-                        const rulebooks = game.settings.get(MODULE.ID, 'defaultRulebooks');
-                        if (rulebooks && rulebooks.trim()) output = output.replace('[ADD-RULEBOOKS-HERE]', rulebooks);
+                        const output = fillCampaignPlaceholders(template);
                         copyToClipboard(output);
                         ui.notifications.info('Template copied to clipboard!');
                     });

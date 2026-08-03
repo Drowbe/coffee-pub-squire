@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
-import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, renderTemplate } from './helpers.js';
+import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, renderTemplate, getCampaignContext } from './helpers.js';
 import { CharacterPanel } from './panel-character.js';
 import { GmPanel } from './panel-gm.js';
 import { SpellsPanel } from './panel-spells.js';
@@ -441,7 +441,7 @@ export class PanelManager {
             showTabQuests: game.settings.get(MODULE.ID, 'showTabQuests'),
             isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
             newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems),
-            defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
+            defaultPartyName: getCampaignContext().party,
             favoriteMacros
         });
         // v13: Create native DOM element instead of jQuery
@@ -518,7 +518,7 @@ export class PanelManager {
             showTabNotes: game.settings.get(MODULE.ID, 'showTabNotes'),
             showTabCodex: game.settings.get(MODULE.ID, 'showTabCodex'),
             showTabQuests: game.settings.get(MODULE.ID, 'showTabQuests'),
-            defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName')
+            defaultPartyName: getCampaignContext().party
         });
         // v13: Create native DOM element instead of jQuery
         const wrapper = document.createElement('div');
