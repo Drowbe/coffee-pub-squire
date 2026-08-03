@@ -281,29 +281,12 @@
 
 
 
-/* STATS */
-.squire-tray[data-position="left"] .handle-stats-primary,
-.squire-tray[data-position="left"] .handle-stats-secondary {
-    display: flex;
-    align-items: center;
-    font-size: 1.1em;
-    color: #aaa;
-    font-weight: 900;
-}
-
-.squire-tray[data-position="left"] .handle-stats-secondary {
-    font-size: 1em;  /* Slightly smaller for secondary stats */
-}
-
 .squire-tray[data-position="left"] .tray-handle-content {
     font-size: 1.1em;
     color: #ffffff;
     font-weight: 900;
 }
 
-.squire-tray[data-position="left"] .handle-stats {
-    font-weight: 900;
-}
 
 
 
@@ -392,7 +375,6 @@
 .squire-tray[data-position="left"] .handle-pinnedquests,
 .squire-tray[data-position="left"] .handle-partymembers,
 .squire-tray[data-position="left"] .handle-characters,
-.squire-tray[data-position="left"] .handle-macros,
 .squire-tray[data-position="left"] .handle-conditions,
 .squire-tray[data-position="left"] .handle-favorites {
     display: flex;
@@ -424,7 +406,6 @@
 .squire-tray[data-position="left"] .handle-pinnedquest-icon,
 .squire-tray[data-position="left"] .handle-partymember-icon,
 .squire-tray[data-position="left"] .handle-character-icon,
-.squire-tray[data-position="left"] .handle-macro-icon,
 .squire-tray[data-position="left"] .handle-condition-icon,
 .squire-tray[data-position="left"] .handle-favorite-icon {
     display: flex;
@@ -464,7 +445,6 @@
 .squire-tray[data-position="left"] .handle-partymember-icon.clickable:hover,
 .squire-tray[data-position="left"] .handle-character-icon:hover,
 .squire-tray[data-position="left"] .handle-condition-icon:hover,
-.squire-tray[data-position="left"] .handle-macro-icon:hover,
 .squire-tray[data-position="left"] .handle-favorite-icon:hover {
     background: rgba(0, 0, 0, 0.4);
     filter: brightness(1);
@@ -480,7 +460,6 @@
 .squire-tray[data-position="left"] .handle-partymember-icon img,
 .squire-tray[data-position="left"] .handle-character-icon img,
 .squire-tray[data-position="left"] .handle-condition-icon img,
-.squire-tray[data-position="left"] .handle-macro-icon img,
 .squire-tray[data-position="left"] .handle-favorite-icon img {
     background: rgba(0, 0, 0, 0.5);
     width: 100%;

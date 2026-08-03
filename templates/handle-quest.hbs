@@ -51,20 +51,3 @@
 {{!-- NOTE: Objectives display 1→n top-to-bottom via `flex-direction: row-reverse` on
      .handle-pinnedquests in handle.css, which cancels the content wrapper's 180° rotation.
      Do NOT reverse the tasks array in JS — data-task-index must stay the original index. --}}
-
-
-
-{{!-- THESE DO NOT REQUIRE A SELECTED TOKEN --}} 
-
-{{!-- MACROS --}} 
-{{#if showHandleMacros}}
-    {{> handle-macros}}
-    <span class="tray-handle-separator line-ridge-thin"></span>
-{{/if}}
-
-
-{{!-- DICE TRAY BUTTON --}} 
-{{#if showHandleDiceTray}}
-    {{> handle-dice-tray}}
-    <span class="tray-handle-separator line-ridge-thin"></span>
-{{/if}}

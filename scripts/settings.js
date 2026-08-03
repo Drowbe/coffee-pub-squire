@@ -306,6 +306,18 @@ export const registerSettings = function() {
 
     // Panel Visibility Settings
 
+    game.settings.register(MODULE.ID, 'showGmPanel', {
+        name: 'Show GM Details Panel',
+        hint: 'Display the GM Details panel at the top of the tray. GM only — players never see this panel regardless of this setting.',
+        scope: 'user',
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => {
+            if (ui.squire) ui.squire.render();
+        }
+    });
+
     game.settings.register(MODULE.ID, 'showCharacterSummaryPanel', {
         name: 'Show Character Summary Panel',
         hint: 'Display one compact panel with experience, core statistics, abilities, and skills.',
@@ -386,24 +398,6 @@ export const registerSettings = function() {
         default: true
     });
 
-	// ---------- Handle Primary Stats ----------
-    game.settings.register(MODULE.ID, 'showHandleStatsPrimary', {
-        name: 'Show Primary Stats in Handle',
-        hint: 'Display primary stats (HP, AC, Move) in the handle',
-        scope: 'user',
-        config: true,
-        type: Boolean,
-        default: false
-    });
-    // ---------- Handle Secondary Stats ----------
-    game.settings.register(MODULE.ID, 'showHandleStatsSecondary', {
-        name: 'Show Secondary Stats in Handle',
-        hint: 'Display secondary stats (Initiative, Proficiency) in the handle',
-        scope: 'user',
-        config: true,
-        type: Boolean,
-        default: false
-    });
     // ---------- Handle Favorites ----------
     game.settings.register(MODULE.ID, 'showHandleFavorites', {
         name: 'Show Favorites in Handle',
@@ -412,6 +406,20 @@ export const registerSettings = function() {
         config: true,
         type: Boolean,
         default: true
+    });
+
+    game.settings.register(MODULE.ID, 'handleFavoritesMax', {
+        name: 'Maximum Handle Favorites',
+        hint: 'How many items can sit on the tray handle at once. The handle is a narrow strip, so a small number keeps every icon big enough to hit; adding another once the limit is reached asks you to remove one first.',
+        scope: 'world',
+        config: true,
+        type: Number,
+        default: 5,
+        range: {
+            min: 1,
+            max: 12,
+            step: 1,
+        },
     });
 
     game.settings.register(MODULE.ID, 'showHandleHealthBar', {
@@ -437,6 +445,21 @@ export const registerSettings = function() {
         default: true
     });
 
+
+    // --------------------------------
+    // ---     MENUBAR Settings     ---
+    // --------------------------------
+
+	// ---------- Menubar Heading ----------
+	game.settings.register(MODULE.ID, "headingH3MenubarConfiguration", {
+		name: 'Menubar Configuration',
+		hint: 'Squire tools that live in the Blacksmith menubar rather than the tray handle. These are global tools — they do not depend on which token is selected.',
+		scope: "world",
+		config: true,
+		default: "",
+		type: String,
+	});
+
     game.settings.register(MODULE.ID, 'showHealthMenubarTool', {
         name: 'Show Health Tool in Menubar',
         hint: 'Display a Health window icon beside the Dice Tray icon in the Blacksmith menubar.',
@@ -446,42 +469,6 @@ export const registerSettings = function() {
         default: true,
         onChange: () => {
             game.modules.get('coffee-pub-blacksmith')?.api?.renderMenubar?.(true);
-        }
-    });
-
-    // ---------- Handle Dice Tray ----------
-    game.settings.register(MODULE.ID, 'showHandleDiceTray', {
-        name: 'Show Dice Tray Icon in Handle',
-        hint: 'Display a dice icon in the handle to quickly access the dice tray',
-        scope: 'user',
-        config: true,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showHandleMacros', {
-        name: 'Show Macros Icon in Handle',
-        hint: 'Display a macros icon in the handle to quickly access the macros panel',
-        scope: 'user',
-        config: true,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'hideFoundryHotbar', {
-        name: 'Hide the default Foundry hotbar.',
-        hint: 'Get some screen real estate back by hiding the default Foundry hotbar.',
-        scope: 'user',
-        config: true,
-        type: Boolean,
-        default: true,
-        onChange: () => {
-            // Update hotbar visibility when setting changes
-            import('./panel-macros.js').then(module => {
-                if (module.updateHotbarVisibility) {
-                    module.updateHotbarVisibility();
-                }
-            });
         }
     });
 
@@ -535,20 +522,6 @@ export const registerSettings = function() {
         config: true,
         type: Boolean,
         default: false
-    });
-
-    game.settings.register(MODULE.ID, 'handleFavoritesMax', {
-        name: 'Maximum Handle Favorites',
-        hint: 'How many items can sit on the tray handle at once. The handle is a narrow strip, so a small number keeps every icon big enough to hit; adding another once the limit is reached asks you to remove one first.',
-        scope: 'world',
-        config: true,
-        type: Number,
-        default: 5,
-        range: {
-            min: 1,
-            max: 12,
-            step: 1,
-        },
     });
 
     game.settings.register(MODULE.ID, 'quantityConfirmValue', {
@@ -683,15 +656,11 @@ export const registerSettings = function() {
     // ---      NOTES Settings      ---
     // --------------------------------
 
-	// ---------- Notes Heading ----------
-	game.settings.register(MODULE.ID, "headingH3NotesConfiguration", {
-		name: 'Notes Configuration',
-		hint: 'Settings for the party notes, quests, and other shared data.',
-		scope: "world",
-		config: true,
-		default: "",
-		type: String,
-	});
+	// The Notes heading is registered further down, immediately before the Notes
+	// Journal picker. It used to be registered here as well; a duplicate key
+	// keeps its FIRST registration position but takes the LAST one's values, so
+	// the heading rendered up here with nothing under it while its own setting
+	// appeared much later with no heading at all.
 
     // Persistent Journal for Players
     game.settings.register(MODULE.ID, 'notesPersistentJournal', {
@@ -1156,30 +1125,9 @@ export const registerSettings = function() {
         }
     });
 
-    // Codex Journal
-    game.settings.register(MODULE.ID, 'codexJournal', {
-        name: "Codex Journal",
-        hint: "The journal to use for codex entries. Each entry will be a separate page in this journal.",
-        scope: "world",
-        config: false,
-        type: String,
-        choices: () => {
-            const choices = {
-                'none': '- Select Journal -'
-            };
-            game.journal.contents.forEach(j => {
-                choices[j.id] = j.name;
-            });
-            return choices;
-        },
-        default: "none",
-        onChange: () => {
-            // Update the codex panel if it exists
-            if (PanelManager.instance?.codexPanel) {
-                PanelManager.instance.codexPanel.render(PanelManager.element);
-            }
-        }
-    });
+    // codexJournal is registered below, under the Codex heading. It used to be
+    // registered here too — an identical duplicate whose only effect was to
+    // claim this position in the settings list.
 
     // --------------------------------
     // ---      CODEX Settings     ---
@@ -1200,7 +1148,7 @@ export const registerSettings = function() {
         name: "Codex Journal",
         hint: "The journal to use for codex entries. Each entry will be a separate page in this journal.",
         scope: "world",
-        config: false,
+        config: true,
         type: String,
         choices: () => {
             const choices = {
@@ -1316,7 +1264,7 @@ export const registerSettings = function() {
         name: "Quest Journal",
         hint: "The journal to use for quest entries. Each quest will be a separate page in this journal.",
         scope: "world",
-        config: false,
+        config: true,
         type: String,
         choices: () => {
             // Create choices object with 'none' as first option

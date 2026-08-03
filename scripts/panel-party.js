@@ -97,9 +97,7 @@ export class PartyPanel {
             partyRemainingHP,
             partyTotalHP,
             partyHealthbarStatus,
-            showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
-            showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
-            showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros')
+            showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar')
         });
         // v13: Use native DOM innerHTML instead of jQuery html()
         partyContainer.innerHTML = html;

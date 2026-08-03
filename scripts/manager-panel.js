@@ -429,6 +429,7 @@ export class PanelManager {
                 icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
             })) || [],
             settings: {
+                showGmPanel: game.settings.get(MODULE.ID, 'showGmPanel'),
                 showCharacterSummaryPanel: game.settings.get(MODULE.ID, 'showCharacterSummaryPanel'),
                 showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
                 showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
@@ -507,6 +508,7 @@ export class PanelManager {
                 icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.icon || 'icons/svg/aura.svg'
             })) || [],
             settings: {
+                showGmPanel: game.settings.get(MODULE.ID, 'showGmPanel'),
                 showCharacterSummaryPanel: game.settings.get(MODULE.ID, 'showCharacterSummaryPanel'),
                 showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
                 showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
@@ -600,7 +602,8 @@ export class PanelManager {
 
         if (this.actor) {
             this.characterPanel?.render(element);
-            if (game.user.isGM) {
+            // GM-only, and now individually toggleable like the other panels.
+            if (game.user.isGM && game.settings.get(MODULE.ID, 'showGmPanel')) {
                 if (this.gmPanel) {
                     this.gmPanel.render(element, PanelManager.gmDetails);
                 }

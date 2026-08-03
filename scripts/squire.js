@@ -410,35 +410,9 @@ Hooks.once('ready', async () => {
             }
         });
         
-        // Macros Panel Hooks
-        const macrosReadyHookId = getBlacksmithHookManager().registerHook({
-            name: "ready",
-            description: "Coffee Pub Squire: Handle ready event for macros panel",
-            context: MODULE.ID,
-            priority: 2,
-            callback: () => {
-                // Route to macros panel if it exists
-                const panelManager = getPanelManager();
-                if (panelManager?.instance?.macrosPanel && panelManager.instance.macrosPanel.updateHotbarVisibility) {
-                    panelManager.instance.macrosPanel.updateHotbarVisibility();
-                }
-            }
-        });
-        
-        const macrosRenderSettingsConfigHookId = getBlacksmithHookManager().registerHook({
-            name: "renderSettingsConfig",
-            description: "Coffee Pub Squire: Handle settings config rendering for macros panel",
-            context: MODULE.ID,
-            priority: 2,
-            callback: () => {
-                // Route to macros panel if it exists
-                const panelManager = getPanelManager();
-                if (panelManager?.instance?.macrosPanel && panelManager.instance.macrosPanel.updateHotbarVisibility) {
-                    panelManager.instance.macrosPanel.updateHotbarVisibility();
-                }
-            }
-        });
-        
+        // The two macros-panel hooks here existed only to re-apply Squire's own
+        // hotbar-hiding style, which Blacksmith now owns exclusively.
+
         // Party Stats Panel Hooks
         const partyStatsUpdateCombatHookId = getBlacksmithHookManager().registerHook({
             name: "updateCombat",
@@ -1836,12 +1810,8 @@ Hooks.once('init', async function() {
     const partials = [
         { name: 'handle-health', path: 'handle-health.hbs' },
         { name: 'handle-health-tray', path: 'handle-health-tray.hbs' },
-        { name: 'handle-dice-tray', path: 'handle-dice-tray.hbs' },
-        { name: 'handle-macros', path: 'handle-macros.hbs' },
         { name: 'handle-favorites', path: 'handle-favorites.hbs' },
-        { name: 'handle-conditions', path: 'handle-conditions.hbs' },
-        { name: 'handle-primary-stats', path: 'handle-primary-stats.hbs' },
-        { name: 'handle-secondary-stats', path: 'handle-secondary-stats.hbs' }
+        { name: 'handle-conditions', path: 'handle-conditions.hbs' }
     ];
     
     for (const partial of partials) {
@@ -2174,8 +2144,36 @@ Hooks.once('ready', async function() {
             icon: "fa-solid fa-code",
             name: "squire-macros",
             title: null,
-            tooltip: "Macro window",
+            tooltip: "Macro window (right-click for favorites)",
             onClick: () => blacksmith.openWindow(`${MODULE.ID}-macros-window`),
+            // Favorited macros used to sit on the tray handle. They live here
+            // now: the handle is for the selected token's state, and a macro
+            // isn't token state. Passed as a function so the list is rebuilt on
+            // each open rather than frozen at registration.
+            contextMenuItems: () => {
+                const items = [{
+                    name: 'Show Macro Window',
+                    icon: 'fa-solid fa-code',
+                    onClick: () => blacksmith.openWindow(`${MODULE.ID}-macros-window`)
+                }];
+
+                const favoriteIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
+                const favorites = favoriteIds
+                    .map(id => game.macros.get(id))
+                    .filter(Boolean);
+
+                if (favorites.length) {
+                    items.push({ separator: true });
+                    for (const macro of favorites) {
+                        items.push({
+                            name: macro.name,
+                            icon: 'fa-solid fa-play',
+                            onClick: () => macro.execute()
+                        });
+                    }
+                }
+                return items;
+            },
             zone: "left",
             group: "general",
             groupOrder: 999,

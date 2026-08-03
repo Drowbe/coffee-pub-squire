@@ -110,9 +110,9 @@
 
 
                     <!-- GM DETAILS -->
-                    {{#if isGM}}
+                    {{#if isGM}}{{#if @root.settings.showGmPanel}}
                         <div class="panel-container" data-panel="gm"></div>
-                    {{/if}}
+                    {{/if}}{{/if}}
 
 
                     <!-- CHARACTER SUMMARY -->

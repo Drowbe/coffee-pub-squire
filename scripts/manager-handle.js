@@ -2,7 +2,6 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { showQuestTooltip, hideQuestTooltip, getObjectiveTooltipData } from './helpers.js';
 import { QuestParser } from './utility-quest-parser.js';
 // REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
-import { DiceTrayPanel } from './panel-dicetray.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
 import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getTextEditor } from './helpers.js';
@@ -81,13 +80,6 @@ export class HandleManager {
             
             return { status, statusClass, percentage };
         };
-
-        // Build favorite macros array
-        let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
-        let favoriteMacros = favoriteMacroIds.map(id => {
-            const macro = game.macros.get(id);
-            return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
-        }).filter(Boolean);
 
         // Fetch pinned quest data for quest handle
         let pinnedQuest = null;
@@ -175,15 +167,9 @@ export class HandleManager {
             })) || [],
             pinnedQuest,
             showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
-            showHandleStatsPrimary: game.settings.get(MODULE.ID, 'showHandleStatsPrimary'),
-            showHandleStatsSecondary: game.settings.get(MODULE.ID, 'showHandleStatsSecondary'),
             showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
             showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
-            showHandleDiceTray: game.settings.get(MODULE.ID, 'showHandleDiceTray'),
-            showHandleMacros: game.settings.get(MODULE.ID, 'showHandleMacros'),
-            isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
-            defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName'),
-            favoriteMacros
+            defaultPartyName: game.settings.get(MODULE.ID, 'defaultPartyName')
         };
 
         // If party view, add party context for handle-party
@@ -393,16 +379,6 @@ export class HandleManager {
             }
         });
 
-        // Handle dice tray icon clicks - delegated
-        handleElement.addEventListener('click', async (event) => {
-            if (!event.target.closest('#dice-tray-button')) return;
-            event.preventDefault();
-            event.stopPropagation();
-            if (PanelManager.instance?.dicetrayPanel && !PanelManager.instance.dicetrayPanel.isWindowOpen) {
-                await PanelManager.instance.dicetrayPanel.openWindow();
-            }
-        });
-
         // Handle pinned quest clicks - delegated
         handleElement.addEventListener('click', async (event) => {
             if (!event.target.closest('.handle-pinned-quest-name')) return;
@@ -545,28 +521,8 @@ export class HandleManager {
             });
         });
 
-        // Handle macros icon clicks - delegated
-        handleElement.addEventListener('click', async (event) => {
-            if (!event.target.closest('#macros-button')) return;
-            event.preventDefault();
-            event.stopPropagation();
-            if (PanelManager.instance?.macrosPanel && !PanelManager.instance.macrosPanel.isWindowOpen) {
-                await PanelManager.instance.macrosPanel.openWindow();
-            }
-        });
-
-        // Add click handler for favorite macros in handle
-        // v13: Use handleElement (the cloned handle that's actually in the DOM) for event delegation
-        handleElement.addEventListener('click', function(e) {
-            const macroIcon = e.target.closest('.handle-macro-icon');
-            if (!macroIcon) return;
-            
-            e.preventDefault();
-            e.stopPropagation();
-            const macroId = macroIcon.dataset.macroId;
-            const macro = game.macros.get(macroId);
-            if (macro) macro.execute();
-        });
+        // Macros moved to the Blacksmith menubar tool's context menu — favorites
+        // are still favorites, they're just reached from there now.
 
         // Add click handler for party member portraits in the handle
         // v13: Use native DOM event delegation

@@ -3,23 +3,12 @@ import { PanelManager } from './manager-panel.js';
 import { trackModuleTimeout } from './timer-utils.js';
 import { getNativeElement } from './helpers.js';
 
-// Hide Foundry hotbar if setting is enabled
-export function updateHotbarVisibility() {
-  // Only run if the setting is registered
-  if (!game.settings.settings.has(`${MODULE.ID}.hideFoundryHotbar`)) return;
-  const shouldHide = game.settings.get(MODULE.ID, 'hideFoundryHotbar');
-  let styleTag = document.getElementById('squire-hide-hotbar-style');
-  if (shouldHide) {
-    if (!styleTag) {
-      styleTag = document.createElement('style');
-      styleTag.id = 'squire-hide-hotbar-style';
-      styleTag.innerText = '#hotbar { display: none !important; }';
-      document.head.appendChild(styleTag);
-    }
-  } else if (styleTag) {
-    styleTag.remove();
-  }
-}
+// Hiding the Foundry hotbar belongs to Blacksmith's hide-UI feature, which
+// Squire depends on. Squire used to inject its own `#hotbar { display: none }`
+// style from a competing setting, so two modules fought over the same element
+// and the visible result depended on which wrote last. Removed entirely —
+// Squire still MOVES the hotbar as the tray opens and closes, which is a
+// different concern and lives in the tray layout code.
 
 // Function to open macros window from menubar
 export async function openMacros() {
@@ -70,8 +59,6 @@ export class MacrosPanel {
             this.actor.apps[this.id] = this;
         }
         
-        // Update hotbar visibility when panel is created
-        updateHotbarVisibility();
     }
 
     async render() {
