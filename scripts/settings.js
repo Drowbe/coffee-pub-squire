@@ -15,7 +15,7 @@ export const registerSettings = function() {
     game.settings.register(MODULE.ID, "headingH1Squire", {
         name: 'Introduction',
         hint: 'A FoundryVTT module from the Coffee Pub suite that provides quick access to character-specific combat information through a sliding tray interface. It features automatic character detection, spell and weapon management with favorites and filtering, HP tracking, ability rolls, an integrated dice tray, quick condition application, and customizable themes. The UI adjusts automatically for better usability and fully integrates with the Coffee Pub Blacksmith API.',
-        scope: "world",
+        scope: "user",
         config: true,
         default: "",
         type: String,
@@ -29,7 +29,7 @@ export const registerSettings = function() {
 	game.settings.register(MODULE.ID, "headingH2Tray", {
 		name: 'The Tray',
 		hint: 'How the tray itself looks and behaves — which tabs and panels appear, what sits on the handle, and which Squire tools live in the menubar.',
-		scope: "world",
+		scope: "user",
 		config: true,
 		default: "",
 		type: String,
@@ -39,7 +39,7 @@ export const registerSettings = function() {
 	game.settings.register(MODULE.ID, "headingH3TrayConfiguration", {
 		name: 'Tray Configuration',
 		hint: 'Automation of token actions.',
-		scope: "world",
+		scope: "user",
 		config: true,
 		default: "",
 		type: String,
@@ -196,12 +196,15 @@ export const registerSettings = function() {
     
 
 
-    // Tray Position
+    // TODO: Remove trayPosition and make left positioning an implementation detail.
+    // This requires untangling the panel template data reads and the many
+    // `.squire-tray[data-position="left"]` CSS selectors before the compatibility
+    // setting and its onChange handler can be deleted safely.
     game.settings.register(MODULE.ID, 'trayPosition', {
         name: 'Tray Position',
         hint: 'Where should the tray appear on the screen',
         scope: 'client',
-        config: true,
+        config: false,
         type: String,
         choices: {
             'left': 'Left Side'
@@ -310,7 +313,7 @@ export const registerSettings = function() {
 	game.settings.register(MODULE.ID, "headingH3PanelConfiguration", {
 		name: 'Panel Configuration',
 		hint: 'Panels appear at the top of the tray, above the spells, weapons, and inventory. They can be collapsed or hidden completely. Several of them can be accessed via the handle even if the panel is disabled.',
-		scope: "world",
+		scope: "user",
 		config: true,
 		default: "",
 		type: String,
@@ -394,7 +397,7 @@ export const registerSettings = function() {
 	game.settings.register(MODULE.ID, "headingH3HandleConfiguration", {
 		name: 'Handle Configuration',
 		hint: 'The handle is the bit of the tray that always shows. Many actions can be performed via the handle, even if the panels are disabled.',
-		scope: "world",
+		scope: "user",
 		config: true,
 		default: "",
 		type: String,
@@ -466,7 +469,7 @@ export const registerSettings = function() {
 	game.settings.register(MODULE.ID, "headingH3MenubarConfiguration", {
 		name: 'Menubar Configuration',
 		hint: 'Squire tools that live in the Blacksmith menubar rather than the tray handle. These are global tools — they do not depend on which token is selected.',
-		scope: "world",
+		scope: "user",
 		config: true,
 		default: "",
 		type: String,
@@ -1269,4 +1272,3 @@ export const registerSettings = function() {
 // ***************************
 
 // None
-
