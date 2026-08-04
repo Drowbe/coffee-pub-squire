@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [13.5.1]
 
+### Changed
+- **Health tool claims the shared party-health capability**: The Squire Health menubar registration now declares Blacksmith's `party-health` intent, allowing compatible Blacksmith surfaces to discover the handler without coupling to Squire's tool id.
+- **Tool windows follow Blacksmith themes automatically**: Dice Tray, Health, and Transfer now use Blacksmith's theme-aware field, raised, sunken, hover, selected, and muted-text properties for neutral content surfaces. Removed redundant Light/Dark/Glass workarounds while retaining deliberate semantic colors for health actions, advantage/disadvantage, warnings, and drag targets.
+- **Tray Position hidden pending removal**: The single-option Tray Position setting remains registered for runtime and stored-setting compatibility but is no longer shown in Settings. A follow-up TODO records the required JavaScript, template-data, and position-scoped CSS cleanup before the setting can be removed safely.
+
+### Fixed
+- **Players retain the settings heading hierarchy**: Introduction, The Tray, Tray Configuration, Panel Configuration, Handle Configuration, and Menubar Configuration headings are now user-scoped, so player-visible user/client settings no longer appear as an unexplained flat list. Only heading scopes changed; the scopes and behavior of the settings beneath them are unchanged.
 
 
 ## [13.5.0]
