@@ -2122,6 +2122,7 @@ Hooks.once('ready', async function() {
             group: "general",
             groupOrder: 999,
             order: 201,
+            intents: ['party-health'],
             moduleId: MODULE.ID,
             gmOnly: false,
             leaderOnly: false,
