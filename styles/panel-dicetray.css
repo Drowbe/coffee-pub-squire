@@ -1,25 +1,16 @@
 .squire-dicetray-tool-window #dicetray-content {
-    --dice-control-border: rgba(112, 85, 49, 0.42);
-    --dice-control-bg: rgba(112, 85, 49, 0.11);
-    --dice-control-bg-hover: rgba(112, 85, 49, 0.2);
-    --dice-control-text: #4a3828;
-    --dice-control-muted: rgba(74, 56, 40, 0.58);
+    --dice-control-border: var(--blacksmith-tool-divider);
+    --dice-control-bg: var(--blacksmith-tool-surface-raised);
+    --dice-control-bg-hover: var(--blacksmith-tool-surface-hover);
+    --dice-control-text: var(--blacksmith-tool-text);
+    --dice-control-muted: var(--blacksmith-tool-text-muted);
     display: flex;
     flex-direction: column;
     min-height: 0;
     gap: 8px;
     padding: 8px;
-    color: var(--blacksmith-tool-text, #2f241a);
+    color: var(--blacksmith-tool-text);
     overflow: hidden;
-}
-
-.squire-dicetray-tool-window.blacksmith-window-tool-theme-dark #dicetray-content,
-.squire-dicetray-tool-window.blacksmith-window-tool-theme-glass #dicetray-content {
-    --dice-control-border: var(--blacksmith-tool-divider, rgba(172, 159, 129, 0.35));
-    --dice-control-bg: rgba(255, 255, 255, 0.055);
-    --dice-control-bg-hover: rgba(255, 255, 255, 0.11);
-    --dice-control-text: var(--blacksmith-tool-text, rgba(224, 224, 224, 0.92));
-    --dice-control-muted: rgba(224, 224, 224, 0.54);
 }
 
 .squire-dicetray-tool-window .squire-dice-formula {
@@ -36,41 +27,32 @@
     height: 34px;
     padding: 4px 8px;
     box-sizing: border-box;
-    border: 1px solid var(--dice-control-border);
+    border: 1px solid var(--blacksmith-tool-field-border);
     border-radius: 4px;
-    background: rgba(255, 250, 239, 0.42);
-    box-shadow: inset 0 1px 2px rgba(77, 53, 28, 0.1);
+    background: var(--blacksmith-tool-field-background);
 }
 
-.squire-dicetray-tool-window .squire-formula-input {
+.squire-dicetray-tool-window .squire-input-wrapper:focus-within {
+    border-color: var(--blacksmith-tool-field-focus-border);
+    box-shadow: 0 0 0 2px var(--blacksmith-tool-field-focus-ring);
+}
+
+.application.blacksmith-window-tool.squire-dicetray-tool-window .squire-formula-input {
     width: 100%;
     border: 0;
     background: transparent;
     color: var(--dice-control-text);
     font-weight: 600;
     box-shadow: none;
-}
-
-.squire-dicetray-tool-window.blacksmith-window-tool-theme-dark .squire-input-wrapper,
-.squire-dicetray-tool-window.blacksmith-window-tool-theme-glass .squire-input-wrapper {
-    background: rgba(0, 0, 0, 0.24);
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.42);
-}
-
-.squire-dicetray-tool-window.blacksmith-window-tool-theme-dark .squire-clear-button,
-.squire-dicetray-tool-window.blacksmith-window-tool-theme-dark .history-clear,
-.squire-dicetray-tool-window.blacksmith-window-tool-theme-dark .reroll-button,
-.squire-dicetray-tool-window.blacksmith-window-tool-theme-glass .squire-clear-button,
-.squire-dicetray-tool-window.blacksmith-window-tool-theme-glass .history-clear,
-.squire-dicetray-tool-window.blacksmith-window-tool-theme-glass .reroll-button {
-    color: var(--blacksmith-tool-accent, rgba(236, 215, 178, 0.9));
+    background: transparent;
 }
 
 .squire-dicetray-tool-window .squire-formula-input::placeholder {
     color: var(--dice-control-muted);
 }
 
-.squire-dicetray-tool-window .squire-formula-input:focus {
+.application.blacksmith-window-tool.squire-dicetray-tool-window .squire-formula-input:focus,
+.application.blacksmith-window-tool.squire-dicetray-tool-window .squire-formula-input:focus-visible {
     outline: none;
     box-shadow: none;
 }
@@ -78,7 +60,7 @@
 .squire-dicetray-tool-window .squire-clear-button,
 .squire-dicetray-tool-window .history-clear,
 .squire-dicetray-tool-window .reroll-button {
-    color: rgba(112, 85, 49, 0.72);
+    color: var(--blacksmith-tool-text-muted);
     cursor: pointer;
     transition: color 100ms ease, transform 100ms ease;
 }
@@ -113,9 +95,9 @@
 .squire-dicetray-tool-window .squire-dice-icon:hover,
 .squire-dicetray-tool-window .squire-operator-icon:hover,
 .squire-dicetray-tool-window .squire-modifier-icon:hover {
-    border-color: rgba(112, 85, 49, 0.66);
+    border-color: var(--blacksmith-tool-field-focus-border);
     background: var(--dice-control-bg-hover);
-    color: var(--blacksmith-tool-text, #2f241a);
+    color: var(--blacksmith-tool-text);
 }
 
 .squire-dicetray-tool-window .squire-roll-button:active,
@@ -187,7 +169,7 @@
     margin-top: 2px;
     padding-top: 7px;
     border-top: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
-    color: var(--blacksmith-tool-text, #2f241a);
+    color: var(--blacksmith-tool-text);
 }
 
 .squire-dicetray-tool-window .history-header {
@@ -201,7 +183,7 @@
 }
 
 .squire-dicetray-tool-window .history-header .tray-title-small {
-    color: var(--blacksmith-tool-accent, #4a3828);
+    color: var(--blacksmith-tool-accent);
     font-family: "Modesto Condensed", "Palatino Linotype", serif;
     font-size: 15px;
     font-weight: 800;
@@ -255,7 +237,7 @@
     min-height: 24px;
     padding: 3px 4px;
     border-bottom: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.2));
-    color: var(--blacksmith-tool-text, #2f241a);
+    color: var(--blacksmith-tool-text);
 }
 
 .squire-dicetray-tool-window .history-entry:last-child {

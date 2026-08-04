@@ -25,12 +25,12 @@
     padding: 3px;
     border: 1px solid transparent;
     border-radius: 5px;
-    background: rgba(112, 85, 49, 0.10);
+    background: var(--blacksmith-tool-surface-raised);
     cursor: pointer;
 }
 
 .squire-health-tool-window .health-row-aggregate {
-    background: rgba(112, 85, 49, 0.15);
+    background: var(--blacksmith-tool-surface-sunken);
 }
 
 .squire-health-tool-window .health-portrait {
@@ -43,8 +43,8 @@
     box-sizing: border-box;
     border: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
     border-radius: 4px;
-    background: rgba(112, 85, 49, 0.12);
-    color: rgba(74, 56, 40, 0.78);
+    background: var(--blacksmith-tool-surface-sunken);
+    color: var(--blacksmith-tool-text-muted);
 }
 
 .squire-health-tool-window .health-portrait img {
@@ -74,8 +74,8 @@
     box-sizing: border-box;
     border: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
     border-radius: 4px;
-    background: rgba(112, 85, 49, 0.12);
-    color: rgba(74, 56, 40, 0.88);
+    background: var(--blacksmith-tool-surface-sunken);
+    color: var(--blacksmith-tool-text);
     font-family: "Signika", sans-serif;
     font-size: 0.78em;
     font-weight: 900;
@@ -92,14 +92,14 @@
     padding: 0;
     border: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
     border-radius: 4px;
-    background: rgba(112, 85, 49, 0.12);
-    color: rgba(74, 56, 40, 0.88);
+    background: var(--blacksmith-tool-surface-sunken);
+    color: var(--blacksmith-tool-text);
     line-height: 1;
 }
 
 .squire-health-tool-window .health-conditions:hover {
-    border-color: rgba(183, 118, 50, 0.72);
-    color: rgba(193, 87, 1, 1);
+    border-color: var(--blacksmith-tool-field-focus-border);
+    color: var(--blacksmith-tool-accent);
 }
 
 .squire-health-tool-window .health-condition-count {
@@ -141,7 +141,7 @@
     overflow: hidden;
     border: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
     border-radius: 4px;
-    background: rgba(47, 36, 26, 0.28);
+    background: var(--blacksmith-tool-surface-sunken);
     font-family: "Signika", sans-serif;
 }
 
@@ -187,7 +187,7 @@
     align-items: center;
     justify-content: center;
     min-height: 30px;
-    color: rgba(74, 56, 40, 0.65);
+    color: var(--blacksmith-tool-text-muted);
     font-style: italic;
 }
 
@@ -195,24 +195,24 @@
 .squire-health-tool-window .health-row:hover .hp-bar,
 .squire-health-tool-window .health-row:hover .health-conditions,
 .squire-health-tool-window .health-row:hover .health-aggregate-stat {
-    border-color: rgba(183, 118, 50, 0.72);
+    border-color: var(--blacksmith-tool-field-focus-border);
 }
 
 .squire-health-tool-window .health-row:hover {
-    background: rgba(183, 118, 50, 0.16);
+    background: var(--blacksmith-tool-surface-hover);
 }
 
 .squire-health-tool-window .health-row.selected .health-portrait,
 .squire-health-tool-window .health-row.selected .hp-bar,
 .squire-health-tool-window .health-row.selected .health-conditions,
 .squire-health-tool-window .health-row.selected .health-aggregate-stat {
-    border-color: rgba(193, 87, 1, 1.0);
+    border-color: var(--blacksmith-tool-accent);
 }
 
 .squire-health-tool-window .health-row.selected {
-    border-color: rgba(193, 87, 1, 0.85);
-    background: rgba(193, 87, 1, 0.28);
-    box-shadow: inset 0 0 0 1px rgba(193, 87, 1, 0.18);
+    border-color: var(--blacksmith-tool-accent);
+    background: var(--blacksmith-tool-surface-selected);
+    box-shadow: inset 0 0 0 1px var(--blacksmith-tool-field-focus-ring);
 }
 
 .squire-health-tool-window .hp-controls {
@@ -236,20 +236,17 @@
     justify-content: center;
     padding: 4px;
     border: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
-    background: rgba(112, 85, 49, 0.12);
-    color: rgba(74, 56, 40, 0.88);
+    background: var(--blacksmith-tool-surface-raised);
+    color: var(--blacksmith-tool-text);
 }
 
 .squire-health-tool-window .hp-btn:hover {
-    background: rgba(112, 85, 49, 0.22);
+    background: var(--blacksmith-tool-surface-hover);
 }
 
 .squire-health-tool-window .hp-amount {
     width: 100%;
     padding: 4px 6px;
-    border: 1px solid var(--blacksmith-tool-divider, rgba(112, 85, 49, 0.34));
-    background: rgba(255, 250, 239, 0.42);
-    color: rgba(47, 36, 26, 1.0);
     font-family: "Signika", sans-serif;
     font-weight: 700;
     text-align: center;
@@ -278,41 +275,6 @@
     opacity: 0.5;
 }
 
-.squire-health-tool-window.blacksmith-window-tool-theme-dark #health-content,
-.squire-health-tool-window.blacksmith-window-tool-theme-glass #health-content {
-    --health-tool-control-bg: rgba(255, 255, 255, 0.06);
-    --health-tool-control-bg-strong: rgba(255, 255, 255, 0.09);
-    --health-tool-control-text: var(--blacksmith-tool-text, rgba(224, 224, 224, 0.92));
-}
-
-.squire-health-tool-window.blacksmith-window-tool-theme-dark .health-row,
-.squire-health-tool-window.blacksmith-window-tool-theme-glass .health-row {
-    background: var(--health-tool-control-bg);
-}
-
-.squire-health-tool-window.blacksmith-window-tool-theme-dark .health-row-aggregate,
-.squire-health-tool-window.blacksmith-window-tool-theme-glass .health-row-aggregate {
-    background: var(--health-tool-control-bg-strong);
-}
-
-.squire-health-tool-window.blacksmith-window-tool-theme-dark .health-portrait,
-.squire-health-tool-window.blacksmith-window-tool-theme-dark .health-conditions,
-.squire-health-tool-window.blacksmith-window-tool-theme-dark .health-aggregate-stat,
-.squire-health-tool-window.blacksmith-window-tool-theme-dark .hp-btn,
-.squire-health-tool-window.blacksmith-window-tool-theme-glass .health-portrait,
-.squire-health-tool-window.blacksmith-window-tool-theme-glass .health-conditions,
-.squire-health-tool-window.blacksmith-window-tool-theme-glass .health-aggregate-stat,
-.squire-health-tool-window.blacksmith-window-tool-theme-glass .hp-btn {
-    background: var(--health-tool-control-bg);
-    color: var(--health-tool-control-text);
-}
-
-.squire-health-tool-window.blacksmith-window-tool-theme-dark .hp-amount,
-.squire-health-tool-window.blacksmith-window-tool-theme-glass .hp-amount {
-    background: rgba(0, 0, 0, 0.28);
-    color: var(--health-tool-control-text);
-}
-
 .squire-health-tool-window.blacksmith-window-tool-theme-dark .select-party,
 .squire-health-tool-window.blacksmith-window-tool-theme-dark .select-npcs,
 .squire-health-tool-window.blacksmith-window-tool-theme-glass .select-party,
@@ -336,14 +298,4 @@
 .squire-health-tool-window.blacksmith-window-tool-theme-glass .hp-up,
 .squire-health-tool-window.blacksmith-window-tool-theme-glass .hp-up-ten {
     color: rgba(151, 220, 157, 0.96);
-}
-
-.squire-health-tool-window.blacksmith-window-tool-theme-dark .health-row:hover,
-.squire-health-tool-window.blacksmith-window-tool-theme-glass .health-row:hover {
-    background: rgba(183, 118, 50, 0.18);
-}
-
-.squire-health-tool-window.blacksmith-window-tool-theme-dark .health-row.selected,
-.squire-health-tool-window.blacksmith-window-tool-theme-glass .health-row.selected {
-    background: rgba(193, 87, 1, 0.34);
 }
