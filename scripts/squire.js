@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager, _updateHealthPanelFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings, migrateCompendiumAccessSetting } from './settings.js';
-import { getTransferBlocker, registerHelpers, renderTemplate, showSquireToast, withArrivalFlag } from './helpers.js';
+import { getTransferBlocker, registerHelpers, renderTemplate, showSquireToast } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
 import { CompendiumRequestUtils } from './compendium-request-utils.js';
 import { QuestParser, migrateQuestJournalData } from './utility-quest-parser.js';
@@ -148,6 +148,14 @@ Hooks.once('ready', async () => {
                 'Coffee Pub Squire | Failed to register SQUIRE with Blacksmith: registerModule not available (is coffee-pub-blacksmith active?)'
             );
         }
+
+        // Declare `isNew` as carrying no identity, so Blacksmith's stack-merge
+        // predicate ignores it for every consumer without any of them needing to
+        // know Squire exists. Without this, an item that has been stamped and one
+        // that hasn't compare as different documents and identical stacks stop
+        // merging. Optional-chained because it lands with api.inventory, which
+        // may be newer than the Blacksmith a given world has installed.
+        blacksmithApi?.inventory?.registerTransientFlag?.(`${MODULE.ID}.isNew`);
 
         // Initialize unified pin manager (taxonomy, events, context menus, hooks).
         await initPinManager();
@@ -496,6 +504,33 @@ Hooks.once('ready', async () => {
             }
         });
         
+        // Stamp the "just arrived" badge into the item's own creation data.
+        //
+        // This used to be a setFlag in the createItem hook below, which is a
+        // second write to the Actor landing after the create returns. dnd5e
+        // recomputes encumbrance after every item write, and that recompute is a
+        // check-then-create against one fixed effect id with no lock, so the
+        // second write's recompute reads the same still-empty effects collection
+        // and tries to create `dnd5eencumbered0` again — the server rejects it.
+        // Awaiting the first write doesn't help: the recompute outlives it.
+        //
+        // It also made stack-merge identity timing-dependent for anything
+        // comparing item flags, since a stamped item and an unstamped one differ
+        // until the follow-up write lands. Injecting at preCreate means one
+        // write, no window, and the same persisted flag.
+        //
+        // Registered natively rather than through Blacksmith's hook manager:
+        // preCreate hooks cancel the operation when a handler returns false, and
+        // routing a cancel-capable hook through a wrapper whose return value
+        // Squire doesn't control risks silently blocking item creation for the
+        // whole world. `updateSource` mutates the pending document in place; the
+        // callback returns nothing.
+        registerNativeHook('preCreateItem', (item, data, options, userId) => {
+            if (item?.parent?.documentName !== 'Actor') return;
+            if (!item.parent.isOwner) return;
+            item.updateSource({ flags: { [MODULE.ID]: { isNew: true } } });
+        });
+
         const globalCreateItemHookId = getBlacksmithHookManager().registerHook({
             name: "createItem",
             description: "Coffee Pub Squire: Handle global item creation for tray updates and auto-favoriting",
@@ -506,15 +541,12 @@ Hooks.once('ready', async () => {
 
                 // Check if this item belongs to an actor that the current user owns
                 if (item.parent && item.parent.isOwner) {
-                    // Mark the item as new for the NEW badge — only on the creating client
-                    // so multiple clients don't race to write the same flag
+                    // Session half of the NEW badge. The durable half is the flag,
+                    // injected at preCreate above; this map is in-memory, so it
+                    // costs no write and is only meaningful on the client that
+                    // made the item.
                     if (userId === game.user.id && item.parent.documentName === 'Actor') {
-                        try {
-                            await item.setFlag(MODULE.ID, 'isNew', true);
-                            panelManager?.newlyAddedItems?.set(item.id, Date.now());
-                        } catch (error) {
-                            // Non-fatal: the badge just won't show for this item
-                        }
+                        panelManager?.newlyAddedItems?.set(item.id, Date.now());
                     }
 
                     // Check if this is an NPC/monster and trigger auto-favoring if needed
@@ -1561,7 +1593,7 @@ Hooks.once('socketlib.ready', () => {
                 }
                 
                 // Create the item on the target actor
-                const transferredItem = await targetActor.createEmbeddedDocuments('Item', [withArrivalFlag(itemData)]);
+                const transferredItem = await targetActor.createEmbeddedDocuments('Item', [itemData]);
                 
                 // Reduce quantity or remove the item from source actor
                 if (data.hasQuantity && data.quantity < sourceItem.system.quantity) {

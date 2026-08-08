@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-import { getTransferBlocker, renderTemplate, withArrivalFlag } from './helpers.js';
+import { getTransferBlocker, renderTemplate } from './helpers.js';
 
 export class TransferUtils {
     /**
@@ -335,7 +335,7 @@ export class TransferUtils {
         if (hasQuantity) {
             transferData.system.quantity = quantity;
         }
-        const transferredItem = await targetActor.createEmbeddedDocuments('Item', [withArrivalFlag(transferData)]);
+        const transferredItem = await targetActor.createEmbeddedDocuments('Item', [transferData]);
         
         if (hasQuantity && quantity < item.system.quantity) {
             await item.update({

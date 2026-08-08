@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
-import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getTransferBlocker, renderTemplate, withArrivalFlag, getCampaignContext } from './helpers.js';
+import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getTransferBlocker, renderTemplate, getCampaignContext } from './helpers.js';
 import { CharacterPanel } from './panel-character.js';
 import { GmPanel } from './panel-gm.js';
 import { SpellsPanel } from './panel-spells.js';
@@ -1665,7 +1665,7 @@ export class PanelManager {
         if (hasQuantity) {
             transferData.system.quantity = quantityToTransfer;
         }
-        const transferredItem = await targetActor.createEmbeddedDocuments('Item', [withArrivalFlag(transferData)]);
+        const transferredItem = await targetActor.createEmbeddedDocuments('Item', [transferData]);
         if (hasQuantity && quantityToTransfer < sourceItem.system.quantity) {
             await sourceItem.update({
                 'system.quantity': sourceItem.system.quantity - quantityToTransfer

@@ -452,31 +452,6 @@ export function getTransferBlocker(item, actor) {
 }
 
 /**
- * Stamp Squire's "just arrived" marker onto item data before it is created.
- *
- * The flag has to ride along with the create rather than follow it. dnd5e
- * recomputes encumbrance on every item create, update, and delete
- * (Actor5e#updateEncumbrance), and that recompute is a check-then-create against
- * one fixed effect id: it reads `effects.get(ENCUMBERED)`, sees nothing, and
- * creates the effect with keepId. A second write issued before the first
- * recompute's round trip lands reads the same empty collection and tries the
- * same id again — the server rejects it with "The _id [dnd5eencumbered0] already
- * exists within the parent collection". Creating an item and then setting a flag
- * on it is exactly that pair of writes, so the flag goes in the payload.
- *
- * Only the durable half of the two-tier badge. Callers still seed
- * PanelManager.newlyAddedItems, which covers the session and is what the stray
- * sweep reconciles against.
- *
- * @param {object} itemData - item data destined for createEmbeddedDocuments
- * @returns {object} the same object, so it can be used inline in the create call
- */
-export function withArrivalFlag(itemData) {
-    foundry.utils.setProperty(itemData, `flags.${MODULE.ID}.isNew`, true);
-    return itemData;
-}
-
-/**
  * Attach the delegated "open the container this item is stored in" handler.
  * Shared by every panel that renders the container icon so the behaviour and
  * the double-click guard stay in one place.

@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
-import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate, withArrivalFlag } from './helpers.js';
+import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -399,7 +399,7 @@ export class PartyPanel {
                             if (!item) return;
                             
                             // Create the item on the actor
-                            const createdItem = await targetActor.createEmbeddedDocuments('Item', [withArrivalFlag(item.toObject())]);
+                            const createdItem = await targetActor.createEmbeddedDocuments('Item', [item.toObject()]);
                             
                             // Add to newlyAddedItems in PanelManager
                             if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
@@ -419,7 +419,7 @@ export class PartyPanel {
                     case 'ItemDirectory':
                         const itemData = game.items.get(data.uuid)?.toObject();
                         if (itemData) {
-                            const newItem = await targetActor.createEmbeddedDocuments('Item', [withArrivalFlag(itemData)]);
+                            const newItem = await targetActor.createEmbeddedDocuments('Item', [itemData]);
                             
                             // Add to newlyAddedItems in PanelManager
                             if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
@@ -691,7 +691,7 @@ export class PartyPanel {
         if (hasQuantity) {
             transferData.system.quantity = quantityToTransfer;
         }
-        const transferredItem = await targetActor.createEmbeddedDocuments('Item', [withArrivalFlag(transferData)]);
+        const transferredItem = await targetActor.createEmbeddedDocuments('Item', [transferData]);
         if (hasQuantity && quantityToTransfer < sourceItem.system.quantity) {
             await sourceItem.update({
                 'system.quantity': sourceItem.system.quantity - quantityToTransfer
