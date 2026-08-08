@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-import { renderTemplate } from './helpers.js';
+import { getTransferBlocker, renderTemplate } from './helpers.js';
 
 export class TransferUtils {
     /**
@@ -13,6 +13,15 @@ export class TransferUtils {
      * @param {Object} [params.context] - Additional context for the transfer
      */
     static async executeTransfer({ sourceActor, targetActor, item, quantity = 1, hasQuantity = false, context = {} }) {
+        // A packed container can't be handed over — see getTransferBlocker. This
+        // is the programmatic entry point, so the panels' own guards don't cover
+        // callers that arrive here directly.
+        const containerBlocker = getTransferBlocker(item, sourceActor);
+        if (containerBlocker) {
+            ui.notifications.warn(containerBlocker.message);
+            return false;
+        }
+
         // Create transfer data structure
         const transferId = `transfer_${Date.now()}`;
         const transferData = this._createTransferData(transferId, sourceActor, targetActor, item, quantity, hasQuantity);
@@ -310,6 +319,17 @@ export class TransferUtils {
      * @param {boolean} hasQuantity - Whether item has quantity
      */
     static async _completeItemTransfer(sourceActor, targetActor, item, quantity, hasQuantity) {
+        // The quantity was chosen in a client-side dialog and can be stale by the
+        // time it reaches the mutation — the stack may have been spent, sold, or
+        // partly handed to someone else since. Unchecked, the create below mints
+        // the full requested amount while the delete below removes the source
+        // stack, turning a stale client value into duplicated items.
+        const available = item.system?.quantity ?? 1;
+        if (quantity > available) {
+            ui.notifications.warn(`${sourceActor.name} no longer has ${quantity} ${item.name} to hand over — only ${available} left.`);
+            return false;
+        }
+
         // Create a copy of the item data to transfer
         const transferData = item.toObject();
         if (hasQuantity) {

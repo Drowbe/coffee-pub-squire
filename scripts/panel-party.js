@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
-import { getHealthbarStatusClass, getNativeElement, renderTemplate } from './helpers.js';
+import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -352,6 +352,16 @@ export class PartyPanel {
                                 ui.notifications.warn("Could not find the item on the source character.");
                                 return;
                             }
+
+                            // A packed container can't be handed over: dnd5e keeps
+                            // containment on the child as `system.container`, so a
+                            // copy on the target has an id its contents never point
+                            // at. Refuse in front of the quantity dialog.
+                            const containerBlocker = getTransferBlocker(sourceItem, sourceActor);
+                            if (containerBlocker) {
+                                ui.notifications.warn(containerBlocker.message);
+                                return;
+                            }
                             
                             // Check permissions on source actor
                             const hasSourcePermission = sourceActor.isOwner;
@@ -444,6 +454,16 @@ export class PartyPanel {
                         const sourceItem = sourceActor.items.get(itemId);
                         if (!sourceItem) {
                             ui.notifications.warn("Could not find the item on the source character.");
+                            return;
+                        }
+
+                        // A packed container can't be handed over: dnd5e keeps
+                        // containment on the child as `system.container`, so a
+                        // copy on the target has an id its contents never point
+                        // at. Refuse in front of the quantity dialog.
+                        const containerBlocker = getTransferBlocker(sourceItem, sourceActor);
+                        if (containerBlocker) {
+                            ui.notifications.warn(containerBlocker.message);
                             return;
                         }
                         
@@ -657,6 +677,17 @@ export class PartyPanel {
     }
 
     async _completeItemTransfer(sourceActor, targetActor, sourceItem, quantityToTransfer, hasQuantity) {
+        // The quantity was chosen in a client-side dialog and can be stale by the
+        // time it reaches the mutation — the stack may have been spent, sold, or
+        // partly handed to someone else since. Unchecked, the create below mints
+        // the full requested amount while the delete below removes the source
+        // stack, turning a stale client value into duplicated items.
+        const available = sourceItem.system?.quantity ?? 1;
+        if (quantityToTransfer > available) {
+            ui.notifications.warn(`${sourceActor.name} no longer has ${quantityToTransfer} ${sourceItem.name} to hand over — only ${available} left.`);
+            return false;
+        }
+
         // Create a copy of the item data to transfer
         const transferData = sourceItem.toObject();
         if (hasQuantity) {

@@ -409,6 +409,49 @@ export function getContainerInfo(item, actor) {
 }
 
 /**
+ * The items stored inside a container, found by the `system.container`
+ * back-reference each child carries.
+ *
+ * The inverse of getContainerInfo: that walks child to parent, this walks parent
+ * to children.
+ *
+ * @returns {Item[]} empty for anything that isn't a container, or an empty one
+ */
+export function getContainedItems(container, actor) {
+    if (!container?.id || !actor) return [];
+    return actor.items.filter(item => item.system?.container === container.id);
+}
+
+/**
+ * Why an item can't be handed to another actor, or null if it can.
+ *
+ * Containment lives on the child as `system.container`, pointing at the parent's
+ * id. Copying a container to another actor mints a new id there, so the contents
+ * stay behind on the source pointing at an id that no longer exists: the bag
+ * arrives empty and the source keeps items no panel will render. Nothing in the
+ * move is reversible once both halves have run.
+ *
+ * An empty container has nothing to orphan, so it hands over normally — the
+ * block is about contents, not about being a container.
+ *
+ * Blacksmith's api.inventory rejects the same case with this code and count once
+ * transfers migrate to it; this stays afterwards as the check that keeps the
+ * refusal in front of the quantity dialog rather than after it.
+ *
+ * @returns {{code: string, contentCount: number, message: string}|null}
+ */
+export function getTransferBlocker(item, actor) {
+    const contents = getContainedItems(item, actor);
+    if (!contents.length) return null;
+
+    return {
+        code: 'CONTAINER_HAS_CONTENTS',
+        contentCount: contents.length,
+        message: `${item.name} still holds ${contents.length} item${contents.length === 1 ? '' : 's'}. Unpack it before handing it over.`
+    };
+}
+
+/**
  * Attach the delegated "open the container this item is stored in" handler.
  * Shared by every panel that renders the container icon so the behaviour and
  * the double-click guard stay in one place.

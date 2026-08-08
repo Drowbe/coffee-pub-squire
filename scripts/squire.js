@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager, _updateHealthPanelFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings } from './settings.js';
-import { registerHelpers, renderTemplate, showSquireToast } from './helpers.js';
+import { getTransferBlocker, registerHelpers, renderTemplate, showSquireToast } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
 import { QuestParser, migrateQuestJournalData } from './utility-quest-parser.js';
 // Legacy PIXI-based quest pins - TO BE REMOVED
@@ -1485,12 +1485,38 @@ Hooks.once('socketlib.ready', () => {
                     });
                     return false;
                 }
+
+                // A packed container can't be handed over: dnd5e keeps containment
+                // on the child as `system.container`, so the copy made below lands
+                // with an id its contents never point at and they stay orphaned on
+                // the source. The panels refuse this before the quantity dialog;
+                // this is the GM-side backstop for anything that reaches the socket.
+                const containerBlocker = getTransferBlocker(sourceItem, sourceActor);
+                if (containerBlocker) {
+                    const sourceUsers = game.users.filter(user => sourceActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
+                    const targetUsers = game.users.filter(user => targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
+                    const allUsers = [...new Set([...sourceUsers.map(u => u.id), ...targetUsers.map(u => u.id), data.sourceUserId, data.targetUserId])].filter(id => id);
+
+                    await ChatMessage.create({
+                        content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                            isPublic: false,
+                            cardType: "transfer-failed",
+                            failureReason: containerBlocker.message
+                        }),
+                        speaker: { alias: "System" },
+                        whisper: allUsers
+                    });
+                    return false;
+                }
                 
-                // Validate quantity if applicable
-                if (data.hasQuantity && data.quantity > sourceItem.system.quantity) {
+                // Validate against the live document, not the client's hasQuantity
+                // claim — a caller that reports an item as non-stackable would
+                // otherwise skip the check entirely.
+                const available = sourceItem.system?.quantity ?? 1;
+                if (data.quantity > available) {
                     console.error('Insufficient quantity for transfer:', { 
                         requested: data.quantity, 
-                        available: sourceItem.system.quantity, 
+                        available, 
                         data 
                     });
                     // Send error message to all relevant users
@@ -1502,7 +1528,7 @@ Hooks.once('socketlib.ready', () => {
                         content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                             isPublic: false,
                             cardType: "transfer-failed",
-                            failureReason: `Insufficient quantity. Only ${sourceItem.system.quantity} ${sourceItem.name}${sourceItem.system.quantity !== 1 ? 's' : ''} available, but ${data.quantity} requested.`
+                            failureReason: `Insufficient quantity. Only ${available} ${sourceItem.name}${available !== 1 ? 's' : ''} available, but ${data.quantity} requested.`
                         }),
                         speaker: { alias: "System" },
                         whisper: allUsers
