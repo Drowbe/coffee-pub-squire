@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager, _updateHealthPanelFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings } from './settings.js';
-import { getTransferBlocker, registerHelpers, renderTemplate, showSquireToast } from './helpers.js';
+import { getTransferBlocker, registerHelpers, renderTemplate, showSquireToast, withArrivalFlag } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
 import { QuestParser, migrateQuestJournalData } from './utility-quest-parser.js';
 // Legacy PIXI-based quest pins - TO BE REMOVED
@@ -1545,7 +1545,7 @@ Hooks.once('socketlib.ready', () => {
                 }
                 
                 // Create the item on the target actor
-                const transferredItem = await targetActor.createEmbeddedDocuments('Item', [itemData]);
+                const transferredItem = await targetActor.createEmbeddedDocuments('Item', [withArrivalFlag(itemData)]);
                 
                 // Reduce quantity or remove the item from source actor
                 if (data.hasQuantity && data.quantity < sourceItem.system.quantity) {
@@ -1561,7 +1561,6 @@ Hooks.once('socketlib.ready', () => {
                 // Mark the item as newly added
                 if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
                     game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
-                    await transferredItem[0].setFlag(MODULE.ID, 'isNew', true);
                 }
                 
                 return true; // Success

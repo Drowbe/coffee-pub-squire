@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
-import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate } from './helpers.js';
+import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate, withArrivalFlag } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -399,12 +399,11 @@ export class PartyPanel {
                             if (!item) return;
                             
                             // Create the item on the actor
-                            const createdItem = await targetActor.createEmbeddedDocuments('Item', [item.toObject()]);
+                            const createdItem = await targetActor.createEmbeddedDocuments('Item', [withArrivalFlag(item.toObject())]);
                             
                             // Add to newlyAddedItems in PanelManager
                             if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
                                 game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(createdItem[0].id, Date.now());
-                                await createdItem[0].setFlag(MODULE.ID, 'isNew', true);
                             }
                             
                             // Send chat notification
@@ -420,12 +419,11 @@ export class PartyPanel {
                     case 'ItemDirectory':
                         const itemData = game.items.get(data.uuid)?.toObject();
                         if (itemData) {
-                            const newItem = await targetActor.createEmbeddedDocuments('Item', [itemData]);
+                            const newItem = await targetActor.createEmbeddedDocuments('Item', [withArrivalFlag(itemData)]);
                             
                             // Add to newlyAddedItems in PanelManager
                             if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
                                 game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(newItem[0].id, Date.now());
-                                await newItem[0].setFlag(MODULE.ID, 'isNew', true);
                             }
                             
                             // Send chat notification
@@ -693,7 +691,7 @@ export class PartyPanel {
         if (hasQuantity) {
             transferData.system.quantity = quantityToTransfer;
         }
-        const transferredItem = await targetActor.createEmbeddedDocuments('Item', [transferData]);
+        const transferredItem = await targetActor.createEmbeddedDocuments('Item', [withArrivalFlag(transferData)]);
         if (hasQuantity && quantityToTransfer < sourceItem.system.quantity) {
             await sourceItem.update({
                 'system.quantity': sourceItem.system.quantity - quantityToTransfer
@@ -703,7 +701,6 @@ export class PartyPanel {
         }
         if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
             game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
-            await transferredItem[0].setFlag(MODULE.ID, 'isNew', true);
         }
         
         // Create chat messages for direct transfer completion

@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-import { getTransferBlocker, renderTemplate } from './helpers.js';
+import { getTransferBlocker, renderTemplate, withArrivalFlag } from './helpers.js';
 
 export class TransferUtils {
     /**
@@ -335,7 +335,7 @@ export class TransferUtils {
         if (hasQuantity) {
             transferData.system.quantity = quantity;
         }
-        const transferredItem = await targetActor.createEmbeddedDocuments('Item', [transferData]);
+        const transferredItem = await targetActor.createEmbeddedDocuments('Item', [withArrivalFlag(transferData)]);
         
         if (hasQuantity && quantity < item.system.quantity) {
             await item.update({
@@ -348,7 +348,6 @@ export class TransferUtils {
         // Mark as newly added
         if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
             game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
-            await transferredItem[0].setFlag(MODULE.ID, 'isNew', true);
         }
         
         // Send completion messages
