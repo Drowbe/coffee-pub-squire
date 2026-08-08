@@ -2,12 +2,8 @@
 
 ## Enhancements
 
-- **Manage which statuses the handle shows**: the handle currently renders every active effect on the actor (`manager-handle.js` `effects:` map). Add a way to manage/filter which statuses appear — e.g. a setting or per-condition toggle (conditions only vs. all effects, hide passive item effects, etc.).
-- **Support third-party statuses (e.g. Bibliosoph "injury" statuses)**: effects from other modules show in the handle but the click dialog has no description — the lookup only knows `CONFIG.DND5E.conditionTypes`. Fall back to the effect's own data (`effect.description`, enriched) when the name doesn't match a dnd5e condition, and consider `CONFIG.statusEffects` as a second lookup source so any module-registered status resolves.
-
-## Bugs
-
-- ~~**Quest/objective pin legacy color data**: existing pins still render with colored borders.~~ **RESOLVED (13.3.3)**. Root cause was not a stray color write — the current create path writes a white stroke and update paths never touch style, and Blacksmith renders the border purely from `style.stroke` with no status-based logic. The colored borders were the pre-13.3.0 per-state ring colors (red/green/grey) baked into `style.stroke` by the 13.3.0 migration and frozen there. Fixed with the one-time `migrateSquirePinStyles` GM migration (gated by `pinStrokeMigrationDone`) that resets stroke on existing quest/objective pins to the current design. Note: the original "strip fill/stroke so pins fall back to Blacksmith defaults" plan was stale — the 13.3.1 design language deliberately assigns per-type colors, so the migration normalizes to those instead.
+- **Manage which statuses the handle shows**: the handle currently renders every active effect on the actor (`manager-handle.js` `effects:` map). Add a way to manage/filter which statuses appear — e.g. a setting or per-condition toggle (conditions only vs. all effects, hide passive item effects, etc.). `showHandleConditions` is all-or-nothing and does not cover this.
+- **Remove the `trayPosition` setting**: registered `config: false` for compatibility only, since left is the only option. Removing it means untangling the panel template-data reads and the many `.squire-tray[data-position="left"]` CSS selectors first, then deleting the setting and its `onChange`. Comment lives at `settings.js:212`.
 
 ## Critical
 
@@ -19,5 +15,9 @@
   - Include migration from current HTML/flag state to new schema with backward compatibility.
 - Quest taxonomy management: create a way to manage quest locations and tags centrally, including migrating those changes to existing quests.
 - Leverage the Blacksmith tag system for quests instead of the local quest tag implementation, reusing the same tag model already used for pins.
-- **Pin default tags from API**: Replace `QUEST_CATEGORY_TAG_MAP` and the hardcoded tag logic in `_questCategoryToPinTags()` with a pattern that reads default tags directly from the registered taxonomy via `pins.getModuleTaxonomy()`. Currently the taxonomy (what shows as Suggested in Configure Pin) and the tag-assignment map are kept in sync manually — the API should be the single source of truth for both.
-- ~~**Codex tag migration**: Codex tags were changed from hardcoded singular slugs (`'character'`, `'faction'`, `'artifact'`, etc.) to dynamic category-derived slugs (`'characters'`, `'factions'`, `'artifacts'`, etc.). Existing pins in Blacksmith still carry the old singular tags. A one-time GM migration is needed to rename the old tags on all existing Squire codex pins to match the new naming convention.~~ **VOIDED (2026-07-18)**: all codex content was deleted and rebuilt from scratch, so no pins with old singular tags exist anymore.
+- **Pin default tags from API**: Replace `QUEST_CATEGORY_TAG_MAP` (`manager-pins.js:124`) and the hardcoded tag logic in `_questCategoryToPinTags()` with a pattern that reads default tags directly from the registered taxonomy via `pins.getModuleTaxonomy()`. Partially done: the live taxonomy is already read and used to *validate* the mapping, but the category→tag map is still the source of truth and still kept in sync by hand.
+
+## Blocked / waiting on another module
+
+- **Migrate item mutation to Blacksmith `api.inventory`** (not yet shipped). When `transferItem` / `grantItem` land: the four `_completeItemTransfer` copies (`transfer-utils.js`, `panel-party.js`, `manager-panel.js`, the `squire.js` socket handler) collapse into `transferItem` calls, and the four drop-create sites become `grantItem`. Pass `ignoreFlags: ['coffee-pub-squire.isNew', 'coffee-pub-squire.isHandleFavorite']` on every call. The quantity re-checks in the three `_completeItemTransfer` copies become redundant and can go; the container guard in `getTransferBlocker()` stays, since it keeps the refusal in front of the quantity dialog.
+- **Revisit the dnd5e `updateEncumbrance` upstream report after the v14 migration**. `Actor5e#updateEncumbrance` is an unguarded check-then-create against a fixed effect id, so any two writes to one actor can collide. Blacksmith holds a prepared report in its `TODO-GLOBAL.md`; filing was deferred because a report against a system version this world cannot run earns "upgrade and retry". Squire offered to co-sign. Blacksmith's `enableEncumbranceGuard` mitigates it in the meantime.
