@@ -1,6 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { getNativeElement, renderTemplate } from './helpers.js';
 import { CompendiumSearchUtility } from './utility-compendium-search.js';
+import { CompendiumRequestUtils } from './compendium-request-utils.js';
 
 // Wait this long after the last keystroke before searching. Long enough that
 // typing "longbow" is one query rather than seven, short enough to feel live.
@@ -80,7 +81,19 @@ export class CompendiumSearchPanel {
         const panel = this.element.querySelector('[data-panel="compendium-search"]');
         if (!panel) return;
 
+        // The results list is the same list at every access level; only what you
+        // can do with a row changes. Resolved per render rather than held on the
+        // instance so a GM flipping the setting mid-session reaches an open tray.
+        const canAdd = CompendiumSearchUtility.canAdd(this.actor);
+        const canRequest = CompendiumSearchUtility.canRequest(this.actor);
+
         const templateData = {
+            canAdd,
+            canRequest,
+            panelIcon: canAdd ? 'fa-circle-plus' : (canRequest ? 'fa-paper-plane' : 'fa-book-open-cover'),
+            panelTitle: canAdd
+                ? 'Add From Compendiums'
+                : (canRequest ? 'Request From Compendiums' : 'Browse Compendiums'),
             position: game.settings.get(MODULE.ID, 'trayPosition'),
             query: this.query,
             searching: this.searching,
@@ -97,6 +110,20 @@ export class CompendiumSearchPanel {
         this._removeEventListeners();
         panel.innerHTML = content;
         this._activateListeners(panel);
+    }
+
+
+    /**
+     * The rendered result for a uuid. Rows carry a uuid and a document class and
+     * nothing else, but a request card wants the name, image, and source that
+     * were on screen when the player clicked.
+     */
+    _findResult(uuid) {
+        for (const group of this.results.groups ?? []) {
+            const match = group.items?.find(item => item.uuid === uuid);
+            if (match) return match;
+        }
+        return null;
     }
 
     _removeEventListeners() {
@@ -163,6 +190,32 @@ export class CompendiumSearchPanel {
             doc?.sheet?.render(true);
         }, { signal });
 
+        // Ask the GM to add it — the "request" rung. Only rendered at that
+        // level, and the row carries no more than a uuid, so the entry is read
+        // back out of the results the row was rendered from.
+        panel.addEventListener('click', async (event) => {
+            const button = event.target.closest('.compendium-search-request');
+            if (!button) return;
+            event.preventDefault();
+            event.stopPropagation();
+
+            const row = button.closest('.compendium-search-item');
+            const uuid = row?.dataset.uuid;
+            if (!uuid) return;
+
+            if (button.dataset.processing === 'true') return;
+            button.dataset.processing = 'true';
+            button.classList.add('faded');
+
+            try {
+                const entry = this._findResult(uuid);
+                if (entry) await CompendiumRequestUtils.sendRequest(this.actor, entry);
+            } finally {
+                button.dataset.processing = 'false';
+                button.classList.remove('faded');
+            }
+        }, { signal });
+
         // Drag straight onto a sheet, the canvas, or a journal.
         //
         // `{type, uuid}` on `text/plain` is what TextEditor.getDragEventData
@@ -170,7 +223,16 @@ export class CompendiumSearchPanel {
         // document CLASS from the API, not the row's subtype badge — a spell
         // result is class 'Item', so deriving this from the searched type token
         // would build payloads no sheet accepts, and only for spell rows.
+        //
+        // Add rung only. Dropping a row onto a sheet creates the item directly,
+        // which is the same mutation the add button performs, so leaving the
+        // drag live for a browsing or requesting player would be a second
+        // unguarded door into what the setting just closed. `draggable` is
+        // already false on those rows; this is the half that survives someone
+        // editing the attribute in devtools.
         panel.addEventListener('dragstart', (event) => {
+            if (!CompendiumSearchUtility.canAdd(this.actor)) return;
+
             const row = event.target.closest?.('.compendium-search-item');
             if (!row?.dataset.uuid || !row.dataset.documentClass) return;
 

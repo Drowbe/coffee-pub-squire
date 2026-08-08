@@ -2,7 +2,7 @@
     {{#if (eq position "left")}}
     <div class="section-header">
         <div class="header-left">
-            <i class="fa-solid fa-circle-plus"></i> Add From Compendiums
+            <i class="fa-solid {{panelIcon}}"></i> {{panelTitle}}
         </div>
         <div class="header-right">
             <i class="fa-solid fa-xmark compendium-search-close" title="Back to Panels"></i>
@@ -36,7 +36,7 @@
             {{/if}}
         </div>
         {{#each this.items}}
-        <div draggable="true" class="panel-item compendium-search-item"
+        <div draggable="{{#if @root.canAdd}}true{{else}}false{{/if}}" class="panel-item compendium-search-item"
              data-uuid="{{this.uuid}}" data-document-class="{{this.documentClass}}">
             <div class="panel-item-row">
                 <div class="panel-item-image-container">
@@ -52,7 +52,11 @@
                 </div>
                 <div class="tray-buttons">
                     <i class="fa-solid fa-feather compendium-search-view" title="View Details"></i>
+                    {{#if @root.canAdd}}
                     <i class="fa-solid fa-circle-plus compendium-search-add" title="Add to Character"></i>
+                    {{else if @root.canRequest}}
+                    <i class="fa-solid fa-paper-plane compendium-search-request" title="Ask the GM to add this"></i>
+                    {{/if}}
                 </div>
             </div>
         </div>

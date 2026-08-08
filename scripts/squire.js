@@ -1,9 +1,10 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager, _updateHealthPanelFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
-import { registerSettings } from './settings.js';
+import { registerSettings, migrateCompendiumAccessSetting } from './settings.js';
 import { getTransferBlocker, registerHelpers, renderTemplate, showSquireToast, withArrivalFlag } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
+import { CompendiumRequestUtils } from './compendium-request-utils.js';
 import { QuestParser, migrateQuestJournalData } from './utility-quest-parser.js';
 // Legacy PIXI-based quest pins - TO BE REMOVED
 // import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
@@ -152,6 +153,7 @@ Hooks.once('ready', async () => {
         await initPinManager();
         await migrateSquireNotePinTypes();
         await migrateSquirePinStyles();
+        await migrateCompendiumAccessSetting();
         initTransientNotifications();
         await clearNoteEditLocks({ userId: game.user.id, clearExpired: true });
 
@@ -407,6 +409,20 @@ Hooks.once('ready', async () => {
                 if (panelManager?.instance?.partyPanel && panelManager.instance.partyPanel._handleTransferButtons) {
                     panelManager.instance.partyPanel._handleTransferButtons(message, html, data);
                 }
+            }
+        });
+
+        // Deliberately its own hook rather than a branch inside the party
+        // panel's: a GM approving a compendium request may have no tray open at
+        // all, and routing through PanelManager.instance would make the buttons
+        // work or not depending on whether a token happened to be selected.
+        const compendiumRequestHookId = getBlacksmithHookManager().registerHook({
+            name: "renderChatMessage",
+            description: "Coffee Pub Squire: Handle compendium add request approval buttons",
+            context: MODULE.ID,
+            priority: 2,
+            callback: (message, html) => {
+                CompendiumRequestUtils.handleRequestButtons(message, html);
             }
         });
         
@@ -1773,6 +1789,17 @@ Hooks.once('socketlib.ready', () => {
                 }
             } catch (error) {
                 console.error('Error deleting sender waiting message:', { transferId, error });
+            }
+        });
+
+        // Compendium add requests from players on the "ask the GM" access rung.
+        socket.register("createCompendiumRequestChat", async (data) => {
+            if (!game.user.isGM) return;
+
+            try {
+                await CompendiumRequestUtils.createRequestChat(data);
+            } catch (error) {
+                console.error('Error creating compendium request message:', { data, error });
             }
         });
         

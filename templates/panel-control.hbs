@@ -1,10 +1,10 @@
 {{#if (eq position "left")}}
 <div class="tray-title-small">
     <span>Character Sheet</span>
-    {{#if canAddFromCompendiums}}
+    {{#if canUseCompendiums}}
     <div class="control-mode-toggles">
         <i class="fa-solid fa-user control-mode-toggle" data-mode="sheet" title="Show This Character's Items"></i>
-        <i class="fa-solid fa-magnifying-glass control-mode-toggle" data-mode="search" title="Search Compendiums to Add Items"></i>
+        <i class="fa-solid fa-magnifying-glass control-mode-toggle" data-mode="search" title="{{compendiumToggleTitle}}"></i>
     </div>
     {{/if}}
 </div>

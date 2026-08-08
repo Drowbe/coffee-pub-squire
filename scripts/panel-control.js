@@ -20,9 +20,17 @@ export class ControlPanel {
         }
         if (!this.element) return;
 
+        // Browsing and adding are separate rungs, so the mode toggle and the
+        // add-flow option are gated separately: "clear the search and stay
+        // here after adding" is meaningless to a player who can only look.
+        const canAdd = CompendiumSearchUtility.canAdd(this.actor);
         const templateData = {
             position: game.settings.get(MODULE.ID, 'trayPosition'),
-            canAddFromCompendiums: CompendiumSearchUtility.canAdd(this.actor),
+            canUseCompendiums: CompendiumSearchUtility.canBrowse(this.actor),
+            canAddFromCompendiums: canAdd,
+            compendiumToggleTitle: canAdd
+                ? 'Search Compendiums to Add Items'
+                : 'Search Compendiums',
             clearOnAdd: game.settings.get(MODULE.ID, 'compendiumClearOnAdd')
         };
 

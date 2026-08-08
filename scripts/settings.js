@@ -1,6 +1,19 @@
 import { MODULE, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 
+/**
+ * Starting rung for `compendiumPlayerAccess`.
+ *
+ * Asking rather than refusing: a player who wants something is a table
+ * conversation, and the request card is where that happens. The GM can drop it
+ * to Off or raise it to Add freely per world.
+ *
+ * Shared with migrateCompendiumAccessSetting(), which reads "still at the
+ * default" as "the GM hasn't chosen yet" — so this constant has to be the same
+ * value in both places or the migration stops recognising an untouched world.
+ */
+const COMPENDIUM_ACCESS_DEFAULT = 'request';
+
 export const registerSettings = function() {
 
 
@@ -542,15 +555,6 @@ export const registerSettings = function() {
     });
 
 
-    game.settings.register(MODULE.ID, 'compendiumAddPlayers', {
-        name: 'Let Players Add From Compendiums',
-        hint: 'Allow players to use the tray\'s compendium quick-add on characters they own. Off by default — who may pull arbitrary compendium content onto a sheet is a table policy question. The GM can always use it.',
-        scope: 'world',
-        config: true,
-        type: Boolean,
-        default: false
-    });
-
     game.settings.register(MODULE.ID, 'quantityConfirmValue', {
         name: 'Confirm Deleting Items Worth More Than',
         hint: 'Setting an item\'s quantity to zero deletes it. Deletion is always confirmed for magical, attuned, or better-than-common items; this adds a confirmation for anything whose total value in gold exceeds this amount. Set to 0 to confirm on value never.',
@@ -746,6 +750,52 @@ export const registerSettings = function() {
     // notesPinDefaultDesign and questPinDefaultDesign removed — initial defaults live in
     // pin-defaults.json and the GM manages design via Blacksmith Configure Pin.
 
+    // --------------------------------
+    // --- Compendium Settings ---
+    // --------------------------------
+
+
+	// ---------- Compendiums Heading ----------
+	game.settings.register(MODULE.ID, "headingH3Compendiums", {
+		name: 'Compendiums',
+		hint: 'The tray\'s compendium search, and how much of it players get. Sits next to Transfers because both govern how content arrives on a character sheet.',
+		scope: "world",
+		config: true,
+		default: "",
+		type: String,
+	});
+
+    // Four rungs rather than a boolean, because "may they add things" and "may
+    // they look things up" are different questions. A player who doesn't
+    // understand how grappling works, or who wants to read the other party
+    // member's spell, needs the compendium open — not write access to their own
+    // sheet. Migrated from the old `compendiumAddPlayers` boolean by
+    // migrateCompendiumAccessSetting().
+    game.settings.register(MODULE.ID, 'compendiumPlayerAccess', {
+        name: 'Let Players Use Compendiums',
+        hint: 'What players may do with the tray\'s compendium search on characters they own. The GM can always search and add.',
+        scope: 'world',
+        config: true,
+        type: String,
+        choices: {
+            none: 'Off — no compendium mode for players',
+            browse: 'Look only — search and read details, no adding',
+            request: 'Ask the GM — adding sends a request to approve or deny',
+            add: 'Add freely — players add straight to their own sheet'
+        },
+        default: COMPENDIUM_ACCESS_DEFAULT,
+        onChange: () => {
+            // World-scoped, so a GM flipping this has to reach players who
+            // already have the tray open. The toggle lives in the control panel
+            // and the results panel changes shape with the mode.
+            if (PanelManager.instance?.controlPanel) {
+                PanelManager.instance.controlPanel.render(PanelManager.element);
+            }
+            if (PanelManager.instance?.compendiumSearchPanel) {
+                PanelManager.instance.compendiumSearchPanel.render(PanelManager.element);
+            }
+        }
+    });
     // --------------------------------
     // --- Transfer Settings ---
     // --------------------------------
@@ -1271,4 +1321,40 @@ export const registerSettings = function() {
 // *** FUNCTIONS           ***
 // ***************************
 
-// None
+
+/**
+ * Fold the retired `compendiumAddPlayers` boolean into `compendiumPlayerAccess`.
+ *
+ * A world where the GM had turned players loose on the compendiums keeps that
+ * permission — `true` becomes the top rung — and everything else lands on
+ * COMPENDIUM_ACCESS_DEFAULT. Only migrates while the new setting still reads as
+ * that default, so a GM who has already picked a rung isn't overruled by a stale
+ * boolean. That test is why the default lives in a constant: written literally
+ * here, changing the default in the registration would silently stop this from
+ * recognising an untouched world, and worlds that had the old switch on would
+ * quietly lose the permission.
+ *
+ * The legacy key is read straight out of world settings storage rather than
+ * being kept registered for a release: registering a setting purely so it can
+ * be read once leaves a dead switch in the file that the next person has to work
+ * out is vestigial. The Setting document is deleted afterwards, so this is a
+ * no-op on every subsequent load.
+ */
+export async function migrateCompendiumAccessSetting() {
+    if (!game.user.isGM) return;
+
+    const legacy = game.settings.storage.get('world')?.getSetting?.(`${MODULE.ID}.compendiumAddPlayers`);
+    if (!legacy) return;
+
+    try {
+        // Stored serialized, and tolerant of both shapes because a Boolean
+        // setting written by an older core version may arrive either way.
+        const wasEnabled = legacy.value === true || legacy.value === 'true';
+        if (wasEnabled && game.settings.get(MODULE.ID, 'compendiumPlayerAccess') === COMPENDIUM_ACCESS_DEFAULT) {
+            await game.settings.set(MODULE.ID, 'compendiumPlayerAccess', 'add');
+        }
+        await legacy.delete();
+    } catch (error) {
+        console.error(`${MODULE.ID}: Failed to migrate compendiumAddPlayers:`, error);
+    }
+}

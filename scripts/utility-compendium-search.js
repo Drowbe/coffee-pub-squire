@@ -118,6 +118,32 @@ export class CompendiumSearchUtility {
     }
 
     /**
+     * Whether the pack a result came from is visible to the current user.
+     *
+     * Search runs on the requesting client against Blacksmith's configured
+     * sources, and pack ownership is Foundry's own permission layer over those
+     * sources — a GM-only homebrew pack is still in `game.packs` on a player's
+     * client. Now that players can search, an unfiltered result list would show
+     * them names out of packs they aren't allowed to open.
+     *
+     * Compendium results whose pack can't be resolved are dropped rather than
+     * kept: an unresolvable pack is exactly the case where the visibility answer
+     * is unknown, and the cost of being wrong runs one way. World results carry
+     * no pack and are governed by document ownership instead.
+     */
+    static _isVisibleToUser(entry) {
+        const uuid = String(entry?.uuid ?? '');
+        if (!uuid.startsWith('Compendium.')) return true;
+
+        // Compendium.<scope>.<packName>.<DocumentType>.<id>
+        const parts = uuid.split('.');
+        const collection = parts.length >= 3 ? `${parts[1]}.${parts[2]}` : '';
+        const pack = game.packs?.get(collection);
+        if (!pack) return false;
+        return pack.visible !== false;
+    }
+
+    /**
      * Search every relevant type at once and return results grouped by source.
      *
      * Groups preserve first-appearance order, which — given the API returns
@@ -179,7 +205,9 @@ export class CompendiumSearchUtility {
             if (Array.isArray(raw?.results)) {
                 // Deduped upstream at bucketing time, so a doubled entry can't
                 // even occupy two result slots.
-                entries = raw.results.map(entry => this._normalize(entry)).filter(Boolean);
+                entries = raw.results
+                    .map(entry => this._normalize(entry))
+                    .filter(entry => entry && this._isVisibleToUser(entry));
             }
             truncated = raw?.truncated === true;
             skippedCount = Array.isArray(raw?.skippedSources) ? raw.skippedSources.length : 0;
@@ -218,27 +246,67 @@ export class CompendiumSearchUtility {
     }
 
     /* ---------------------------------------------------------------- */
-    /*  Adding                                                           */
+    /*  Access and adding                                                */
     /* ---------------------------------------------------------------- */
 
     /**
-     * Whether this user may add compendium content to the actor.
+     * What this user may do with compendium content on this actor.
      *
-     * Adding items is an additive, explicitly-invoked mutation of actor content,
-     * which is the narrow case Squire permits. Restricted to the GM by default
-     * because who may pull arbitrary compendium content onto a sheet is a table
-     * policy question, not a UI one.
+     * Four rungs, from the `compendiumPlayerAccess` world setting:
+     *   none     nothing — the mode toggle doesn't appear
+     *   browse   search and open item sheets, no adding
+     *   request  adding asks the GM, who approves or denies
+     *   add      adding happens immediately
+     *
+     * The GM is always on the top rung. Looking things up and putting things on
+     * a sheet are separate permissions because they answer different questions:
+     * a player reading how grappling works needs the compendium open, not write
+     * access to their own character.
+     *
+     * @returns {'none'|'browse'|'request'|'add'}
      */
-    static canAdd(actor) {
+    static getAccessLevel() {
+        if (game.user.isGM) return 'add';
+        try {
+            const level = game.settings.get(MODULE.ID, 'compendiumPlayerAccess');
+            return ['none', 'browse', 'request', 'add'].includes(level) ? level : 'none';
+        } catch (error) {
+            // Setting not registered yet — nothing sensible to do this early.
+            return 'none';
+        }
+    }
+
+    /**
+     * Whether the actor can receive compendium content at all, independent of
+     * who is asking: a pack actor or one in a locked collection can't be
+     * written to, and an actor you don't own isn't yours to modify.
+     */
+    static _isEligibleActor(actor) {
         if (!actor) return false;
         if (actor.pack || (actor.collection && actor.collection.locked)) return false;
-        if (!actor.isOwner) return false;
-        if (game.user.isGM) return true;
-        try {
-            return game.settings.get(MODULE.ID, 'compendiumAddPlayers') === true;
-        } catch (error) {
-            return false;
-        }
+        return actor.isOwner;
+    }
+
+    /** Whether this user may open compendium search against this actor. */
+    static canBrowse(actor) {
+        return this._isEligibleActor(actor) && this.getAccessLevel() !== 'none';
+    }
+
+    /**
+     * Whether this user may add compendium content to the actor directly.
+     *
+     * Adding is an additive, explicitly-invoked mutation of actor content, which
+     * is the narrow case Squire permits. Off for players by default because who
+     * may pull arbitrary compendium content onto a sheet is a table policy
+     * question, not a UI one.
+     */
+    static canAdd(actor) {
+        return this._isEligibleActor(actor) && this.getAccessLevel() === 'add';
+    }
+
+    /** Whether this user's adds go to the GM as a request instead. */
+    static canRequest(actor) {
+        return this._isEligibleActor(actor) && this.getAccessLevel() === 'request';
     }
 
     /**

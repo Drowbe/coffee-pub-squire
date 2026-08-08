@@ -383,6 +383,55 @@
       </div>
     </div>
 
+  {{!-- COMPENDIUM ADD REQUEST --}}
+  {{else if (eq cardType "compendium-request")}}
+    <div class="blacksmith-card theme-green">
+      <div class="section-header">
+        <i class="fa-solid fa-book-open-cover"></i> Compendium Request
+      </div>
+      <div class="section-content">
+        <p><strong>{{requesterName}}</strong> wants to add <strong>{{itemName}}</strong>{{#if itemType}} ({{itemType}}){{/if}} to <strong>{{actorName}}</strong>.</p>
+        {{#if sourceLabel}}<p><em>From {{sourceLabel}}.</em></p>{{/if}}
+        <div class="transfer-request-buttons blacksmith-chat-buttons">
+          <button class="compendium-request-button chat-button approve"><i class="fa-solid fa-circle-check"></i> Approve</button>
+          <button class="compendium-request-button chat-button deny"><i class="fa-solid fa-circle-xmark"></i> Deny</button>
+        </div>
+      </div>
+    </div>
+
+  {{!-- COMPENDIUM ADD APPROVED --}}
+  {{else if (eq cardType "compendium-approved")}}
+    <div class="blacksmith-card theme-default">
+      <div class="section-header">
+        <i class="fa-solid fa-circle-check"></i> Request Approved
+      </div>
+      <div class="section-content">
+        <p><strong>{{itemName}}</strong> was added to <strong>{{actorName}}</strong>.</p>
+      </div>
+    </div>
+
+  {{!-- COMPENDIUM ADD DENIED --}}
+  {{else if (eq cardType "compendium-denied")}}
+    <div class="blacksmith-card theme-orange">
+      <div class="section-header">
+        <i class="fa-solid fa-circle-xmark"></i> Request Denied
+      </div>
+      <div class="section-content">
+        <p>The GM declined to add <strong>{{itemName}}</strong> to <strong>{{actorName}}</strong>.</p>
+      </div>
+    </div>
+
+  {{!-- COMPENDIUM ADD FAILED --}}
+  {{else if (eq cardType "compendium-failed")}}
+    <div class="blacksmith-card theme-red">
+      <div class="section-header">
+        <i class="fa-solid fa-exclamation-triangle"></i> Request Failed
+      </div>
+      <div class="section-content">
+        <p>{{failureReason}}</p>
+      </div>
+    </div>
+
   {{!-- GENERAL & ERROR CONDITION --}}  
   {{else}}
     <div class="blacksmith-card theme-default">
