@@ -1,3 +1,4 @@
+import { requestHandleRefresh } from './campaign-panels.js';
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import {
     QuestParser,
@@ -2735,10 +2736,10 @@ export class QuestPanel {
                 await this._mirrorTrackerFlagToPlayers('pinnedQuests', pinnedQuests);
                 this.render(this.element);
 
-                // Update the handle to reflect the pinned quest change
-                if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance) {
-                    await game.modules.get('coffee-pub-squire').api.PanelManager.instance.updateHandle();
-                }
+                // The handle shows the pinned quest, so pinning has to reach
+                // across into character UI. Routed through one named call — see
+                // requestHandleRefresh().
+                await requestHandleRefresh();
             });
         });
 

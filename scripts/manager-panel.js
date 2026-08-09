@@ -1,4 +1,5 @@
 import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
+import { registerCampaignPanel } from './campaign-panels.js';
 import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getTransferBlocker, renderTemplate, getCampaignContext } from './helpers.js';
 import { CharacterPanel } from './panel-character.js';
 import { GmPanel } from './panel-gm.js';
@@ -108,6 +109,7 @@ export class PanelManager {
         this.notesPanel = new NotesPanel();
         this.codexPanel = new CodexPanel();
         this.questPanel = new QuestPanel();
+        this._registerCampaignPanels();
         this.hiddenCategories = new Set();
         this.macrosPanel = new MacrosPanel({ actor });
         
@@ -569,6 +571,7 @@ export class PanelManager {
         this.partyPanel = new PartyPanel();
         this.partyStatsPanel = new PartyStatsPanel();
         this.notesPanel = new NotesPanel();
+        this._registerCampaignPanels();
 
         // Update panel element references for non-popped panels
         this.characterPanel.element = PanelManager.element;
@@ -588,6 +591,36 @@ export class PanelManager {
         await this.renderPanels(PanelManager.element);
 
 
+    }
+
+
+    /**
+     * Publish the campaign panels so the pin manager, the notification watcher,
+     * and the editor windows can reach them without knowing the tray exists.
+     * Re-run on every rebuild — panel instances are replaced, and a stale one
+     * renders into a detached element nobody sees.
+     */
+    _registerCampaignPanels() {
+        const entries = [
+            ['quest', this.questPanel],
+            ['codex', this.codexPanel],
+            ['notes', this.notesPanel]
+        ];
+        for (const [kind, panel] of entries) {
+            if (!panel) continue;
+            registerCampaignPanel(kind, {
+                panel,
+                getElement: () => PanelManager.element,
+                reveal: async () => {
+                    // Revealing in the tray means switching tab and making sure
+                    // the tray is actually open — a view-mode change behind a
+                    // collapsed tray shows nothing.
+                    await this.setViewMode(kind);
+                    const el = PanelManager.element;
+                    if (el && !el.classList.contains('expanded')) el.classList.add('expanded');
+                }
+            });
+        }
     }
 
     async updateHandle() {

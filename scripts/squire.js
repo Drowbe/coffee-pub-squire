@@ -2,6 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager, _updateHealthPanelFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings, migrateCompendiumAccessSetting } from './settings.js';
+import { getCampaignPanel } from './campaign-panels.js';
 import { getTransferBlocker, registerHelpers, renderTemplate, showSquireToast } from './helpers.js';
 import { QuestPanel } from './panel-quest.js';
 import { CompendiumRequestUtils } from './compendium-request-utils.js';
@@ -235,10 +236,7 @@ Hooks.once('ready', async () => {
                 if (moduleId === MODULE.ID) {
                     // Clear quest notifications when module is disabled
                     try {
-                        // Clear quest notifications through the panel manager
-                        if (game.modules.get('coffee-pub-squire')?.api?.PanelManager?.instance?.questPanel) {
-                            game.modules.get('coffee-pub-squire').api.PanelManager.instance.questPanel.clearQuestNotifications();
-                        }
+                        getCampaignPanel('quest')?.clearQuestNotifications?.();
                     } catch (error) {
                         console.error('Coffee Pub Squire | Error clearing quest notifications on disable:', error);
                     }
@@ -2071,6 +2069,14 @@ Hooks.once('ready', async function() {
     }
 
     try {
+        const { registerCampaignBrowserWindows, openCampaignBrowser } = await import('./window-campaign-browser.js');
+        registerCampaignBrowserWindows();
+        game.modules.get(MODULE.ID).api.openCampaignBrowser = openCampaignBrowser;
+    } catch (error) {
+        console.error('Coffee Pub Squire | Failed to register campaign browser windows:', error);
+    }
+
+    try {
         const {
             registerStatusEffectsWindow,
             openStatusEffectsWindow,
@@ -2315,6 +2321,52 @@ Hooks.once('ready', async function() {
         }
     } catch (error) {
         console.error('Coffee Pub Squire | Error registering quick note with Blacksmith menubar:', error);
+    }
+
+    // Campaign browsers. These live on the menubar rather than in the tray:
+    // quests, codex, and notes are campaign content, not properties of the
+    // selected token, and they are moving out of Squire entirely.
+    const CAMPAIGN_TOOLS = [
+        { kind: 'quest', id: 'squire-quests', icon: 'fa-solid fa-flag', tooltip: 'Quests', order: 204 },
+        { kind: 'codex', id: 'squire-codex', icon: 'fa-solid fa-book', tooltip: 'Codex', order: 205 },
+        { kind: 'notes', id: 'squire-notes', icon: 'fa-solid fa-sticky-note', tooltip: 'Notes', order: 206 }
+    ];
+
+    for (const tool of CAMPAIGN_TOOLS) {
+        try {
+            const ok = blacksmith.registerMenubarTool(tool.id, {
+                icon: tool.icon,
+                name: tool.id,
+                title: null,
+                tooltip: tool.tooltip,
+                onClick: async () => {
+                    const open = game.modules.get(MODULE.ID)?.api?.openCampaignBrowser;
+                    if (typeof open !== 'function') {
+                        ui.notifications.warn(`${tool.tooltip} window is not ready yet.`);
+                        return;
+                    }
+                    await open(tool.kind);
+                },
+                zone: "left",
+                group: "general",
+                groupOrder: 999,
+                order: tool.order,
+                moduleId: MODULE.ID,
+                gmOnly: false,
+                leaderOnly: false,
+                visible: true,
+                toggleable: false,
+                active: false,
+                iconColor: null,
+                buttonNormalTint: null,
+                buttonSelectedTint: null
+            });
+            if (!ok) {
+                console.error(`Coffee Pub Squire | Failed to register ${tool.tooltip} with Blacksmith menubar`);
+            }
+        } catch (error) {
+            console.error(`Coffee Pub Squire | Error registering ${tool.tooltip} with Blacksmith menubar:`, error);
+        }
     }
 
     blacksmith.renderMenubar?.(true);

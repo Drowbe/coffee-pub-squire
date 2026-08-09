@@ -1,3 +1,4 @@
+import { getCampaignPanel, refreshCampaignPanel } from './campaign-panels.js';
 import { MODULE } from './const.js';
 import { getTextEditor } from './helpers.js';
 import {
@@ -942,11 +943,10 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
     }
 
     async _refreshNotesPanel() {
-        const notesPanel = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.notesPanel;
-        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-        if (!notesPanel || !panelManager?.element) return;
+        const notesPanel = getCampaignPanel('notes');
+        if (!notesPanel) return;
         await notesPanel._refreshData();
-        notesPanel.render(panelManager.element);
+        await refreshCampaignPanel('notes');
     }
 
     async _updateObject(event, formData) {
@@ -1059,7 +1059,7 @@ export class NoteWindow extends BlacksmithWindowBaseV2 {
             await this.close();
 
             if (shouldPlace && page) {
-                const notesPanel = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.notesPanel;
+                const notesPanel = getCampaignPanel('notes');
                 if (notesPanel?._beginNotePinPlacement) {
                     await notesPanel._beginNotePinPlacement(page);
                 } else {

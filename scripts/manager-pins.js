@@ -11,6 +11,7 @@
  * Position (x, y, sceneId) and design are owned by Blacksmith — never cached in page flags.
  */
 
+import { getCampaignPanel, refreshCampaignPanel, revealCampaignPanel } from './campaign-panels.js';
 import { MODULE, getCodexCategoryIcon } from './const.js';
 import { QuestParser } from './utility-quest-parser.js';
 import { trackModuleTimeout } from './timer-utils.js';
@@ -1679,10 +1680,6 @@ let _pinManagerInitialized = false;
 let _syncDebounceTimer    = null;
 let _syncPending          = false;
 
-function _getPanelManager() {
-    return game.modules.get(MODULE.ID)?.api?.PanelManager?.instance ?? null;
-}
-
 let _notesSyncPending = false;
 let _notesSyncTimer   = null;
 let _codexSyncPending = false;
@@ -1699,10 +1696,7 @@ function _scheduleQuestPanelRefresh() {
         if (canvas?.scene?.id && typeof pins?.reload === 'function') {
             try { await pins.reload({ sceneId: canvas.scene.id }); } catch (_) {}
         }
-        const pm = _getPanelManager();
-        const panelEl = pm?.questPanel?.element;
-        if (!pm?.questPanel || !panelEl) return;
-        if (typeof pm.questPanel.render === 'function') await pm.questPanel.render(panelEl);
+        await refreshCampaignPanel('quest');
     }, 50);
 }
 
@@ -1713,14 +1707,12 @@ function _scheduleNotesPanelRefresh(cleanupMissingPins = false) {
         _notesSyncTimer = null;
         if (!_notesSyncPending) return;
         _notesSyncPending = false;
-        const pm = _getPanelManager();
-        const panel = pm?.notesPanel;
-        const panelEl = panel?.element;
-        if (!panel || !panelEl) return;
+        const panel = getCampaignPanel('notes');
+        if (!panel) return;
         if (cleanupMissingPins && typeof panel._cleanupMissingPins === 'function') {
             await panel._cleanupMissingPins();
         } else {
-            if (typeof panel.render === 'function') await panel.render(panelEl);
+            await refreshCampaignPanel('notes');
         }
     }, 75);
 }
@@ -1732,11 +1724,7 @@ function _scheduleCodexPanelRefresh() {
         _codexSyncTimer = null;
         if (!_codexSyncPending) return;
         _codexSyncPending = false;
-        const pm = _getPanelManager();
-        const panel = pm?.codexPanel;
-        const panelEl = panel?.element;
-        if (!panel || !panelEl) return;
-        if (typeof panel.render === 'function') await panel.render(panelEl);
+        await refreshCampaignPanel('codex');
     }, 50);
 }
 
@@ -1796,9 +1784,9 @@ function _registerContextMenuItems(pins) {
                 const updated = await _updateObjectiveStateInJournal(page, objIndex, 'completed');
                 if (updated) {
                     const objText = (pin?.config?.objectiveText || '').trim() || `Objective ${objIndex + 1}`;
-                    const pm = _getPanelManager();
-                    if (typeof pm?.questPanel?.notifyObjectiveCompleted === 'function') {
-                        pm.questPanel.notifyObjectiveCompleted(objText);
+                    const questPanel = getCampaignPanel('quest');
+                    if (typeof questPanel?.notifyObjectiveCompleted === 'function') {
+                        questPanel.notifyObjectiveCompleted(objText);
                     } else {
                         ui.notifications.info(`Objective completed: ${objText}`);
                     }
@@ -1937,19 +1925,17 @@ function _registerContextMenuItems(pins) {
  */
 export async function focusQuestInPanel(questUuid, objectiveIndex = null, questStatus = null) {
     if (!questUuid) return;
-    const pm = _getPanelManager();
-    if (!pm) return;
-    if (pm.setViewMode) await pm.setViewMode('quest');
-    if (pm.element && !pm.element.classList.contains('expanded')) pm.element.classList.add('expanded');
-    if (pm.questPanel?.render && pm.element) await pm.questPanel.render(pm.element);
+    const questPanel = getCampaignPanel('quest');
+    if (!questPanel) return;
+    await revealCampaignPanel('quest');
 
     const pinFilter = _mapQuestStatusToFilter(questStatus);
-    let targetFilter = pm.questPanel?.resolveStatusFilterForQuestUuid?.(questUuid) ?? pinFilter ?? 'active';
-    if (typeof pm.questPanel?.applyQuestStatusFilter === 'function') pm.questPanel.applyQuestStatusFilter(targetFilter);
+    let targetFilter = questPanel.resolveStatusFilterForQuestUuid?.(questUuid) ?? pinFilter ?? 'active';
+    if (typeof questPanel.applyQuestStatusFilter === 'function') questPanel.applyQuestStatusFilter(targetFilter);
     if (!_hasQuestEntryInDom(questUuid)) {
         for (const f of [...new Set([pinFilter, 'active', 'available', 'complete'].filter(Boolean))]) {
             if (_hasQuestEntryInDom(questUuid)) break;
-            pm.questPanel?.applyQuestStatusFilter?.(f);
+            questPanel.applyQuestStatusFilter?.(f);
         }
     }
     const tryFocus = () => _focusQuestEntryInDom(questUuid, objectiveIndex);
@@ -1967,16 +1953,14 @@ export async function focusQuestInPanel(questUuid, objectiveIndex = null, questS
  */
 export async function focusCodexInPanel(codexUuid) {
     if (!codexUuid) return;
-    const pm = _getPanelManager();
-    if (!pm) return;
-    if (pm.element && !pm.element.classList.contains('expanded')) pm.element.classList.add('expanded');
-    if (pm.setViewMode) await pm.setViewMode('codex');
-    if (pm.codexPanel?.render && pm.element) await pm.codexPanel.render(pm.element);
+    const codexPanel = getCampaignPanel('codex');
+    if (!codexPanel) return;
+    await revealCampaignPanel('codex');
     const tryFocus = () => {
         // Prefer the panel's own focus: it records the expansion, so the entry
         // stays open across the next re-render. The raw-DOM fallback below only
         // sets a class, which any render would immediately undo.
-        if (pm.codexPanel?._focusEntry) return pm.codexPanel._focusEntry(codexUuid);
+        if (codexPanel._focusEntry) return codexPanel._focusEntry(codexUuid);
         const entry = document.querySelector(`.codex-entry[data-uuid="${codexUuid}"]`);
         if (!entry) return false;
         const section = entry.closest('.codex-section');
@@ -2025,14 +2009,12 @@ function _registerEventHandlers(pins) {
     pins.on('click', async (evt) => {
         const noteUuid = evt?.pin?.config?.noteUuid;
         if (!noteUuid) return;
-        const pm = _getPanelManager();
-        if (!pm) return;
-        if (pm.notesPanel?.showNote) {
-            pm.notesPanel.showNote(noteUuid);
+        const notesPanel = getCampaignPanel('notes');
+        if (!notesPanel) return;
+        if (notesPanel.showNote) {
+            notesPanel.showNote(noteUuid);
         } else {
-            if (pm.setViewMode) await pm.setViewMode('notes');
-            if (pm.element && !pm.element.classList.contains('expanded')) pm.element.classList.add('expanded');
-            if (pm.notesPanel?.render && pm.element) await pm.notesPanel.render(pm.element);
+            await revealCampaignPanel('notes');
         }
         const tryFocus = () => {
             const row = document.querySelector(`.note-row[data-note-uuid="${noteUuid}"]`);

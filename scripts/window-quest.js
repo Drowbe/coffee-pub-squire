@@ -1592,10 +1592,10 @@ export class QuestWindow extends BlacksmithWindowBaseV2 {
     }
 
     async _refreshQuestPanel() {
-        const questPanel = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.questPanel;
+        const questPanel = getCampaignPanel('quest');
         if (!questPanel) return;
         await questPanel._refreshData();
-        questPanel.render(questPanel.element);
+        await refreshCampaignPanel('quest');
     }
 
     async _applyActiveObjectiveSelection(pageUuid, activeObjectiveIndex) {

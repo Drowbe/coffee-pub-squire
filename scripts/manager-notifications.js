@@ -25,6 +25,7 @@
  * exported here.
  */
 
+import { getCampaignPanel } from './campaign-panels.js';
 import { MODULE } from './const.js';
 import { focusQuestInPanel, focusCodexInPanel } from './manager-pins.js';
 import { CODEX_PAGE_TYPE } from './data/codex-page-model.js';
@@ -45,8 +46,8 @@ function getBlacksmith() {
     return game.modules.get('coffee-pub-blacksmith')?.api;
 }
 
-function _getPanelManagerInstance() {
-    return game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
+function _getNotesPanel() {
+    return getCampaignPanel('notes');
 }
 
 function _notify(text, icon, options = null) {
@@ -270,7 +271,7 @@ function _handleNoteUpdate(page, changes, userId) {
     if (!changes?.text && !changes?.name && !changes?.['==text']) return;
 
     _notify(`Note updated: ${page.name}`, 'fa-solid fa-note-sticky', {
-        onClick: () => _getPanelManagerInstance()?.notesPanel?.showNote?.(page.uuid)
+        onClick: () => _getNotesPanel()?.showNote?.(page.uuid)
     });
 }
 

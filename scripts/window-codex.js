@@ -1,3 +1,4 @@
+import { getCampaignPanel, refreshCampaignPanel } from './campaign-panels.js';
 import { MODULE } from './const.js';
 import { CodexParser } from './utility-codex-parser.js';
 import { CODEX_PAGE_TYPE } from './data/codex-page-model.js';
@@ -1220,10 +1221,10 @@ export class CodexWindow extends BlacksmithWindowBaseV2 {
     }
 
     async _refreshCodexPanel() {
-        const codexPanel = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.codexPanel;
+        const codexPanel = getCampaignPanel('codex');
         if (!codexPanel) return;
         await codexPanel._refreshData();
-        codexPanel.render(codexPanel.element);
+        await refreshCampaignPanel('codex');
     }
 
     _clearEventHandlers() {

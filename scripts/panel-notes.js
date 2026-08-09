@@ -1,3 +1,4 @@
+import { getCampaignPanelElement, revealCampaignPanel } from './campaign-panels.js';
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import {
     getPinsApi,
@@ -724,8 +725,7 @@ export class NotesPanel {
             }
         }
 
-        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-        const targetElement = panelManager?.element || this.element;
+        const targetElement = getCampaignPanelElement('notes') || this.element;
         if (targetElement) await this.render(targetElement);
     }
 
@@ -764,8 +764,7 @@ export class NotesPanel {
 
         await this._cleanupMissingPins();
 
-        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-        const targetElement = panelManager?.element || this.element;
+        const targetElement = getCampaignPanelElement('notes') || this.element;
         if (targetElement) {
             await this.render(targetElement);
         }
@@ -1414,10 +1413,8 @@ export class NotesPanel {
     }
 
     async showNote(noteUuid) {
-        const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-        if (panelManager?.setViewMode) {
-            await panelManager.setViewMode('notes');
-        }
+        // Whoever hosts this panel decides what showing it means.
+        await revealCampaignPanel('notes');
         if (this.element && !this.element.classList.contains('expanded')) {
             this.element.classList.add('expanded');
         }

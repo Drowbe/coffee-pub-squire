@@ -1,0 +1,11 @@
+{{!--
+    Host shell for a campaign browser panel.
+
+    `squire-panel-host` + `data-position="left"` is what the panel stylesheets
+    key off. It is deliberately NOT `squire-tray` — that class carries the
+    tray's own fixed positioning and slide-in transform, which would fight the
+    window frame.
+--}}
+<div class="squire-panel-host campaign-browser-body" data-position="left">
+    <div class="panel-container" data-panel="{{panelKey}}"></div>
+</div>

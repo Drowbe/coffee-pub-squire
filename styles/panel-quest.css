@@ -1,4 +1,4 @@
-.squire-tray[data-position="left"] .panel-container[data-panel="panel-quest"] {
+.squire-panel-host[data-position="left"] .panel-container[data-panel="panel-quest"] {
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -58,7 +58,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* CONTENT */
 
-.squire-tray[data-position="left"] .quest-content {
+.squire-panel-host[data-position="left"] .quest-content {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
@@ -73,15 +73,15 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 }
 
 
-.squire-tray[data-position="left"] .quest-entry-content {
+.squire-panel-host[data-position="left"] .quest-entry-content {
     padding: 12px 0px 0px 0px;
 }
 
-.squire-tray[data-position="left"] .quest-entry.collapsed .quest-entry-content {
+.squire-panel-host[data-position="left"] .quest-entry.collapsed .quest-entry-content {
     display: none;
 }
 
-.squire-tray[data-position="left"] .quest-entry-divider {
+.squire-panel-host[data-position="left"] .quest-entry-divider {
     border-top: 1px dotted rgba(255, 255, 255, 0.2);
     margin-top: 8px;
     margin-bottom: 8px;
@@ -89,7 +89,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* TOOLBAR */
 
-.squire-tray[data-position="left"] .quest-toolbar {
+.squire-panel-host[data-position="left"] .quest-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -100,7 +100,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 }
 
 /* Titlebar controls (match notes panel pattern) */
-.squire-tray[data-position="left"] .quest-controls {
+.squire-panel-host[data-position="left"] .quest-controls {
     display: flex;
     gap: 8px;
     align-items: center;
@@ -109,7 +109,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* Control Icons (section toolbars, entry toolbars) */
 
-.squire-tray[data-position="left"] .quest-toolbar i {
+.squire-panel-host[data-position="left"] .quest-toolbar i {
     font-size: 1.0em;
     opacity: 1;
     cursor: pointer;
@@ -119,81 +119,81 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     transition: color 0.2s, opacity 0.2s, box-shadow 0.2s;
 }
 
-.squire-tray[data-position="left"] .quest-toolbar i:hover {
+.squire-panel-host[data-position="left"] .quest-toolbar i:hover {
     opacity: 1;
     color: var(--color-border-highlight, #ff6400);
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
 /* Titlebar icon styling (override to match notes: dimmer default, highlight on hover) */
-.squire-tray[data-position="left"] .quest-controls i {
+.squire-panel-host[data-position="left"] .quest-controls i {
     opacity: 0.7;
     transition: all 0.2s ease;
 }
 
-.squire-tray[data-position="left"] .quest-controls i:hover {
+.squire-panel-host[data-position="left"] .quest-controls i:hover {
     opacity: 1;
     color: var(--color-border-highlight, #ff6400);
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
-.squire-tray[data-position="left"] i.quest-entry-visibility {
+.squire-panel-host[data-position="left"] i.quest-entry-visibility {
     opacity: .4;
 }
-.squire-tray[data-position="left"] i.quest-entry-visibility.visible {
+.squire-panel-host[data-position="left"] i.quest-entry-visibility.visible {
     opacity: 1;
 }
 
 
-.squire-tray[data-position="left"] .quest-toolbar .identified {
+.squire-panel-host[data-position="left"] .quest-toolbar .identified {
     opacity: 1;
 }
-.squire-tray[data-position="left"] .quest-toolbar .unidentified {
+.squire-panel-host[data-position="left"] .quest-toolbar .unidentified {
     opacity: .4;
 }
-.squire-tray[data-position="left"] .quest-toolbar .has-link {
+.squire-panel-host[data-position="left"] .quest-toolbar .has-link {
     opacity: 1;
 }
 
-.squire-tray[data-position="left"] .quest-entry .quest-entry-toggle {
+.squire-panel-host[data-position="left"] .quest-entry .quest-entry-toggle {
     margin-left: 8px;
     transition: transform 0.2s;
 }
-.squire-tray[data-position="left"] .quest-entry:not(.collapsed) .quest-entry-toggle {
+.squire-panel-host[data-position="left"] .quest-entry:not(.collapsed) .quest-entry-toggle {
     transform: rotate(90deg);
 }
 
-.squire-tray[data-position="left"] .quest-section.collapsed .quest-toolbar i {
+.squire-panel-host[data-position="left"] .quest-section.collapsed .quest-toolbar i {
     transform: rotate(-90deg);
     transition: transform 0.2s ease;
 }
 
 /* Pin Icon */
-.squire-tray[data-position="left"] .quest-toolbar .quest-pin {
+.squire-panel-host[data-position="left"] .quest-toolbar .quest-pin {
     opacity: .3;
 }
 
-.squire-tray[data-position="left"] .quest-toolbar .quest-pin.pinned {
+.squire-panel-host[data-position="left"] .quest-toolbar .quest-pin.pinned {
     opacity: 1;
 }
 
-.squire-tray[data-position="left"] .quest-toolbar .quest-pin-to-scene {
+.squire-panel-host[data-position="left"] .quest-toolbar .quest-pin-to-scene {
     opacity: 0.8;
 }
 
-.squire-tray[data-position="left"] .quest-pin-icon.quest-pin-dim {
+.squire-panel-host[data-position="left"] .quest-pin-icon.quest-pin-dim {
     opacity: 0.4;
 }
 
-.squire-tray[data-position="left"] .quest-pin-icon.quest-pin-active {
+.squire-panel-host[data-position="left"] .quest-pin-icon.quest-pin-active {
     opacity: 1;
     color: var(--color-border-highlight, #ff6400);
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
 /* Objective row icons: match Codex/tray style (tanish, don't inherit li color) */
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene,
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-context-menu {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .objective-pin-to-scene,
+.squire-panel-host[data-position="left"] .quest-entry-tasks .objective-context-menu {
     color: rgba(159, 146, 117, 0.9);
     font-size: 1em;
     cursor: pointer;
@@ -201,28 +201,28 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     transition: color 0.2s, opacity 0.2s, box-shadow 0.2s;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .objective-pin-to-scene {
     opacity: 0.5;
     margin-right: 4px;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene.quest-pin-active {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .objective-pin-to-scene.quest-pin-active {
     opacity: 1;
     color: var(--color-border-highlight, #ff6400);
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene.quest-pin-dim {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .objective-pin-to-scene.quest-pin-dim {
     opacity: 0.35;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-context-menu {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .objective-context-menu {
     opacity: 0.7;
     margin-left: 2px;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-pin-to-scene:hover,
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-context-menu:hover {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .objective-pin-to-scene:hover,
+.squire-panel-host[data-position="left"] .quest-entry-tasks .objective-context-menu:hover {
     opacity: 1;
     color: var(--color-border-highlight, #ff6400);
     text-shadow: 0 0 8px var(--color-shadow-primary);
@@ -240,14 +240,14 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* SEARCH & FILTER BAR */
 
-.squire-tray[data-position="left"] .quest-filters {
+.squire-panel-host[data-position="left"] .quest-filters {
     padding: 10px 8px 6px 8px;
     background: rgba(0, 0, 0, 0.3);
     border-bottom: 0px solid rgba(255, 255, 255, 0.1);
     border-radius: 0px 0px 6px 6px;
 }
 
-.squire-tray[data-position="left"] .quest-search {
+.squire-panel-host[data-position="left"] .quest-search {
     position: relative;
     margin-bottom: 6px;
     display: flex;
@@ -255,7 +255,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     gap: 8px;
 }
 
-.squire-tray[data-position="left"] .quest-search input {
+.squire-panel-host[data-position="left"] .quest-search input {
     flex: 1;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -265,7 +265,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     height: 28px;
 }
 
-.squire-tray[data-position="left"] .quest-search .clear-search {
+.squire-panel-host[data-position="left"] .quest-search .clear-search {
     position: absolute;
     right: 28px; 
     top: 50%;
@@ -286,7 +286,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     pointer-events: auto;
 }
 
-.squire-tray[data-position="left"] .quest-search .clear-search.disabled {
+.squire-panel-host[data-position="left"] .quest-search .clear-search.disabled {
     opacity: 0.3;
     cursor: default;
     pointer-events: none;
@@ -294,7 +294,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* FILTERS */
 
-.squire-tray[data-position="left"] .quest-search .toggle-tags-button {
+.squire-panel-host[data-position="left"] .quest-search .toggle-tags-button {
     cursor: pointer;
     transition: opacity 0.2s;
     color: rgba(159, 146, 117, 0.9);
@@ -303,18 +303,18 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     align-items: center;
     justify-content: center;
 }
-.squire-tray[data-position="left"] .quest-search .toggle-tags-button.active {
+.squire-panel-host[data-position="left"] .quest-search .toggle-tags-button.active {
     color: rgba(159, 146, 117, 0.9);
     opacity: 1;
 }
-.squire-tray[data-position="left"] .quest-search .toggle-tags-button:hover,
-.squire-tray[data-position="left"] .quest-search .clear-search:hover {
+.squire-panel-host[data-position="left"] .quest-search .toggle-tags-button:hover,
+.squire-panel-host[data-position="left"] .quest-search .clear-search:hover {
     opacity: 1;
     color: var(--color-border-highlight, #ff6400);
 }
 
 
-.squire-tray[data-position="left"] .quest-tag-filter select {
+.squire-panel-host[data-position="left"] .quest-tag-filter select {
     width: 100%;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -338,13 +338,13 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* QUEST STATUS FILTER BUTTONS */
 
-.squire-tray[data-position="left"] .quest-status-section {
+.squire-panel-host[data-position="left"] .quest-status-section {
     display: flex;
     justify-content: center;
     margin: 0px;
 }
 
-.squire-tray[data-position="left"] .quest-status-buttons {
+.squire-panel-host[data-position="left"] .quest-status-buttons {
     display: flex;
     gap: 6px;
     width: 100%;
@@ -354,7 +354,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     padding: 6px;
 }
 
-.squire-tray[data-position="left"] .quest-status-button {
+.squire-panel-host[data-position="left"] .quest-status-button {
     flex: 1;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.05);
@@ -372,7 +372,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     letter-spacing: 0.03em;
 }
 
-.squire-tray[data-position="left"] .quest-status-button.active {
+.squire-panel-host[data-position="left"] .quest-status-button.active {
     background: rgba(145, 133, 107, 0.4);
     border-color: rgba(145, 133, 107, 0.6);
     color: rgba(255, 255, 255, 0.9);
@@ -380,8 +380,8 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     outline: 2px solid rgba(183, 81, 58, 0.2);
 }
 
-.squire-tray[data-position="left"] .quest-status-button.active:hover,
-.squire-tray[data-position="left"] .quest-status-button:hover {
+.squire-panel-host[data-position="left"] .quest-status-button.active:hover,
+.squire-panel-host[data-position="left"] .quest-status-button:hover {
     border-color: rgba(255, 100, 0, 0.6);
     color: rgba(255, 255, 255, 0.9);
     background: rgba(183, 82, 58, 0.9);
@@ -390,15 +390,15 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* CATEGORY HEADERS */
 
-.squire-tray[data-position="left"] .quest-section {
+.squire-panel-host[data-position="left"] .quest-section {
     margin-bottom: 0px;
 }
 
-.squire-tray[data-position="left"] .quest-section--no-titlebar .quest-entries {
+.squire-panel-host[data-position="left"] .quest-section--no-titlebar .quest-entries {
     margin-top: 8px;
 }
 
-.squire-tray[data-position="left"] .quest-category {
+.squire-panel-host[data-position="left"] .quest-category {
     background: rgba(48, 24, 29, 1.0);
     padding: 12px 8px;
     border-radius: 4px;
@@ -409,7 +409,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     cursor: pointer;
 }
 
-.squire-tray[data-position="left"] .quest-category h3 {
+.squire-panel-host[data-position="left"] .quest-category h3 {
     color: rgba(186, 168, 137, 0.9);
     margin: 0;
     border: none;
@@ -417,17 +417,17 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     font-size: 1.5em;
     font-weight: 900;
 }
-.squire-tray[data-position="left"] .quest-category h3 i {
+.squire-panel-host[data-position="left"] .quest-category h3 i {
     color: rgba(186, 168, 137, 0.9);
     font-size: .9em;
     margin-right: 6px;
 }
 
-.squire-tray[data-position="left"] .quest-section.collapsed .quest-entries {
+.squire-panel-host[data-position="left"] .quest-section.collapsed .quest-entries {
     display: none;
 }
 
-.squire-tray[data-position="left"] .quest-entries-subgroup-header {
+.squire-panel-host[data-position="left"] .quest-entries-subgroup-header {
     color: rgba(186, 168, 137, 0.9);
     font-size: 1.2em;
     font-weight: 700;
@@ -440,13 +440,13 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 /* ENTRY CARDS */
 
 
-.squire-tray[data-position="left"] .quest-entries {
+.squire-panel-host[data-position="left"] .quest-entries {
     margin: 8px 0 0 0;
 }
 
 
 
-.squire-tray[data-position="left"] .quest-entry {
+.squire-panel-host[data-position="left"] .quest-entry {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.0);
     border-radius: 4px;
@@ -456,7 +456,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 }
 
 /* Special styling for expanded entries */
-.squire-tray[data-position="left"] .quest-entry:not(.collapsed) {
+.squire-panel-host[data-position="left"] .quest-entry:not(.collapsed) {
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 0 5px rgba(200, 100, 121, 0.3);
 }
@@ -465,7 +465,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 
 
-.squire-tray[data-position="left"] .quest-entry-header-wrapper {
+.squire-panel-host[data-position="left"] .quest-entry-header-wrapper {
     background: rgba(0, 0, 0, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.0);
     border-radius: 4px;
@@ -477,7 +477,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 
 
-.squire-tray[data-position="left"] .quest-entry-header {
+.squire-panel-host[data-position="left"] .quest-entry-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -489,10 +489,10 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 }
 
 
-.squire-tray[data-position="left"] .quest-entry-name:hover {
+.squire-panel-host[data-position="left"] .quest-entry-name:hover {
     color: rgba(255, 100, 0, 0.9);
 }
-.squire-tray[data-position="left"] .quest-entry-name {
+.squire-panel-host[data-position="left"] .quest-entry-name {
     flex: 1 1 auto;
     text-align: left;
     font-weight: 500;
@@ -512,7 +512,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* QUEST ICON */  
 
-.squire-tray[data-position="left"] .quest-entry-name .quest-icon {
+.squire-panel-host[data-position="left"] .quest-entry-name .quest-icon {
     width: 18px;
     height: 18px;
     display: inline-flex;
@@ -524,12 +524,12 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     flex-shrink: 0;
 }
 
-.squire-tray[data-position="left"] .quest-entry-name .quest-icon i {
+.squire-panel-host[data-position="left"] .quest-entry-name .quest-icon i {
     color: inherit;
     font-size: 100%;
 }
 
-.squire-tray[data-position="left"] .quest-entry-name .quest-icon img {
+.squire-panel-host[data-position="left"] .quest-entry-name .quest-icon img {
     width: 100%;
     height: 100%;
     border-radius: 6px;
@@ -543,7 +543,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 /* Objective Number Styling */
 
 
-.squire-tray[data-position="left"] .quest-number {
+.squire-panel-host[data-position="left"] .quest-number {
     font-weight: 900;
     margin-right: 0px;
     margin-left: 0px;
@@ -559,7 +559,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 /* IMAGE */
 
 
-.squire-tray[data-position="left"] .quest-entry-image {
+.squire-panel-host[data-position="left"] .quest-entry-image {
     float: left;
     margin: 0 8px 8px 0;
     width: 100%;
@@ -569,7 +569,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     justify-content: center;
     background: rgba(0, 0, 0, 0.2);
 }
-.squire-tray[data-position="left"] .quest-entry-image img {
+.squire-panel-host[data-position="left"] .quest-entry-image img {
     width: 100%;
     height: auto;
     object-fit: cover;
@@ -587,13 +587,13 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     margin-right: 2px;    
 }
 
-.squire-tray[data-position="left"] .quest-entry-description {
+.squire-panel-host[data-position="left"] .quest-entry-description {
     margin-bottom: 8px;
     clear: right;
     font-size: .9em;
 }
 
-.squire-tray[data-position="left"] .quest-entry-plothook {
+.squire-panel-host[data-position="left"] .quest-entry-plothook {
     color: #aaa;
     margin-bottom: 8px;
     background: rgba(128, 127, 112, 0.3);
@@ -601,7 +601,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     padding: 6px 8px 6px 8px;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tags {
+.squire-panel-host[data-position="left"] .quest-entry-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
@@ -612,7 +612,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* Tag Cloud Container */
 
-.squire-tray[data-position="left"] .quest-tag-cloud {
+.squire-panel-host[data-position="left"] .quest-tag-cloud {
     padding: 8px 0px 8px 0px;
     margin-bottom: 6px;
     display: flex;
@@ -624,7 +624,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     border-radius: 4px;
     transition: all 0.2s ease-out;
 }
-.squire-tray[data-position="left"] .quest-tag-cloud.collapsed {
+.squire-panel-host[data-position="left"] .quest-tag-cloud.collapsed {
     max-height: 0;
     padding: 0;
     margin: 0;
@@ -633,7 +633,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* Tag Cloud Tags */
 
-.squire-tray[data-position="left"] .quest-tag {
+.squire-panel-host[data-position="left"] .quest-tag {
     background: rgba(255, 47, 47, 0.2);
     border-color: rgba(255, 47, 47, 0.0);
     border-radius: 4px;
@@ -644,52 +644,52 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     transition: all 0.2s ease;
     text-transform: uppercase;
 }
-.squire-tray[data-position="left"] .quest-tag:hover {
+.squire-panel-host[data-position="left"] .quest-tag:hover {
     background: rgba(255, 47, 47, 0.7);
     border-color: rgba(255, 47, 47, 0.0);
 }
 
-.squire-tray[data-position="left"] .quest-tag.selected {
+.squire-panel-host[data-position="left"] .quest-tag.selected {
     background: rgba(50, 100, 150, 0.4);
     border-color: rgba(50, 100, 150, 0.0);
     color: rgba(255, 255, 255, 0.9)
 }
-.squire-tray[data-position="left"] .quest-tag.selected:hover {
+.squire-panel-host[data-position="left"] .quest-tag.selected:hover {
     background: rgba(50, 100, 150, 0.7);
     border-color: rgba(100, 150, 200, 0.8)
 }
 
 /* Quest Status Tag Styling */
-.squire-tray[data-position="left"] .quest-tag.quest-status {
+.squire-panel-host[data-position="left"] .quest-tag.quest-status {
     background: rgba(2, 136, 20, 0.7);
     border-color: rgba(2, 136, 20, 0.8);
 }
 
-.squire-tray[data-position="left"] .quest-tag.quest-status:hover {
+.squire-panel-host[data-position="left"] .quest-tag.quest-status:hover {
     background: rgba(9, 179, 32, 0.7);
     border-color: rgba(9, 179, 32, 0.7);
 }
 
-.squire-tray[data-position="left"] .quest-tag.quest-status.selected {
+.squire-panel-host[data-position="left"] .quest-tag.quest-status.selected {
     background: rgba(4, 73, 153, 0.4);
     border-color: rgba(4, 73, 153, 0.6);
 }
 
-.squire-tray[data-position="left"] .quest-tag.quest-status.selected:hover {
+.squire-panel-host[data-position="left"] .quest-tag.quest-status.selected:hover {
     background: rgba(12, 94, 189, 0.7);
     border-color: rgba(12, 94, 189, 0.8);
 }
 
 /* --- THESE ARE NEW AND DIFFERENT THN CODEX --- */
 
-.squire-tray[data-position="left"] .quest-entry-location,
-.squire-tray[data-position="left"] .quest-entry-scene,
-.squire-tray[data-position="left"] .quest-entry-timeframe,
-.squire-tray[data-position="left"] .quest-entry-tasks,
-.squire-tray[data-position="left"] .quest-entry-reward,
-.squire-tray[data-position="left"] .quest-entry-participants,
-.squire-tray[data-position="left"] .quest-entry-plothook,
-.squire-tray[data-position="left"] .quest-entry-progress {
+.squire-panel-host[data-position="left"] .quest-entry-location,
+.squire-panel-host[data-position="left"] .quest-entry-scene,
+.squire-panel-host[data-position="left"] .quest-entry-timeframe,
+.squire-panel-host[data-position="left"] .quest-entry-tasks,
+.squire-panel-host[data-position="left"] .quest-entry-reward,
+.squire-panel-host[data-position="left"] .quest-entry-participants,
+.squire-panel-host[data-position="left"] .quest-entry-plothook,
+.squire-panel-host[data-position="left"] .quest-entry-progress {
     margin-bottom: 0.5rem;
     clear: both;
 }
@@ -697,11 +697,11 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* TASKS */
 
-.squire-tray[data-position="left"] .quest-entry-tasks ul {
+.squire-panel-host[data-position="left"] .quest-entry-tasks ul {
     list-style: none;
     padding-left: 0;
 }
-.squire-tray[data-position="left"] .quest-entry-tasks li {
+.squire-panel-host[data-position="left"] .quest-entry-tasks li {
     display: flex;
     align-items: flex-start;
     gap: 8px;
@@ -712,16 +712,16 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 
 
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-text {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .objective-text {
     flex: 1;
 }
 
-.squire-tray[data-position="left"] .objective-text.active {
+.squire-panel-host[data-position="left"] .objective-text.active {
     position: relative;
 }
 
 /* ACTIVE BADGE */
-.squire-tray[data-position="left"] .objective-text.active::before {
+.squire-panel-host[data-position="left"] .objective-text.active::before {
     content: "ACTIVE ";
     color: rgba(255,255,255, 0.9);
     font-weight: 400;
@@ -736,7 +736,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 /* OBJECTIVE NUMBER */
 
 
-.squire-tray[data-position="left"] .objective-number {
+.squire-panel-host[data-position="left"] .objective-number {
     font-weight: 700;
     font-size: 0.85em;
     margin-right: 0px;
@@ -751,12 +751,12 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 /* Objective Number - NORMAL */
 
 /* Clickable Objective Number */
-.squire-tray[data-position="left"] .objective-number.clickable-objective {
+.squire-panel-host[data-position="left"] .objective-number.clickable-objective {
     cursor: pointer;
     transition: all 0.1s ease;
 }
 
-.squire-tray[data-position="left"] .objective-number.clickable-objective:hover {
+.squire-panel-host[data-position="left"] .objective-number.clickable-objective:hover {
     border: 2px solid rgba(169, 79, 57, 0.9) !important;
     background-color: rgba(169, 79, 57, 0.9);
     color: rgba(255,255,255, 0.7);
@@ -767,7 +767,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 /* Objective Number - ACTIVE*/
 
 /* Active Objective Styling */
-.squire-tray[data-position="left"] .objective-number.active {
+.squire-panel-host[data-position="left"] .objective-number.active {
     border: 1px solid rgba(54, 124, 204, 0.6);
     background-color: rgba(54, 124, 204, 0.2);
     color: rgba(255,255,255, 0.7);
@@ -778,12 +778,12 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 /* Objective Number - HIDDEN */
 
 
-.squire-tray[data-position="left"] .quest-entry-tasks li.task-hidden {
+.squire-panel-host[data-position="left"] .quest-entry-tasks li.task-hidden {
     opacity: 1.0;
     color: rgba(134, 134, 134, 0.9);
     text-decoration: none;
 }
-.squire-tray[data-position="left"] .quest-entry-tasks li.task-hidden .objective-number.clickable-objective {
+.squire-panel-host[data-position="left"] .quest-entry-tasks li.task-hidden .objective-number.clickable-objective {
     cursor: pointer;
     transition: all 0.2s ease;
     background-color: rgba(119, 119, 118, 0.6);
@@ -794,19 +794,19 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* Objective Number - COMPLETE */
 
-.squire-tray[data-position="left"] .quest-entry-tasks li.task-complete {
+.squire-panel-host[data-position="left"] .quest-entry-tasks li.task-complete {
     opacity: 1.0;
     color: rgba(60, 146, 69, .9);
     text-decoration: none;
 }
-.squire-tray[data-position="left"] .quest-entry-tasks li.task-complete .objective-number.clickable-objective {
+.squire-panel-host[data-position="left"] .quest-entry-tasks li.task-complete .objective-number.clickable-objective {
     cursor: pointer;
     transition: all 0.2s ease;
     background-color: rgba(60, 146, 69, 0.6);
     color: rgba(255,255,255, 0.9);
     border: 1px solid rgba(60, 146, 69, 0.6);
 }
-.squire-tray[data-position="left"] .quest-entry-tasks li.task-complete .objective-number-icon {
+.squire-panel-host[data-position="left"] .quest-entry-tasks li.task-complete .objective-number-icon {
     color: rgba(255,255,255, 0.8);
     font-size: .85em;
 }
@@ -814,19 +814,19 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* Objective Number - FAILED*/
 
-.squire-tray[data-position="left"] .quest-entry-tasks li.task-failed {
+.squire-panel-host[data-position="left"] .quest-entry-tasks li.task-failed {
     opacity: 1.0;
     color: rgba(255, 48, 33, 0.9);
     text-decoration: none;
 }
-.squire-tray[data-position="left"] .quest-entry-tasks li.task-failed .objective-number.clickable-objective {
+.squire-panel-host[data-position="left"] .quest-entry-tasks li.task-failed .objective-number.clickable-objective {
     cursor: pointer;
     transition: all 0.2s ease;
     background-color: rgba(182, 36, 25, 0.6);
     color: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(182, 36, 25, 0.6);
 }
-.squire-tray[data-position="left"] .quest-entry-tasks li.task-failed .objective-number-icon {
+.squire-panel-host[data-position="left"] .quest-entry-tasks li.task-failed .objective-number-icon {
     color: rgba(255,255,255, 0.8);
     font-size: .85em;
 }
@@ -842,40 +842,40 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 
 /* GM Hints and Treasure Unlocks */
-.squire-tray[data-position="left"] .quest-entry-tasks [data-tooltip] {
+.squire-panel-host[data-position="left"] .quest-entry-tasks [data-tooltip] {
     cursor: help;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks .treasure-unlocks {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .treasure-unlocks {
     margin-top: 0.25rem;
     margin-left: 1.5rem;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks .treasure-locked {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .treasure-locked {
     color: #888888;
     font-style: italic;
     opacity: 0.6;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks .treasure-unlocked {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .treasure-unlocked {
     color: #48a000;
     font-weight: 500;
     opacity: 1;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks .treasure-unlocked a {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .treasure-unlocked a {
     color: #48a000;
     text-decoration: none;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks .treasure-unlocked a:hover {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .treasure-unlocked a:hover {
     color: #5bb800;
     text-decoration: underline;
 }
 
 /* PARTICIPANTS */
 
-.squire-tray[data-position="left"] .quest-entry-participants {
+.squire-panel-host[data-position="left"] .quest-entry-participants {
     margin-bottom: 0.5rem;
     color: #ffffff;
     clear: both;
@@ -884,14 +884,14 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     padding-top: 4px;
 }
 
-.squire-tray[data-position="left"] .participant-portraits {
+.squire-panel-host[data-position="left"] .participant-portraits {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 4px;
 }
 
-.squire-tray[data-position="left"] .participant-portrait {
+.squire-panel-host[data-position="left"] .participant-portrait {
     width: 36px;
     height: 36px;
     border-radius: 4px;
@@ -901,35 +901,35 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     transition: all 0.2s ease;
 }
 
-.squire-tray[data-position="left"] .participant-portrait:hover {
+.squire-panel-host[data-position="left"] .participant-portrait:hover {
     border-color: var(--color-border-highlight, #ff6400);
     transform: scale(1.1);
     box-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
-.squire-tray[data-position="left"] .participant-portrait img {
+.squire-panel-host[data-position="left"] .participant-portrait img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.squire-tray[data-position="left"] .no-quest-selected {
+.squire-panel-host[data-position="left"] .no-quest-selected {
     padding: 1rem;
     text-align: center;
     color: var(--color-text-light);
 }
 
-.squire-tray[data-position="left"] .no-quest-selected p {
+.squire-panel-host[data-position="left"] .no-quest-selected p {
     margin: 0.5rem 0;
 }
 
-.squire-tray[data-position="left"] .no-quest-selected i {
+.squire-panel-host[data-position="left"] .no-quest-selected i {
     opacity: 0.7;
 }
 
 
 /* Progress Bar */
-.squire-tray[data-position="left"] .quest-entry-progressbar {
+.squire-panel-host[data-position="left"] .quest-entry-progressbar {
     height: 8px;
     background: rgba(255,255,255,0.05);
     border-radius: 3px;
@@ -938,7 +938,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     position: relative;
     overflow: hidden;
 }
-.squire-tray[data-position="left"] .quest-entry-progressbar-fill {
+.squire-panel-host[data-position="left"] .quest-entry-progressbar-fill {
     height: 100%;
     background: linear-gradient(90deg, #791a38 0%, #831c3c 100%);
     background: rgba(45, 97, 50, 0.6);
@@ -947,7 +947,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 }
 
 /* Add drop target styling for quest entries */
-.squire-tray[data-position="left"] .quest-entry.drop-target {
+.squire-panel-host[data-position="left"] .quest-entry.drop-target {
     border-color: #48a000;
     box-shadow: 0 0 5px rgba(72, 160, 0, 0.5);
     background: rgba(72, 160, 0, 0.15);
@@ -958,7 +958,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     z-index: 100;
 }
 
-.squire-tray[data-position="left"] .quest-entry.drop-target::after {
+.squire-panel-host[data-position="left"] .quest-entry.drop-target::after {
     content: 'DROP HERE';
     position: absolute;
     top: 50%;
@@ -976,7 +976,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     z-index: 101;
 }
 
-.squire-tray[data-position="left"] .quest-entry.drop-target::before {
+.squire-panel-host[data-position="left"] .quest-entry.drop-target::before {
     content: '';
     position: absolute;
     top: 0;
@@ -997,7 +997,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 }
 
 /* Special styling for success indication after drop */
-.squire-tray[data-position="left"] .quest-entry.dropped-success {
+.squire-panel-host[data-position="left"] .quest-entry.dropped-success {
     border-color: #48a000;
     box-shadow: 0 0 10px rgba(72, 160, 0, 0.7);
     transition: all 0.3s ease;
@@ -1006,8 +1006,8 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* OBJECTIVE TREASURE INDICATOR */
 
-.squire-tray[data-position="left"] .quest-entry-tasks .unlocked-objective-treasure,
-.squire-tray[data-position="left"] .quest-entry-tasks .locked-objective-treasure {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .unlocked-objective-treasure,
+.squire-panel-host[data-position="left"] .quest-entry-tasks .locked-objective-treasure {
     display: block;
     color: rgba(96, 148, 255, 0.9);
     margin-left: 0px;
@@ -1019,7 +1019,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 
 
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-gm-note {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .objective-gm-note {
     display: block;
     color: rgba(198, 151, 6, 0.9);
     margin-left: 0px;
@@ -1027,7 +1027,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
     margin-top: 2px;
 }
 
-.squire-tray[data-position="left"] .quest-entry-tasks .objective-gm-note i {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .objective-gm-note i {
     margin-right: 4px;
     margin-left: 0px;
     opacity: 0.8;
@@ -1038,32 +1038,32 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 
 /* OBJECTIVE TREASURE INDICATOR */
 
-.squire-tray[data-position="left"] .quest-entry-tasks .locked-objective-treasure i {
+.squire-panel-host[data-position="left"] .quest-entry-tasks .locked-objective-treasure i {
     margin-right: 4px;
     margin-left: 0px;
     opacity: 0.7;
     font-size: 0.8em;
     vertical-align: baseline;
 }
-.squire-tray[data-position="left"] .quest-entry-reward .treasure-link {
+.squire-panel-host[data-position="left"] .quest-entry-reward .treasure-link {
     color: #e2551d;
     font-weight: 200;
     text-decoration: none;
     transition: color 0.2s;
 }
-.squire-tray[data-position="left"] .quest-entry-reward .treasure-link:hover {
+.squire-panel-host[data-position="left"] .quest-entry-reward .treasure-link:hover {
     color: #ff7a3c;
     text-decoration: underline;
 }
-.squire-tray[data-position="left"] .quest-entry-reward .treasure-lock,
-.squire-tray[data-position="left"] .quest-entry-reward .treasure-icon {
+.squire-panel-host[data-position="left"] .quest-entry-reward .treasure-lock,
+.squire-panel-host[data-position="left"] .quest-entry-reward .treasure-icon {
     margin-right: 0px;
     vertical-align: baseline;
     font-size: .8em;
 }
 
 /* Quest objective highlight when pin is clicked */
-.squire-tray[data-position="left"] .quest-entry-tasks li.objective-highlighted {
+.squire-panel-host[data-position="left"] .quest-entry-tasks li.objective-highlighted {
     background-color: rgba(255, 237, 78, 0.1);
     border: 1px solid rgba(255, 237, 78, 0.9);
     transition: background-color 0.3s ease;
@@ -1071,7 +1071,7 @@ html.squire-quest-pin-placement .squire-quest-pin-placement-canvas {
 }
 
 /* Quest entry highlight when quest-level pin is clicked */
-.squire-tray[data-position="left"] .quest-entry.quest-highlighted {
+.squire-panel-host[data-position="left"] .quest-entry.quest-highlighted {
     border: 2px solid #ffd700;
     border-radius: 6px;
     box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
