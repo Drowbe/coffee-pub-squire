@@ -323,6 +323,19 @@ export class TransferUtils {
      * @param {boolean} hasQuantity - Whether item has quantity
      */
     static async _completeItemTransfer(sourceActor, targetActor, item, quantity, hasQuantity) {
+        // Container guard at the mutation, not only at the drop handlers.
+        // Entry-point checks are for giving a good message early; this is the
+        // one that cannot be routed around, whichever path got here.
+        const packed = getTransferBlocker(item, sourceActor);
+        if (packed) {
+            showSquireToast('Unpack it first', {
+                subtitle: packed.message,
+                icon: 'fa-solid fa-box-open',
+                color: '#e0a53c'
+            });
+            return false;
+        }
+
         // The quantity was chosen in a client-side dialog and can be stale by the
         // time it reaches the mutation — the stack may have been spent, sold, or
         // partly handed to someone else since. Unchecked, the create below mints

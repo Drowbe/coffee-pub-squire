@@ -930,9 +930,16 @@ export class PanelManager {
                 switch (data.type) {
                     case 'Item':
                         // This could be either a world item OR a drag from character sheet
-                        if ((data.actorId && (data.data?.itemId || data.embedId)) || 
-                            data.fromInventory || 
-                            (data.uuid && data.uuid.startsWith("Actor."))) {
+                        // Classify by what the uuid actually points at, not by
+                        // its prefix. An item on an unlinked token is
+                        // `Scene.x.Token.y.Actor.z.Item.i`, which does not START
+                        // with "Actor." — so a startsWith test routes an NPC's
+                        // item to the world-item branch below, where it is
+                        // copied onto the target and left on the source with
+                        // none of the transfer guards run.
+                        if ((data.actorId && (data.data?.itemId || data.embedId)) ||
+                            data.fromInventory ||
+                            /Actor\.[^.]+\.Item\./.test(String(data.uuid || ''))) {
                             
 
                             // This is a drag from character sheet
@@ -940,12 +947,10 @@ export class PanelManager {
                             let itemId;
                             
                             // Parse from UUID format if present (Actor.actorId.Item.itemId)
-                            if (data.uuid && data.uuid.startsWith("Actor.")) {
-                                const parts = data.uuid.split(".");
-                                if (parts.length >= 4 && parts[2] === "Item") {
-                                    sourceActorId = parts[1];
-                                    itemId = parts[3];
-                                }
+                            const uuidMatch = String(data.uuid || '').match(/Actor\.([^.]+)\.Item\.([^.]+)/);
+                            if (uuidMatch) {
+                                sourceActorId = uuidMatch[1];
+                                itemId = uuidMatch[2];
                             } else {
                                 sourceActorId = data.actorId;
                                 itemId = data.data?.itemId || data.embedId || data.uuid?.split('.').pop();
@@ -1636,6 +1641,19 @@ export class PanelManager {
 
     // Add this new method to complete an item transfer between actors
     async _completeItemTransfer(sourceActor, targetActor, sourceItem, quantityToTransfer, hasQuantity) {
+        // Container guard at the mutation, not only at the drop handlers.
+        // Entry-point checks are for giving a good message early; this is the
+        // one that cannot be routed around, whichever path got here.
+        const packed = getTransferBlocker(sourceItem, sourceActor);
+        if (packed) {
+            showSquireToast('Unpack it first', {
+                subtitle: packed.message,
+                icon: 'fa-solid fa-box-open',
+                color: '#e0a53c'
+            });
+            return false;
+        }
+
         // The quantity was chosen in a client-side dialog and can be stale by the
         // time it reaches the mutation — the stack may have been spent, sold, or
         // partly handed to someone else since. Unchecked, the create below mints
