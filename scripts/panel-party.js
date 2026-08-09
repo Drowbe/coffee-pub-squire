@@ -726,92 +726,52 @@ export class PartyPanel {
         
         // Create chat messages for direct transfer completion
         try {
-            // Find the users who own the source and target actors
-            const sourceUsers = game.users.filter(user => sourceActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
-            const targetUsers = game.users.filter(user => targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
-            
-            // Send message to source actor's owner (sender)
-            if (sourceUsers.length > 0) {
+            // One card, whispered to everyone involved.
+            //
+            // This used to send a "You sent…" card to the source's owners and a
+            // separate "You received…" card to the target's, plus a GM copy —
+            // up to three messages describing one event, and every GM saw all of
+            // them. The third-person wording reads correctly for all three
+            // audiences, so one message says the same thing once.
+            const sourceUsers = game.users.filter(user => sourceActor.ownership?.[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
+            const targetUsers = game.users.filter(user => targetActor.ownership?.[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
+            const gmUsers = game.users.filter(u => u.isGM);
+            const receiverIds = [...new Set([
+                ...sourceUsers.map(u => u.id),
+                ...targetUsers.map(u => u.id),
+                ...gmUsers.map(u => u.id)
+            ])];
+
+            const payload = {
+                sourceActorId: sourceActor.id,
+                sourceActorName: getActorDisplayName(sourceActor),
+                targetActorId: targetActor.id,
+                targetActorName: getActorDisplayName(targetActor),
+                itemId: sourceItem.id,
+                itemName: sourceItem.name,
+                quantity: quantityToTransfer,
+                hasQuantity: hasQuantity,
+                isPlural: quantityToTransfer > 1,
+                receiverIds
+            };
+
             const socket = game.modules.get(MODULE.ID)?.socket;
             if (socket) {
-                await socket.executeAsGM('createTransferCompleteChat', {
-                    sourceActorId: sourceActor.id,
-                    sourceActorName: getActorDisplayName(sourceActor),
-                    targetActorId: targetActor.id,
-                    targetActorName: getActorDisplayName(targetActor),
-                    itemId: sourceItem.id,
-                    itemName: sourceItem.name,
-                    quantity: quantityToTransfer,
-                    hasQuantity: hasQuantity,
-                    isPlural: quantityToTransfer > 1,
-                    isTransferSender: true,
-                        receiverIds: sourceUsers.map(u => u.id)
-                });
+                await socket.executeAsGM('createTransferCompleteChat', payload);
             } else {
-                // Fallback: create message directly if socket not available
+                // No socket: a player cannot whisper on someone else's behalf,
+                // so this only reaches whoever is looking. Better than silence.
                 await ChatMessage.create({
                     content: await renderTemplate(TEMPLATES.CHAT_CARD, {
                         isPublic: false,
                         cardType: "transfer-complete",
                         strCardIcon: "fa-solid fa-backpack",
                         strCardTitle: "Transfer Complete",
-                        sourceActor,
-                        sourceActorName: getActorDisplayName(sourceActor),
-                        targetActor,
-                        targetActorName: getActorDisplayName(targetActor),
-                        item: sourceItem,
-                        itemName: sourceItem.name,
-                        quantity: quantityToTransfer,
-                        hasQuantity: hasQuantity,
-                        isPlural: quantityToTransfer > 1,
-                        isTransferSender: true
+                        ...payload
                     }),
-                        speaker: ChatMessage.getSpeaker({ actor: sourceActor }),
-                        whisper: sourceUsers.map(u => u.id)
-                    });
-                }
-            }
-            
-            // Send message to target actor's owner (receiver) - only if different from sender
-            if (targetUsers.length > 0 && !targetUsers.some(u => sourceUsers.some(su => su.id === u.id))) {
-                const socket = game.modules.get(MODULE.ID)?.socket;
-                if (socket) {
-                    await socket.executeAsGM('createTransferCompleteChat', {
-                        sourceActorId: sourceActor.id,
-                        sourceActorName: getActorDisplayName(sourceActor),
-                        targetActorId: targetActor.id,
-                        targetActorName: getActorDisplayName(targetActor),
-                        itemId: sourceItem.id,
-                        itemName: sourceItem.name,
-                        quantity: quantityToTransfer,
-                        hasQuantity: hasQuantity,
-                        isPlural: quantityToTransfer > 1,
-                        isTransferReceiver: true,
-                        receiverIds: targetUsers.map(u => u.id)
-                    });
-                } else {
-                    // Fallback: create message directly if socket not available
-                    await ChatMessage.create({
-                        content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                            isPublic: false,
-                            cardType: "transfer-complete",
-                            strCardIcon: "fa-solid fa-backpack",
-                            strCardTitle: "Transfer Complete",
-                            sourceActor,
-                            sourceActorName: getActorDisplayName(sourceActor),
-                            targetActor,
-                            targetActorName: getActorDisplayName(targetActor),
-                            item: sourceItem,
-                            itemName: sourceItem.name,
-                            quantity: quantityToTransfer,
-                            hasQuantity: hasQuantity,
-                            isPlural: quantityToTransfer > 1,
-                            isTransferReceiver: true
-                        }),
-                    speaker: ChatMessage.getSpeaker({ actor: targetActor }),
-                        whisper: targetUsers.map(u => u.id)
+                    speaker: ChatMessage.getSpeaker({ actor: sourceActor }),
+                    whisper: receiverIds
                 });
-                }
             }
         } catch (error) {
             console.error('Coffee Pub Squire | Error creating transfer complete chat message:', error);
@@ -1020,8 +980,16 @@ export class PartyPanel {
                     
                     // Transfer succeeded - create success messages
                     if (socket) {
-                        // Message for sender (only if not GM)
-                        if (senderUsers.length > 0) {
+                        // One card for everyone involved, same as the direct
+                        // transfer path: three messages describing one event
+                        // meant every GM read the sender's copy, the receiver's
+                        // copy and their own.
+                        const receiverIds = [...new Set([
+                            ...senderUsers.map(u => u.id),
+                            ...receiverUsers.map(u => u.id),
+                            ...gmUsers.map(u => u.id)
+                        ])];
+                        if (receiverIds.length > 0) {
                             await socket.executeAsGM('createTransferCompleteChat', {
                                 sourceActorId: sourceActor.id,
                                 sourceActorName: getActorDisplayName(sourceActor),
@@ -1032,44 +1000,7 @@ export class PartyPanel {
                                 quantity: transferData.quantity,
                                 hasQuantity: true,
                                 isPlural: transferData.quantity > 1,
-                                isTransferSender: true,
-                                receiverIds: senderUsers.map(u => u.id),
-                                transferId
-                            });
-                        }
-                        
-                        // Message for receiver (only if not GM)
-                        if (receiverUsers.length > 0) {
-                                await socket.executeAsGM('createTransferCompleteChat', {
-                                    sourceActorId: sourceActor.id,
-                                    sourceActorName: getActorDisplayName(sourceActor),
-                                    targetActorId: targetActor.id,
-                                    targetActorName: getActorDisplayName(targetActor),
-                                itemId: item?.id || transferData.itemId,
-                                itemName: item?.name || transferData.itemName,
-                                    quantity: transferData.quantity,
-                                    hasQuantity: true,
-                                    isPlural: transferData.quantity > 1,
-                                    isTransferReceiver: true,
-                                    receiverIds: receiverUsers.map(u => u.id),
-                                    transferId
-                                });
-                            }
-                        
-                        // GM notification message (for all GMs)
-                        if (gmUsers.length > 0) {
-                            await socket.executeAsGM('createTransferCompleteChat', {
-                                sourceActorId: sourceActor.id,
-                                    sourceActorName: getActorDisplayName(sourceActor),
-                                targetActorId: targetActor.id,
-                                    targetActorName: getActorDisplayName(targetActor),
-                                itemId: item?.id || transferData.itemId,
-                                itemName: item?.name || transferData.itemName,
-                                    quantity: transferData.quantity,
-                                    hasQuantity: true,
-                                isPlural: transferData.quantity > 1,
-                                isGMNotification: true,
-                                receiverIds: gmUsers.map(u => u.id),
+                                receiverIds,
                                 transferId
                             });
                         }
