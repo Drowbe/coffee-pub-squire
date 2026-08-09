@@ -423,6 +423,25 @@ export function getContainedItems(container, actor) {
 }
 
 /**
+ * The name a player would recognise for an actor.
+ *
+ * `actor.name` on a synthetic (unlinked token) actor is the PROTOTYPE's name,
+ * so every Cultist on the scene reports itself as "Cultist" — which is what
+ * lands in chat cards and toasts unless something asks the token instead. A
+ * synthetic actor carries its own TokenDocument, so it can answer this itself.
+ *
+ * Linked actors fall through to `actor.name` deliberately rather than hunting
+ * the canvas for a token: a linked actor can have several placed tokens with
+ * different names, and picking one arbitrarily is worse than using the name
+ * on the sheet.
+ */
+export function getActorDisplayName(actor) {
+    if (!actor) return '';
+    if (actor.isToken && actor.token?.name) return actor.token.name;
+    return actor.name ?? '';
+}
+
+/**
  * Resolve the actor and item behind an item drop.
  *
  * Prefers the drop payload's uuid. Actor ids are not safe here: a synthetic

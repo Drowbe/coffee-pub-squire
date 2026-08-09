@@ -47,7 +47,12 @@ function actorRecipients(sourceActor) {
     // Party first, then everyone else. The list renders a header where each
     // group's first member appears and does not reorder, so the sort here is
     // what produces the sections.
-    const isParty = (actor) => actor.type === 'character' && actor.hasPlayerOwner;
+    //
+    // Grouped on `type` alone, deliberately: the row already prints
+    // "Character" or "NPC", and gating Party on hasPlayerOwner as well puts a
+    // row labelled Character under the NPCS heading whenever a PC has no player
+    // assigned — which reads as a sorting bug rather than a rule.
+    const isParty = (actor) => actor.type === 'character';
     const ordered = [...tokens].sort((a, b) => {
         const aParty = isParty(a.actor) ? 0 : 1;
         const bParty = isParty(b.actor) ? 0 : 1;
@@ -219,6 +224,10 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
             fixedRecipient,
             requestedQuantity: this.requestedQuantity,
             entityListHtml: this.entityList?.html || '',
+            // The actor list supplies its own Party / NPCs headings; the
+            // generic "Recipient" one above them would be a third header
+            // saying less than either. Note recipients are users and stay flat.
+            groupedRecipients: !!this.entityList && this.mode !== 'note' && !this.targetActor,
             quantityHtml: this.quantitySplit?.html || ''
         });
 

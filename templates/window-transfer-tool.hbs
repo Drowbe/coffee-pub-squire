@@ -33,7 +33,9 @@
     {{/if}}
 
     <section class="squire-transfer-section squire-transfer-recipient">
+        {{#unless groupedRecipients}}
         <h3><i class="fa-solid fa-user-check"></i> Recipient</h3>
+        {{/unless}}
         {{#if fixedRecipient}}
             <div class="squire-transfer-fixed-recipient">
                 <img src="{{fixedRecipient.img}}" alt="">

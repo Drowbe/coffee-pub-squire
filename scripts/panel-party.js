@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
-import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate, resolveDroppedItem, showSquireToast } from './helpers.js';
+import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate, resolveDroppedItem, showSquireToast, getActorDisplayName } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -700,7 +700,7 @@ export class PartyPanel {
         const available = sourceItem.system?.quantity ?? 1;
         if (quantityToTransfer > available) {
             showSquireToast('Not enough left', {
-                subtitle: `${sourceActor.name} has only ${available} ${sourceItem.name}.`,
+                subtitle: `${getActorDisplayName(sourceActor)} has only ${available} ${sourceItem.name}.`,
                 icon: 'fa-solid fa-triangle-exclamation',
                 color: '#e05c3c'
             });
@@ -736,9 +736,9 @@ export class PartyPanel {
             if (socket) {
                 await socket.executeAsGM('createTransferCompleteChat', {
                     sourceActorId: sourceActor.id,
-                    sourceActorName: sourceActor.name,
+                    sourceActorName: getActorDisplayName(sourceActor),
                     targetActorId: targetActor.id,
-                    targetActorName: targetActor.name,
+                    targetActorName: getActorDisplayName(targetActor),
                     itemId: sourceItem.id,
                     itemName: sourceItem.name,
                     quantity: quantityToTransfer,
@@ -756,9 +756,9 @@ export class PartyPanel {
                         strCardIcon: "fa-solid fa-backpack",
                         strCardTitle: "Transfer Complete",
                         sourceActor,
-                        sourceActorName: sourceActor.name,
+                        sourceActorName: getActorDisplayName(sourceActor),
                         targetActor,
-                        targetActorName: targetActor.name,
+                        targetActorName: getActorDisplayName(targetActor),
                         item: sourceItem,
                         itemName: sourceItem.name,
                         quantity: quantityToTransfer,
@@ -778,9 +778,9 @@ export class PartyPanel {
                 if (socket) {
                     await socket.executeAsGM('createTransferCompleteChat', {
                         sourceActorId: sourceActor.id,
-                        sourceActorName: sourceActor.name,
+                        sourceActorName: getActorDisplayName(sourceActor),
                         targetActorId: targetActor.id,
-                        targetActorName: targetActor.name,
+                        targetActorName: getActorDisplayName(targetActor),
                         itemId: sourceItem.id,
                         itemName: sourceItem.name,
                         quantity: quantityToTransfer,
@@ -798,9 +798,9 @@ export class PartyPanel {
                             strCardIcon: "fa-solid fa-backpack",
                             strCardTitle: "Transfer Complete",
                             sourceActor,
-                            sourceActorName: sourceActor.name,
+                            sourceActorName: getActorDisplayName(sourceActor),
                             targetActor,
-                            targetActorName: targetActor.name,
+                            targetActorName: getActorDisplayName(targetActor),
                             item: sourceItem,
                             itemName: sourceItem.name,
                             quantity: quantityToTransfer,
@@ -1024,9 +1024,9 @@ export class PartyPanel {
                         if (senderUsers.length > 0) {
                             await socket.executeAsGM('createTransferCompleteChat', {
                                 sourceActorId: sourceActor.id,
-                                sourceActorName: sourceActor.name,
+                                sourceActorName: getActorDisplayName(sourceActor),
                                 targetActorId: targetActor.id,
-                                targetActorName: targetActor.name,
+                                targetActorName: getActorDisplayName(targetActor),
                                 itemId: item?.id || transferData.itemId,
                                 itemName: item?.name || transferData.itemName,
                                 quantity: transferData.quantity,
@@ -1042,9 +1042,9 @@ export class PartyPanel {
                         if (receiverUsers.length > 0) {
                                 await socket.executeAsGM('createTransferCompleteChat', {
                                     sourceActorId: sourceActor.id,
-                                    sourceActorName: sourceActor.name,
+                                    sourceActorName: getActorDisplayName(sourceActor),
                                     targetActorId: targetActor.id,
-                                    targetActorName: targetActor.name,
+                                    targetActorName: getActorDisplayName(targetActor),
                                 itemId: item?.id || transferData.itemId,
                                 itemName: item?.name || transferData.itemName,
                                     quantity: transferData.quantity,
@@ -1060,9 +1060,9 @@ export class PartyPanel {
                         if (gmUsers.length > 0) {
                             await socket.executeAsGM('createTransferCompleteChat', {
                                 sourceActorId: sourceActor.id,
-                                    sourceActorName: sourceActor.name,
+                                    sourceActorName: getActorDisplayName(sourceActor),
                                 targetActorId: targetActor.id,
-                                    targetActorName: targetActor.name,
+                                    targetActorName: getActorDisplayName(targetActor),
                                 itemId: item?.id || transferData.itemId,
                                 itemName: item?.name || transferData.itemName,
                                     quantity: transferData.quantity,
@@ -1098,9 +1098,9 @@ export class PartyPanel {
                         if (socket) {
                             await socket.executeAsGM('createTransferRejectedChat', {
                                 sourceActorId: sourceActor.id,
-                                sourceActorName: sourceActor.name,
+                                sourceActorName: getActorDisplayName(sourceActor),
                                 targetActorId: targetActor.id,
-                                targetActorName: targetActor.name,
+                                targetActorName: getActorDisplayName(targetActor),
                             itemId: item?.id || transferData.itemId,
                             itemName: item?.name || transferData.itemName,
                                 quantity: transferData.quantity,
@@ -1120,9 +1120,9 @@ export class PartyPanel {
                                 strCardIcon: "fa-solid fa-times-circle",
                                 strCardTitle: "Transfer Rejected", 
                                 sourceActor,
-                                sourceActorName: sourceActor.name,
+                                sourceActorName: getActorDisplayName(sourceActor),
                                 targetActor,
-                                targetActorName: targetActor.name,
+                                targetActorName: getActorDisplayName(targetActor),
                                 item: item || { name: transferData.itemName },
                                 itemName: item?.name || transferData.itemName,
                                 quantity: transferData.quantity,
@@ -1142,9 +1142,9 @@ export class PartyPanel {
                             if (socket) {
                                 await socket.executeAsGM('createTransferRejectedChat', {
                                     sourceActorId: sourceActor.id,
-                                    sourceActorName: sourceActor.name,
+                                    sourceActorName: getActorDisplayName(sourceActor),
                                     targetActorId: targetActor.id,
-                                    targetActorName: targetActor.name,
+                                    targetActorName: getActorDisplayName(targetActor),
                                 itemId: item?.id || transferData.itemId,
                                 itemName: item?.name || transferData.itemName,
                                     quantity: transferData.quantity,
@@ -1164,9 +1164,9 @@ export class PartyPanel {
                                     strCardIcon: "fa-solid fa-times-circle",
                                     strCardTitle: "Transfer Rejected",
                                     sourceActor,
-                                    sourceActorName: sourceActor.name,
+                                    sourceActorName: getActorDisplayName(sourceActor),
                                     targetActor,
-                                    targetActorName: targetActor.name,
+                                    targetActorName: getActorDisplayName(targetActor),
                                     item: item || { name: transferData.itemName },
                                     itemName: item?.name || transferData.itemName,
                                     quantity: transferData.quantity,
@@ -1344,9 +1344,9 @@ export class PartyPanel {
                         strCardIcon: "fa-solid fa-people-arrows",
                         strCardTitle: "Transfer Request",
                         sourceActor,
-                        sourceActorName: sourceActor.name,
+                        sourceActorName: getActorDisplayName(sourceActor),
                         targetActor,
-                        targetActorName: targetActor.name,
+                        targetActorName: getActorDisplayName(targetActor),
                         item: item || { name: transferData.itemName },
                         itemName: item?.name || transferData.itemName,
                         quantity: transferData.quantity,
@@ -1372,9 +1372,9 @@ export class PartyPanel {
             if (socket && !game.user.isGM) {
                 await socket.executeAsGM('createTransferRejectedChat', {
                     sourceActorId: sourceActor.id,
-                    sourceActorName: sourceActor.name,
+                    sourceActorName: getActorDisplayName(sourceActor),
                     targetActorId: targetActor.id,
-                    targetActorName: targetActor.name,
+                    targetActorName: getActorDisplayName(targetActor),
                     itemId: item?.id || transferData.itemId,
                     itemName: item?.name || transferData.itemName,
                     quantity: transferData.quantity,
@@ -1393,9 +1393,9 @@ export class PartyPanel {
                         strCardIcon: "fa-solid fa-times-circle",
                         strCardTitle: "Transfer Denied",
                         sourceActor,
-                        sourceActorName: sourceActor.name,
+                        sourceActorName: getActorDisplayName(sourceActor),
                         targetActor,
-                        targetActorName: targetActor.name,
+                        targetActorName: getActorDisplayName(targetActor),
                         item: item || { name: transferData.itemName },
                         itemName: item?.name || transferData.itemName,
                         quantity: transferData.quantity,
@@ -1441,7 +1441,7 @@ export class PartyPanel {
             showTransferButtons,
             showExecuteButton,
             // fallback
-            strCardContent: (cardType === "compendium-drop" || cardType === "world-drop") && targetActor && item ? `<p><strong>${targetActor.name}</strong> received <strong>${item.name}</strong> via the Squire tray.</p>` : undefined
+            strCardContent: (cardType === "compendium-drop" || cardType === "world-drop") && targetActor && item ? `<p><strong>${getActorDisplayName(targetActor)}</strong> received <strong>${item.name}</strong> via the Squire tray.</p>` : undefined
         };
     }
 

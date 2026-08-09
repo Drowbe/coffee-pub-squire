@@ -5,7 +5,7 @@
   {{!-- PLANNING START --}}
   {{#if isPlanningStart}}
     <div class="blacksmith-card theme-blue">
-      <div class="section-header">
+      <div class="card-header">
         <i class="fa-solid fa-hourglass-start"></i> Planning Phase Started
       </div>
       <div class="section-content">
@@ -16,7 +16,7 @@
   {{!-- PLANNING PAUSED --}}
   {{else if isPlanningPaused}}
     <div class="blacksmith-card theme-default">
-      <div class="section-header">
+      <div class="card-header">
         <i class="fa-solid fa-pause"></i> Planning Phase Paused
       </div>
       <div class="section-content">
@@ -27,7 +27,7 @@
   {{!-- PLANNING RESUMED --}}
   {{else if isPlanningResumed}}
     <div class="blacksmith-card theme-default">
-      <div class="section-header">
+      <div class="card-header">
         <i class="fa-solid fa-play"></i> Planning Phase Resumed
       </div>
       <div class="section-content">
@@ -38,7 +38,7 @@
   {{!-- COMBAT TIMER --}}
   {{else if isTimer}}
     <div class="blacksmith-card {{#if theme}}theme-{{theme}}{{else}}theme-default{{/if}}">
-      <div class="section-header">
+      <div class="card-header">
         {{#if isTimerSet}}
           <i class="fa-solid fa-clock"></i> {{timerLabel}} Timer Updated
         {{else if isTimerStart}}
@@ -81,7 +81,7 @@
   {{!-- ROUND ANNOUNCEMENT --}}
   {{else if isRoundAnnouncement}}
     <div class="blacksmith-card theme-default">
-      <div class="section-header">
+      <div class="card-header">
         <i class="fa-solid fa-swords"></i> Round {{roundNumber}} Has Started
       </div>
       <div class="section-content"></div>
@@ -90,7 +90,7 @@
   {{!-- LOOT DROP --}}
   {{else if isLootDrop}}
     <div class="blacksmith-card theme-default">
-      <div class="section-header">
+      <div class="card-header">
         <i class="fa-solid fa-coins"></i> Loot Dropped!
       </div>
       <div class="section-content">
@@ -101,7 +101,7 @@
   {{!-- MOVEMENT CHANGE --}}
   {{else if isMovementChange}}
       <div class="blacksmith-card theme-default">
-          <div class="section-header">
+          <div class="card-header">
               <i class="fas {{movementIcon}}"></i> {{movementLabel}} Mode Active
           </div>
           <div class="section-content">
@@ -123,7 +123,7 @@
   {{!-- LEADER CHANGE --}}
   {{else if isLeaderChange}}
       <div class="blacksmith-card theme-default">
-          <div class="section-header">
+          <div class="card-header">
               <i class="fa-solid fa-crown"></i> {{leaderName}} is Party Leader
           </div>
           <div class="section-content">
@@ -140,7 +140,7 @@
   {{!-- TRANSFER REQUEST --}}
   {{else if (eq cardType "transfer-request")}}
     <div class="blacksmith-card theme-green">
-      <div class="section-header">
+      <div class="card-header">
         <i class="{{strCardIcon}}"></i> {{strCardTitle}}
       </div>
       <div class="section-content">
@@ -159,7 +159,7 @@
   {{!-- TRANSFER COMPLETE --}}
   {{else if (eq cardType "transfer-complete")}}
     <div class="blacksmith-card theme-default">
-      <div class="section-header">
+      <div class="card-header">
         <i class="{{strCardIcon}}"></i> {{strCardTitle}}
       </div>
       <div class="section-content">
@@ -180,7 +180,7 @@
   {{!-- TRANSFER REJECTED --}}
   {{else if (eq cardType "transfer-rejected")}}
     <div class="blacksmith-card theme-default">
-      <div class="section-header">
+      <div class="card-header">
         <i class="{{strCardIcon}}"></i> {{strCardTitle}}
       </div>
       <div class="section-content">
@@ -199,7 +199,7 @@
   {{!-- TRANSFER FAILED --}}
   {{else if (eq cardType "transfer-failed")}}
     <div class="blacksmith-card theme-red">
-      <div class="section-header">
+      <div class="card-header">
         <i class="fa-solid fa-exclamation-triangle"></i> Transfer Failed
       </div>
       <div class="section-content">
@@ -210,7 +210,7 @@
   {{!-- TRANSFER EXPIRED --}}
   {{else if (eq cardType "transfer-expired")}}
     <div class="blacksmith-card theme-orange">
-      <div class="section-header">
+      <div class="card-header">
         <i class="fa-solid fa-clock"></i> Transfer Request Expired
       </div>
       <div class="section-content">
@@ -231,7 +231,7 @@
   {{!-- TRANSFER GM --}}
   {{else if (eq cardType "transfer-gm")}}
     <div class="blacksmith-card theme-default">
-      <div class="section-header">
+      <div class="card-header">
         <i class="{{strCardIcon}}"></i> {{strCardTitle}}
       </div>
       <div class="section-content">
@@ -242,7 +242,7 @@
   {{!-- GENERAL & ERROR CONDITION --}}
   {{else}}
     <div class="blacksmith-card theme-default">
-      <div class="section-header">
+      <div class="card-header">
         {{#if strCardTitle}}
           <i class="{{strCardIcon}}"></i> {{strCardTitle}}
         {{else}}
@@ -265,7 +265,7 @@
   {{!-- LEADER CHANGE --}}
   {{#if isLeaderChange}}
       <div class="blacksmith-card theme-red">
-          <div class="section-header">
+          <div class="card-header">
               <i class="fa-solid fa-crown"></i> You Are Party Leader!
           </div>
           <div class="section-content">
@@ -276,7 +276,7 @@
   {{!-- TRANSFER REQUEST --}}
   {{else if (eq cardType "transfer-request")}}
     <div class="blacksmith-card theme-green">
-      <div class="section-header">
+      <div class="card-header">
         <i class="{{strCardIcon}}"></i> {{strCardTitle}} 
       </div>
       <div class="section-content">
@@ -302,7 +302,7 @@
   {{!-- TRANSFER COMPLETE --}}
   {{else if (eq cardType "transfer-complete")}}
     <div class="blacksmith-card theme-default">
-      <div class="section-header">
+      <div class="card-header">
         <i class="{{strCardIcon}}"></i> {{strCardTitle}}
       </div>
       <div class="section-content">
@@ -323,7 +323,7 @@
   {{!-- TRANSFER REJECTED --}}
   {{else if (eq cardType "transfer-rejected")}}
     <div class="blacksmith-card theme-default">
-      <div class="section-header">
+      <div class="card-header">
         <i class="{{strCardIcon}}"></i> {{strCardTitle}}
       </div>
       <div class="section-content">
@@ -343,7 +343,7 @@
   {{!-- TRANSFER FAILED --}}
   {{else if (eq cardType "transfer-failed")}}
     <div class="blacksmith-card theme-red">
-      <div class="section-header">
+      <div class="card-header">
         <i class="fa-solid fa-exclamation-triangle"></i> Transfer Failed
       </div>
       <div class="section-content">
@@ -354,7 +354,7 @@
   {{!-- TRANSFER EXPIRED --}}
   {{else if (eq cardType "transfer-expired")}}
     <div class="blacksmith-card theme-orange">
-      <div class="section-header">
+      <div class="card-header">
         <i class="fa-solid fa-clock"></i> Transfer Request Expired
       </div>
       <div class="section-content">
@@ -375,7 +375,7 @@
   {{!-- TRANSFER GM --}}
   {{else if (eq cardType "transfer-gm")}}
     <div class="blacksmith-card theme-default">
-      <div class="section-header">
+      <div class="card-header">
         <i class="{{strCardIcon}}"></i> {{strCardTitle}}
       </div>
       <div class="section-content">
@@ -386,7 +386,7 @@
   {{!-- COMPENDIUM ADD REQUEST --}}
   {{else if (eq cardType "compendium-request")}}
     <div class="blacksmith-card theme-green">
-      <div class="section-header">
+      <div class="card-header">
         <i class="fa-solid fa-book-open-cover"></i> Compendium Request
       </div>
       <div class="section-content">
@@ -402,7 +402,7 @@
   {{!-- COMPENDIUM ADD APPROVED --}}
   {{else if (eq cardType "compendium-approved")}}
     <div class="blacksmith-card theme-default">
-      <div class="section-header">
+      <div class="card-header">
         <i class="fa-solid fa-circle-check"></i> Request Approved
       </div>
       <div class="section-content">
@@ -413,7 +413,7 @@
   {{!-- COMPENDIUM ADD DENIED --}}
   {{else if (eq cardType "compendium-denied")}}
     <div class="blacksmith-card theme-orange">
-      <div class="section-header">
+      <div class="card-header">
         <i class="fa-solid fa-circle-xmark"></i> Request Denied
       </div>
       <div class="section-content">
@@ -424,7 +424,7 @@
   {{!-- COMPENDIUM ADD FAILED --}}
   {{else if (eq cardType "compendium-failed")}}
     <div class="blacksmith-card theme-red">
-      <div class="section-header">
+      <div class="card-header">
         <i class="fa-solid fa-exclamation-triangle"></i> Request Failed
       </div>
       <div class="section-content">
@@ -435,7 +435,7 @@
   {{!-- GENERAL & ERROR CONDITION --}}  
   {{else}}
     <div class="blacksmith-card theme-default">
-      <div class="section-header">
+      <div class="card-header">
         {{#if strCardTitle}}
           <i class="{{strCardIcon}}"></i> {{strCardTitle}}
         {{else}}

@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-import { getTransferBlocker, renderTemplate, showSquireToast } from './helpers.js';
+import { getTransferBlocker, renderTemplate, showSquireToast, getActorDisplayName } from './helpers.js';
 
 export class TransferUtils {
     /**
@@ -83,8 +83,8 @@ export class TransferUtils {
             quantity: quantity,
             hasQuantity: hasQuantity,
             isPlural: quantity > 1,
-            sourceActorName: sourceActor.name,
-            targetActorName: targetActor.name,
+            sourceActorName: getActorDisplayName(sourceActor),
+            targetActorName: getActorDisplayName(targetActor),
             status: 'pending',
             timestamp: Date.now(),
             sourceUserId: game.user.id
@@ -106,9 +106,9 @@ export class TransferUtils {
                     await socket.executeAsGM('createTransferRequestChat', {
                         cardType: "transfer-request",
                         sourceActorId: sourceActor.id,
-                        sourceActorName: `${sourceActor.name} (${game.user.name})`,
+                        sourceActorName: `${getActorDisplayName(sourceActor)} (${game.user.name})`,
                         targetActorId: targetActor.id,
-                        targetActorName: targetActor.name,
+                        targetActorName: getActorDisplayName(targetActor),
                         itemId: item.id,
                         itemName: item.name,
                         quantity: quantity,
@@ -128,9 +128,9 @@ export class TransferUtils {
                         strCardIcon: "fa-solid fa-gavel",
                         strCardTitle: "GM Approval Required",
                         sourceActor,
-                        sourceActorName: `${sourceActor.name} (${game.user.name})`,
+                        sourceActorName: `${getActorDisplayName(sourceActor)} (${game.user.name})`,
                         targetActor,
-                        targetActorName: targetActor.name,
+                        targetActorName: getActorDisplayName(targetActor),
                         item: item,
                         itemName: item.name,
                         quantity: quantity,
@@ -169,9 +169,9 @@ export class TransferUtils {
                     await socket.executeAsGM('createTransferRequestChat', {
                         cardType: "transfer-request",
                         sourceActorId: sourceActor.id,
-                        sourceActorName: sourceActor.name,
+                        sourceActorName: getActorDisplayName(sourceActor),
                         targetActorId: targetActor.id,
-                        targetActorName: targetActor.name,
+                        targetActorName: getActorDisplayName(targetActor),
                         itemId: item.id,
                         itemName: item.name,
                         quantity: quantity,
@@ -191,9 +191,9 @@ export class TransferUtils {
                         strCardIcon: "fa-solid fa-people-arrows",
                         strCardTitle: "Transfer Request",
                         sourceActor,
-                        sourceActorName: sourceActor.name,
+                        sourceActorName: getActorDisplayName(sourceActor),
                         targetActor,
-                        targetActorName: targetActor.name,
+                        targetActorName: getActorDisplayName(targetActor),
                         item: item,
                         itemName: item.name,
                         quantity: quantity,
@@ -232,9 +232,9 @@ export class TransferUtils {
                 strCardIcon: "fa-solid fa-people-arrows",
                 strCardTitle: "Transfer Request",
                 sourceActor,
-                sourceActorName: sourceActor.name,
+                sourceActorName: getActorDisplayName(sourceActor),
                 targetActor,
-                targetActorName: targetActor.name,
+                targetActorName: getActorDisplayName(targetActor),
                 item: item,
                 itemName: item.name,
                 quantity: quantity,
@@ -267,7 +267,7 @@ export class TransferUtils {
     static async handleItemDropTransfer(sourceActor, targetActor, itemId, quantity = 1) {
         const item = sourceActor.items.get(itemId);
         if (!item) {
-            ui.notifications.error(`Item with ID ${itemId} not found on ${sourceActor.name}`);
+            ui.notifications.error(`Item with ID ${itemId} not found on ${getActorDisplayName(sourceActor)}`);
             return;
         }
 
@@ -344,7 +344,7 @@ export class TransferUtils {
         const available = item.system?.quantity ?? 1;
         if (quantity > available) {
             showSquireToast('Not enough left', {
-                subtitle: `${sourceActor.name} has only ${available} ${item.name}.`,
+                subtitle: `${getActorDisplayName(sourceActor)} has only ${available} ${item.name}.`,
                 icon: 'fa-solid fa-triangle-exclamation',
                 color: '#e05c3c'
             });
@@ -410,9 +410,9 @@ export class TransferUtils {
         if (allUserIds.length > 0) {
             await socket.executeAsGM('createTransferCompleteChat', {
                 sourceActorId: sourceActor.id,
-                sourceActorName: sourceActor.name,
+                sourceActorName: getActorDisplayName(sourceActor),
                 targetActorId: targetActor.id,
-                targetActorName: targetActor.name,
+                targetActorName: getActorDisplayName(targetActor),
                 itemId: item.id,
                 itemName: item.name,
                 quantity: quantity,

@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
-import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getTransferBlocker, renderTemplate, getCampaignContext, resolveDroppedItem, showSquireToast } from './helpers.js';
+import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getTransferBlocker, renderTemplate, getCampaignContext, resolveDroppedItem, showSquireToast, getActorDisplayName } from './helpers.js';
 import { CharacterPanel } from './panel-character.js';
 import { GmPanel } from './panel-gm.js';
 import { SpellsPanel } from './panel-spells.js';
@@ -1015,7 +1015,7 @@ export class PanelManager {
                                     quantity: selectedQuantity,
                                     hasQuantity: hasQuantity,
                                     isPlural: selectedQuantity > 1,
-                                    sourceActorName: sourceActor.name,
+                                    sourceActorName: getActorDisplayName(sourceActor),
                                     targetActorName: actor.name,
                                     status: 'pending',
                                     timestamp: Date.now(),
@@ -1032,7 +1032,7 @@ export class PanelManager {
                                         strCardIcon: "fa-solid fa-people-arrows",
                                         strCardTitle: "Transfer Request",
                                         sourceActor,
-                                        sourceActorName: sourceActor.name,
+                                        sourceActorName: getActorDisplayName(sourceActor),
                                         targetActor: actor,
                                         targetActorName: actor.name,
                                         item: sourceItem,
@@ -1067,7 +1067,7 @@ export class PanelManager {
                                                 await socket.executeAsGM('createTransferRequestChat', {
                                                     cardType: "transfer-request",
                                                     sourceActorId: sourceActor.id,
-                                                    sourceActorName: `${sourceActor.name} (${game.user.name})`,
+                                                    sourceActorName: `${getActorDisplayName(sourceActor)} (${game.user.name})`,
                                                     targetActorId: actor.id,
                                                     targetActorName: actor.name,
                                                     itemId: sourceItem.id,
@@ -1089,7 +1089,7 @@ export class PanelManager {
                                                     strCardIcon: "fa-solid fa-gavel",
                                                     strCardTitle: "GM Approval Required",
                                                     sourceActor,
-                                                    sourceActorName: `${sourceActor.name} (${game.user.name})`,
+                                                    sourceActorName: `${getActorDisplayName(sourceActor)} (${game.user.name})`,
                                                     targetActor: actor,
                                                     targetActorName: actor.name,
                                                     item: sourceItem,
@@ -1124,7 +1124,7 @@ export class PanelManager {
                                                 await socket.executeAsGM('createTransferRequestChat', {
                                                     cardType: "transfer-request",
                                                     sourceActorId: sourceActor.id,
-                                                    sourceActorName: sourceActor.name,
+                                                    sourceActorName: getActorDisplayName(sourceActor),
                                                     targetActorId: actor.id,
                                                     targetActorName: actor.name,
                                                     itemId: sourceItem.id,
@@ -1146,7 +1146,7 @@ export class PanelManager {
                                                     strCardIcon: "fa-solid fa-people-arrows",
                                                     strCardTitle: "Transfer Request",
                                                     sourceActor,
-                                                    sourceActorName: sourceActor.name,
+                                                    sourceActorName: getActorDisplayName(sourceActor),
                                                     targetActor: actor,
                                                     targetActorName: actor.name,
                                                     item: sourceItem,
@@ -1662,7 +1662,7 @@ export class PanelManager {
         const available = sourceItem.system?.quantity ?? 1;
         if (quantityToTransfer > available) {
             showSquireToast('Not enough left', {
-                subtitle: `${sourceActor.name} has only ${available} ${sourceItem.name}.`,
+                subtitle: `${getActorDisplayName(sourceActor)} has only ${available} ${sourceItem.name}.`,
                 icon: 'fa-solid fa-triangle-exclamation',
                 color: '#e05c3c'
             });
@@ -1698,9 +1698,9 @@ export class PanelManager {
                 if (socket) {
                     await socket.executeAsGM('createTransferCompleteChat', {
                         sourceActorId: sourceActor.id,
-                        sourceActorName: sourceActor.name,
+                        sourceActorName: getActorDisplayName(sourceActor),
                         targetActorId: targetActor.id,
-                        targetActorName: targetActor.name,
+                        targetActorName: getActorDisplayName(targetActor),
                         itemId: sourceItem.id,
                         itemName: sourceItem.name,
                         quantity: quantityToTransfer,
@@ -1718,9 +1718,9 @@ export class PanelManager {
                             strCardIcon: "fa-solid fa-backpack",
                             strCardTitle: "Transfer Complete",
                             sourceActor,
-                            sourceActorName: sourceActor.name,
+                            sourceActorName: getActorDisplayName(sourceActor),
                             targetActor,
-                            targetActorName: targetActor.name,
+                            targetActorName: getActorDisplayName(targetActor),
                             item: sourceItem,
                             itemName: sourceItem.name,
                             quantity: quantityToTransfer,
@@ -1740,9 +1740,9 @@ export class PanelManager {
                 if (socket) {
                     await socket.executeAsGM('createTransferCompleteChat', {
                         sourceActorId: sourceActor.id,
-                        sourceActorName: sourceActor.name,
+                        sourceActorName: getActorDisplayName(sourceActor),
                         targetActorId: targetActor.id,
-                        targetActorName: targetActor.name,
+                        targetActorName: getActorDisplayName(targetActor),
                         itemId: sourceItem.id,
                         itemName: sourceItem.name,
                         quantity: quantityToTransfer,
@@ -1760,9 +1760,9 @@ export class PanelManager {
                             strCardIcon: "fa-solid fa-backpack",
                             strCardTitle: "Transfer Complete",
                             sourceActor,
-                            sourceActorName: sourceActor.name,
+                            sourceActorName: getActorDisplayName(sourceActor),
                             targetActor,
-                            targetActorName: targetActor.name,
+                            targetActorName: getActorDisplayName(targetActor),
                             item: sourceItem,
                             itemName: sourceItem.name,
                             quantity: quantityToTransfer,

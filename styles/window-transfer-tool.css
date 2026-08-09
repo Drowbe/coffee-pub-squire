@@ -110,3 +110,23 @@
     pointer-events: none;
     opacity: 0.72;
 }
+
+/* Group headings inside the recipient list are section headings for this
+   window, so they match `.squire-transfer-section > h3` rather than the
+   entity list's quieter default — the list no longer has a heading of its
+   own above them. */
+.squire-transfer-recipient .blacksmith-entity-group {
+    margin: 12px 0 7px;
+    padding: 0 0 5px;
+    border: none;
+    border-bottom: 1px solid var(--blacksmith-tool-divider);
+    color: var(--blacksmith-tool-accent);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: normal;
+    text-transform: uppercase;
+}
+
+.squire-transfer-recipient .blacksmith-entity-group:first-child {
+    margin-top: 0;
+}
