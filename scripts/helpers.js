@@ -147,15 +147,15 @@ export async function openPlayerStatsWindow(actorId) {
  * Remaining health as a percentage from a raw `{ value, max }`, or null.
  *
  * For the template helper, which is handed an HP object rather than an actor.
- * Matches Blacksmith's clamping and its "no usable max means no answer" rule so
- * the two cannot drift; if the API grows an HP-shaped variant, this delegates
- * to it and goes away.
+ * Delegates to Blacksmith, which made this a primitive after the same ask
+ * turned up three copies of the clamp inside their own health utility.
+ *
+ * Null means "no usable HP", not zero — an actor with a max and no readable
+ * value is missing data, not a corpse.
  */
 export function getHealthPercentFromHP(hp) {
-    const value = Number(hp?.value);
-    const max = Number(hp?.max);
-    if (!Number.isFinite(value) || !Number.isFinite(max) || max <= 0) return null;
-    return Math.max(0, Math.min(100, (value / max) * 100));
+    const percent = getBlacksmith()?.getHealthPercentForHP?.(hp);
+    return typeof percent === 'number' ? percent : null;
 }
 
 /**
@@ -182,10 +182,11 @@ const SEVERITY_CLASS = {
 };
 
 export function getHealthbarStatusClass(hp) {
-  const severity = getBlacksmith()?.getHealthSeverityForHP?.({
-    value: Number(hp?.value) || 0,
-    max: Number(hp?.max) || 0
-  });
+  // Passed through raw. Coercing a missing value to 0 first would hand
+  // Blacksmith a usable-looking `{ value: 0, max: 20 }` and get back `dead` —
+  // the exact bug they removed from `getHealthSeverityForHP`. Their helper
+  // returns null for an unusable pair, which maps to healthy below.
+  const severity = getBlacksmith()?.getHealthSeverityForHP?.(hp);
   return SEVERITY_CLASS[severity] ?? SEVERITY_CLASS.healthy;
 }
 
