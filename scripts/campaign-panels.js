@@ -83,8 +83,24 @@ export async function refreshCampaignPanel(kind) {
  * tray's view mode today, focusing a window later.
  */
 export async function revealCampaignPanel(kind) {
-    const host = hosts.get(kind);
-    if (!host) return false;
+    let host = hosts.get(kind);
+
+    // Nothing hosting it means the browser window isn't open. Clicking a quest
+    // pin should open the quests window, not silently do nothing — so ask the
+    // opener, then look again. Registration happens during that window's first
+    // render, which is awaited here.
+    if (!host) {
+        const open = game.modules.get(MODULE.ID)?.api?.openCampaignBrowser;
+        if (typeof open !== 'function') return false;
+        try {
+            await open(kind);
+        } catch (error) {
+            console.error(`${MODULE.ID}: failed to open the '${kind}' browser:`, error);
+            return false;
+        }
+        host = hosts.get(kind);
+        if (!host) return false;
+    }
     if (host.reveal) {
         try {
             await host.reveal();

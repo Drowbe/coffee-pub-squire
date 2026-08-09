@@ -67,12 +67,9 @@ export const registerSettings = function() {
         config: true,
         type: String,
         choices: {
-            'player': 'Player Tab',
+            'player': 'Character Tab',
             'party': 'Party Tab',
-            'notes': 'Notes Tab',
-            'codex': 'Codex Tab',
-            'quest': 'Quest Tab',
-            'last': 'Last Tab Viewed (Defualt)',
+            'last': 'Last Tab Viewed (Default)',
         },
         default: 'last'
     });
@@ -92,44 +89,8 @@ export const registerSettings = function() {
         }
     });
 
-    game.settings.register(MODULE.ID, 'showTabNotes', {
-        name: 'Show Notes Tab',
-        hint: 'Show the Notes tab on the tray (recommended)',
-        scope: 'user',
-        requiresReload: true,
-        config: true,
-        type: Boolean,
-        default: true,
-        onChange: () => {
-            if (ui.squire) ui.squire.render();
-        }
-    });
 
-    game.settings.register(MODULE.ID, 'showTabCodex', {
-        name: 'Show Codex Tab',
-        hint: 'Show the Codex tab on the tray (recommended)',
-        scope: 'user',
-        requiresReload: true,
-        config: true,   
-        type: Boolean,
-        default: true,
-        onChange: () => {
-            if (ui.squire) ui.squire.render();
-        }
-    });
 
-    game.settings.register(MODULE.ID, 'showTabQuests', {
-        name: 'Show Quests Tab',
-        hint: 'Show the Quests tab on the tray (recommended)',
-        scope: 'user',
-        requiresReload: true,
-        config: true,
-        type: Boolean,
-        default: true,
-        onChange: () => {
-            if (ui.squire) ui.squire.render();
-        }
-    });
 
     // Excluded Users
     game.settings.register(MODULE.ID, 'excludedUsers', {
@@ -979,11 +940,8 @@ export const registerSettings = function() {
         config: false,
         type: String,
         choices: {
-            'player': 'Player View',
-            'party': 'Party View',
-            'notes': 'Notes View',
-            'codex': 'Codex View',
-            'quest': 'Quest View'
+            'player': 'Character View',
+            'party': 'Party View'
         },
         default: 'player'
     });

@@ -1925,9 +1925,11 @@ function _registerContextMenuItems(pins) {
  */
 export async function focusQuestInPanel(questUuid, objectiveIndex = null, questStatus = null) {
     if (!questUuid) return;
+    // Reveal first: it opens the browser window when nothing is hosting the
+    // panel yet, which is the normal case for a pin clicked on a fresh load.
+    await revealCampaignPanel('quest');
     const questPanel = getCampaignPanel('quest');
     if (!questPanel) return;
-    await revealCampaignPanel('quest');
 
     const pinFilter = _mapQuestStatusToFilter(questStatus);
     let targetFilter = questPanel.resolveStatusFilterForQuestUuid?.(questUuid) ?? pinFilter ?? 'active';
@@ -1953,9 +1955,9 @@ export async function focusQuestInPanel(questUuid, objectiveIndex = null, questS
  */
 export async function focusCodexInPanel(codexUuid) {
     if (!codexUuid) return;
+    await revealCampaignPanel('codex');
     const codexPanel = getCampaignPanel('codex');
     if (!codexPanel) return;
-    await revealCampaignPanel('codex');
     const tryFocus = () => {
         // Prefer the panel's own focus: it records the expansion, so the entry
         // stays open across the next re-render. The raw-DOM fallback below only
@@ -2009,13 +2011,10 @@ function _registerEventHandlers(pins) {
     pins.on('click', async (evt) => {
         const noteUuid = evt?.pin?.config?.noteUuid;
         if (!noteUuid) return;
+        await revealCampaignPanel('notes');
         const notesPanel = getCampaignPanel('notes');
         if (!notesPanel) return;
-        if (notesPanel.showNote) {
-            notesPanel.showNote(noteUuid);
-        } else {
-            await revealCampaignPanel('notes');
-        }
+        notesPanel.showNote?.(noteUuid);
         const tryFocus = () => {
             const row = document.querySelector(`.note-row[data-note-uuid="${noteUuid}"]`);
             if (!row) return false;

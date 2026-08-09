@@ -125,7 +125,9 @@ export class CampaignBrowserWindow extends BlacksmithWindowBaseV2 {
             panel,
             getElement: () => this.element ?? null,
             reveal: () => {
-                this.bringToTop?.();
+                // v13 renamed bringToTop -> bringToFront; the old name still
+                // resolves through a shim that logs a deprecation on every call.
+                (this.bringToFront ?? this.bringToTop)?.call(this);
                 if (this.minimized) this.maximize?.();
             }
         });
@@ -160,7 +162,7 @@ export class CampaignBrowserWindow extends BlacksmithWindowBaseV2 {
 export async function openCampaignBrowser(kind) {
     const existing = openWindows.get(kind);
     if (existing) {
-        existing.bringToTop?.();
+        (existing.bringToFront ?? existing.bringToTop)?.call(existing);
         if (existing.minimized) existing.maximize?.();
         await existing.render(false);
         return existing;

@@ -1,5 +1,4 @@
 import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
-import { registerCampaignPanel } from './campaign-panels.js';
 import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getTransferBlocker, renderTemplate, getCampaignContext } from './helpers.js';
 import { CharacterPanel } from './panel-character.js';
 import { GmPanel } from './panel-gm.js';
@@ -109,7 +108,6 @@ export class PanelManager {
         this.notesPanel = new NotesPanel();
         this.codexPanel = new CodexPanel();
         this.questPanel = new QuestPanel();
-        this._registerCampaignPanels();
         this.hiddenCategories = new Set();
         this.macrosPanel = new MacrosPanel({ actor });
         
@@ -230,9 +228,6 @@ export class PanelManager {
             // Validate that the initial viewMode is enabled
             const enabledTabs = ['player']; // Player is always enabled
             if (game.settings.get(MODULE.ID, 'showTabParty')) enabledTabs.push('party');
-            if (game.settings.get(MODULE.ID, 'showTabNotes')) enabledTabs.push('notes');
-            if (game.settings.get(MODULE.ID, 'showTabCodex')) enabledTabs.push('codex');
-            if (game.settings.get(MODULE.ID, 'showTabQuests')) enabledTabs.push('quest');
             
             if (!enabledTabs.includes(PanelManager.viewMode)) {
                 // Fallback to first enabled tab
@@ -438,9 +433,6 @@ export class PanelManager {
             },
             viewMode: viewMode,
             showTabParty: game.settings.get(MODULE.ID, 'showTabParty'),
-            showTabNotes: game.settings.get(MODULE.ID, 'showTabNotes'),
-            showTabCodex: game.settings.get(MODULE.ID, 'showTabCodex'),
-            showTabQuests: game.settings.get(MODULE.ID, 'showTabQuests'),
             isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
             newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems),
             defaultPartyName: getCampaignContext().party,
@@ -517,9 +509,6 @@ export class PanelManager {
             },
             viewMode: viewMode,
             showTabParty: game.settings.get(MODULE.ID, 'showTabParty'),
-            showTabNotes: game.settings.get(MODULE.ID, 'showTabNotes'),
-            showTabCodex: game.settings.get(MODULE.ID, 'showTabCodex'),
-            showTabQuests: game.settings.get(MODULE.ID, 'showTabQuests'),
             defaultPartyName: getCampaignContext().party
         });
         // v13: Create native DOM element instead of jQuery
@@ -571,7 +560,6 @@ export class PanelManager {
         this.partyPanel = new PartyPanel();
         this.partyStatsPanel = new PartyStatsPanel();
         this.notesPanel = new NotesPanel();
-        this._registerCampaignPanels();
 
         // Update panel element references for non-popped panels
         this.characterPanel.element = PanelManager.element;
@@ -593,35 +581,6 @@ export class PanelManager {
 
     }
 
-
-    /**
-     * Publish the campaign panels so the pin manager, the notification watcher,
-     * and the editor windows can reach them without knowing the tray exists.
-     * Re-run on every rebuild — panel instances are replaced, and a stale one
-     * renders into a detached element nobody sees.
-     */
-    _registerCampaignPanels() {
-        const entries = [
-            ['quest', this.questPanel],
-            ['codex', this.codexPanel],
-            ['notes', this.notesPanel]
-        ];
-        for (const [kind, panel] of entries) {
-            if (!panel) continue;
-            registerCampaignPanel(kind, {
-                panel,
-                getElement: () => PanelManager.element,
-                reveal: async () => {
-                    // Revealing in the tray means switching tab and making sure
-                    // the tray is actually open — a view-mode change behind a
-                    // collapsed tray shows nothing.
-                    await this.setViewMode(kind);
-                    const el = PanelManager.element;
-                    if (el && !el.classList.contains('expanded')) el.classList.add('expanded');
-                }
-            });
-        }
-    }
 
     async updateHandle() {
         // Delegate to the handle manager
@@ -665,30 +624,26 @@ export class PanelManager {
 
         await this.renderActorPanels(element);
 
-        // These panels don't require an actor.
-        // Journal/party tabs render lazily: disabled tabs never render, and
-        // enabled-but-inactive tabs defer their first render until the tab is viewed
-        // (setViewMode) or an event-driven refresh renders them directly. Once
-        // rendered, they stay warm across subsequent renderPanels calls.
-        const lazyTabs = [
-            { view: 'party', setting: 'showTabParty',  panel: this.partyPanel },
-            { view: 'notes', setting: 'showTabNotes',  panel: this.notesPanel },
-            { view: 'codex', setting: 'showTabCodex',  panel: this.codexPanel },
-            { view: 'quest', setting: 'showTabQuests', panel: this.questPanel }
-        ];
-        for (const { view, setting, panel } of lazyTabs) {
-            if (!panel) continue;
-            if (!game.settings.get(MODULE.ID, setting)) continue;
-            if (PanelManager.viewMode !== view && !panel._hasRenderedOnce) {
-                // Deferred — but the persistent pinned-quest menubar notification is
-                // normally restored from the quest render path, so keep it working
-                // without paying for a full panel render
-                if (view === 'quest') panel._checkAndNotifyPinnedQuest?.();
-                continue;
+        // Party renders lazily: it defers its first render until the tab is
+        // viewed (setViewMode) or an event-driven refresh renders it directly,
+        // then stays warm across subsequent renderPanels calls.
+        //
+        // Quests, codex, and notes are no longer tray tabs — they render into
+        // their own windows (window-campaign-browser.js), launched from the
+        // menubar. The tray must not render them: one panel instance holds one
+        // AbortController, so a second host re-rendering it silently kills the
+        // first host's listeners.
+        if (this.partyPanel && game.settings.get(MODULE.ID, 'showTabParty')) {
+            if (PanelManager.viewMode === 'party' || this.partyPanel._hasRenderedOnce) {
+                this.partyPanel._hasRenderedOnce = true;
+                this.partyPanel.render(element);
             }
-            panel._hasRenderedOnce = true;
-            panel.render(element);
         }
+
+        // The persistent pinned-quest menubar notification used to be restored
+        // by the quest panel's render. Nothing renders that panel on load now,
+        // so ask it directly — it is cheap and does not touch the DOM.
+        this.questPanel?._checkAndNotifyPinnedQuest?.();
         // Party-stats lives inside the party tab — same lazy rules plus its own setting
         if (game.settings.get(MODULE.ID, 'showPartyStatsPanel')) {
             if (this.partyStatsPanel
@@ -1300,9 +1255,6 @@ export class PanelManager {
         // Validate that the requested mode is enabled
         const enabledTabs = ['player']; // Player is always enabled
         if (game.settings.get(MODULE.ID, 'showTabParty')) enabledTabs.push('party');
-        if (game.settings.get(MODULE.ID, 'showTabNotes')) enabledTabs.push('notes');
-        if (game.settings.get(MODULE.ID, 'showTabCodex')) enabledTabs.push('codex');
-        if (game.settings.get(MODULE.ID, 'showTabQuests')) enabledTabs.push('quest');
         
         if (!enabledTabs.includes(mode)) {
             return;

@@ -81,20 +81,13 @@ export class HandleManager {
             return { status, statusClass, percentage };
         };
 
-        // Fetch pinned quest data for quest handle
+        // The handle still shows a pinned quest, which is the one place
+        // character UI reads campaign content. There is no longer a quest view
+        // to special-case: fetch it when one is pinned, otherwise skip.
         let pinnedQuest = null;
-        
-        // Always try to fetch quest data if we're in quest view, or if we have a pinned quest
-        if (PanelManager.viewMode === 'quest') {
+        const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
+        if (Object.values(pinnedQuests).some(uuid => uuid !== null)) {
             pinnedQuest = await this._getPinnedQuestData();
-        } else {
-            // Check if there's a pinned quest even if not in quest view
-            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
-            const hasPinnedQuest = Object.values(pinnedQuests).some(uuid => uuid !== null);
-            
-            if (hasPinnedQuest) {
-                pinnedQuest = await this._getPinnedQuestData();
-            }
         }
 
         // Always gather party context
@@ -200,10 +193,7 @@ export class HandleManager {
 
         const handleTemplates = {
             player: TEMPLATES.HANDLE_PLAYER,
-            party: TEMPLATES.HANDLE_PARTY,
-            notes: TEMPLATES.HANDLE_NOTES,
-            codex: TEMPLATES.HANDLE_CODEX,
-            quest: TEMPLATES.HANDLE_QUEST
+            party: TEMPLATES.HANDLE_PARTY
         };
         const handleContent = await renderTemplate(
             handleTemplates[PanelManager.viewMode] ?? TEMPLATES.HANDLE_PLAYER,
@@ -359,9 +349,6 @@ export class HandleManager {
                 // Get enabled tabs from settings
                 const enabledTabs = ['player']; // Player is always enabled
                 if (game.settings.get(MODULE.ID, 'showTabParty')) enabledTabs.push('party');
-                if (game.settings.get(MODULE.ID, 'showTabNotes')) enabledTabs.push('notes');
-                if (game.settings.get(MODULE.ID, 'showTabCodex')) enabledTabs.push('codex');
-                if (game.settings.get(MODULE.ID, 'showTabQuests')) enabledTabs.push('quest');
                 
                 // Find current position in enabled tabs
                 const currentIndex = enabledTabs.indexOf(currentMode);

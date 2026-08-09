@@ -1872,18 +1872,6 @@ Hooks.once('init', async function() {
     const handlePartyTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-party.hbs`).then(response => response.text());
     Handlebars.registerPartial('handle-party', handlePartyTemplate);
     
-    // Register handle-quest template
-    const handleQuestTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-quest.hbs`).then(response => response.text());
-    Handlebars.registerPartial('handle-quest', handleQuestTemplate);
-    
-    // Register handle-codex template
-    const handleCodexTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-codex.hbs`).then(response => response.text());
-    Handlebars.registerPartial('handle-codex', handleCodexTemplate);
-    
-    // Register handle-notes template
-    const handleNotesTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-notes.hbs`).then(response => response.text());
-    Handlebars.registerPartial('handle-notes', handleNotesTemplate);
-    
     // Register quest-entry partial
     const questEntryPartial = await fetch(`modules/${MODULE.ID}/templates/partials/quest-entry.hbs`).then(response => response.text());
     Handlebars.registerPartial('quest-entry', questEntryPartial);
@@ -2347,9 +2335,9 @@ Hooks.once('ready', async function() {
                     }
                     await open(tool.kind);
                 },
-                zone: "left",
-                group: "general",
-                groupOrder: 999,
+                zone: "middle",
+                group: "campaign",
+                groupOrder: 20,
                 order: tool.order,
                 moduleId: MODULE.ID,
                 gmOnly: false,
