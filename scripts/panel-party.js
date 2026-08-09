@@ -209,17 +209,18 @@ export class PartyPanel {
                 token.control({releaseOthers: false});
             });
             
-            // Open health window and populate with party data
-            if (PanelManager.instance?.healthPanel) {
-                const healthPanel = PanelManager.instance.healthPanel;
-                
-                // Update the health panel with all party tokens
-                healthPanel.updateTokens(partyTokens);
-                
-                // If health panel is not already open, pop it out
-                if (!healthPanel.isPoppedOut) {
-                    await healthPanel._onPopOut();
-                }
+            // Open the health window and populate it with the party.
+            //
+            // `openWindow()` is the entry point since Health became a standalone
+            // window; the old `_onPopOut()` / `isPoppedOut` pair went with the
+            // pop-out panel and this call site was missed.
+            const healthPanel = PanelManager.instance?.healthPanel;
+            if (healthPanel) {
+                // Forced: the window may already be showing this exact selection,
+                // and the no-change short-circuit would leave it stale after the
+                // control() calls above.
+                healthPanel.updateTokens(partyTokens, { force: true });
+                await healthPanel.openWindow();
             }
         });
         }
@@ -532,9 +533,10 @@ export class PartyPanel {
                 if (!partyCard) return;
                 const tokenId = partyCard.dataset.tokenId;
                 const token = canvas.tokens.placeables.find(t => t.id === tokenId);
-                if (token?.actor && PanelManager.instance && PanelManager.instance.healthPanel) {
-                    PanelManager.instance.healthPanel.updateTokens([token]);
-                    await PanelManager.instance.healthPanel._onPopOut();
+                const healthPanel = PanelManager.instance?.healthPanel;
+                if (token?.actor && healthPanel) {
+                    healthPanel.updateTokens([token], { force: true });
+                    await healthPanel.openWindow();
                 }
             });
         });

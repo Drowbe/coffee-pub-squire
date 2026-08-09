@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Quests, Codex, and Notes moved out of the tray into their own windows**: each is launched from the Blacksmith menubar rather than a tray tab. They are campaign content — they describe the world, not the selected token — and the tray is about the token you have selected. The tray now carries Character and Party only.
+  - The panels were **re-hosted, not rewritten**. They were always `render(hostElement)` classes that look for their own container inside whatever they are given; the tray was one such host and a window is another. Their stylesheets moved from `.squire-tray[data-position="left"]` to `.squire-panel-host[data-position="left"]`, a class both hosts carry, so one set of rules still serves both — 304 rules, same specificity, no duplicated stylesheet.
+  - Reaching a panel no longer means reaching through the tray. A new registry (`campaign-panels.js`) replaced 21 `PanelManager` lookups across 8 files: callers ask for a *kind*, and whichever host is showing it supplies the element and decides what "reveal" means. Clicking a quest, codex, or note pin now **opens** the relevant browser if it isn't already open, instead of doing nothing.
+  - The one place character UI genuinely reads campaign content — the pinned quest on the tray handle — is now a single named call, `requestHandleRefresh()`.
+  - Removed with the tabs: the `showTabNotes` / `showTabCodex` / `showTabQuests` settings, the Notes/Codex/Quest entries in Default Tab and view mode, and the three `handle-*.hbs` partials. A client whose saved view mode was one of the removed tabs falls back to Character on load.
+- **The tray's first tab is now called "Character"** rather than "Token", and its tooltip matches. The stored value is unchanged, so nothing needs reconfiguring.
+
+### Fixed
+- **Quest and codex cards would not expand once a browser window was open**: a panel keeps one `AbortController` and aborts it on every render, so with both the tray and a window hosting the same panel instance, whichever rendered last silently killed the other's event listeners — the markup stayed and the interactivity did not. Only one host renders a given panel now.
+- **Deprecation warning on every pin click**: the browser windows called `bringToTop`, which v13 shims to `bringToFront` and logs about. They call the current name where it exists.
+- **Party panel health shortcuts threw instead of opening the Health window**: both the "select the party" button and a click on any party member's HP bar called `healthPanel._onPopOut()`, which stopped existing when Health became a standalone window — `_onPopOut is not a function`. Both call sites now use `openWindow()`, and force the token update so the window cannot show a stale selection.
+
 ## [13.5.3]
 
 ### Added

@@ -2,24 +2,43 @@
 
 Working doc. Delete it when the split is done.
 
+## Progress
+
+**Phase 0 — campaign content out of the tray: DONE (13.5.4, unreleased).**
+
+- `campaign-panels.js` registry replaces 21 `PanelManager` reach-throughs across 8 files. Campaign code asks for a *kind*; the host supplies the element and defines what "reveal" means.
+- The one genuine campaign→character call is now `requestHandleRefresh()` — the handle's pinned-quest contract, and the line that becomes cross-module later.
+- Panel stylesheets re-keyed from `.squire-tray[data-position="left"]` to `.squire-panel-host[data-position="left"]` (304 rules, one exact prefix, specificity preserved). Both hosts carry the class.
+- `window-campaign-browser.js` — one parametrised V2 window hosting all three panels.
+- Menubar launchers in the **middle** zone, `campaign` group.
+- Tray tabs, `showTab*` settings, view-mode entries, and the three `handle-*.hbs` partials removed.
+
+**Next:** shared services (dice/macros/HP) to Blacksmith. The author granted a one-time exception to write into `coffee-pub-blacksmith` from a Squire session for this.
+
+## Corrections to earlier versions of this doc
+
+Both were wrong in the same direction — they made the job look smaller than it is.
+
+1. **"The tray panels are legacy surface and can be deleted."** They are not. `panel-quest.js`, `panel-codex.js`, and `panel-notes.js` hold the browse experience *and* most of the product: import/export dialogs, pin placement and configuration, objective state, quest status, visibility, category management, notifications. The V2 windows (`window-quest`, `window-codex`, `window-note`) are **single-entry editors** — `QuestWindow` binds one `pageUuid` and has `isEditing`. Librarian inherits essentially the full 15,766 lines, not 8,000.
+
+2. **"The journal substrate needs a merge with Blacksmith's."** It does not. Blacksmith's `manager-journal-tools.js` upgrades entity links to compendium UUIDs and `parsers/parse-journal-area.js` builds page HTML from JSON — both *write* side. Squire's `utility-journal.js` reads and renders pages with permission awareness, and `utility-base-parser.js` reads structured data back out of page HTML. Opposite directions, zero overlap. That piece is a move, not a reconciliation.
+
 ## The shape
 
-Squire is two products sharing a bootstrap. Character/party is per-token, per-session, selection-driven, player-facing. Codex/quests/notes is campaign authoring: GM-facing, journal-backed, canvas-pinned, indifferent to which token is selected. They share almost no data and no lifecycle.
+Squire is two products sharing a bootstrap. Character/party is per-token, per-session, selection-driven, player-facing. Codex/quests/notes is campaign authoring: GM-facing, journal-backed, canvas-pinned, indifferent to which token is selected.
 
-| Destination | Gets | Why |
-|---|---|---|
-| **Squire** (stays) | Character, party, tray, handle, transfer, compendium search, statblock repair, inventory/quantity | Everything driven by the selected token |
-| **Librarian** (new) | Quests, codex, notes UI, pin adapter, journal parsers | Campaign content authoring — one coherent product |
-| **Blacksmith** | Dice tray, HP window, macros, **note-binding service** | Primitives any module composes |
+| Destination | Gets |
+|---|---|
+| **Squire** (stays) | Character, party, tray, handle, transfer, compendium search, statblock repair, inventory/quantity |
+| **coffee-pub-librarian** (new) | Quests, codex, **notes**, pin adapter, journal utils, parsers |
+| **Blacksmith** | Dice tray, HP window, macros, **all import/export**, note-binding service, notification watcher |
 
-### The notes boundary
+Decisions taken:
 
-Notes split in two, and the seam is the point:
-
-- **Blacksmith gets the service.** Bind a journal page to an arbitrary document uuid, resolve it back, manage its ownership. Cartographer wants notes on map drawings; Artificer wants notes on items. Nobody orchestrates that today, and orchestration is the hub's job.
-- **Librarian gets the experience.** The notes panel, browsing, filtering, tag cloud, sort modes, the editor window. That's content authoring, and it sits beside codex and quests where the parsers and storage model already live.
-
-The rule this follows: **Blacksmith owns primitives, not content types.** A note-binding service is a primitive. A notes panel is a content type.
+- **Notes go to Librarian**, not Blacksmith. What goes to Blacksmith is note *binding* — attach a journal page to any document uuid, resolve it, own its permissions — because Cartographer wants notes on drawings and Artificer wants notes on items, and nobody orchestrates that today. Blacksmith owns primitives; Librarian owns the reading and authoring experience.
+- **Blacksmith owns import and export of all data.** This unblocks something already waiting: `helpers.js` says Squire's two complex JSON-import surfaces are "blocked on the public Blacksmith Importer API". So `_openImportQuestsDialog` / `_openExportQuestsDialog` and `window-data-export.js` go to Blacksmith, not Librarian. The *parsers* stay with Librarian — import is JSON→page, parsing is page→data.
+- **Campaign content gets its own windows and does not appear in the tray.** Done as of Phase 0.
+- **`manager-pins.js` goes to Librarian, not Blacksmith.** Blacksmith already owns pins; Squire's 2,342 lines are an adapter, and every caller is campaign code.
 
 ## Evidence
 
@@ -32,77 +51,36 @@ The rule this follows: **Blacksmith owns primitives, not content types.** A note
 | Dice tray + macros + health | 2,075 | 6% |
 | Bootstrap, tray, settings, helpers, transfer, compendium | ~13,000 | 35% |
 
-Coupling is already thin. Every import in the six campaign files resolves to six shared modules — `helpers`, `const`, `timer-utils`, `utility-resolver`, `utility-journal`, `manager-pins`. **None import the tray.** `panel-codex.js` never references `PanelManager`; quest and notes reference it 2 and 3 times.
+## The Blacksmith ask, sized
 
-The dependency runs core → campaign, not the reverse:
+Blacksmith is 90,848 lines and already owns `api-pins`/`manager-pins`/`pins-renderer`/`pins-schema`, `api-gmnotes`/`manager-gmnotes`, `manager-journal-tools`, `api-toast`, `api-tags`, a `parsers/` folder, and `registry-json-import-*`.
 
-- `manager-panel.js:17-19` imports NotesPanel, CodexPanel, QuestPanel to mount them
-- `squire.js:6,8,21` imports QuestPanel, QuestParser, pin manager; lazily imports the three windows at 2036/2050/2061
-- `manager-handle.js:3` imports QuestParser for the pinned quest on the handle
-
-Three seams, all thin. The last one is the only genuine cross-product feature.
-
-## Inventory
-
-### Moves to Librarian
-
-**Scripts** (15,766 lines): `panel-quest.js` (4137), `manager-pins.js` (2342), `panel-codex.js` (2061), `window-quest.js` (1701), `panel-notes.js` (1602), `window-codex.js` (1268), `window-note.js` (1144), `utility-journal.js` (569), `utility-quest-parser.js` (425), `utility-codex-parser.js` (260), `utility-notes-parser.js`, `utility-base-parser.js`, `data/codex-page-model.js`
-
-**Templates**: `panel-{quest,codex,notes}.hbs`, `window-{quest,codex,note}.hbs`, `handle-{quest,codex,notes}.hbs`, `page-codex-fields-{edit,view}.hbs`, `tooltip-pin-quests-objective.hbs`
-
-**Styles**: `panel-{quest,codex,notes}.css`, `window-{quest,codex,note}.css`, `quest-markers.css`, `notes-metadata-box.css`
-
-**Settings**: `showTabNotes`, `showTabCodex`, `showTabQuests`, `notesPersistentJournal`, `notesGMJournal`, `notesSharedJournalPage`, `notesJournal`, `notesSortMode`, `notesWindowPosition`, `codexJournal`, `questJournal`, `questCategories`, `pinStrokeMigrationDone`, `pinSound`, `unpinSound`, and the three H3 headings
-
-### Moves to Blacksmith
-
-`panel-dicetray.js`, `window-dicetray.js`, `panel-macros.js`, `window-macros.js`, `panel-health.js`, `window-health.js` (2,075 lines), plus the note-binding primitives currently living inside `manager-pins.js`: `buildNoteOwnership()`, `syncNoteOwnership()`, and the edit-lock machinery (`getNoteEditLockInfo`, `clearNoteEditLocks`, the `editorIds` flag).
-
-### Stays in Squire
-
-Everything else. Note `manager-pins.js` leaves entirely — it is Squire's adapter over Blacksmith's pins API and every caller is campaign code.
-
-## Contracts to design
-
-Three, and only the first is hard.
-
-1. **Handle pinned quest.** `manager-handle.js` reads `game.user`'s `pinnedQuests` flag and calls `QuestParser` to render a quest summary on the character handle. This is the only real character↔campaign feature. It becomes a read-only contract, Blacksmith-brokered since both modules depend on the hub anyway: Librarian publishes "the current user's pinned quest, rendered", Squire's handle consumes it and renders nothing if absent.
-
-2. **Note binding.** Blacksmith exposes create/attach/resolve/ownership for a journal page bound to a document uuid. Librarian consumes it for its notes panel; Cartographer and Artificer consume it directly. This is a new API, not a move — design it with those three consumers in the room.
-
-3. **Pins ownership.** Already a Blacksmith API. `manager-pins.js` moves to Librarian unchanged and keeps calling it.
+| Piece | LOE | Confidence |
+|---|---|---|
+| Note binding — `api-gmnotes` already does per-module sections with a merge policy; the question is generalise-vs-sibling, not build | M, design-dominated | Medium |
+| Pin adapter | **not in the ask** | High |
+| Journal helpers + base parser — no overlap, straight move | S | High |
+| Notification watcher — 335 lines spanning quest/codex/notes/effects; `api-toast` + HookManager already there | S | High |
+| Import/export surfaces | M | Medium |
 
 ## The real cost: flag namespace
 
-Campaign data lives under `coffee-pub-squire.*` flags on journal pages, journal entries, pins, and users. Moving to a new module id puts all of it in the wrong namespace.
-
-Flags written by campaign code:
+Campaign data lives under `coffee-pub-squire.*` on journal pages, entries, pins, and users:
 
 `activeObjectives`, `authorId`, `codexCollapsedCategories`, `codexExpandedEntries`, `codexPinId`, `codexSceneId`, `codexTagCloudCollapsed`, `codexUuid`, `draft`, `editorIds`, `noteIcon`, `notesSortMode`, `originalCategory`, `pinId`, `pinnedQuests`, `questCardCollapsed`, `questCollapsedCategories`, `questIcon`, `questPins`, `questTagCloudCollapsed`, `questUuid`, `sceneId`, `tags`, `visibility`, `visible`, `x`, `y`
 
-Two options, both bad on their own: read the old namespace forever (a vestigial switch at scale), or migrate every journal page and every pin in every existing world.
-
-**So don't pay for it twice.** The TODO already carries a Critical item to rewrite quest storage — stable `questId`/`taskId`, structured flags instead of HTML parsing, new schema with migration. That is *already* a migration touching every quest in every world. Do it as part of the extraction: new module, new namespace, new schema, one migration, once.
+**Don't pay for it twice.** The Critical TODO to rewrite quest storage — stable `questId`/`taskId`, structured flags instead of HTML parsing — is *already* a migration over every quest in every world. Do it as part of the extraction: new module, new namespace, new schema, one migration.
 
 ## Sequence
 
-**Phase 0 — make the boundary real inside Squire.** No new module, no user-visible change, fully reversible.
-
-- Move campaign files under `scripts/campaign/`
-- Route every core→campaign import through one barrel, so the surface is countable and visible in one file
-- Remove the 5 `PanelManager` references in campaign code so nothing reaches back across the seam
-- Put the handle's pinned-quest read behind a small interface instead of a direct `QuestParser` import
-
-At the end of Phase 0 the extraction is a folder move plus a manifest. If it stalls here, Squire is still better organised than it was.
-
-**Phase 1 — shared services to Blacksmith.** Dice tray, HP, macros. Cheap, no data migration, and it proves the cross-module pattern on something affordable to get wrong. Partly underway already: macro favorites are on the menubar, health registers `party-health`.
-
-**Phase 2 — design the note-binding API.** Blacksmith-side, with Cartographer and Artificer's needs in scope, not just Squire's.
-
-**Phase 3 — extract Librarian**, absorbing the quest persistence refactor. One migration for users.
+1. ~~**Phase 0** — campaign content out of the tray, internal boundary made real.~~ **Done.**
+2. **Shared services to Blacksmith** — dice tray, HP, macros. Mechanical, no data migration. Order within the phase: Blacksmith adds → verify in a live world → Squire removes → release.
+3. **Import/export to Blacksmith** — unblocks the note in `helpers.js`.
+4. **Design the note-binding API** — with Cartographer's and Artificer's needs in scope, not just Squire's.
+5. **Stand up `coffee-pub-librarian`** — windows, panels, parsers, journal utils, pin adapter, absorbing the quest persistence refactor and the namespace migration together.
 
 ## Open questions
 
-- **Librarian vs Scribe.** Scribe exists and is under-developed. Reviving it beats minting a new id if its scope is compatible — worth reading before naming anything.
-- **Does the tray keep campaign tabs?** Cleanest is no: Librarian owns its own windows, which it already has (`window-quest`, `window-codex`, `window-note` are standalone). But the quest tab in the tray is a habit for players, and dropping it is a real UX change.
+- **Librarian vs Scribe.** Scribe exists and is under-developed. Worth reading before minting a new id.
+- **Pin taxonomy across two modules.** Blacksmith registers pin types per module. Confirm before step 5 that quest/codex pins registered by Librarian and any pins still registered by Squire coexist cleanly on one scene.
 - **Three modules to install.** Blacksmith is already required, so it's two-to-three. Worth a bundle story.

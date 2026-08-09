@@ -36,6 +36,7 @@ const KINDS = {
         id: `${MODULE.ID}-quest-browser-window`,
         title: 'Quests',
         panelKey: 'panel-quest',
+        headerIcon: 'fa-solid fa-flag',
         rootClass: 'quest-browser-window',
         position: { width: 520, height: 860 },
         constraints: { minWidth: 420, minHeight: 480 }
@@ -44,6 +45,7 @@ const KINDS = {
         id: `${MODULE.ID}-codex-browser-window`,
         title: 'Codex',
         panelKey: 'panel-codex',
+        headerIcon: 'fa-solid fa-book',
         rootClass: 'codex-browser-window',
         position: { width: 520, height: 860 },
         constraints: { minWidth: 420, minHeight: 480 }
@@ -52,6 +54,7 @@ const KINDS = {
         id: `${MODULE.ID}-notes-browser-window`,
         title: 'Notes',
         panelKey: 'panel-notes',
+        headerIcon: 'fa-solid fa-sticky-note',
         rootClass: 'notes-browser-window',
         position: { width: 520, height: 860 },
         constraints: { minWidth: 420, minHeight: 480 }
@@ -96,16 +99,22 @@ export class CampaignBrowserWindow extends BlacksmithWindowBaseV2 {
         this.config = config;
     }
 
-    async getData() {
+    _viewContext() {
         return {
             appId: this.id,
-            panelKey: this.config.panelKey
+            panelKey: this.config.panelKey,
+            headerIcon: this.config.headerIcon,
+            headerTitle: this.config.title
         };
+    }
+
+    async getData() {
+        return this._viewContext();
     }
 
     async _prepareContext(options) {
         const base = await super._prepareContext?.(options) ?? {};
-        return foundry.utils.mergeObject(base, { panelKey: this.config.panelKey });
+        return foundry.utils.mergeObject(base, this._viewContext());
     }
 
     /**

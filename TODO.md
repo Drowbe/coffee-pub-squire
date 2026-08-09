@@ -17,6 +17,10 @@
 - Leverage the Blacksmith tag system for quests instead of the local quest tag implementation, reusing the same tag model already used for pins.
 - **Pin default tags from API**: Replace `QUEST_CATEGORY_TAG_MAP` (`manager-pins.js:124`) and the hardcoded tag logic in `_questCategoryToPinTags()` with a pattern that reads default tags directly from the registered taxonomy via `pins.getModuleTaxonomy()`. Partially done: the live taxonomy is already read and used to *validate* the mapping, but the category→tag map is still the source of truth and still kept in sync by hand.
 
+## Module split
+
+Tracked in full in `documents/plan-module-split.md`. Phase 0 (campaign content out of the tray) is done; the next step is moving the dice tray, HP window, and macros to Blacksmith.
+
 ## Blocked / waiting on another module
 
 - **Migrate item mutation to Blacksmith `api.inventory`** (not yet shipped). When `transferItem` / `grantItem` land: the four `_completeItemTransfer` copies (`transfer-utils.js`, `panel-party.js`, `manager-panel.js`, the `squire.js` socket handler) collapse into `transferItem` calls, and the four drop-create sites become `grantItem`. Pass `ignoreFlags: ['coffee-pub-squire.isNew', 'coffee-pub-squire.isHandleFavorite']` on every call. The quantity re-checks in the three `_completeItemTransfer` copies become redundant and can go; the container guard in `getTransferBlocker()` stays, since it keeps the refusal in front of the quantity dialog.

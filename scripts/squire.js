@@ -2315,9 +2315,9 @@ Hooks.once('ready', async function() {
     // quests, codex, and notes are campaign content, not properties of the
     // selected token, and they are moving out of Squire entirely.
     const CAMPAIGN_TOOLS = [
-        { kind: 'quest', id: 'squire-quests', icon: 'fa-solid fa-flag', tooltip: 'Quests', order: 204 },
-        { kind: 'codex', id: 'squire-codex', icon: 'fa-solid fa-book', tooltip: 'Codex', order: 205 },
-        { kind: 'notes', id: 'squire-notes', icon: 'fa-solid fa-sticky-note', tooltip: 'Notes', order: 206 }
+        { kind: 'quest', id: 'squire-quests', icon: 'fa-solid fa-flag', label: 'Quests', tooltip: 'Open the quest log', order: 204 },
+        { kind: 'codex', id: 'squire-codex', icon: 'fa-solid fa-book', label: 'Codex', tooltip: 'Open the codex', order: 205 },
+        { kind: 'notes', id: 'squire-notes', icon: 'fa-solid fa-sticky-note', label: 'Notes', tooltip: 'Open notes', order: 206 }
     ];
 
     for (const tool of CAMPAIGN_TOOLS) {
@@ -2325,12 +2325,14 @@ Hooks.once('ready', async function() {
             const ok = blacksmith.registerMenubarTool(tool.id, {
                 icon: tool.icon,
                 name: tool.id,
-                title: null,
+                // `title` renders as the visible label beside the icon; `tooltip`
+                // is what shows on hover. Icon-only tools pass null for title.
+                title: tool.label,
                 tooltip: tool.tooltip,
                 onClick: async () => {
                     const open = game.modules.get(MODULE.ID)?.api?.openCampaignBrowser;
                     if (typeof open !== 'function') {
-                        ui.notifications.warn(`${tool.tooltip} window is not ready yet.`);
+                        ui.notifications.warn(`${tool.label} window is not ready yet.`);
                         return;
                     }
                     await open(tool.kind);
@@ -2350,10 +2352,10 @@ Hooks.once('ready', async function() {
                 buttonSelectedTint: null
             });
             if (!ok) {
-                console.error(`Coffee Pub Squire | Failed to register ${tool.tooltip} with Blacksmith menubar`);
+                console.error(`Coffee Pub Squire | Failed to register ${tool.label} with Blacksmith menubar`);
             }
         } catch (error) {
-            console.error(`Coffee Pub Squire | Error registering ${tool.tooltip} with Blacksmith menubar:`, error);
+            console.error(`Coffee Pub Squire | Error registering ${tool.label} with Blacksmith menubar:`, error);
         }
     }
 

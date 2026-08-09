@@ -1,0 +1,44 @@
+/*
+    Campaign browser windows (quests / codex / notes).
+
+    The panels scroll on their own inner element — .quest-content,
+    .codex-content, .notes-content — each declared `flex: 1; overflow-y: auto`.
+    That only produces a scrollbar when every ancestor up to the window body is
+    a bounded flex column: a flex child defaults to min-height:auto, refuses to
+    shrink below its content, and hands the scroller an unbounded height.
+
+    Blacksmith's window template already supplies the top of that chain —
+    `.blacksmith-window-template-root` is a full-height flex column and
+    `.blacksmith-window-template-body` is `flex: 1; min-height: 0`. What is
+    missing is the two levels this window adds between the body and the panel,
+    plus turning the body's own `overflow: auto` off so the panel's scroller
+    owns scrolling instead of the window scrolling as a whole.
+*/
+
+.campaign-browser-window .blacksmith-window-template-body {
+    display: flex;
+    flex-direction: column;
+    /* The panel scrolls internally; a second scrollbar on the body would let
+       the whole panel — filters and all — scroll away with the list. */
+    overflow: hidden;
+    padding: 0;
+}
+
+.campaign-browser-window .campaign-browser-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    padding: 8px 4px 8px 8px;
+}
+
+.campaign-browser-window .campaign-browser-body > .panel-container {
+    flex: 1;
+    min-height: 0;
+}
+
+/* The panel's own root, whatever it renders, has to be shrinkable too. */
+.campaign-browser-window .panel-container > * {
+    min-height: 0;
+}
