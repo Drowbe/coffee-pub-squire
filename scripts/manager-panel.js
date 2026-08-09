@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
-import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getTransferBlocker, renderTemplate, getCampaignContext } from './helpers.js';
+import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getTransferBlocker, renderTemplate, getCampaignContext, resolveDroppedItem, showSquireToast } from './helpers.js';
 import { CharacterPanel } from './panel-character.js';
 import { GmPanel } from './panel-gm.js';
 import { SpellsPanel } from './panel-spells.js';
@@ -951,10 +951,14 @@ export class PanelManager {
                                 itemId = data.data?.itemId || data.embedId || data.uuid?.split('.').pop();
                             }
                             
-                            const sourceActor = game.actors.get(sourceActorId);
-                            if (!sourceActor || !itemId) {
-                                ui.notifications.warn("Could not determine the source actor or item.");
-                                return;
+                            const { sourceActor, sourceItem } = await resolveDroppedItem(data, sourceActorId, itemId);
+                            if (!sourceActor || !sourceItem) {
+                            showSquireToast('Could not find that item on its owner.', {
+                                subtitle: 'Nothing was transferred.',
+                                icon: 'fa-solid fa-triangle-exclamation',
+                                color: '#e05c3c'
+                            });
+                            return;
                             }
 
                             // Same-actor drop is a no-op: transferring an item to
@@ -963,12 +967,6 @@ export class PanelManager {
                             // catches a drag from this actor's own sheet.
                             if (sourceActor.id === actor.id) return;
                             
-                            // Get the item from the source actor
-                            const sourceItem = sourceActor.items.get(itemId);
-                            if (!sourceItem) {
-                                ui.notifications.warn("Could not find the item on the source character.");
-                                return;
-                            }
 
                             // A packed container can't be handed over: dnd5e keeps
                             // containment on the child as `system.container`, so a
@@ -976,7 +974,11 @@ export class PanelManager {
                             // at. Refuse in front of the quantity dialog.
                             const containerBlocker = getTransferBlocker(sourceItem, sourceActor);
                             if (containerBlocker) {
-                                ui.notifications.warn(containerBlocker.message);
+                                showSquireToast('Unpack it first', {
+                                    subtitle: containerBlocker.message,
+                                    icon: 'fa-solid fa-box-open',
+                                    color: '#e0a53c'
+                                });
                                 return;
                             }
                             
@@ -1641,7 +1643,11 @@ export class PanelManager {
         // stack, turning a stale client value into duplicated items.
         const available = sourceItem.system?.quantity ?? 1;
         if (quantityToTransfer > available) {
-            ui.notifications.warn(`${sourceActor.name} no longer has ${quantityToTransfer} ${sourceItem.name} to hand over — only ${available} left.`);
+            showSquireToast('Not enough left', {
+                subtitle: `${sourceActor.name} has only ${available} ${sourceItem.name}.`,
+                icon: 'fa-solid fa-triangle-exclamation',
+                color: '#e05c3c'
+            });
             return false;
         }
 

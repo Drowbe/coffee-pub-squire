@@ -110,18 +110,3 @@ export async function revealCampaignPanel(kind) {
     }
     return refreshCampaignPanel(kind);
 }
-
-/**
- * Ask the character handle to redraw.
- *
- * The one genuine call from campaign content into character UI: the handle
- * shows the pinned quest, so pinning one has to reach across. Kept in a single
- * named function rather than scattered `PanelManager.instance.updateHandle()`
- * calls, because when quests move to their own module this is the call that
- * becomes a cross-module contract — and it should be one line to find.
- */
-export async function requestHandleRefresh() {
-    const panelManager = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
-    if (typeof panelManager?.updateHandle !== 'function') return;
-    await panelManager.updateHandle();
-}

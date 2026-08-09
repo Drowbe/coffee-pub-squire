@@ -423,6 +423,39 @@ export function getContainedItems(container, actor) {
 }
 
 /**
+ * Resolve the actor and item behind an item drop.
+ *
+ * Prefers the drop payload's uuid. Actor ids are not safe here: a synthetic
+ * actor created for an unlinked token carries the BASE actor's id, so
+ * `game.actors.get(id)` returns the prototype in the directory — or nothing —
+ * for anything sitting on an unlinked token. Dragging a sack off an unlinked
+ * NPC is exactly that case.
+ *
+ * Returns nulls rather than throwing; callers refuse the drop. Deliberately no
+ * "import a fresh copy instead" fallback — that path created the item on the
+ * target without removing it from the source, which is duplication wearing a
+ * transfer's clothes, and it ran before any of the transfer guards.
+ *
+ * @returns {{sourceActor: Actor|null, sourceItem: Item|null}}
+ */
+export async function resolveDroppedItem(data, fallbackActorId = null, fallbackItemId = null) {
+    if (data?.uuid) {
+        try {
+            const dropped = await fromUuid(data.uuid);
+            if (dropped?.parent?.documentName === 'Actor') {
+                return { sourceActor: dropped.parent, sourceItem: dropped };
+            }
+        } catch (error) {
+            console.error(`${MODULE.ID}: could not resolve dropped item uuid:`, error);
+        }
+    }
+
+    const sourceActor = fallbackActorId ? (game.actors.get(fallbackActorId) ?? null) : null;
+    const sourceItem = fallbackItemId ? (sourceActor?.items.get(fallbackItemId) ?? null) : null;
+    return { sourceActor, sourceItem };
+}
+
+/**
  * Why an item can't be handed to another actor, or null if it can.
  *
  * Containment lives on the child as `system.container`, pointing at the parent's

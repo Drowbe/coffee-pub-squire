@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-import { getTransferBlocker, renderTemplate } from './helpers.js';
+import { getTransferBlocker, renderTemplate, showSquireToast } from './helpers.js';
 
 export class TransferUtils {
     /**
@@ -18,7 +18,11 @@ export class TransferUtils {
         // callers that arrive here directly.
         const containerBlocker = getTransferBlocker(item, sourceActor);
         if (containerBlocker) {
-            ui.notifications.warn(containerBlocker.message);
+            showSquireToast('Unpack it first', {
+                subtitle: containerBlocker.message,
+                icon: 'fa-solid fa-box-open',
+                color: '#e0a53c'
+            });
             return false;
         }
 
@@ -326,7 +330,11 @@ export class TransferUtils {
         // stack, turning a stale client value into duplicated items.
         const available = item.system?.quantity ?? 1;
         if (quantity > available) {
-            ui.notifications.warn(`${sourceActor.name} no longer has ${quantity} ${item.name} to hand over — only ${available} left.`);
+            showSquireToast('Not enough left', {
+                subtitle: `${sourceActor.name} has only ${available} ${item.name}.`,
+                icon: 'fa-solid fa-triangle-exclamation',
+                color: '#e05c3c'
+            });
             return false;
         }
 

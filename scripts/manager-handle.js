@@ -1,10 +1,8 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-import { showQuestTooltip, hideQuestTooltip, getObjectiveTooltipData } from './helpers.js';
-import { QuestParser } from './utility-quest-parser.js';
 // REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getTextEditor, getCampaignContext } from './helpers.js';
+import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getCampaignContext } from './helpers.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
 // FoundryVTT function imports
@@ -22,7 +20,6 @@ export class HandleManager {
         this._boundHandleElement = null;
 
         // Parsed pinned-quest cache: { uuid, modifiedTime, data }
-        this._pinnedQuestCache = null;
     }
 
     /**
@@ -80,15 +77,6 @@ export class HandleManager {
             
             return { status, statusClass, percentage };
         };
-
-        // The handle still shows a pinned quest, which is the one place
-        // character UI reads campaign content. There is no longer a quest view
-        // to special-case: fetch it when one is pinned, otherwise skip.
-        let pinnedQuest = null;
-        const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
-        if (Object.values(pinnedQuests).some(uuid => uuid !== null)) {
-            pinnedQuest = await this._getPinnedQuestData();
-        }
 
         // Always gather party context
         const tokens = canvas.tokens.placeables.filter(token => token.actor?.hasPlayerOwner);
@@ -158,7 +146,6 @@ export class HandleManager {
                 name: e.name,
                 icon: e.img || CONFIG.DND5E.conditionTypes[e.name.toLowerCase()]?.img || 'icons/svg/aura.svg'
             })) || [],
-            pinnedQuest,
             showHandleConditions: game.settings.get(MODULE.ID, 'showHandleConditions'),
             showHandleFavorites: game.settings.get(MODULE.ID, 'showHandleFavorites'),
             showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar'),
@@ -366,28 +353,6 @@ export class HandleManager {
             }
         });
 
-        // Handle pinned quest clicks - delegated
-        handleElement.addEventListener('click', async (event) => {
-            if (!event.target.closest('.handle-pinned-quest-name')) return;
-            event.preventDefault();
-            event.stopPropagation();
-
-            // Get the pinned quest UUID from the current data
-            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
-            const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
-
-            if (pinnedQuestUuid) {
-                try {
-                    const doc = await fromUuid(pinnedQuestUuid);
-                    if (doc) {
-                        doc.sheet.render(true);
-                    }
-                } catch (error) {
-                    console.error('Error opening pinned quest:', error);
-                    ui.notifications.warn('Could not open pinned quest.');
-                }
-            }
-        });
 
         // Handle health bar clicks
         // v13: Use handleElement (the cloned handle that's actually in the DOM) for event delegation
@@ -591,7 +556,6 @@ export class HandleManager {
         }
         // Delegated handle listeners die with the tray element; just drop the references
         this._boundHandleElement = null;
-        this._pinnedQuestCache = null;
     }
 
     /**
@@ -627,164 +591,8 @@ export class HandleManager {
         // Remove existing handlers first - v13: Use native DOM
         // Cloning elements in the main handler already removes old listeners
         
-        // v13: Use native DOM event delegation
-        handle.addEventListener('click', async (event) => {
-            const objectiveIcon = event.target.closest('.handle-pinnedquest-icon-fill');
-            if (!objectiveIcon) return;
-            
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const taskIndex = parseInt(objectiveIcon.dataset.taskIndex);
-            
-            // Get the pinned quest UUID from the current data
-            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
-            const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
-            
-            if (!pinnedQuestUuid) {
-                ui.notifications.warn('No quest is currently pinned.');
-                return;
-            }
-            
-            // Check if the objective is hidden for non-GM users
-            if (!game.user.isGM) {
-                try {
-                    // Find the journal page by UUID
-                    let page = null;
-                    for (const journal of game.journal.contents) {
-                        page = journal.pages.find(p => p.uuid === pinnedQuestUuid);
-                        if (page) break;
-                    }
-                    
-                    if (page) {
-                        // Enrich the page HTML if needed
-                        const TextEditor = getTextEditor();
-                        const enrichedHtml = await TextEditor.enrichHTML(page.text.content, { async: true });
-                        // Parse the quest entry using the source of truth
-                        const entry = await QuestParser.parseSinglePage(page, enrichedHtml);
-                        
-                        if (entry && entry.tasks[taskIndex]) {
-                            const task = entry.tasks[taskIndex];
-                            if (task.state === 'hidden') {
-                                ui.notifications.warn(`No pin found for objective ${taskIndex + 1}.`);
-                                return;
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error checking objective visibility:', error);
-                }
-            }
-            
-            // MIGRATED TO BLACKSMITH API: Find and pan to quest pin
-            const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
-            if (pins?.isAvailable()) {
-                const allPins = pins.list({ moduleId: 'coffee-pub-squire', sceneId: canvas.scene?.id });
-                const questPin = allPins.find(p => 
-                    p.config?.questUuid === pinnedQuestUuid && 
-                    p.config?.objectiveIndex === taskIndex
-                );
-                
-                if (questPin) {
-                    // Use Blacksmith API to pan and ping the pin
-                    await pins.panTo(questPin.id);
-                    await pins.ping(questPin.id);
-                } else {
-                    ui.notifications.warn(`No pin found for objective ${taskIndex + 1}.`);
-                }
-            } else {
-                ui.notifications.warn('Quest pins are not available on this scene.');
-            }
-        });
 
         // Add enhanced tooltip functionality
-        // mouseover/mouseout bubble (mouseenter/mouseleave don't), so delegation works;
-        // the relatedTarget check filters out moves between children of the same icon
-        handle.addEventListener('mouseover', async (event) => {
-            const objectiveIcon = event.target.closest('.handle-pinnedquest-icon-fill');
-            if (!objectiveIcon || objectiveIcon.contains(event.relatedTarget)) return;
-
-            const taskIndex = parseInt(objectiveIcon.dataset.taskIndex);
-            // Get the pinned quest UUID from the current data
-            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
-            const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
-            if (!pinnedQuestUuid) return;
-            try {
-                const tooltipData = await getObjectiveTooltipData(pinnedQuestUuid, taskIndex);
-                if (!tooltipData) return;
-                // Add handle-specific controls text
-                tooltipData.controls = 'Left-click: Pan to objective pin on map';
-                showQuestTooltip('squire-handle-objective-tooltip', tooltipData, event, 500); // 500ms delay before showing tooltip
-            } catch (error) {
-                console.error('Error creating tooltip:', error);
-            }
-        });
-
-        // v13: Use native DOM event delegation
-        handle.addEventListener('mouseout', (event) => {
-            const objectiveIcon = event.target.closest('.handle-pinnedquest-icon-fill');
-            if (!objectiveIcon || objectiveIcon.contains(event.relatedTarget)) return;
-            hideQuestTooltip('squire-handle-objective-tooltip');
-        });
-    }
-
-    /**
-     * Get pinned quest data for quest handle
-     * @private
-     */
-    async _getPinnedQuestData() {
-        try {
-            const pinnedQuests = await game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
-            const pinnedQuestUuid = Object.values(pinnedQuests).find(uuid => uuid !== null);
-            
-            if (!pinnedQuestUuid) {
-                return null;
-            }
-            
-            const doc = await fromUuid(pinnedQuestUuid);
-            if (!doc) {
-                return null;
-            }
-
-            // Cache the parsed result — enrichHTML + QuestParser are heavyweight and this
-            // runs on every updateHandle() while a quest is pinned. Invalidate when the
-            // pinned quest changes or the page document is modified.
-            const modifiedTime = doc._stats?.modifiedTime ?? 0;
-            if (this._pinnedQuestCache?.uuid === pinnedQuestUuid
-                && this._pinnedQuestCache.modifiedTime === modifiedTime) {
-                return this._pinnedQuestCache.data;
-            }
-
-            // Get the quest data from the journal entry
-            const TextEditor = getTextEditor();
-            const enrichedHtml = await TextEditor.enrichHTML(doc.text.content, { async: true });
-
-            const entry = await QuestParser.parseSinglePage(doc, enrichedHtml);
-            
-  
-            // If QuestParser failed to parse tasks, create a basic fallback
-            let fallbackTasks = [];
-            if (!entry.tasks || entry.tasks.length === 0) {
-                // Create a basic fallback with just the quest name
-                fallbackTasks = [{
-                    text: 'Quest details available in journal',
-                    state: 'active',
-                    completed: false
-                }];
-            }
-            
-            const result = {
-                name: entry.title || doc.name || 'Unknown Quest',
-                title: entry.title || doc.name || 'Unknown Quest', // Keep both for compatibility
-                uuid: pinnedQuestUuid,
-                tasks: entry.tasks && entry.tasks.length > 0 ? entry.tasks : fallbackTasks
-            };
-            this._pinnedQuestCache = { uuid: pinnedQuestUuid, modifiedTime, data: result };
-            return result;
-        } catch (error) {
-            console.error('Error getting pinned quest data:', error);
-            return null;
-        }
     }
 
     /**

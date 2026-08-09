@@ -1,4 +1,5 @@
 import { MODULE } from './const.js';
+import { getCampaignPanel, refreshCampaignPanel } from './campaign-panels.js';
 import {
     QuestParser,
     QUEST_CATEGORIES,

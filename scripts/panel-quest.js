@@ -1,4 +1,3 @@
-import { requestHandleRefresh } from './campaign-panels.js';
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import {
     QuestParser,
@@ -21,7 +20,7 @@ import {
     reconcileQuestPins,
     focusQuestInPanel
 } from './manager-pins.js';
-import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, getPartyActors, showBlacksmithWait, fillCampaignPlaceholders } from './helpers.js';
+import { copyToClipboard, getNativeElement, renderTemplate, getTextEditor, getPartyActors, showBlacksmithWait, fillCampaignPlaceholders, showSquireToast } from './helpers.js';
 import { trackModuleTimeout, clearTrackedTimeout, moduleDelay } from './timer-utils.js';
 import { showJournalPicker } from './utility-journal.js';
 import { resolveEntries, reportResolution } from './utility-resolver.js';
@@ -1486,7 +1485,17 @@ export class QuestPanel {
             }
             await this._syncQuestPinMirror(page, { ...created, sceneId: canvas.scene.id });
             this._clearQuestPinPlacement();
-            ui.notifications.info('Quest pin placed.');
+            const questIsHidden = questStateVal === 'hidden';
+            showSquireToast(questIsHidden ? 'Quest pin placed, hidden' : 'Quest pin placed', {
+                subtitle: questIsHidden
+                    ? 'Hidden quests get hidden pins. Turn on Show Hidden in Manage Pins to see it.'
+                    : undefined,
+                icon: questIsHidden ? 'fa-solid fa-eye-slash' : 'fa-solid fa-location-dot'
+            });
+            // Reload before re-rendering: `pins.list()` reads a cache that the
+            // create has not landed in yet, so the icon would render unpinned
+            // and a second click would place a duplicate.
+            await reloadAllQuestPins();
             if (this.element) await this.render(this.element);
         };
 
@@ -1608,7 +1617,21 @@ export class QuestPanel {
                 return;
             }
             this._clearQuestPinPlacement();
-            ui.notifications.info('Objective pin placed.');
+            // A pin for a hidden objective (or on a hidden quest) is created
+            // hidden — correct, but indistinguishable from a failed placement
+            // unless we say so: nothing appears on the canvas, and Blacksmith's
+            // pin manager filters it out until Show Hidden is on.
+            const objectiveIsHidden = questStateVal === 'hidden' || (objective?.state || '') === 'hidden';
+            showSquireToast(objectiveIsHidden ? 'Objective pin placed, hidden' : 'Objective pin placed', {
+                subtitle: objectiveIsHidden
+                    ? 'Hidden objectives get hidden pins. Turn on Show Hidden in Manage Pins to see it.'
+                    : undefined,
+                icon: objectiveIsHidden ? 'fa-solid fa-eye-slash' : 'fa-solid fa-location-dot'
+            });
+            // Reload before re-rendering: `pins.list()` reads a cache that the
+            // create has not landed in yet, so the icon would render unpinned
+            // and a second click would place a duplicate.
+            await reloadAllQuestPins();
             if (this.element) await this.render(this.element);
         };
 
@@ -1667,6 +1690,9 @@ export class QuestPanel {
         } catch (e) {
             console.warn('Coffee Pub Squire | Unplace quest pin:', e);
         }
+        // Same cache lag as placement, in the other direction: without the
+        // reload the icon stays lit and the next click tries to unpin nothing.
+        await reloadAllQuestPins();
         if (this.element) await this.render(this.element);
     }
 
@@ -1684,6 +1710,7 @@ export class QuestPanel {
         } catch (e) {
             console.warn('Coffee Pub Squire | Unplace objective pin:', e);
         }
+        await reloadAllQuestPins();
         if (this.element) await this.render(this.element);
     }
 
@@ -2736,10 +2763,6 @@ export class QuestPanel {
                 await this._mirrorTrackerFlagToPlayers('pinnedQuests', pinnedQuests);
                 this.render(this.element);
 
-                // The handle shows the pinned quest, so pinning has to reach
-                // across into character UI. Routed through one named call — see
-                // requestHandleRefresh().
-                await requestHandleRefresh();
             });
         });
 

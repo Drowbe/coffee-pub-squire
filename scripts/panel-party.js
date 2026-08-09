@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
-import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate } from './helpers.js';
+import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate, resolveDroppedItem, showSquireToast } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -336,21 +336,13 @@ export class PartyPanel {
                                 itemId = data.data?.itemId || data.embedId || data.uuid?.split('.').pop();
                             }
                             
-                            const sourceActor = game.actors.get(sourceActorId);
-                            if (!sourceActor || !itemId) {
-                                ui.notifications.warn("Could not determine the source actor or item.");
-                                
-                                // Try the regular Item import as fallback
-                                item = await Item.implementation.fromDropData(data);
-                                if (!item) return;
-                                const createdItem = await targetActor.createEmbeddedDocuments('Item', [item.toObject()]);
-                                break;
-                            }
-                            
-                            // Get the item from the source actor
-                            const sourceItem = sourceActor.items.get(itemId);
-                            if (!sourceItem) {
-                                ui.notifications.warn("Could not find the item on the source character.");
+                            const { sourceActor, sourceItem } = await resolveDroppedItem(data, sourceActorId, itemId);
+                            if (!sourceActor || !sourceItem) {
+                                showSquireToast('Could not find that item on its owner.', {
+                                    subtitle: 'Nothing was transferred.',
+                                    icon: 'fa-solid fa-triangle-exclamation',
+                                    color: '#e05c3c'
+                                });
                                 return;
                             }
 
@@ -360,7 +352,11 @@ export class PartyPanel {
                             // at. Refuse in front of the quantity dialog.
                             const containerBlocker = getTransferBlocker(sourceItem, sourceActor);
                             if (containerBlocker) {
-                                ui.notifications.warn(containerBlocker.message);
+                                showSquireToast('Unpack it first', {
+                                    subtitle: containerBlocker.message,
+                                    icon: 'fa-solid fa-box-open',
+                                    color: '#e0a53c'
+                                });
                                 return;
                             }
                             
@@ -441,18 +437,15 @@ export class PartyPanel {
                     case 'Actor':
                         // Extract item data from drop event
                         const sourceActorId = data.id;
-                        const sourceActor = game.actors.get(sourceActorId);
                         const itemId = data.data?.itemId || data.uuid?.split('.').pop();
-                        
-                        if (!sourceActor || !itemId) {
-                            ui.notifications.warn("Could not determine the source actor or item.");
-                            return;
-                        }
-                        
-                        // Get the item from the source actor
-                        const sourceItem = sourceActor.items.get(itemId);
-                        if (!sourceItem) {
-                            ui.notifications.warn("Could not find the item on the source character.");
+
+                        const { sourceActor, sourceItem } = await resolveDroppedItem(data, sourceActorId, itemId);
+                        if (!sourceActor || !sourceItem) {
+                            showSquireToast('Could not find that item on its owner.', {
+                                subtitle: 'Nothing was transferred.',
+                                icon: 'fa-solid fa-triangle-exclamation',
+                                color: '#e05c3c'
+                            });
                             return;
                         }
 
@@ -462,7 +455,11 @@ export class PartyPanel {
                         // at. Refuse in front of the quantity dialog.
                         const containerBlocker = getTransferBlocker(sourceItem, sourceActor);
                         if (containerBlocker) {
-                            ui.notifications.warn(containerBlocker.message);
+                            showSquireToast('Unpack it first', {
+                                subtitle: containerBlocker.message,
+                                icon: 'fa-solid fa-box-open',
+                                color: '#e0a53c'
+                            });
                             return;
                         }
                         
@@ -684,7 +681,11 @@ export class PartyPanel {
         // stack, turning a stale client value into duplicated items.
         const available = sourceItem.system?.quantity ?? 1;
         if (quantityToTransfer > available) {
-            ui.notifications.warn(`${sourceActor.name} no longer has ${quantityToTransfer} ${sourceItem.name} to hand over — only ${available} left.`);
+            showSquireToast('Not enough left', {
+                subtitle: `${sourceActor.name} has only ${available} ${sourceItem.name}.`,
+                icon: 'fa-solid fa-triangle-exclamation',
+                color: '#e05c3c'
+            });
             return false;
         }
 
