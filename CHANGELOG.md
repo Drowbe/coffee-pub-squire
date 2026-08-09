@@ -5,20 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [13.6.0]
 
 ### Changed
 - **Quests, Codex, and Notes moved out of the tray into their own windows**: each is launched from the Blacksmith menubar rather than a tray tab. They are campaign content — they describe the world, not the selected token — and the tray is about the token you have selected. The tray now carries Character and Party only.
   - The panels were **re-hosted, not rewritten**. They were always `render(hostElement)` classes that look for their own container inside whatever they are given; the tray was one such host and a window is another. Their stylesheets moved from `.squire-tray[data-position="left"]` to `.squire-panel-host[data-position="left"]`, a class both hosts carry, so one set of rules still serves both — 304 rules, same specificity, no duplicated stylesheet.
   - Reaching a panel no longer means reaching through the tray. A new registry (`campaign-panels.js`) replaced 21 `PanelManager` lookups across 8 files: callers ask for a *kind*, and whichever host is showing it supplies the element and decides what "reveal" means. Clicking a quest, codex, or note pin now **opens** the relevant browser if it isn't already open, instead of doing nothing.
-  - The one place character UI genuinely reads campaign content — the pinned quest on the tray handle — is now a single named call, `requestHandleRefresh()`.
+  - **Campaign code now makes no calls into character UI at all.** The one apparent exception, the pinned quest on the tray handle, turned out to be dead: neither `handle-player.hbs` nor `handle-party.hbs` has rendered it since the handle was simplified, so `_getPinnedQuestData`, its cache, a click handler and two handlers bound to a class that no longer exists were all removed — `manager-handle.js` lost 205 lines and four unused imports.
   - Removed with the tabs: the `showTabNotes` / `showTabCodex` / `showTabQuests` settings, the Notes/Codex/Quest entries in Default Tab and view mode, and the three `handle-*.hbs` partials. A client whose saved view mode was one of the removed tabs falls back to Character on load.
 - **The tray's first tab is now called "Character"** rather than "Token", and its tooltip matches. The stored value is unchanged, so nothing needs reconfiguring.
+
+### Added
+- **Transfer recipients are grouped and named properly**: the recipient list is split into **Party** and **NPCs** sections, sorted alphabetically within each, using each token's own name and artwork. Grouping is a new optional `group` field on Blacksmith's shared entity list, so it is available to every consumer rather than faked here.
+- **Macro favourites show their own artwork** in the menubar list instead of a column of identical play triangles, falling back to the triangle when a macro has no image.
 
 ### Fixed
 - **Quest and codex cards would not expand once a browser window was open**: a panel keeps one `AbortController` and aborts it on every render, so with both the tray and a window hosting the same panel instance, whichever rendered last silently killed the other's event listeners — the markup stayed and the interactivity did not. Only one host renders a given panel now.
 - **Deprecation warning on every pin click**: the browser windows called `bringToTop`, which v13 shims to `bringToFront` and logs about. They call the current name where it exists.
 - **Party panel health shortcuts threw instead of opening the Health window**: both the "select the party" button and a click on any party member's HP bar called `healthPanel._onPopOut()`, which stopped existing when Health became a standalone window — `_onPopOut is not a function`. Both call sites now use `openWindow()`, and force the token update so the window cannot show a stale selection.
+- **Dragging an item off an unlinked token copied it instead of transferring it**: the drop classifier tested `data.uuid.startsWith("Actor.")`, but an item on an unlinked token is `Scene.x.Token.y.Actor.z.Item.i` — it contains `Actor.` without starting with it. Any NPC token's item was therefore classified as a *world item*: created on the target, left on the source, and past every transfer guard on the way. A packed sack arrived with none of its contents and the original stayed put. Both classifiers now match `/Actor\.[^.]+\.Item\./`.
+- **The container guard sat too far forward.** It ran at the drop handlers only, so any path reaching the mutation directly skipped it — the same shape as the quantity bug fixed in 13.5.2. It now also runs inside all three `_completeItemTransfer` copies, where it cannot be routed around.
+- **Chat cards and toasts showed the prototype name for token actors**: `actor.name` on a synthetic actor is the prototype's, so every NPC reported itself as "Cultist". New `getActorDisplayName()` asks a synthetic actor's own TokenDocument; linked actors keep the sheet name rather than picking arbitrarily among several placed tokens.
+- **Transfer chat cards did not match Blacksmith's**: ours used `class="section-header"` where Blacksmith's cards use `class="card-header"`, so the theme applied but the header typography never did. All 27 headers corrected.
+- **One transfer produced up to three chat messages**: a "you sent" card, a "you received" card and a GM copy, so every GM read the same event three times. Now a single card whispered to both owners and the GMs, using wording that reads correctly for all of them. `transfer-utils.js` already did this; the panel copies had drifted.
+- **Every Cultist on the scene was disabled as "the source"**: the transfer tool compared `actor.id`, and unlinked tokens from one prototype share the base actor's id. Compared on `uuid` now, so only the actual source is greyed out.
+- **Objective and quest pins could be placed repeatedly**: the panel re-rendered immediately after placing, but `pins.list()` is served from a cache the create has not landed in, so the icon still read "unpinned" and another click placed a duplicate. Both placement and both unpin paths now reload the pin cache first.
+- **Placing a pin for a hidden objective looked like a failure**: it is created hidden, correctly, but nothing appeared on the canvas and the toast said only "Objective pin placed." Both placement paths now say when a pin was created hidden and where to find it.
+
 
 ## [13.5.3]
 
