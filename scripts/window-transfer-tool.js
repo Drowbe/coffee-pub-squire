@@ -1,5 +1,5 @@
 import { MODULE } from './const.js';
-import { renderTemplate } from './helpers.js';
+import { getTokenDisplayName, renderTemplate } from './helpers.js';
 
 function getBlacksmith() {
     return globalThis.game?.modules?.get?.('coffee-pub-blacksmith')?.api ?? null;
@@ -15,10 +15,17 @@ if (!BlacksmithToolWindowBaseV2) {
 const TRANSFER_TOOL_TEMPLATE = `modules/${MODULE.ID}/templates/window-transfer-tool.hbs`;
 const DEFAULT_IMAGE = 'icons/svg/mystery-man.svg';
 
-function uniqueActors(actors = []) {
+/**
+ * One entry per actor, keyed on uuid.
+ *
+ * Not `id`: every unlinked token derived from the same prototype carries the
+ * BASE actor's id, so an id-keyed set collapses a dozen distinct Cultists into
+ * one. A linked actor with two tokens does share a uuid, and should collapse.
+ */
+function uniqueTokensByActor(tokens = []) {
     const seen = new Set();
-    return actors.filter(actor => {
-        const key = actor?.uuid || actor?.id;
+    return tokens.filter(token => {
+        const key = token?.actor?.uuid;
         if (!key || seen.has(key)) return false;
         seen.add(key);
         return true;
@@ -26,24 +33,46 @@ function uniqueActors(actors = []) {
 }
 
 function actorRecipients(sourceActor) {
-    const actors = game.user.isGM
-        ? (canvas.tokens?.placeables || [])
-            .map(token => token.actor)
-            .filter(actor => actor && ['character', 'npc', 'monster'].includes(actor.type))
-        : (canvas.tokens?.placeables || [])
-            .map(token => token.actor)
-            .filter(actor => actor?.hasPlayerOwner && actor.type === 'character');
+    const canReceive = (actor) => game.user.isGM
+        ? ['character', 'npc', 'monster'].includes(actor.type)
+        : (actor.hasPlayerOwner && actor.type === 'character');
 
-    return uniqueActors(actors).map(actor => ({
-        id: actor.uuid || actor.id,
-        uuid: actor.uuid,
-        name: actor.name,
-        img: actor.img || DEFAULT_IMAGE,
-        type: actor.type === 'character' ? 'Character' : (actor.type === 'npc' ? 'NPC' : 'Monster'),
-        disabled: actor.id === sourceActor?.id,
-        disabledReason: actor.id === sourceActor?.id ? 'Cannot transfer an item to its source.' : '',
-        metadata: { actor }
-    }));
+    // Kept as tokens rather than mapped straight to actors: the token carries
+    // the name the GM sees on the canvas, and a synthetic actor's `name` is the
+    // prototype's ("Cultist") for every one of them.
+    const tokens = uniqueTokensByActor(
+        (canvas.tokens?.placeables || []).filter(token => token?.actor && canReceive(token.actor))
+    );
+
+    // Party first, then everyone else. The list renders a header where each
+    // group's first member appears and does not reorder, so the sort here is
+    // what produces the sections.
+    const isParty = (actor) => actor.type === 'character' && actor.hasPlayerOwner;
+    const ordered = [...tokens].sort((a, b) => {
+        const aParty = isParty(a.actor) ? 0 : 1;
+        const bParty = isParty(b.actor) ? 0 : 1;
+        if (aParty !== bParty) return aParty - bParty;
+        return getTokenDisplayName(a, a.actor).localeCompare(getTokenDisplayName(b, b.actor));
+    });
+
+    return ordered.map(token => {
+        const actor = token.actor;
+        // Compared on uuid, not id. Unlinked tokens sharing a prototype share
+        // the base actor's id, so an id test disables every Cultist on the
+        // scene rather than the one the item came from.
+        const isSource = !!sourceActor?.uuid && actor.uuid === sourceActor.uuid;
+        return {
+            id: actor.uuid || actor.id,
+            uuid: actor.uuid,
+            name: getTokenDisplayName(token, actor),
+            img: token.document?.texture?.src || actor.img || DEFAULT_IMAGE,
+            type: actor.type === 'character' ? 'Character' : (actor.type === 'npc' ? 'NPC' : 'Monster'),
+            group: isParty(actor) ? 'Party' : 'NPCs',
+            disabled: isSource,
+            disabledReason: isSource ? 'Cannot transfer an item to its source.' : '',
+            metadata: { actor, token }
+        };
+    });
 }
 
 function userRecipients() {

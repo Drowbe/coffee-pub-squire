@@ -2246,7 +2246,12 @@ Hooks.once('ready', async function() {
                     for (const macro of favorites) {
                         items.push({
                             name: macro.name,
-                            icon: 'fa-solid fa-play',
+                            // Macros are identified by their artwork in Foundry's
+                            // own hotbar, so a column of identical play triangles
+                            // is the least useful thing this list could show.
+                            // Falls back to the triangle when a macro has no
+                            // image, which would otherwise leave an empty slot.
+                            icon: macro.img ? `<img src="${macro.img}" alt="">` : 'fa-solid fa-play',
                             onClick: () => macro.execute()
                         });
                     }
