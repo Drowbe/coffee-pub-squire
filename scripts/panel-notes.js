@@ -1415,9 +1415,6 @@ export class NotesPanel {
     async showNote(noteUuid) {
         // Whoever hosts this panel decides what showing it means.
         await revealCampaignPanel('notes');
-        if (this.element && !this.element.classList.contains('expanded')) {
-            this.element.classList.add('expanded');
-        }
 
         let focused = false;
         const tryFocus = () => {
@@ -1432,11 +1429,6 @@ export class NotesPanel {
             trackModuleTimeout(tryFocus, 200);
             trackModuleTimeout(tryFocus, 500);
             trackModuleTimeout(tryFocus, 1000);
-            trackModuleTimeout(() => {
-                if (!focused) {
-                } else {
-                }
-            }, 1200);
         }
     }
 

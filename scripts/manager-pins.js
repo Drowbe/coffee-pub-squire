@@ -2011,10 +2011,12 @@ function _registerEventHandlers(pins) {
     pins.on('click', async (evt) => {
         const noteUuid = evt?.pin?.config?.noteUuid;
         if (!noteUuid) return;
+        // showNote() reveals the panel itself, so don't reveal here as well —
+        // that renders the panel twice for one click.
         await revealCampaignPanel('notes');
         const notesPanel = getCampaignPanel('notes');
-        if (!notesPanel) return;
-        notesPanel.showNote?.(noteUuid);
+        if (!notesPanel?.showNote) return;
+        await notesPanel.showNote(noteUuid);
         const tryFocus = () => {
             const row = document.querySelector(`.note-row[data-note-uuid="${noteUuid}"]`);
             if (!row) return false;

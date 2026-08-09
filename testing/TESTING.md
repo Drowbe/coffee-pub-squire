@@ -49,7 +49,7 @@ The interesting case is with the browser **closed** — reveal should open it.
 - [x] Click a quest pin with the window already open → focuses without reopening
 - [x] Click an objective pin → the right objective is highlighted
 - [x] Click a codex pin → codex window opens and scrolls to the entry, and the entry stays expanded through the next re-render
-- [ ] Click a note pin → notes window opens and highlights the row
+- [x] Click a note pin → notes window opens and highlights the row
 - [x] Complete an objective from the pin context menu → toast appears naming the objective
 
 
