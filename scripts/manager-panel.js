@@ -9,15 +9,12 @@ import { FavoritesPanel } from './panel-favorites.js';
 import { ControlPanel } from './panel-control.js';
 import { CompendiumSearchPanel } from './panel-compendium-search.js';
 import { FeaturesPanel } from './panel-features.js';
-import { DiceTrayPanel } from './panel-dicetray.js';
-import { HealthPanel } from './panel-health.js';
 import { CharacterSummaryPanel } from './panel-character-summary.js';
 import { PartyPanel } from './panel-party.js';
 import { PartyStatsPanel } from './panel-party-stats.js';
 import { NotesPanel } from './panel-notes.js';
 import { CodexPanel } from './panel-codex.js';
 import { QuestPanel } from './panel-quest.js';
-import { MacrosPanel } from './panel-macros.js';
 import { PrintCharacterSheet } from './utility-print-character.js';
 import { StatblockUtility } from './utility-statblock.js';
 // REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
@@ -52,6 +49,8 @@ export class PanelManager {
     static newlyAddedItems = new Map();
     static _cleanupInterval = null;
     static _lastFlagSweepActorId = null; // Last actor swept for stray isNew flags (flags persist; the map doesn't)
+    /** Token ids the selection handler last acted on, for its no-change check. */
+    static _lastControlledTokenIds = [];
     static _initializationInProgress = false;
     static _lastInitTime = 0;
     static _eventListeners = new Map(); // Track event listeners for cleanup
@@ -101,15 +100,12 @@ export class PanelManager {
             this.characterSummaryPanel = new CharacterSummaryPanel(actor);
         }
         // Always create these panels regardless of actor (for handle icons and multi-select functionality)
-        this.dicetrayPanel = new DiceTrayPanel({ actor });
-        this.healthPanel = new HealthPanel(actor); // Always create for multi-select
         this.partyPanel = new PartyPanel();
         this.partyStatsPanel = new PartyStatsPanel();
         this.notesPanel = new NotesPanel();
         this.codexPanel = new CodexPanel();
         this.questPanel = new QuestPanel();
         this.hiddenCategories = new Set();
-        this.macrosPanel = new MacrosPanel({ actor });
         
         // Register panels with HookManager
         this._registerPanelsWithHookManager();
@@ -257,13 +253,6 @@ export class PanelManager {
                 PanelManager._intervals.add(intervalId);
             }
 
-            // Preserve window states from old instance
-            const oldHealthPanel = PanelManager.instance?.healthPanel;
-            const hadHealthWindow = oldHealthPanel?.isWindowOpen && oldHealthPanel?.window;
-            const oldDiceTrayPanel = PanelManager.instance?.dicetrayPanel;
-            const hadDiceTrayWindow = oldDiceTrayPanel?.isWindowOpen && oldDiceTrayPanel?.window;
-            const oldMacrosPanel = PanelManager.instance?.macrosPanel;
-            const hadMacrosWindow = oldMacrosPanel?.isWindowOpen && oldMacrosPanel?.window;
 
             // Clean up old instance before creating new one to prevent memory leaks
             if (PanelManager.instance) {
@@ -310,58 +299,6 @@ export class PanelManager {
                 }
             }
 
-            // Abort if instance was cleared by another hook (e.g. deleteToken) during await
-            if (!PanelManager.instance) return;
-            
-            // Restore window states from user flags
-            const savedWindowStates = game.user.getFlag(MODULE.ID, 'windowStates') || {};
-            
-            // Restore health window state if it was open
-            if (hadHealthWindow && PanelManager.instance.healthPanel) {
-                PanelManager.instance.healthPanel.isWindowOpen = true;
-                PanelManager.instance.healthPanel.window = oldHealthPanel.window;
-                PanelManager.instance.healthPanel.window.panel = PanelManager.instance.healthPanel;
-                HealthPanel.isWindowOpen = true;
-                HealthPanel.activeWindow = PanelManager.instance.healthPanel.window;
-                const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
-                const actorToken = canvas.tokens.placeables.find(t => t.actor?.id === actor?.id);
-                const healthTokens = controlledTokens.length ? controlledTokens : (actorToken ? [actorToken] : []);
-                PanelManager.instance.healthPanel.updateTokens(healthTokens, { force: true });
-            } else if (savedWindowStates.health && PanelManager.instance?.healthPanel) {
-                await PanelManager.instance.healthPanel.openWindow();
-            }
-
-            // Abort if instance was cleared by another hook (e.g. deleteToken) during await
-            if (!PanelManager.instance) return;
-
-            // Restore dice tray window state if it was open
-            if (hadDiceTrayWindow && PanelManager.instance.dicetrayPanel) {
-                PanelManager.instance.dicetrayPanel.isWindowOpen = true;
-                PanelManager.instance.dicetrayPanel.window = oldDiceTrayPanel.window;
-                PanelManager.instance.dicetrayPanel.window.panel = PanelManager.instance.dicetrayPanel;
-                DiceTrayPanel.isWindowOpen = true;
-                DiceTrayPanel.activeWindow = PanelManager.instance.dicetrayPanel.window;
-                // Update the panel and window with the new actor
-                PanelManager.instance.dicetrayPanel.updateActor(actor);
-            } else if (savedWindowStates.diceTray && PanelManager.instance?.dicetrayPanel) {
-                // Restore from saved state
-                await PanelManager.instance.dicetrayPanel.openWindow();
-            }
-
-            // Abort if instance was cleared by another hook (e.g. deleteToken) during await
-            if (!PanelManager.instance) return;
-
-            // Keep an open Macros window attached across actor switches.
-            if (hadMacrosWindow && PanelManager.instance.macrosPanel) {
-                PanelManager.instance.macrosPanel.isWindowOpen = true;
-                PanelManager.instance.macrosPanel.window = oldMacrosPanel.window;
-                PanelManager.instance.macrosPanel.window.panel = PanelManager.instance.macrosPanel;
-                MacrosPanel.isWindowOpen = true;
-                MacrosPanel.activeWindow = PanelManager.instance.macrosPanel.window;
-                PanelManager.instance.macrosPanel.updateActor(actor);
-            } else if (savedWindowStates.macros && PanelManager.instance?.macrosPanel) {
-                await PanelManager.instance.macrosPanel.openWindow();
-            }
 
             // Abort if instance was cleared by another hook (e.g. deleteToken) during await
             if (!PanelManager.instance) return;
@@ -382,7 +319,7 @@ export class PanelManager {
             }
             
             // Update health panel with current token selection
-            await _updateHealthPanelFromSelection();
+            await _updateTrayFromSelection();
         } finally {
             PanelManager._initializationInProgress = false;
         }
@@ -410,13 +347,6 @@ export class PanelManager {
         // Use the current viewMode (which is either default or from settings)
         const viewMode = PanelManager.viewMode;
         
-        // Build favorite macros array
-        let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
-        let favoriteMacros = favoriteMacroIds.map(id => {
-            const macro = game.macros.get(id);
-            return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
-        }).filter(Boolean);
-
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, {
             actor: this.actor,
             isGM: game.user.isGM,
@@ -428,15 +358,12 @@ export class PanelManager {
             settings: {
                 showGmPanel: game.settings.get(MODULE.ID, 'showGmPanel'),
                 showCharacterSummaryPanel: game.settings.get(MODULE.ID, 'showCharacterSummaryPanel'),
-                showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
                 showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
             },
             viewMode: viewMode,
             showTabParty: game.settings.get(MODULE.ID, 'showTabParty'),
-            isDiceTrayPopped: DiceTrayPanel.isWindowOpen,
             newlyAddedItems: Object.fromEntries(PanelManager.newlyAddedItems),
             defaultPartyName: getCampaignContext().party,
-            favoriteMacros
         });
         // v13: Create native DOM element instead of jQuery
         const wrapper = document.createElement('div');
@@ -486,13 +413,6 @@ export class PanelManager {
         // Create new tray element
         const viewMode = PanelManager.viewMode;
         
-        // Build favorite macros array
-        let favoriteMacroIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
-        let favoriteMacros = favoriteMacroIds.map(id => {
-            const macro = game.macros.get(id);
-            return macro ? { id: macro.id, name: macro.name, img: macro.img } : null;
-        }).filter(Boolean);
-
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, {
             actor: this.actor,
             isGM: game.user.isGM,
@@ -504,7 +424,6 @@ export class PanelManager {
             settings: {
                 showGmPanel: game.settings.get(MODULE.ID, 'showGmPanel'),
                 showCharacterSummaryPanel: game.settings.get(MODULE.ID, 'showCharacterSummaryPanel'),
-                showDiceTrayPanel: game.settings.get(MODULE.ID, 'showDiceTrayPanel'),
                 showPartyStatsPanel: game.settings.get(MODULE.ID, 'showPartyStatsPanel')
             },
             viewMode: viewMode,
@@ -543,19 +462,6 @@ export class PanelManager {
         this.inventoryPanel = new InventoryPanel(this.actor);
         this.featuresPanel = new FeaturesPanel(this.actor);
         this.characterSummaryPanel = new CharacterSummaryPanel(this.actor);
-
-        // Health is a standalone tool window; keep its controller available for launchers.
-        this.healthPanel = new HealthPanel(this.actor);
-        const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
-        if (controlledTokens.length > 0) {
-            this.healthPanel.updateTokens(controlledTokens);
-        }
-
-        // Dice Tray is a standalone tool window; keep its controller available for launchers.
-        this.dicetrayPanel = new DiceTrayPanel({ actor: this.actor });
-
-        // Macros is a standalone tool window; keep its controller available for launchers.
-        this.macrosPanel = new MacrosPanel({ actor: this.actor });
 
         this.partyPanel = new PartyPanel();
         this.partyStatsPanel = new PartyStatsPanel();
@@ -1543,7 +1449,7 @@ export class PanelManager {
         if (!actor || !actor.isOwner) return;
         try { await game.user.setFlag(MODULE.ID, 'lastCharacterId', actorId); } catch (_) {}
         // Sync canvas selection BEFORE rebuilding: initialize() ends by aligning the tray
-        // to the current selection (_updateHealthPanelFromSelection), so a stale selection
+        // to the current selection (_updateTrayFromSelection), so a stale selection
         // would snap the freshly built tray straight back to the previously selected token.
         // Select the character's token if it has one on the viewed scene; otherwise release
         // the current selection.
@@ -1763,9 +1669,6 @@ export class PanelManager {
         if (PanelManager.instance.characterPanel && typeof PanelManager.instance.characterPanel.destroy === 'function') {
             PanelManager.instance.characterPanel.destroy();
         }
-        if (PanelManager.instance.macrosPanel && typeof PanelManager.instance.macrosPanel.destroy === 'function') {
-            PanelManager.instance.macrosPanel.destroy();
-        }
         if (PanelManager.instance.partyPanel && typeof PanelManager.instance.partyPanel.destroy === 'function') {
             PanelManager.instance.partyPanel.destroy();
         }
@@ -1794,12 +1697,6 @@ export class PanelManager {
         }
         if (PanelManager.instance.characterSummaryPanel && typeof PanelManager.instance.characterSummaryPanel.destroy === 'function') {
             PanelManager.instance.characterSummaryPanel.destroy();
-        }
-        if (PanelManager.instance.healthPanel && typeof PanelManager.instance.healthPanel.destroy === 'function') {
-            PanelManager.instance.healthPanel.destroy();
-        }
-        if (PanelManager.instance.dicetrayPanel && typeof PanelManager.instance.dicetrayPanel.destroy === 'function') {
-            PanelManager.instance.dicetrayPanel.destroy();
         }
         if (PanelManager.instance.controlPanel && typeof PanelManager.instance.controlPanel.destroy === 'function') {
             PanelManager.instance.controlPanel.destroy();
@@ -1845,7 +1742,7 @@ export class PanelManager {
         // Clear the newly added items map
         PanelManager.newlyAddedItems.clear();
 
-        // Destroy all panels (including health/dicetray actor.apps registrations) and null the instance
+        // Destroy all panels and null the instance
         PanelManager._cleanupOldInstance();
 
         // Remove the tray element
@@ -2087,7 +1984,14 @@ export async function _updateSelectionDisplay() {
 }
 
 // Helper function to update health panel from current selection
-export async function _updateHealthPanelFromSelection() {
+/**
+ * Re-point the tray at the current canvas selection.
+ *
+ * Named for the health panel until that window moved to Blacksmith, which is
+ * all it used to do on top of this — the tray re-pointing was the part that
+ * mattered and the part that stayed.
+ */
+export async function _updateTrayFromSelection() {
     // Get a list of all controlled tokens that the user owns
     const controlledTokens = canvas.tokens.controlled.filter(t => t.actor?.isOwner);
     
@@ -2114,10 +2018,13 @@ export async function _updateHealthPanelFromSelection() {
     // This prevents lag during multi-select when selecting same-type tokens
     const actorUnchanged = PanelManager.currentActor?.id === actorToUse.id;
     const actorChanged = !actorUnchanged;
-    const currentTokens = PanelManager.instance?.healthPanel?.tokens || [];
-    const currentTokenIds = currentTokens.map(t => t.id).sort();
+    // Token set last seen by this function. It used to be read off the health
+    // panel's list, which Blacksmith owns now; the diff is still what keeps
+    // multi-select from rebuilding the tray per token.
+    const currentTokenIds = (PanelManager._lastControlledTokenIds || []).slice().sort();
     const newTokenIds = controlledTokens.map(t => t.id).sort();
     const tokensUnchanged = JSON.stringify(currentTokenIds) === JSON.stringify(newTokenIds);
+    PanelManager._lastControlledTokenIds = newTokenIds;
     
     if (actorUnchanged) {
         if (tokensUnchanged) {
@@ -2152,8 +2059,6 @@ export async function _updateHealthPanelFromSelection() {
             if (PanelManager.instance.inventoryPanel) PanelManager.instance.inventoryPanel.actor = actorToUse;
             if (PanelManager.instance.featuresPanel) PanelManager.instance.featuresPanel.actor = actorToUse;
             if (PanelManager.instance.characterSummaryPanel) PanelManager.instance.characterSummaryPanel.actor = actorToUse;
-            if (PanelManager.instance.dicetrayPanel) PanelManager.instance.dicetrayPanel.updateActor(actorToUse);
-            if (PanelManager.instance.macrosPanel) PanelManager.instance.macrosPanel.updateActor(actorToUse);
             
             // Update the handle manager's actor reference
             if (PanelManager.instance.handleManager) {
@@ -2165,14 +2070,6 @@ export async function _updateHealthPanelFromSelection() {
     // Force refresh of items collection to ensure up-to-date handle favorites
     if (PanelManager.instance && PanelManager.instance.actor?.items && typeof PanelManager.instance.actor.items._flush === 'function') {
         await PanelManager.instance.actor.items._flush();
-    }
-    
-    // Update health panel with all controlled tokens for bulk operations
-    if (PanelManager.instance && PanelManager.instance.healthPanel) {
-        // Only update if the tokens have actually changed
-        if (!tokensUnchanged) {
-            PanelManager.instance.healthPanel.updateTokens(controlledTokens);
-        }
     }
     
     // Always update the handle for the new actor

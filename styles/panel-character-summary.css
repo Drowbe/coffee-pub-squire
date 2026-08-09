@@ -162,3 +162,13 @@
     border-radius: 3px;
     background: rgba(159, 146, 117, 0.48);
 }
+
+/* The XP bar opens Blacksmith's XP window. */
+.squire-tray[data-position="left"] .character-summary-xp[data-action="open-xp"] {
+    cursor: pointer;
+}
+
+.squire-tray[data-position="left"] .character-summary-xp[data-action="open-xp"]:focus-visible {
+    outline: 2px solid var(--blacksmith-color-brand-accent, #ac9f81);
+    outline-offset: 1px;
+}

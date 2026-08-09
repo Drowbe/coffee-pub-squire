@@ -61,9 +61,6 @@ const KINDS = {
     }
 };
 
-/** Live window instances, so a second launch focuses rather than duplicates. */
-const openWindows = new Map();
-
 export class CampaignBrowserWindow extends BlacksmithWindowBaseV2 {
     static ROOT_CLASS = 'campaign-browser-window';
 
@@ -158,7 +155,6 @@ export class CampaignBrowserWindow extends BlacksmithWindowBaseV2 {
     }
 
     _onClose(options) {
-        openWindows.delete(this.kind);
         // Leave the registry pointing at nothing rather than at a dead element.
         // A caller that finds no panel skips quietly, which is the correct
         // behaviour for "the browser isn't open".
@@ -167,9 +163,20 @@ export class CampaignBrowserWindow extends BlacksmithWindowBaseV2 {
     }
 }
 
-/** Open (or focus) the browser for a kind. */
+/**
+ * Open (or focus) the browser for a kind.
+ *
+ * The live instance comes from `foundry.applications.instances`, which Foundry
+ * keys by application id and maintains itself — the same id these windows are
+ * constructed with. A module-level Map of open windows would be a second source
+ * of truth for the same fact, and the two only stay in step for as long as every
+ * close path remembers to clear it.
+ */
 export async function openCampaignBrowser(kind) {
-    const existing = openWindows.get(kind);
+    const config = KINDS[kind];
+    if (!config) return null;
+
+    const existing = foundry.applications.instances.get(config.id);
     if (existing) {
         (existing.bringToFront ?? existing.bringToTop)?.call(existing);
         if (existing.minimized) existing.maximize?.();
@@ -178,7 +185,6 @@ export async function openCampaignBrowser(kind) {
     }
 
     const win = new CampaignBrowserWindow(kind);
-    openWindows.set(kind, win);
     await win.render(true);
     return win;
 }

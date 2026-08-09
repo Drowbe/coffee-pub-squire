@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
-import { renderTemplate, getNativeElement, getPartyActors } from './helpers.js';
+import { renderTemplate, getNativeElement, getPartyActors, openPartyStatsWindow, openPlayerStatsWindow } from './helpers.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
 function getBlacksmith() {
@@ -115,8 +115,42 @@ export class PartyStatsPanel {
             const panel = nativeElement.querySelector('[data-panel="party-stats"]');
             if (panel) {
                 panel.innerHTML = content;
+                this._activateListeners(panel);
             }
         }
+    }
+
+    /**
+     * The leaderboard is a summary; the detail lives in Blacksmith's stats
+     * windows. A row opens that player's stats, the header icon opens the
+     * party view — so there is a way to the whole set from a single row.
+     *
+     * Bound after every render because the panel replaces its own innerHTML.
+     */
+    _activateListeners(panel) {
+        panel.querySelectorAll('[data-action="open-player-stats"]').forEach((row) => {
+            const open = async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                await openPlayerStatsWindow(row.dataset.actorId);
+            };
+            row.addEventListener('click', open);
+            row.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') open(event);
+            });
+        });
+
+        const all = panel.querySelector('[data-action="open-party-stats"]');
+        if (!all) return;
+        const openAll = async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            await openPartyStatsWindow();
+        };
+        all.addEventListener('click', openAll);
+        all.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') openAll(event);
+        });
     }
 
     destroy() {

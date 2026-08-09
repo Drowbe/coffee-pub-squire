@@ -13,7 +13,11 @@ Working doc. Delete it when the split is done.
 - Menubar launchers in the **middle** zone, `campaign` group.
 - Tray tabs, `showTab*` settings, view-mode entries, and the three `handle-*.hbs` partials removed.
 
-**Next:** shared services (dice/macros/HP) to Blacksmith. The author granted a one-time exception to write into `coffee-pub-blacksmith` from a Squire session for this.
+**Phase 1 — shared services to Blacksmith: DONE.** Blacksmith pulled the Dice Tray, Macros, and Health windows in and verified them live with Squire disabled; Squire then deleted its copies. ~2,000 lines of wiring went with them, including the window-reattach block in `PanelManager`. Health severity is now Blacksmith's, consumed through `getHealthSeverityForHP()` and mapped to Squire's classes locally.
+
+Worth carrying forward: Blacksmith pulled rather than Squire pushing. That is the better shape for the rest of the split — the receiving module decides the form the code takes in its own codebase, and the sending module's job is to answer questions and then delete.
+
+**Next:** import/export to Blacksmith (unblocks the note in `helpers.js`), then Librarian.
 
 ## Corrections to earlier versions of this doc
 
@@ -74,7 +78,7 @@ Campaign data lives under `coffee-pub-squire.*` on journal pages, entries, pins,
 ## Sequence
 
 1. ~~**Phase 0** — campaign content out of the tray, internal boundary made real.~~ **Done.**
-2. **Shared services to Blacksmith** — dice tray, HP, macros. Mechanical, no data migration. Order within the phase: Blacksmith adds → verify in a live world → Squire removes → release.
+2. ~~**Shared services to Blacksmith** — dice tray, HP, macros.~~ **Done.** The add → verify → remove order held up; worth repeating.
 3. **Import/export to Blacksmith** — unblocks the note in `helpers.js`.
 4. **Design the note-binding API** — with Cartographer's and Artificer's needs in scope, not just Squire's.
 5. **Stand up `coffee-pub-librarian`** — windows, panels, parsers, journal utils, pin adapter, absorbing the quest persistence refactor and the namespace migration together.

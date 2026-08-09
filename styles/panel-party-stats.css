@@ -171,3 +171,28 @@
     font-size: 1.8rem;
     color: rgba(159, 146, 117, 0.8);
 }
+
+/* Rows and the header icon open Blacksmith's statistics windows. */
+.squire-tray[data-position="left"] .mvp-table__row--link {
+    cursor: pointer;
+}
+
+.squire-tray[data-position="left"] .mvp-table__row--link:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.squire-tray[data-position="left"] .mvp-table__row--link:focus-visible,
+.squire-tray[data-position="left"] .mvp-panel__all:focus-visible {
+    outline: 2px solid var(--blacksmith-color-brand-accent, #ac9f81);
+    outline-offset: 1px;
+}
+
+.squire-tray[data-position="left"] .mvp-panel__all {
+    margin-left: auto;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.squire-tray[data-position="left"] .mvp-panel__all:hover {
+    opacity: 1;
+}

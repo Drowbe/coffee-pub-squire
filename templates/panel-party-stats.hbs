@@ -3,6 +3,10 @@
         <div class="mvp-panel__header">
             <i class="fa-solid fa-trophy"></i>
             <span>Lifetime MVP Leaderboard</span>
+            {{#if hasBlacksmith}}
+            <i class="fa-solid fa-chart-simple mvp-panel__all" role="button" tabindex="0"
+               data-action="open-party-stats" data-tooltip="Open full party statistics"></i>
+            {{/if}}
         </div>
 
         {{#if hasBlacksmith}}
@@ -18,7 +22,9 @@
                 </div>
 
                 {{#each leaderboard}}
-                <div class="mvp-table__row" role="row">
+                <div class="mvp-table__row mvp-table__row--link" role="row"
+                     data-action="open-player-stats" data-actor-id="{{actorId}}"
+                     tabindex="0" data-tooltip="Open {{name}}'s statistics">
                     <span class="mvp-table__cell mvp-table__cell--rank" role="cell">{{rank}}</span>
                     <span class="mvp-table__cell mvp-table__cell--player" role="cell">
                         <img class="mvp-player__portrait" src="{{img}}" alt="{{name}}" data-tooltip="{{name}}">

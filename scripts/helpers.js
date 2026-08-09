@@ -94,20 +94,99 @@ export async function showBlacksmithWait(config = {}, renderOptions = {}) {
  * @param {{value?: number, max?: number}|null|undefined} hp
  * @returns {string}
  */
+/**
+ * Remaining health as a percentage, or null when HP is unreadable.
+ *
+ * Blacksmith's `getHealthPercent` clamps to 0-100 and resolves the HP object
+ * across the shapes different systems use, returning null for a missing or
+ * zero max. Squire used to divide in four places that each disagreed on the
+ * edges: one guarded `max > 0`, one clamped, two did neither and produced
+ * `NaN%` for a maxless actor.
+ *
+ * Using the same call Blacksmith's own bars use also keeps Squire's health bar
+ * and the Health window from drawing the same actor differently.
+ */
+export function getHealthPercent(actor) {
+    const percent = getBlacksmith()?.getHealthPercent?.(actor);
+    return typeof percent === 'number' ? percent : null;
+}
+
+/**
+ * Open one of Blacksmith's registry windows by id.
+ *
+ * Squire's tray shows summaries — an XP bar, an MVP leaderboard — and the full
+ * views behind them are Blacksmith's. Kept in one place so the ids appear once
+ * rather than at every affordance that links to them.
+ */
+async function openBlacksmithWindow(id, options, unavailableLabel) {
+    const blacksmith = getBlacksmith();
+    if (typeof blacksmith?.openWindow !== 'function') {
+        ui.notifications.warn(`${unavailableLabel} needs Coffee Pub Blacksmith.`);
+        return null;
+    }
+    return options ? blacksmith.openWindow(id, options) : blacksmith.openWindow(id);
+}
+
+/** Blacksmith's XP window. */
+export async function openXpWindow() {
+    return openBlacksmithWindow('blacksmith-xp', null, 'The XP window');
+}
+
+/** Blacksmith's party statistics window. */
+export async function openPartyStatsWindow() {
+    return openBlacksmithWindow('blacksmith-stats-party', null, 'Party statistics');
+}
+
+/** Blacksmith's per-player statistics window. `actorId` is required. */
+export async function openPlayerStatsWindow(actorId) {
+    if (!actorId) return null;
+    return openBlacksmithWindow('blacksmith-stats-player', { actorId }, 'Player statistics');
+}
+
+/**
+ * Remaining health as a percentage from a raw `{ value, max }`, or null.
+ *
+ * For the template helper, which is handed an HP object rather than an actor.
+ * Matches Blacksmith's clamping and its "no usable max means no answer" rule so
+ * the two cannot drift; if the API grows an HP-shaped variant, this delegates
+ * to it and goes away.
+ */
+export function getHealthPercentFromHP(hp) {
+    const value = Number(hp?.value);
+    const max = Number(hp?.max);
+    if (!Number.isFinite(value) || !Number.isFinite(max) || max <= 0) return null;
+    return Math.max(0, Math.min(100, (value / max) * 100));
+}
+
+/**
+ * Squire's healthbar class for a set of HP values.
+ *
+ * The thresholds and the banding live in Blacksmith now — `getHealthSeverity*`
+ * reads the settings directly, with no window and no instance, so this is safe
+ * on every tray build. Blacksmith deliberately does not know Squire's class
+ * names, so the mapping stays here.
+ *
+ * Two behaviour notes inherited from the move. `hurt` is a band Squire never
+ * had — damaged but above Injured — and it maps to healthy, which reproduces
+ * the previous appearance exactly. And boundaries are now inclusive, so a
+ * creature sitting exactly on the bloodied threshold reads as bloodied; the old
+ * `<=` chain and Blacksmith's old `<` chain disagreed on that single point.
+ */
+const SEVERITY_CLASS = {
+  healthy:  'squire-tray-healthbar-healthy',
+  hurt:     'squire-tray-healthbar-healthy',
+  injured:  'squire-tray-healthbar-injured',
+  bloodied: 'squire-tray-healthbar-bloodied',
+  critical: 'squire-tray-healthbar-critical',
+  dead:     'squire-tray-healthbar-dead'
+};
+
 export function getHealthbarStatusClass(hp) {
-  const value = Number(hp?.value) || 0;
-  const max = Number(hp?.max) || 0;
-  let status = 'squire-tray-healthbar-healthy';
-
-  if (max > 0) {
-    const percentage = (value / max) * 100;
-    if (value <= 0) status = 'squire-tray-healthbar-dead';
-    else if (percentage <= game.settings.get(MODULE.ID, 'healthThresholdCritical')) status = 'squire-tray-healthbar-critical';
-    else if (percentage <= game.settings.get(MODULE.ID, 'healthThresholdBloodied')) status = 'squire-tray-healthbar-bloodied';
-    else if (percentage <= game.settings.get(MODULE.ID, 'healthThresholdInjured')) status = 'squire-tray-healthbar-injured';
-  }
-
-  return status;
+  const severity = getBlacksmith()?.getHealthSeverityForHP?.({
+    value: Number(hp?.value) || 0,
+    max: Number(hp?.max) || 0
+  });
+  return SEVERITY_CLASS[severity] ?? SEVERITY_CLASS.healthy;
 }
 
 /**
@@ -420,6 +499,31 @@ export function getContainerInfo(item, actor) {
 export function getContainedItems(container, actor) {
     if (!container?.id || !actor) return [];
     return actor.items.filter(item => item.system?.container === container.id);
+}
+
+/**
+ * Open Blacksmith's Health window, optionally showing specific tokens.
+ *
+ * The window follows canvas selection on its own, so pass tokens ONLY to show
+ * something that isn't selected — a health bar the user clicked, say. Passing
+ * the current selection is redundant and can cost a double render.
+ *
+ * The set is not sticky: the next canvas selection replaces it. "Show this now,
+ * then resume following the user" is the contract, which suits a click and
+ * would not suit a pin.
+ *
+ * Tokens must be Token placeables, never Actors and never a bare token.
+ */
+export async function openHealthWindow(tokens = null) {
+    const blacksmith = getBlacksmith();
+    if (typeof blacksmith?.openWindow !== 'function') {
+        ui.notifications.warn('The Health window needs Coffee Pub Blacksmith.');
+        return null;
+    }
+    const list = Array.isArray(tokens) ? tokens.filter(Boolean) : [];
+    return list.length
+        ? blacksmith.openWindow('blacksmith-health', { tokens: list })
+        : blacksmith.openWindow('blacksmith-health');
 }
 
 /**

@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
-import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate, resolveDroppedItem, showSquireToast, getActorDisplayName } from './helpers.js';
+import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate, resolveDroppedItem, showSquireToast, getActorDisplayName, openHealthWindow } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -209,19 +209,7 @@ export class PartyPanel {
                 token.control({releaseOthers: false});
             });
             
-            // Open the health window and populate it with the party.
-            //
-            // `openWindow()` is the entry point since Health became a standalone
-            // window; the old `_onPopOut()` / `isPoppedOut` pair went with the
-            // pop-out panel and this call site was missed.
-            const healthPanel = PanelManager.instance?.healthPanel;
-            if (healthPanel) {
-                // Forced: the window may already be showing this exact selection,
-                // and the no-change short-circuit would leave it stale after the
-                // control() calls above.
-                healthPanel.updateTokens(partyTokens, { force: true });
-                await healthPanel.openWindow();
-            }
+            await openHealthWindow(partyTokens);
         });
         }
         
@@ -535,11 +523,9 @@ export class PartyPanel {
                 if (!partyCard) return;
                 const tokenId = partyCard.dataset.tokenId;
                 const token = canvas.tokens.placeables.find(t => t.id === tokenId);
-                const healthPanel = PanelManager.instance?.healthPanel;
-                if (token?.actor && healthPanel) {
-                    healthPanel.updateTokens([token], { force: true });
-                    await healthPanel.openWindow();
-                }
+                // Named rather than selected — a click on one member's health
+                // bar shouldn't change what the user has selected on canvas.
+                if (token?.actor) await openHealthWindow([token]);
             });
         });
 

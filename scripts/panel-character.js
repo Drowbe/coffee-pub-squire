@@ -1,17 +1,18 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getTokenDisplayName, getNativeElement, getTextEditor, renderTemplate } from './helpers.js';
+import { getTokenDisplayName, getNativeElement, getTextEditor, renderTemplate, getHealthPercent, getHealthPercentFromHP } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
 }
 
-// Register custom Handlebars helper for health percentage
+// Register custom Handlebars helper for health percentage.
+// The overlay shows damage taken, so it is the inverse of remaining health.
 Handlebars.registerHelper('healthOverlayHeight', function(hp) {
-    if (!hp?.max) return '0%';
-    const percentage = Math.round(100 - ((hp.value / hp.max) * 100));
-    return `${percentage}%`;
+    const percent = getHealthPercentFromHP(hp);
+    if (percent === null) return '0%';
+    return `${Math.round(100 - percent)}%`;
 });
 
 export class CharacterPanel {
@@ -44,8 +45,8 @@ export class CharacterPanel {
         if (!nativeElement) return;
 
         // Update the health overlay
-        const hp = this.actor.system.attributes.hp;
-        const percentage = Math.round(100 - ((hp.value / hp.max) * 100));
+        const remaining = getHealthPercent(this.actor);
+        const percentage = remaining === null ? 0 : Math.round(100 - remaining);
         const portraitElement = nativeElement.querySelector('.character-portrait');
         if (!portraitElement) return;
         
@@ -664,8 +665,9 @@ export class CharacterPanel {
         if (hpValue && hpMax && hpFill) {
             hpValue.textContent = hp.value;
             hpMax.textContent = hp.max;
-            const percentage = Math.clamped((hp.value / hp.max) * 100, 0, 100);
-            hpFill.style.width = `${percentage}%`;
+            // Was Math.clamped — renamed to Math.clamp in v13, and the API
+            // clamps for us anyway.
+            hpFill.style.width = `${getHealthPercent(this.actor) ?? 0}%`;
         }
     }
 

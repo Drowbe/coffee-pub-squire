@@ -12,11 +12,8 @@
 
 @import "handle.css";
 
-@import "window-dicetray.css";
 
-@import "window-health.css";
 
-@import "window-macros.css";
 
 @import "window-transfer-tool.css";
 
@@ -32,9 +29,8 @@
 
 @import "panel-control.css"; 
 
-@import "panel-dicetray.css"; 
+ 
 
-@import "panel-macros.css";
 
 @import "panel-character-summary.css";
 

@@ -12,7 +12,8 @@
 
     <div id="character-summary-content" class="tray-panel-content character-summary-content">
         {{#if actor.system.details.xp.max}}
-            <div class="character-summary-xp">
+            <div class="character-summary-xp" role="button" tabindex="0" data-action="open-xp"
+                 data-tooltip="Open the XP window">
                 <div class="character-summary-xp-fill" style="width: {{multiply (divide actor.system.details.xp.value actor.system.details.xp.max) 100}}%"></div>
                 <div class="character-summary-xp-label">
                     <span>Experience</span>

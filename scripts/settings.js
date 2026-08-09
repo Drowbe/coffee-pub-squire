@@ -331,35 +331,8 @@ export const registerSettings = function() {
         }
     });
 
-    game.settings.register(MODULE.ID, 'showHealthPanel', {
-        name: 'Legacy Health Panel Visibility',
-        hint: 'Retained for settings compatibility; Health now opens as a standalone window.',
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: false
-    });
 
-    game.settings.register(MODULE.ID, 'showDiceTrayPanel', {
-        name: 'Legacy Dice Tray Panel Visibility',
-        hint: 'Retained for settings compatibility; Dice Tray now opens only as a window.',
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: false,
-        onChange: () => {
-            if (ui.squire) ui.squire.render();
-        }
-    });
 
-    game.settings.register(MODULE.ID, 'showMacrosPanel', {
-        name: 'Legacy Macros Panel Visibility',
-        hint: 'Retained for settings compatibility; Macros now opens as a standalone window.',
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: false
-    });
 
 
     // --------------------------------
@@ -420,19 +393,7 @@ export const registerSettings = function() {
         default: true
     });
 
-    game.settings.register(MODULE.ID, 'healthAdjustmentAmount', {
-        scope: 'client',
-        config: false,
-        type: Number,
-        default: 1
-    });
 
-    game.settings.register(MODULE.ID, 'diceTrayShowRecentRolls', {
-        scope: 'client',
-        config: false,
-        type: Boolean,
-        default: true
-    });
 
 
     // --------------------------------
@@ -449,17 +410,6 @@ export const registerSettings = function() {
 		type: String,
 	});
 
-    game.settings.register(MODULE.ID, 'showHealthMenubarTool', {
-        name: 'Show Health Tool in Menubar',
-        hint: 'Display a Health window icon beside the Dice Tray icon in the Blacksmith menubar.',
-        scope: 'user',
-        config: true,
-        type: Boolean,
-        default: true,
-        onChange: () => {
-            game.modules.get('coffee-pub-blacksmith')?.api?.renderMenubar?.(true);
-        }
-    });
 
 
     // --------------------------------
@@ -593,53 +543,8 @@ export const registerSettings = function() {
 	});
 
 
-    // -- Injured Threshold --
-    game.settings.register(MODULE.ID, 'healthThresholdInjured', {
-        name:'Injured Threshold',
-        hint: 'The percentage of health at which the health bar will turn a dark green.',
-        scope: "world",
-        config: true,
-        requiresReload: false,
-        type: Number,
-        default: 75,
-        range: {
-            min: 0,
-            max: 100,
-            step: 1,
-        },
-    });
 
-// -- Bloodied Threshold --
-    game.settings.register(MODULE.ID, 'healthThresholdBloodied', {
-        name:'Bloodied Threshold',
-        hint: 'The percentage of health at which the health bar will turn a dark orange.',
-        scope: "world",
-        config: true,
-        requiresReload: false,
-        type: Number,
-        default: 50,
-        range: {
-            min: 0,
-            max: 100,
-            step: 1,
-        },
-    });
 
-// -- Critical Threshold --
-    game.settings.register(MODULE.ID, 'healthThresholdCritical', {
-        name:'Critical Threshold',
-        hint: 'The percentage of health at which the health bar will turn a dark red.',
-        scope: "world",
-        config: true,
-        requiresReload: false,
-        type: Number,
-        default: 25,
-        range: {
-            min: 0,
-            max: 100,
-            step: 1,
-        },
-    });
 
 
 
@@ -999,32 +904,6 @@ export const registerSettings = function() {
         default: 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3'
     });
 
-    // Macros Panel
-    game.settings.register(MODULE.ID, 'userMacros', {
-        scope: 'user',
-        config: false,
-        type: Array,
-        default: []
-    }); 
-    // Macros Favorites
-    game.settings.register(MODULE.ID, 'userFavoriteMacros', {
-        scope: 'client',
-        config: false,
-        type: Array,
-        default: []
-    }); 
-
-
-
-    // ---------- SUBHEADING ----------
-    game.settings.register(MODULE.ID, "headingH2CampaignSettings", {
-        name: 'Campaign',
-        hint: 'The shared, journal-backed records a party accumulates — notes, codex entries, and quests — plus the campaign details that power AI-generated content and JSON imports.',
-        scope: "world",
-        config: true,
-        default: "",
-        type: String,
-    });
     // -------------------------------------
 
 

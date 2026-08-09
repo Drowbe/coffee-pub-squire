@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES } from './const.js';
-import { renderTemplate, getNativeElement } from './helpers.js';
+import { renderTemplate, getNativeElement, openXpWindow } from './helpers.js';
 
 export class CharacterSummaryPanel {
     constructor(actor) {
@@ -73,6 +73,21 @@ export class CharacterSummaryPanel {
             toggle.style.transform = collapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
             await game.settings.set(MODULE.ID, 'isCharacterSummaryPanelCollapsed', collapsed);
         });
+
+        // The XP bar is a summary of Blacksmith's XP window; clicking it opens
+        // the real thing rather than duplicating its controls here.
+        const xpBar = panel.querySelector('[data-action="open-xp"]');
+        if (xpBar) {
+            const openXp = async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                await openXpWindow();
+            };
+            xpBar.addEventListener('click', openXp);
+            xpBar.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') openXp(event);
+            });
+        }
 
         panel.querySelectorAll('.character-summary-ability[data-ability]').forEach((button) => {
             const rollTarget = button.querySelector('.character-summary-ability-roll');

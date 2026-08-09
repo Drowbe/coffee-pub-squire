@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-import { PanelManager, _updateHealthPanelFromSelection, _updateSelectionDisplay } from './manager-panel.js';
+import { PanelManager, _updateTrayFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings, migrateCompendiumAccessSetting } from './settings.js';
 import { getCampaignPanel } from './campaign-panels.js';
@@ -1979,44 +1979,8 @@ Hooks.once('ready', async function() {
     // Register module settings
     registerSettings();
 
-    try {
-        const {
-            registerDiceTrayWindow,
-            DiceTrayWindow,
-            DICE_TRAY_WINDOW_ID
-        } = await import('./window-dicetray.js');
-        registerDiceTrayWindow();
-        game.modules.get(MODULE.ID).api.DiceTrayWindow = DiceTrayWindow;
-        game.modules.get(MODULE.ID).api.DICE_TRAY_WINDOW_ID = DICE_TRAY_WINDOW_ID;
-    } catch (error) {
-        console.error('Coffee Pub Squire | Failed to register Dice Tray window:', error);
-    }
 
-    try {
-        const {
-            registerMacrosWindow,
-            MacrosWindow,
-            MACROS_WINDOW_ID
-        } = await import('./window-macros.js');
-        registerMacrosWindow();
-        game.modules.get(MODULE.ID).api.MacrosWindow = MacrosWindow;
-        game.modules.get(MODULE.ID).api.MACROS_WINDOW_ID = MACROS_WINDOW_ID;
-    } catch (error) {
-        console.error('Coffee Pub Squire | Failed to register Macros window:', error);
-    }
 
-    try {
-        const {
-            registerHealthWindow,
-            HealthWindow,
-            HEALTH_WINDOW_ID
-        } = await import('./window-health.js');
-        registerHealthWindow();
-        game.modules.get(MODULE.ID).api.HealthWindow = HealthWindow;
-        game.modules.get(MODULE.ID).api.HEALTH_WINDOW_ID = HEALTH_WINDOW_ID;
-    } catch (error) {
-        console.error('Coffee Pub Squire | Failed to register Health window:', error);
-    }
 
     try {
         const { registerNoteWindow, openNotesWindow, NoteWindow, NotesForm, NOTE_WINDOW_ID } = await import('./window-note.js');
@@ -2161,123 +2125,8 @@ Hooks.once('ready', async function() {
     }
 
     // Menubar tools (require tray / PanelManager — register only for non-excluded users)
-    try {
-        const diceOk = blacksmith.registerMenubarTool('squire-dice-tray', {
-            icon: "fa-solid fa-dice-d20",
-            name: "squire-dice-tray",
-            title: null,
-            tooltip: "Dice Tray",
-            onClick: () => blacksmith.openWindow(`${MODULE.ID}-dice-tray-window`),
-            zone: "left",
-            group: "general",
-            groupOrder: 999,
-            order: 200,
-            moduleId: MODULE.ID,
-            gmOnly: false,
-            leaderOnly: false,
-            visible: true,
-            toggleable: false,
-            active: false,
-            iconColor: null,
-            buttonNormalTint: null,
-            buttonSelectedTint: null
-        });
-        if (!diceOk) {
-            console.error('Coffee Pub Squire | Failed to register dice tray with Blacksmith menubar');
-        }
-    } catch (error) {
-        console.error('Coffee Pub Squire | Error registering dice tray with Blacksmith menubar:', error);
-    }
 
-    try {
-        const healthOk = blacksmith.registerMenubarTool('squire-health', {
-            icon: "fa-solid fa-heart-pulse",
-            name: "squire-health",
-            title: null,
-            tooltip: "Health",
-            onClick: () => blacksmith.openWindow(`${MODULE.ID}-health-window`),
-            zone: "left",
-            group: "general",
-            groupOrder: 999,
-            order: 201,
-            intents: ['party-health'],
-            moduleId: MODULE.ID,
-            gmOnly: false,
-            leaderOnly: false,
-            visible: () => game.settings.get(MODULE.ID, 'showHealthMenubarTool'),
-            toggleable: false,
-            active: false,
-            iconColor: null,
-            buttonNormalTint: null,
-            buttonSelectedTint: null
-        });
-        if (!healthOk) {
-            console.error('Coffee Pub Squire | Failed to register health with Blacksmith menubar');
-        }
-    } catch (error) {
-        console.error('Coffee Pub Squire | Error registering health with Blacksmith menubar:', error);
-    }
 
-    try {
-        const macrosOk = blacksmith.registerMenubarTool('squire-macros', {
-            icon: "fa-solid fa-code",
-            name: "squire-macros",
-            title: null,
-            tooltip: "Macro window (right-click for favorites)",
-            onClick: () => blacksmith.openWindow(`${MODULE.ID}-macros-window`),
-            // Favorited macros used to sit on the tray handle. They live here
-            // now: the handle is for the selected token's state, and a macro
-            // isn't token state. Passed as a function so the list is rebuilt on
-            // each open rather than frozen at registration.
-            contextMenuItems: () => {
-                const items = [{
-                    name: 'Show Macro Window',
-                    icon: 'fa-solid fa-code',
-                    onClick: () => blacksmith.openWindow(`${MODULE.ID}-macros-window`)
-                }];
-
-                const favoriteIds = game.settings.get(MODULE.ID, 'userFavoriteMacros') || [];
-                const favorites = favoriteIds
-                    .map(id => game.macros.get(id))
-                    .filter(Boolean);
-
-                if (favorites.length) {
-                    items.push({ separator: true });
-                    for (const macro of favorites) {
-                        items.push({
-                            name: macro.name,
-                            // Macros are identified by their artwork in Foundry's
-                            // own hotbar, so a column of identical play triangles
-                            // is the least useful thing this list could show.
-                            // Falls back to the triangle when a macro has no
-                            // image, which would otherwise leave an empty slot.
-                            icon: macro.img ? `<img src="${macro.img}" alt="">` : 'fa-solid fa-play',
-                            onClick: () => macro.execute()
-                        });
-                    }
-                }
-                return items;
-            },
-            zone: "left",
-            group: "general",
-            groupOrder: 999,
-            order: 202,
-            moduleId: MODULE.ID,
-            gmOnly: false,
-            leaderOnly: false,
-            visible: true,
-            toggleable: false,
-            active: false,
-            iconColor: null,
-            buttonNormalTint: null,
-            buttonSelectedTint: null
-        });
-        if (!macrosOk) {
-            console.error('Coffee Pub Squire | Failed to register macros with Blacksmith menubar');
-        }
-    } catch (error) {
-        console.error('Coffee Pub Squire | Error registering macros with Blacksmith menubar:', error);
-    }
 
     try {
         const openQuickNote = () => {
@@ -2452,7 +2301,7 @@ Hooks.once('ready', async function() {
             
             // Update health panel with current selection (works for both selection and deselection)
             if (PanelManager.instance) {
-                await _updateHealthPanelFromSelection();
+                await _updateTrayFromSelection();
             }
             }
     });

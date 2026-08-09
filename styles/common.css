@@ -187,13 +187,7 @@
 /* --- NORMALIZED PANEL TOGGLES --- */
 /* All panel toggle icons with IDs ending in "-toggle" */
 .squire-tray[data-position="left"] [data-panel] #gm-toggle,
-.squire-tray[data-position="left"] [data-panel] #macros-toggle,
-.squire-tray[data-position="left"] [data-panel] #dicetray-toggle,
-.squire-tray[data-position="left"] [data-panel] #health-toggle,
-.squire-popout[data-position="left"] [data-panel] #gm-toggle,
-.squire-popout[data-position="left"] [data-panel] #macros-toggle,
-.squire-popout[data-position="left"] [data-panel] #dicetray-toggle,
-.squire-popout[data-position="left"] [data-panel] #health-toggle {
+.squire-popout[data-position="left"] [data-panel] #gm-toggle {
     color: #9f9275;
     transition: transform 0.3s ease;
     cursor: pointer;

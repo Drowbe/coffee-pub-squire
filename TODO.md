@@ -19,7 +19,7 @@
 
 ## Module split
 
-Tracked in full in `documents/plan-module-split.md`. Phase 0 (campaign content out of the tray) is done; the next step is moving the dice tray, HP window, and macros to Blacksmith.
+Tracked in full in `documents/plan-module-split.md`. Phase 0 (campaign content out of the tray) and Phase 1 (dice tray, macros, health to Blacksmith) are done. Next: import/export to Blacksmith, then standing up Librarian.
 
 ## Cross-module work
 

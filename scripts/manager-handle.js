@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 // REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getCampaignContext } from './helpers.js';
+import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getCampaignContext, openHealthWindow, getHealthPercent } from './helpers.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
 // FoundryVTT function imports
@@ -68,10 +68,7 @@ export class HandleManager {
         const calculateHealthStatus = (actor) => {
             if (!actor || !actor.system?.attributes?.hp) return { status: 'dead', percentage: 0 };
             
-            const currentHP = actor.system.attributes.hp.value;
-            const maxHP = actor.system.attributes.hp.max;
-            const percentage = maxHP > 0 ? (currentHP / maxHP) * 100 : 0;
-            
+            const percentage = getHealthPercent(actor) ?? 0;
             const statusClass = getHealthbarStatusClass(actor.system.attributes.hp);
             const status = statusClass.replace('squire-tray-healthbar-', '');
             
@@ -362,9 +359,11 @@ export class HandleManager {
             
             event.preventDefault();
             event.stopPropagation();
-            if (PanelManager.instance?.healthPanel) {
-                await PanelManager.instance.healthPanel.openWindow();
-            }
+            // The handle shows this actor's health, which is not necessarily
+            // what is selected, so name the token rather than relying on
+            // selection.
+            const handleToken = this.actor?.getActiveTokens?.()?.[0] ?? null;
+            await openHealthWindow(handleToken ? [handleToken] : null);
         });
 
         // Handle health tray icon clicks (GM only) - delegated
@@ -372,9 +371,7 @@ export class HandleManager {
             if (!event.target.closest('#health-tray-button')) return;
             event.preventDefault();
             event.stopPropagation();
-            if (game.user.isGM && PanelManager.instance?.healthPanel) {
-                await PanelManager.instance.healthPanel.openWindow();
-            }
+            if (game.user.isGM) await openHealthWindow();
         });
 
         // Handle favorite item clicks
@@ -511,21 +508,11 @@ export class HandleManager {
                 return;
             }
 
-            if (PanelManager.instance?.healthPanel) {
-                // Control the token if it exists on canvas
-                const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
-                if (token) {
-                    token.control({releaseOthers: true});
-
-                    // Update PanelManager's current actor reference so the health panel shows the correct data
-                    PanelManager.currentActor = actor;
-
-                    // Update the health panel with the party member's token
-                    PanelManager.instance.healthPanel.updateTokens([token]);
-
-                    await PanelManager.instance.healthPanel.openWindow();
-                }
-            }
+            // Name the token instead of selecting it: clicking a party
+            // member's health bar shouldn't rearrange the user's canvas
+            // selection to say which one they meant.
+            const token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+            if (token) await openHealthWindow([token]);
         });
 
         // Handle character portrait click in the handle - delegated

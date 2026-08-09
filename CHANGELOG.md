@@ -33,6 +33,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Placing a pin for a hidden objective looked like a failure**: it is created hidden, correctly, but nothing appeared on the canvas and the toast said only "Objective pin placed." Both placement paths now say when a pin was created hidden and where to find it.
 
 
+### Removed
+- **The Dice Tray, Macros, and Health windows now live in Blacksmith.** They were hub tools sitting in a character module: none of them is about the selected token in the way the tray is, and two of them booted the entire tray just to read one actor. Blacksmith adopted the settings and macro data before Squire's copies were deleted, so nothing needs reconfiguring.
+  - Removed here: six scripts, three templates, five stylesheets, three menubar registrations, three window registrations, and roughly 2,000 lines of panel wiring inside `PanelManager` — including a 109-line block that reattached open windows across actor switches, which existed only because the windows belonged to a tray that rebuilt itself.
+  - Ten settings removed. Moved to Blacksmith: `diceTrayShowRecentRolls`, `userMacros`, `userFavoriteMacros`, `showHealthMenubarTool`, `healthAdjustmentAmount`, and the three health thresholds. Dead and simply deleted: `showMacrosPanel`, `showHealthPanel`, `showDiceTrayPanel`. `showHandleHealthBar` stays — it drives the handle, not the window.
+  - **`userFavoriteMacros` is client-scoped**, so it lives per browser. A user on a second machine sees an empty favourites list there, as they did before; no migration on either side can change that.
+
+### Changed
+- **These windows now follow canvas selection**, with `game.user.character` as the fallback, rather than the tray's current character. The visible difference: opening an actor sheet no longer re-points the Dice Tray. Squire's tray keeps its own behaviour — sheet opens still re-point *it*.
+- **Health colours come from Blacksmith.** The handle and party panel now ask `getHealthSeverityForHP()` and map the result to Squire's own `squire-tray-healthbar-*` classes, so the thresholds are configured in one place. Two consequences: a new `hurt` band (damaged but above Injured) maps to healthy so appearance is unchanged, and threshold boundaries are now inclusive — a creature sitting exactly on the bloodied threshold reads as bloodied, where the old comparison put it one band lighter.
+- **Squire's health bars open Blacksmith's Health window, showing the token you clicked.** The handle's health bar, a party member's bar, and the party panel's health button each pass their tokens to `openWindow('blacksmith-health', { tokens })` rather than selecting tokens on the canvas to make the point. Clicking a health bar no longer changes what you have selected. The set isn't sticky by design — the next canvas selection takes over, since the window resumes following the user.
+- **The Health window's conditions button works again**, by registering Squire's Status Effects window under the well-known `blacksmith-status-effects` id. Blacksmith won't name a Squire window, so the integration is opt-in from this side; without a claimant the button correctly stays hidden.
+- **Renamed `_updateHealthPanelFromSelection` to `_updateTrayFromSelection`.** Re-pointing the tray was always the part that mattered; the health update was the part that left.
+
 ## [13.5.3]
 
 ### Added

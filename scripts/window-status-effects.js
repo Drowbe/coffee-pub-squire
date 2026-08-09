@@ -412,13 +412,33 @@ export async function openStatusEffectsWindow(options = {}) {
     return windowInstance;
 }
 
+/**
+ * Well-known id Blacksmith's Health window looks for when deciding whether to
+ * render its per-row conditions button.
+ *
+ * Blacksmith will not name a Squire window, so the integration is inverted: any
+ * module may claim this id, and the button appears only if someone does.
+ * Registering it here restores the behaviour the Health window had while it
+ * lived in Squire.
+ */
+export const BLACKSMITH_STATUS_EFFECTS_WINDOW_ID = 'blacksmith-status-effects';
+
 export function registerStatusEffectsWindow() {
     const blacksmith = getBlacksmith();
     if (!blacksmith?.registerWindow) return false;
 
-    return blacksmith.registerWindow(STATUS_EFFECTS_WINDOW_ID, {
+    const descriptor = {
         open: openStatusEffectsWindow,
         title: 'Status Effects',
         moduleId: MODULE.ID
-    });
+    };
+
+    const own = blacksmith.registerWindow(STATUS_EFFECTS_WINDOW_ID, descriptor);
+    // Opting into the integration. Failure here is not fatal — another module
+    // may already hold the id, in which case its window services the button.
+    const shared = blacksmith.registerWindow(BLACKSMITH_STATUS_EFFECTS_WINDOW_ID, descriptor);
+    if (!shared) {
+        console.warn(`${MODULE.ID}: could not claim ${BLACKSMITH_STATUS_EFFECTS_WINDOW_ID}; the Health window's conditions button will use whichever module holds it.`);
+    }
+    return own;
 }
