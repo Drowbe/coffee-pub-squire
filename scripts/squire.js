@@ -343,6 +343,33 @@ Hooks.once('ready', async () => {
             }
         });
         
+        // The handle shows the current actor's conditions, so it has to redraw
+        // when they change — whoever changed them. This used to be three
+        // updateHandle() calls inside the Status Effects window, which meant a
+        // condition toggled from the token HUD, the character sheet, or any
+        // other module left the handle stale until something else rebuilt it.
+        //
+        // Reacting to the actor changing rather than to one particular window
+        // having changed it is both more correct and what lets that window move
+        // to Blacksmith without taking a Squire dependency with it.
+        const handleEffectRefresh = (effect) => {
+            const parent = effect?.parent;
+            if (!parent || parent.documentName !== 'Actor') return;
+            const current = PanelManager.currentActor;
+            if (!current || parent.uuid !== current.uuid) return;
+            void PanelManager.instance?.handleManager?.updateHandle?.();
+        };
+
+        for (const name of ['createActiveEffect', 'deleteActiveEffect', 'updateActiveEffect']) {
+            getBlacksmithHookManager().registerHook({
+                name,
+                description: "Coffee Pub Squire: Refresh the handle when the current actor's conditions change",
+                context: MODULE.ID,
+                priority: 2,
+                callback: handleEffectRefresh
+            });
+        }
+
         const characterTokenHookId = getBlacksmithHookManager().registerHook({
             name: "updateToken",
             description: "Coffee Pub Squire: Handle token updates for character panel",

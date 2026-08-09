@@ -67,6 +67,10 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
         this._effectHookIds = [];
         this._pendingConditionIds = new Set();
         this._pendingEffectIds = new Set();
+        // Public options, not implementation detail: both deep-link the window
+        // to a particular row's description. `descriptionEffectId` names an
+        // ActiveEffect already on the actor; `descriptionStatusId` names a
+        // configured status that may not be applied yet. Callers use either.
         this.descriptionEffectId = opts.descriptionEffectId || null;
         this.descriptionStatusId = opts.descriptionStatusId || null;
         this._actionRoot = null;
@@ -309,7 +313,6 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
         try {
             await this.actor.toggleStatusEffect(conditionId, { active: !isActive });
             ui.notifications.info(`${isActive ? 'Removed' : 'Added'} ${name} ${isActive ? 'from' : 'to'} ${this.actor.name}`);
-            await game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.handleManager?.updateHandle?.();
         } catch (error) {
             console.error('Coffee Pub Squire | Error managing status effect:', error);
             ui.notifications.error(`Could not ${isActive ? 'remove' : 'add'} ${name}`);
@@ -339,7 +342,6 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
                 await this.actor.toggleStatusEffect(statusId, { active: false });
             }
             ui.notifications.info(`Removed all conditions from ${this.actor.name}`);
-            await game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.handleManager?.updateHandle?.();
         } catch (error) {
             console.error('Coffee Pub Squire | Error removing all status effects:', error);
             ui.notifications.error(`Could not remove all conditions from ${this.actor.name}`);
@@ -367,7 +369,6 @@ export class StatusEffectsWindow extends BlacksmithWindowBaseV2 {
             if (this.descriptionEffectId === effectId) this.descriptionEffectId = null;
             await effect.delete();
             ui.notifications.info(`Removed ${name} from ${this.actor.name}`);
-            await game.modules.get(MODULE.ID)?.api?.PanelManager?.instance?.handleManager?.updateHandle?.();
         } catch (error) {
             console.error('Coffee Pub Squire | Error removing ActiveEffect:', error);
             ui.notifications.error(`Could not remove ${effect.name || effect.label || 'effect'}`);

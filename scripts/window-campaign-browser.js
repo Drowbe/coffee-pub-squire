@@ -64,6 +64,16 @@ const KINDS = {
 export class CampaignBrowserWindow extends BlacksmithWindowBaseV2 {
     static ROOT_CLASS = 'campaign-browser-window';
 
+    /**
+     * Live window per kind, assigned in the constructor.
+     *
+     * Not `foundry.applications.instances`: that map isn't written until the
+     * first render completes, several awaits into `_doRender`, so two rapid
+     * opens both miss it and both construct. Assigning here — synchronously,
+     * before anything is awaited — is the guard that actually holds.
+     */
+    static openByKind = new Map();
+
     static PARTS = {
         body: {
             template: `modules/${MODULE.ID}/templates/window-campaign-browser.hbs`
@@ -94,6 +104,7 @@ export class CampaignBrowserWindow extends BlacksmithWindowBaseV2 {
         super(opts);
         this.kind = kind;
         this.config = config;
+        CampaignBrowserWindow.openByKind.set(kind, this);
     }
 
     _viewContext() {
@@ -155,6 +166,11 @@ export class CampaignBrowserWindow extends BlacksmithWindowBaseV2 {
     }
 
     _onClose(options) {
+        // Identity-checked: a rebuild may already have replaced this entry, and
+        // deleting blindly would drop the live window's registration.
+        if (CampaignBrowserWindow.openByKind.get(this.kind) === this) {
+            CampaignBrowserWindow.openByKind.delete(this.kind);
+        }
         // Leave the registry pointing at nothing rather than at a dead element.
         // A caller that finds no panel skips quietly, which is the correct
         // behaviour for "the browser isn't open".
@@ -166,17 +182,14 @@ export class CampaignBrowserWindow extends BlacksmithWindowBaseV2 {
 /**
  * Open (or focus) the browser for a kind.
  *
- * The live instance comes from `foundry.applications.instances`, which Foundry
- * keys by application id and maintains itself — the same id these windows are
- * constructed with. A module-level Map of open windows would be a second source
- * of truth for the same fact, and the two only stay in step for as long as every
- * close path remembers to clear it.
+ * Reuses the live instance when there is one, so a second launch focuses
+ * rather than duplicating.
  */
 export async function openCampaignBrowser(kind) {
     const config = KINDS[kind];
     if (!config) return null;
 
-    const existing = foundry.applications.instances.get(config.id);
+    const existing = CampaignBrowserWindow.openByKind.get(kind);
     if (existing) {
         (existing.bringToFront ?? existing.bringToTop)?.call(existing);
         if (existing.minimized) existing.maximize?.();
