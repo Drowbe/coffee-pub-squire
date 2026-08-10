@@ -60,6 +60,21 @@ stylesheet the whole time, and Librarian had no journal-update routing at all �
 quests. The quest port missed it because the quest window refreshes its own panel after saving,
 so the round-trip everyone tested worked while every other edit path left the browser stale.
 
+**Shipped.** Squire **13.7.0** and Librarian **13.0.1**, in that order — Librarian first, because
+Squire 13.7.0 drops the `documentTypes` declaration and a world updating without somewhere for
+its codex pages to go would fail validation on every one of them. Production migrated cleanly:
+Librarian installed, macros run, server restarted, and **quests and codex both verified working
+with Squire disabled** before Squire was updated.
+
+The sequence that worked, three times now, and is the one to reuse for Notes:
+
+> receiving module ships and declares first → migrate with both enabled → **verify with the
+> sending module disabled** → only then the sender deletes.
+
+The third step is the one that earns its keep. It has caught something every time: a missing
+`registerHelpers`, a stylesheet borrowed across a module boundary, and journal routing that was
+never ported at all.
+
 **Next:** import/export to Blacksmith (unblocks the note in `helpers.js`), then Notes to
 Blacksmith. Squire is character, party and notes.
 
