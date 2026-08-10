@@ -200,23 +200,23 @@ Hooks.once('ready', async () => {
             }
         });
         
-        // Party reputation is Blacksmith's, stored per scene in its world setting
-        // `blacksmithPartyData`. Blacksmith has no onChange and fires no hook —
-        // it refreshes its own menubar bar inline in its click handlers — so a
-        // change made there would leave Squire's readout stale, and vice versa.
+        // Party reputation is Blacksmith's. It broadcasts changes as
+        // `blacksmith.partyReputationChanged`, which replaced Squire watching
+        // their setting key directly.
         //
-        // `updateSetting` is a core Foundry hook that fires on every client for
-        // any world setting write, which makes it the one reliable signal both
-        // modules already emit without either knowing about the other.
-        const partyDataSettingHookId = getBlacksmithHookManager().registerHook({
-            name: 'updateSetting',
-            description: 'Coffee Pub Squire: Refresh the party panel when Blacksmith party data changes',
+        // The payload is deliberately ignored. Blacksmith emits it from Foundry's
+        // `updateSetting` so it lands on every client, but its `sceneId` is always
+        // the ACTIVE scene — change reputation for a scene nobody is viewing and
+        // the payload still describes the active one. The tray only ever shows the
+        // active scene's standing, so re-reading through the panel is both simpler
+        // and correct, where trusting the payload would be correct only by luck.
+        const reputationHookId = getBlacksmithHookManager().registerHook({
+            name: 'blacksmith.partyReputationChanged',
+            description: 'Coffee Pub Squire: Refresh the party panel when reputation changes',
             context: MODULE.ID,
             priority: 2,
-            callback: async (setting) => {
-                if (setting?.key !== 'coffee-pub-blacksmith.blacksmithPartyData') return;
-                const panelManager = getPanelManager();
-                const partyPanel = panelManager?.instance?.partyPanel;
+            callback: async () => {
+                const partyPanel = getPanelManager()?.instance?.partyPanel;
                 if (partyPanel?.element) await partyPanel.render(partyPanel.element);
             }
         });

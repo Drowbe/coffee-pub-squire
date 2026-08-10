@@ -27,6 +27,21 @@ function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
 }
 
+/**
+ * Whether to offer the Deploy / Clear Party buttons.
+ *
+ * GM-only, and only when Blacksmith actually exposes them (13.16.1+). Blacksmith
+ * keeps the GM guard inside the functions themselves and returns an empty result
+ * for anyone else, so this is about not rendering a control we cannot honour --
+ * not a second guard that could disagree with theirs.
+ */
+function canDeployParty() {
+    if (!game.user.isGM) return false;
+    const blacksmith = getBlacksmith();
+    return typeof blacksmith?.deployParty === 'function'
+        && typeof blacksmith?.clearPartyFromCanvas === 'function';
+}
+
 /** The shared click sound for the party toolbar buttons. */
 function playToolbarSound() {
     const blacksmith = getBlacksmith();
@@ -346,6 +361,7 @@ export class PanelManager {
             actor: this.actor,
             isGM: game.user.isGM,
             canStartVote: isGMOrPartyLeader(),
+            canDeployParty: canDeployParty(),
             ownedCharacters: PanelManager.getOwnedCharacters(this.actor),
             effects: this.actor?.effects?.map(e => ({
                 name: e.name,
@@ -413,6 +429,7 @@ export class PanelManager {
             actor: this.actor,
             isGM: game.user.isGM,
             canStartVote: isGMOrPartyLeader(),
+            canDeployParty: canDeployParty(),
             ownedCharacters: PanelManager.getOwnedCharacters(this.actor),
             effects: this.actor.effects?.map(e => ({
                 name: e.name,
@@ -684,6 +701,41 @@ export class PanelManager {
                 }
                 await blacksmith.openWindow('blacksmith-vote');
                 playToolbarSound();
+            });
+        }
+
+        // Deploy / Clear Party — Blacksmith's, exposed on its api as of 13.16.1.
+        // Both keep their GM guard inside utility-party.js and return an empty
+        // result rather than throwing, so there is no second guard here to drift
+        // out of step with theirs; the buttons are simply not rendered for
+        // non-GMs or against a Blacksmith too old to have them.
+        const deployPartyButton = nativeTray.querySelector('[data-action="deploy-party"]');
+        if (deployPartyButton) {
+            // Clone to remove existing listeners
+            const newButton = deployPartyButton.cloneNode(true);
+            deployPartyButton.parentNode?.replaceChild(newButton, deployPartyButton);
+
+            newButton.addEventListener('click', async () => {
+                const blacksmith = getBlacksmith();
+                if (typeof blacksmith?.deployParty !== 'function') return;
+                const deployed = await blacksmith.deployParty();
+                // Returns Token[]; an empty array means refused or nothing to place,
+                // and Blacksmith has already said why.
+                if (Array.isArray(deployed) && deployed.length) playToolbarSound();
+            });
+        }
+
+        const clearPartyButton = nativeTray.querySelector('[data-action="clear-party"]');
+        if (clearPartyButton) {
+            // Clone to remove existing listeners
+            const newButton = clearPartyButton.cloneNode(true);
+            clearPartyButton.parentNode?.replaceChild(newButton, clearPartyButton);
+
+            newButton.addEventListener('click', async () => {
+                const blacksmith = getBlacksmith();
+                if (typeof blacksmith?.clearPartyFromCanvas !== 'function') return;
+                const removed = await blacksmith.clearPartyFromCanvas();
+                if (Number(removed) > 0) playToolbarSound();
             });
         }
 

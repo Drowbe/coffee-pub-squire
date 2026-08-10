@@ -86,6 +86,16 @@
                             <i class="fa-solid fa-check-to-slot"></i>
                         </button>
                     {{/if}}
+                    {{#if canDeployParty}}
+                        <button class="tray-tools-icon" data-action="deploy-party"
+                                data-tooltip="Deploy all party members to the canvas" aria-label="Deploy Party">
+                            <i class="fa-solid fa-map-location-dot"></i>
+                        </button>
+                        <button class="tray-tools-icon" data-action="clear-party"
+                                data-tooltip="Remove all party member tokens from the canvas" aria-label="Clear Party">
+                            <i class="fa-solid fa-users-slash"></i>
+                        </button>
+                    {{/if}}
                 </div>
             </div>
 
