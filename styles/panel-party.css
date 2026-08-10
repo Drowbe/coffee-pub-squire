@@ -430,3 +430,159 @@
 
 
 
+
+/* ==========================================================================
+   PARTY REPUTATION
+
+   Blacksmith owns the value; this is a readout with adjustment controls.
+   Reputation is stored per scene, so the scene name is shown as part of the
+   reading rather than as decoration — a number with no "where" invites the
+   assumption that it is campaign-wide.
+   ========================================================================== */
+
+.squire-panel-host[data-position="left"] .party-reputation-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 8px;
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-title {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-where {
+    font-size: 0.75em;
+    font-style: italic;
+    color: rgba(205, 204, 179, 0.75);
+    /* A long scene name truncates rather than pushing the title around. */
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-where i {
+    margin-right: 4px;
+    opacity: 0.7;
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-body {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Readout takes the slack; the button clusters keep their intrinsic width. */
+.squire-panel-host[data-position="left"] .party-reputation-readout {
+    flex: 1;
+    min-width: 0;
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-readout.clickable {
+    cursor: pointer;
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-controls {
+    display: flex;
+    gap: 3px;
+    flex: 0 0 auto;
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-adjust {
+    width: 28px;
+    height: 24px;
+    padding: 0;
+    background: rgba(92, 84, 66, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.75em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+    outline: none;
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-adjust:hover {
+    background: rgba(194, 86, 61, 1.0);
+    border-color: rgba(194, 86, 61, 1.0);
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-bar {
+    position: relative;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-fill {
+    height: 100%;
+    transition: width 0.25s ease, background-color 0.25s ease;
+    background: rgba(160, 160, 160, 0.7);
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-bar[data-tone="positive"] .party-reputation-fill {
+    background: rgba(67, 163, 77, 0.85);
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-bar[data-tone="negative"] .party-reputation-fill {
+    background: rgba(194, 86, 61, 0.9);
+}
+
+/* Zero is the meaningful centre of a -100..+100 scale, so it gets a tick.
+   Without it a half-full bar reads as "half good" rather than "neutral". */
+.squire-panel-host[data-position="left"] .party-reputation-midpoint {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-scale {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-label {
+    font-size: 0.8em;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.9);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-value {
+    font-size: 0.8em;
+    font-variant-numeric: tabular-nums;
+    color: rgba(205, 204, 179, 0.9);
+    flex: 0 0 auto;
+}
+
+.squire-panel-host[data-position="left"] .party-reputation-value[data-tone="positive"] { color: rgba(67, 163, 77, 0.95); }
+.squire-panel-host[data-position="left"] .party-reputation-value[data-tone="negative"] { color: rgba(255, 74, 47, 0.95); }
+
+/* Party members with no recorded combats still appear on the MVP board,
+   dimmed, so the roster is complete and the absence is legible. */
+.squire-panel-host[data-position="left"] .mvp-table__row--unranked {
+    opacity: 0.55;
+}

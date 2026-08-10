@@ -1,5 +1,29 @@
 import { MODULE } from './const.js';
 
+/**
+ * True when this user is the GM or the current party leader.
+ *
+ * Blacksmith gates its own Vote tool on `game.user.isGM || isCurrentUserPartyLeader()`,
+ * but does not export the latter, so this reads the `partyLeader` setting it is
+ * derived from — `{ actorId, userId }`, leader if the user matches or owns the actor.
+ *
+ * Reading another module's setting is a liberty, so it fails OPEN: if the setting
+ * is missing or a different shape, the caller shows its control and Blacksmith's
+ * own check refuses the action with a clear message. A hidden button that should
+ * be there is worse than a visible one that explains itself.
+ */
+export function isGMOrPartyLeader() {
+    if (game.user.isGM) return true;
+    try {
+        const leader = game.settings.get('coffee-pub-blacksmith', 'partyLeader');
+        if (!leader?.actorId) return false;
+        if (leader.userId === game.user.id) return true;
+        return !!game.actors.get(leader.actorId)?.isOwner;
+    } catch (error) {
+        return true;
+    }
+}
+
 // Helper function to safely get Blacksmith API
 export function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;

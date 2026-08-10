@@ -18,6 +18,49 @@
     </div>
 </div>
 
+{{#if reputation}}
+<!-- PARTY REPUTATION -->
+
+<div class="party-reputation-card">
+    <div class="party-reputation-header">
+        <span class="party-reputation-title">Reputation</span>
+        {{!-- The "where": reputation is stored per scene, so the value is
+              meaningless without saying which place it describes. --}}
+        <span class="party-reputation-where" data-tooltip="Reputation is tracked per scene">
+            <i class="fa-solid fa-location-dot"></i>{{reputation.sceneName}}
+        </span>
+    </div>
+
+    <div class="party-reputation-body">
+        {{#if reputation.canEdit}}
+        <div class="party-reputation-controls">
+            <button class="party-reputation-adjust" data-delta="-5" data-tooltip="Reputation -5" aria-label="Reputation minus 5">-5</button>
+            <button class="party-reputation-adjust" data-delta="-1" data-tooltip="Reputation -1" aria-label="Reputation minus 1">-1</button>
+        </div>
+        {{/if}}
+
+        <div class="party-reputation-readout {{#if reputation.canEdit}}clickable{{/if}}"
+             data-tooltip="{{reputation.description}}{{#if reputation.canEdit}}&#10;&#10;Click to post the current standing to chat.{{/if}}">
+            <div class="party-reputation-bar" data-tone="{{reputation.tone}}">
+                <div class="party-reputation-fill" style="width: {{reputation.percent}}%"></div>
+                <div class="party-reputation-midpoint"></div>
+            </div>
+            <div class="party-reputation-scale">
+                <span class="party-reputation-label">{{reputation.label}}</span>
+                <span class="party-reputation-value" data-tone="{{reputation.tone}}">{{reputation.value}}</span>
+            </div>
+        </div>
+
+        {{#if reputation.canEdit}}
+        <div class="party-reputation-controls">
+            <button class="party-reputation-adjust" data-delta="1" data-tooltip="Reputation +1" aria-label="Reputation plus 1">+1</button>
+            <button class="party-reputation-adjust" data-delta="5" data-tooltip="Reputation +5" aria-label="Reputation plus 5">+5</button>
+        </div>
+        {{/if}}
+    </div>
+</div>
+{{/if}}
+
 <!-- PARTY CHARACTERS -->
 
 {{#each tokens as |token|}}

@@ -51,17 +51,23 @@ export class PartyStatsPanel {
             try {
                 const stats = await playerApi.getStats(actor.id);
                 const mvp = stats?.lifetime?.mvp;
-                if (!mvp || (mvp.combats ?? 0) <= 0) return null;
+
+                // Every party member appears, including those who have not fought
+                // yet. Dropping them made the board answer "who has scored?" when
+                // the question it is asked is "how is the party doing?" — and a
+                // new character silently missing from the roster reads as a bug.
+                const combats = Number(mvp?.combats ?? 0);
 
                 return {
                     actorId: actor.id,
                     rank: 0,
                     name: actor.prototypeToken?.name ?? actor.name,
                     img: actor.img,
-                    totalScore: Number(mvp.totalScore ?? 0),
-                    combats: Number(mvp.combats ?? 0),
-                    averageScore: Number(mvp.averageScore ?? 0),
-                    bestScore: Number(mvp.highScore ?? 0)
+                    totalScore: Number(mvp?.totalScore ?? 0),
+                    combats,
+                    averageScore: Number(mvp?.averageScore ?? 0),
+                    bestScore: Number(mvp?.highScore ?? 0),
+                    unranked: combats <= 0
                 };
             } catch (error) {
                 getBlacksmith()?.utils?.postConsoleAndNotification(
@@ -77,12 +83,21 @@ export class PartyStatsPanel {
         }));
         payload.leaderboard.push(...entries.filter(Boolean));
 
-        payload.leaderboard.sort((a, b) => b.totalScore - a.totalScore);
+        // Unfought members sort last regardless of score, then by name, so the
+        // ranked part of the board is not interrupted by a run of zeroes.
+        payload.leaderboard.sort((a, b) => {
+            if (a.unranked !== b.unranked) return a.unranked ? 1 : -1;
+            if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+            return a.name.localeCompare(b.name);
+        });
         payload.leaderboard.forEach((entry, index) => {
-            entry.rank = index + 1;
-            entry.totalScoreDisplay = entry.totalScore.toFixed(1);
-            entry.averageScoreDisplay = entry.averageScore.toFixed(2);
-            entry.bestScoreDisplay = entry.bestScore.toFixed(1);
+            // Rank numbers only mean something once there is a score behind them;
+            // an unfought member gets a dash rather than a place it did not earn.
+            entry.rank = entry.unranked ? '—' : index + 1;
+            entry.totalScoreDisplay = entry.unranked ? '—' : entry.totalScore.toFixed(1);
+            entry.averageScoreDisplay = entry.unranked ? '—' : entry.averageScore.toFixed(2);
+            entry.bestScoreDisplay = entry.unranked ? '—' : entry.bestScore.toFixed(1);
+            entry.combatsDisplay = entry.unranked ? '—' : entry.combats;
         });
 
         return payload;

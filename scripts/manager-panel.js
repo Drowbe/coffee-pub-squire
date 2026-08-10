@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
-import { getTransferBlocker, renderTemplate, getCampaignContext, resolveDroppedItem, showSquireToast, getActorDisplayName } from './helpers.js';
+import { getTransferBlocker, renderTemplate, getCampaignContext, resolveDroppedItem, showSquireToast, getActorDisplayName, isGMOrPartyLeader } from './helpers.js';
 import { CharacterPanel } from './panel-character.js';
 import { GmPanel } from './panel-gm.js';
 import { SpellsPanel } from './panel-spells.js';
@@ -25,6 +25,15 @@ export let _selectionCount = 0;
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
+}
+
+/** The shared click sound for the party toolbar buttons. */
+function playToolbarSound() {
+    const blacksmith = getBlacksmith();
+    if (!blacksmith) return;
+    const sound = game.settings.get(MODULE.ID, 'toolbarButtonSound')
+        || 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3';
+    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
 }
 
 export class PanelManager {
@@ -336,6 +345,7 @@ export class PanelManager {
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, {
             actor: this.actor,
             isGM: game.user.isGM,
+            canStartVote: isGMOrPartyLeader(),
             ownedCharacters: PanelManager.getOwnedCharacters(this.actor),
             effects: this.actor?.effects?.map(e => ({
                 name: e.name,
@@ -402,6 +412,7 @@ export class PanelManager {
         const trayHtml = await renderTemplate(TEMPLATES.TRAY, {
             actor: this.actor,
             isGM: game.user.isGM,
+            canStartVote: isGMOrPartyLeader(),
             ownedCharacters: PanelManager.getOwnedCharacters(this.actor),
             effects: this.actor.effects?.map(e => ({
                 name: e.name,
@@ -631,68 +642,53 @@ export class PanelManager {
         
         // GM-only buttons
         if (game.user.isGM) {
-            // Award Button
-            const awardButton = nativeTray.querySelector('.tray-gm-button[data-action="award"]');
-            if (awardButton) {
+            // Experience — Blacksmith's XP distribution window.
+            //
+            // This used to be an "Award" button that reflected over four possible
+            // paths to the dnd5e Award application (`game.dnd5e.applications.Award`
+            // and three fallbacks) and guessed at the party from controlled tokens.
+            // Blacksmith owns XP now and registers the window for any module to open,
+            // so this asks for it by id and lets Blacksmith decide what it awards to.
+            const experienceButton = nativeTray.querySelector('[data-action="experience"]');
+            if (experienceButton) {
                 // Clone to remove existing listeners
-                const newButton = awardButton.cloneNode(true);
-                awardButton.parentNode?.replaceChild(newButton, awardButton);
-                
-                newButton.addEventListener('click', async (event) => {
-                // Check if DnD5e module is available
-                if (!game.dnd5e) {
-                    ui.notifications.error("The DnD5e system is required for the Award functionality.");
-                    return;
-                }
-                
-                try {
-                    // The path might be different between versions, try multiple possibilities
-                    const AwardClass = game.dnd5e.applications?.Award || 
-                                      game.dnd5e.documents?.Award ||
-                                      game.dnd5e.apps?.Award ||
-                                      game.dnd5e.api?.Award;
-                    
-                    if (!AwardClass) {
-                        ui.notifications.warn("Award functionality not found in this version of DnD5e. Please check system version.");
+                const newButton = experienceButton.cloneNode(true);
+                experienceButton.parentNode?.replaceChild(newButton, experienceButton);
+
+                newButton.addEventListener('click', async () => {
+                    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                    if (typeof blacksmith?.openWindow !== 'function') {
+                        ui.notifications.warn('The Experience window is not available.');
                         return;
                     }
-                    
-                    const tokens = canvas.tokens.controlled;
-                    const actors = tokens.map(t => t.actor).filter(a => a);
-                    
-                    // If no tokens are selected, try to use all party members
-                    if (!actors.length) {
-                        const partyActors = canvas.tokens.placeables
-                            .filter(t => t.actor?.hasPlayerOwner)
-                            .map(t => t.actor);
-                        
-                        if (partyActors.length) {
-                            // Create and render the Award dialog
-                            new AwardClass(partyActors).render(true);
-                        } else {
-                            ui.notifications.warn("Please select at least one token or have party members on the canvas.");
-                        }
-                    } else {
-                        // Create and render the Award dialog with selected tokens
-                        new AwardClass(actors).render(true);
-                    }
-                } catch (error) {
-                    console.error('Error launching Award dialog:', error);
-                    ui.notifications.error("Error launching Award dialog. See console for details.");
-                }
-                
-                // Play sound
-                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                if (blacksmith) {
-                    const sound = game.settings.get(MODULE.ID, 'toolbarButtonSound') || 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3';
-                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                }
-            });
+                    await blacksmith.openWindow('blacksmith-xp');
+                    playToolbarSound();
+                });
             }
         }
-            
+
+        // Vote — Blacksmith's vote window. Shown to the GM and the party leader;
+        // Blacksmith re-checks and refuses anyone else, so a stale leader setting
+        // costs a warning rather than an unexpected vote.
+        const voteButton = nativeTray.querySelector('[data-action="vote"]');
+        if (voteButton) {
+            // Clone to remove existing listeners
+            const newButton = voteButton.cloneNode(true);
+            voteButton.parentNode?.replaceChild(newButton, voteButton);
+
+            newButton.addEventListener('click', async () => {
+                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+                if (typeof blacksmith?.openWindow !== 'function') {
+                    ui.notifications.warn('The Vote window is not available.');
+                    return;
+                }
+                await blacksmith.openWindow('blacksmith-vote');
+                playToolbarSound();
+            });
+        }
+
         // Select Party Button - available to all users
-        const selectPartyButton = nativeTray.querySelector('.tray-tools-button[data-action="select-party"]');
+        const selectPartyButton = nativeTray.querySelector('[data-action="select-party"]');
         if (selectPartyButton) {
             // Clone to remove existing listeners
             const newButton = selectPartyButton.cloneNode(true);
@@ -725,12 +721,7 @@ export class PanelManager {
             // Select all appropriate party tokens
             tokensToSelect.forEach(token => token.control({releaseOthers: false}));
             
-            // Play sound
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            if (blacksmith) {
-                const sound = game.settings.get(MODULE.ID, 'toolbarButtonSound') || 'modules/coffee-pub-blacksmith/sounds/interface-button-09.mp3';
-                blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-            }
+            playToolbarSound();
             });
         }
 

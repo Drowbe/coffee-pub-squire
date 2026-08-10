@@ -22,9 +22,9 @@
                 </div>
 
                 {{#each leaderboard}}
-                <div class="mvp-table__row mvp-table__row--link" role="row"
+                <div class="mvp-table__row mvp-table__row--link{{#if unranked}} mvp-table__row--unranked{{/if}}" role="row"
                      data-action="open-player-stats" data-actor-id="{{actorId}}"
-                     tabindex="0" data-tooltip="Open {{name}}'s statistics">
+                     tabindex="0" data-tooltip="{{#if unranked}}{{name}} has no recorded combats yet{{else}}Open {{name}}'s statistics{{/if}}">
                     <span class="mvp-table__cell mvp-table__cell--rank" role="cell">{{rank}}</span>
                     <span class="mvp-table__cell mvp-table__cell--player" role="cell">
                         <img class="mvp-player__portrait" src="{{img}}" alt="{{name}}" data-tooltip="{{name}}">
@@ -33,14 +33,14 @@
                     <span class="mvp-table__cell mvp-table__cell--score" role="cell">{{totalScoreDisplay}}</span>
                     <span class="mvp-table__cell mvp-table__cell--average" role="cell">{{averageScoreDisplay}}</span>
                     <span class="mvp-table__cell mvp-table__cell--best" role="cell">{{bestScoreDisplay}}</span>
-                    <span class="mvp-table__cell mvp-table__cell--combats" role="cell">{{combats}}</span>
+                    <span class="mvp-table__cell mvp-table__cell--combats" role="cell">{{combatsDisplay}}</span>
                 </div>
                 {{/each}}
             </div>
             {{else}}
             <div class="mvp-panel__empty">
                 <i class="fa-solid fa-moon"></i>
-                <span>No MVP data. Complete a combat to start the leaderboard.</span>
+                <span>No party members found. Add player-owned characters to the scene.</span>
             </div>
             {{/if}}
         {{else}}

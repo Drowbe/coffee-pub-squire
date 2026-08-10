@@ -152,6 +152,14 @@ Hooks.once('ready', async () => {
                 if (pm?.instance?.characterPanel && pm.element) {
                     await pm.instance.characterPanel.render(pm.element);
                 }
+
+                // Party reputation is per scene, so the readout describes the
+                // wrong place until the party panel re-renders. Only when it has
+                // rendered at least once — the party tab is lazy.
+                const partyPanel = pm?.instance?.partyPanel;
+                if (partyPanel?._hasRenderedOnce && partyPanel.element) {
+                    await partyPanel.render(partyPanel.element);
+                }
             }
         });
 
@@ -192,6 +200,27 @@ Hooks.once('ready', async () => {
             }
         });
         
+        // Party reputation is Blacksmith's, stored per scene in its world setting
+        // `blacksmithPartyData`. Blacksmith has no onChange and fires no hook —
+        // it refreshes its own menubar bar inline in its click handlers — so a
+        // change made there would leave Squire's readout stale, and vice versa.
+        //
+        // `updateSetting` is a core Foundry hook that fires on every client for
+        // any world setting write, which makes it the one reliable signal both
+        // modules already emit without either knowing about the other.
+        const partyDataSettingHookId = getBlacksmithHookManager().registerHook({
+            name: 'updateSetting',
+            description: 'Coffee Pub Squire: Refresh the party panel when Blacksmith party data changes',
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (setting) => {
+                if (setting?.key !== 'coffee-pub-blacksmith.blacksmithPartyData') return;
+                const panelManager = getPanelManager();
+                const partyPanel = panelManager?.instance?.partyPanel;
+                if (partyPanel?.element) await partyPanel.render(partyPanel.element);
+            }
+        });
+
         // The handle shows the current actor's conditions, so it has to redraw
         // when they change — whoever changed them. This used to be three
         // updateHandle() calls inside the Status Effects window, which meant a

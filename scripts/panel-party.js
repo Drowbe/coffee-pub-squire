@@ -87,8 +87,11 @@ export class PartyPanel {
                 isOwner: token.actor.isOwner
             }));
 
+        const reputation = await this._getReputationData();
+
         const html = await renderTemplate(TEMPLATES.PANEL_PARTY, { 
             tokens,
+            reputation,
             nonPlayerTokens,
             controlledTokenIds,
             isGM: game.user.isGM,
@@ -103,6 +106,65 @@ export class PartyPanel {
         partyContainer.innerHTML = html;
 
         this.activateListeners(partyContainer);
+    }
+
+    /**
+     * Party reputation for the CURRENT SCENE, from Blacksmith.
+     *
+     * Reputation is per-scene by design — `blacksmithPartyData.scenes[id].reputation` —
+     * so the scene name is part of the reading, not decoration. Without it a GM
+     * looking at a number has no way to know which place it describes, and would
+     * reasonably assume it was the campaign's.
+     *
+     * Returns null when Blacksmith is absent or no scene is active, and the
+     * template omits the whole block rather than showing a meaningless zero.
+     */
+    async _getReputationData() {
+        const blacksmith = getBlacksmith();
+        const scene = canvas?.scene;
+        if (!scene?.id || typeof blacksmith?.getPartyReputation !== 'function') return null;
+
+        try {
+            const value = blacksmith.getPartyReputation(scene);
+            const entry = typeof blacksmith.getReputationScaleEntry === 'function'
+                ? await blacksmith.getReputationScaleEntry(value)
+                : null;
+
+            return {
+                sceneName: scene.name,
+                value,
+                label: entry?.label ?? 'Unknown',
+                description: entry?.description ?? '',
+                // -100..100 mapped to 0..100 so the bar can be a plain width %.
+                percent: Math.round(((value + 100) / 200) * 100),
+                tone: value > 0 ? 'positive' : (value < 0 ? 'negative' : 'neutral'),
+                // setPartyReputation is GM-only in Blacksmith and returns false for
+                // anyone else, so the controls are GM-only here too rather than
+                // offering buttons that silently do nothing.
+                canEdit: game.user.isGM
+            };
+        } catch (error) {
+            console.error('Coffee Pub Squire | Error reading party reputation:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Nudge reputation by a delta. Blacksmith clamps to -100..100 and owns the write;
+     * this re-renders so the band label and bar follow the new value.
+     */
+    async _adjustReputation(delta) {
+        const blacksmith = getBlacksmith();
+        const scene = canvas?.scene;
+        if (!scene?.id || typeof blacksmith?.setPartyReputation !== 'function') return;
+
+        const current = blacksmith.getPartyReputation(scene);
+        const ok = await blacksmith.setPartyReputation(current + delta, scene);
+        if (!ok) {
+            showSquireToast('Only the GM can change party reputation.', 'warning');
+            return;
+        }
+        if (this.element) await this.render(this.element);
     }
 
     activateListeners(html) {
@@ -189,6 +251,27 @@ export class PartyPanel {
         });
 
         // Handle party overview health bar clicks
+        // Reputation adjustment buttons (GM only; absent from the DOM otherwise)
+        nativeHtml.querySelectorAll('.party-reputation-adjust').forEach(button => {
+            button.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const delta = Number(event.currentTarget.dataset.delta);
+                if (!Number.isFinite(delta)) return;
+                await this._adjustReputation(delta);
+            });
+        });
+
+        // Clicking the reputation readout posts the current standing to chat.
+        const reputationCard = nativeHtml.querySelector('.party-reputation-card .party-reputation-readout');
+        if (reputationCard) {
+            reputationCard.addEventListener('click', async () => {
+                const blacksmith = getBlacksmith();
+                if (typeof blacksmith?.postCurrentReputationCard !== 'function') return;
+                await blacksmith.postCurrentReputationCard(blacksmith);
+            });
+        }
+
         const partyHealthCard = nativeHtml.querySelector('.party-health-card');
         if (partyHealthCard) {
             // Clone to remove existing listeners

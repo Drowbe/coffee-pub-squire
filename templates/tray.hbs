@@ -66,18 +66,27 @@
             <!-- Party Toolbar -->
 
             <div class="tray-tools-toolbar {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
+                {{!-- One labelled primary action, then a right-aligned icon rail.
+                      Only the primary carries a word, so the row cannot wrap
+                      however many tools end up on it. --}}
                 {{#if isGM}}
-                    <button class="tray-gm-button" data-action="award">
-                        <i class="fa-solid fa-medal"></i> Award
-                    </button>
-                    <button class="tray-tools-button" data-action="select-party">
-                        <i class="fa-solid fa-users-viewfinder"></i> Select Party
-                    </button>
-                {{else}}
-                    <button class="tray-tools-button" data-action="select-party">
-                        <i class="fa-solid fa-users-viewfinder"></i> Select Owned
+                    <button class="tray-tools-primary" data-action="experience">
+                        <i class="fa-solid fa-medal"></i><span>Experience</span>
                     </button>
                 {{/if}}
+                <div class="tray-tools-rail">
+                    <button class="tray-tools-icon" data-action="select-party"
+                            data-tooltip="{{#if isGM}}Select the whole party{{else}}Select the characters you own{{/if}}"
+                            aria-label="{{#if isGM}}Select Party{{else}}Select Owned{{/if}}">
+                        <i class="fa-solid fa-users-viewfinder"></i>
+                    </button>
+                    {{#if canStartVote}}
+                        <button class="tray-tools-icon" data-action="vote"
+                                data-tooltip="Start a vote" aria-label="Vote">
+                            <i class="fa-solid fa-check-to-slot"></i>
+                        </button>
+                    {{/if}}
+                </div>
             </div>
 
             <!-- ********** PLAYER TAB ********** -->

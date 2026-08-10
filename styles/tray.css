@@ -1320,43 +1320,89 @@
 
 
 
-/* Tray Tools Toolbar (for all users) */
+/* Tray Tools Toolbar (for all users)
+   One labelled primary action on the left, a right-aligned rail of icon-only
+   tools. The old rule put `flex: 1` on every button, so three buttons split the
+   width three ways and "Select Party" wrapped to two lines; nothing here grows,
+   and the only button carrying text refuses to wrap. */
 
 .squire-tray .tray-tools-toolbar {
     display: flex;
+    align-items: center;
     background: rgba(42, 42, 42, 0.0);
     padding: 4px;
     margin-bottom: 8px;
     border-radius: 0 0 4px 4px;
-    gap: 4px;
+    gap: 6px;
 }
 
-.squire-tray .tray-gm-button,
-.squire-tray .tray-tools-button {
-    flex: 1;
-    padding: 4px 8px;
+.squire-tray .tray-tools-primary,
+.squire-tray .tray-tools-icon {
     background: rgba(92, 84, 66, 0.9);
     border: 2px solid rgba(0, 0, 0, 0.3);
     border-radius: 6px;
     color: rgba(255, 255, 255, 0.9);
     cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: center;
-    font-size: 0.85em;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     font-weight: bold;
     text-transform: uppercase;
     outline: none;
     box-shadow: none;
 }
-.squire-tray .tray-gm-button:hover,
-.squire-tray .tray-tools-button:hover {
+
+.squire-tray .tray-tools-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    /* Sized by its content, not by a share of the row. */
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 4px 12px;
+    font-size: 0.85em;
+    /* The wrap this replaced. If the tray is ever too narrow for the word,
+       it ellipsises rather than growing a second line. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* The icon rail sits hard right, so adding tools grows it leftward into empty
+   space rather than squeezing the labelled button. */
+.squire-tray .tray-tools-rail {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    flex: 0 0 auto;
+}
+
+.squire-tray .tray-tools-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Fixed square: the rail stays a predictable width per tool, which is what
+       keeps the row stable as Deploy/Clear and friends arrive. */
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    font-size: 0.95em;
+}
+
+.squire-tray .tray-tools-primary:hover,
+.squire-tray .tray-tools-icon:hover {
     background: rgba(194, 86, 61, 1.0);
     color: rgba(255, 255, 255, 1.0);
     border-color: rgba(194, 86, 61, 1.0);
 }
-.squire-tray .tray-gm-button i,
-.squire-tray .tray-tools-button i {
-    margin-right: 5px;
+
+.squire-tray .tray-tools-primary:focus-visible,
+.squire-tray .tray-tools-icon:focus-visible {
+    border-color: rgba(255, 255, 255, 0.8);
+}
+
+.squire-tray .tray-tools-icon i {
+    margin: 0;
 }
 
 /* Drop Target Styles for Stacked Container */

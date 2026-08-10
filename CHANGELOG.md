@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Party reputation, in the Party tab.** Blacksmith owns the value; Squire shows it with the thing that makes it readable — **the scene it belongs to.** Reputation is stored per scene (`blacksmithPartyData.scenes[id].reputation`), so a bare number invites the assumption that it is campaign-wide. The readout shows the scene name, the band label (Neutral, Respected, Revered…), the value, and a bar whose midpoint tick marks zero — without it, half-full reads as "half good" rather than "neutral". GMs get **−5 / −1 / +1 / +5** controls; `setPartyReputation` is GM-only in Blacksmith, so players get the readout rather than buttons that would silently do nothing. Clicking the readout posts the current standing to chat.
+  - It stays in step with Blacksmith's own reputation bar in both directions. Blacksmith has no `onChange` and fires no hook — it updates its bar inline in its click handlers — so Squire listens for Foundry's core `updateSetting`, the one signal both modules already emit without knowing about each other. The panel also re-reads on scene change, since the value describes the wrong place otherwise.
+- **A Vote button** in the Party toolbar, opening Blacksmith's vote window. Shown to the GM and the party leader.
+
+### Changed
+- **"Award" is now "Experience"**, and opens Blacksmith's XP distribution window instead of the dnd5e Award dialog. The old handler reflected over four possible paths to the Award class (`game.dnd5e.applications.Award` and three fallbacks) and guessed the party from controlled tokens; Blacksmith owns XP and decides its own recipients.
+- **The Party toolbar no longer wraps.** Every button had `flex: 1`, so three of them split the row three ways and "Select Party" broke onto two lines. It is now one labelled primary action with a right-aligned rail of fixed-width icon buttons: only the primary carries a word, so the row cannot wrap however many tools end up on it, and the rail grows leftward into empty space rather than squeezing the label.
+- **The MVP leaderboard shows every party member**, including those with no recorded combats — dimmed, sorted last, with dashes instead of zeroes. It was filtering them out, which made the board answer "who has scored?" when the question it is asked is "how is the party doing?" A character silently missing from the roster reads as a bug.
+
+
 ### Removed
 - **Notes moved to Coffee Pub Blacksmith.** Squire is now character and party — the tray, the handle, and the panels that describe the token you have selected. Nothing else.
   - **Run Blacksmith's notes migration before updating.** Note pages are plain journal pages with no document subtype, so unlike the codex move there is no validation cliff: an unmigrated world loses the tray's view of its notes but the pages themselves are untouched and Blacksmith can adopt them at any point.
