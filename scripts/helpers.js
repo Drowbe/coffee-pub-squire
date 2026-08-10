@@ -127,6 +127,21 @@ async function openBlacksmithWindow(id, options, unavailableLabel) {
     return options ? blacksmith.openWindow(id, options) : blacksmith.openWindow(id);
 }
 
+/**
+ * Blacksmith's Status Effects window.
+ *
+ * `actorUuid` names an actor that may not be selected — the handle shows one
+ * actor regardless of canvas selection. Omit it to mean "whatever is selected",
+ * which the window follows on its own.
+ *
+ * `descriptionEffectId` deep-links to an effect already on the actor;
+ * `descriptionStatusId` does the same for a configured status that may not be
+ * applied yet. Both are part of the window's public options.
+ */
+export async function openStatusEffectsWindow(options = {}) {
+    return openBlacksmithWindow('blacksmith-status-effects', options, 'Status Effects');
+}
+
 /** Blacksmith's XP window. */
 export async function openXpWindow() {
     return openBlacksmithWindow('blacksmith-xp', null, 'The XP window');

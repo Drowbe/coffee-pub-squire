@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 // REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getCampaignContext, openHealthWindow, getHealthPercent } from './helpers.js';
+import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getCampaignContext, openHealthWindow, getHealthPercent, openStatusEffectsWindow } from './helpers.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
 // FoundryVTT function imports
@@ -412,11 +412,11 @@ export class HandleManager {
             event.stopPropagation();
 
             const effectId = effectIcon.dataset.effectId;
-            const blacksmith = getBlacksmith();
-            if (!effectId || typeof blacksmith?.openWindow !== 'function') return;
+            if (!effectId) return;
 
-            await blacksmith.openWindow(`${MODULE.ID}-status-effects-window`, {
-                actor: this.actor,
+            // actorUuid because the handle shows its own actor, which is not
+            // necessarily what is selected on the canvas.
+            await openStatusEffectsWindow({
                 actorUuid: this.actor?.uuid,
                 descriptionEffectId: effectId
             });
@@ -459,15 +459,7 @@ export class HandleManager {
                 return;
             }
 
-            const blacksmith = getBlacksmith();
-            if (typeof blacksmith?.openWindow !== 'function') {
-                ui.notifications.error('The Blacksmith Window API is unavailable.');
-                return;
-            }
-            await blacksmith.openWindow(`${MODULE.ID}-status-effects-window`, {
-                actor: this.actor,
-                actorUuid: this.actor?.uuid
-            });
+            await openStatusEffectsWindow({ actorUuid: this.actor?.uuid });
         });
 
         // Macros moved to the Blacksmith menubar tool's context menu — favorites

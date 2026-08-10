@@ -67,6 +67,23 @@ Blacksmith is 90,848 lines and already owns `api-pins`/`manager-pins`/`pins-rend
 | Notification watcher — 335 lines spanning quest/codex/notes/effects; `api-toast` + HookManager already there | S | High |
 | Import/export surfaces | M | Medium |
 
+## The codex page subtype
+
+Squire declares a document subtype — `documentTypes: { JournalEntryPage: { codex: {} } }` in the manifest, with the data model and sheet registered at `squire.js:1880`. Every codex entry is stored as `type: "coffee-pub-squire.codex"`.
+
+Disable Squire and every codex page fails validation at load, one console error each. The pages are intact — refused, not damaged — and reload normally when Squire is re-enabled. Quest and note pages are ordinary journal pages, so codex is the only content carrying this.
+
+**This is louder than the flag namespace and needs different handling.** A flag under a dead namespace is ignored; a `type` under a dead namespace refuses to initialise. And Librarian cannot fix it after the fact — at that point the pages don't load for it to touch.
+
+**What makes it cheap: there is exactly one world using codex — the author's.** No installed base to protect, so:
+
+- Librarian declares `coffee-pub-librarian.codex` from day one. No dual declaration, no compatibility window, no reading both namespaces forever.
+- Migration is a one-time GM macro over that world, not a shipped migration path.
+- **Update the type in place; do not delete and recreate.** `DocumentTypeField` carries no `readonly` flag, so `page.update()` can change `type` — and page ids, and therefore UUIDs, survive. That matters because codex pins reference pages by `codexUuid`; recreating pages would orphan every pin on every scene.
+- Write `type` and `system` in the same update, reading the existing `system` first. A subtype change can otherwise reset system data to the new model's defaults.
+
+Sequence it as: Librarian ships declaring the new subtype → run the macro once with both modules enabled → Squire's declaration comes out in its next release.
+
 ## The real cost: flag namespace
 
 Campaign data lives under `coffee-pub-squire.*` on journal pages, entries, pins, and users:
