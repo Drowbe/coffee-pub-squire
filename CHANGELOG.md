@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Removed
+- **Codex moved to Coffee Pub Librarian**, following Quests. Squire is now character, party and notes.
+  - **Run Librarian's `macros/migrate-codex-from-squire.js` with both modules enabled before updating.** This migration is not like the quest one: codex pages are a declared document subtype, so it rewrites `type` on live documents from `coffee-pub-squire.codex` to `coffee-pub-librarian.codex`. It updates in place so page ids — and the `codexUuid` every codex pin references — survive, force-replaces `system` in the same update so entries are not reset to model defaults, and backs both up in a flag so it can be reverted.
+  - **`documentTypes` is gone from Squire's manifest.** Any world that has not migrated will find its codex pages failing validation once this ships, one error per page. The pages are refused, not damaged, and re-enabling an older Squire or running the migration restores them.
+  - Removed here: `panel-codex.js`, `window-codex.js`, `utility-codex-parser.js`, `utility-resolver.js`, `window-data-export.js`, the codex page model and sheet, five templates, three stylesheets, the codex half of `manager-pins.js` and `manager-notifications.js`, the codex browser-window kind and menubar tool, and the `codexJournal` setting — about 1,000 lines.
+  - `initTransientNotifications()` and `recordCreatedPageBaseline()` went with it: both existed only to snapshot codex visibility, and had nothing left to track.
+  - `utility-base-parser.js` and `utility-journal.js` **stay** — the Notes panel still uses both. They move, or dissolve, when Notes goes to Blacksmith.
+
+### Changed
+- **`testing/preflight.py` skips `_backups/` and other ignored directories.** It was scanning gitignored scratch copies and reporting their stale asset paths as failures — a false positive is as corrosive to a pre-flight check as a false pass.
+
+### Removed
 - **Quests moved to Coffee Pub Librarian.** Quests are campaign knowledge, not character sheet, and they belong beside the Codex rather than beside inventory. Librarian now owns the quest log, the single-quest editor, the parser, and the quest/objective pins; Squire's copies are gone. A migration macro shipped with Librarian copies the journal setting, the categories, the per-page and per-user quest flags, and re-stamps every existing quest and objective pin — **run it with both modules enabled before updating Squire**, or the pins stay addressed to a module that no longer claims them.
   - Removed here: `panel-quest.js`, `window-quest.js`, `utility-quest-parser.js`, four templates, three stylesheets, the quest half of `manager-pins.js`, the quest notifier, the quest browser-window kind, the quest settings, and the quest tooltip and task helpers — about 2,300 lines.
   - Settings removed: `questJournal`, `questCategories`, `headingH3QuestConfiguration`, and `pinStrokeMigrationDone` (a one-time quest-pin repair that had nothing left to repair). `autoAddPartyMembers` went too — it was registered but never read by anything.

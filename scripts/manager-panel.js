@@ -13,7 +13,6 @@ import { CharacterSummaryPanel } from './panel-character-summary.js';
 import { PartyPanel } from './panel-party.js';
 import { PartyStatsPanel } from './panel-party-stats.js';
 import { NotesPanel } from './panel-notes.js';
-import { CodexPanel } from './panel-codex.js';
 import { PrintCharacterSheet } from './utility-print-character.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { HandleManager } from './manager-handle.js';
@@ -101,7 +100,6 @@ export class PanelManager {
         this.partyPanel = new PartyPanel();
         this.partyStatsPanel = new PartyStatsPanel();
         this.notesPanel = new NotesPanel();
-        this.codexPanel = new CodexPanel();
         this.hiddenCategories = new Set();
         
         // Register panels with HookManager
@@ -526,7 +524,7 @@ export class PanelManager {
         // viewed (setViewMode) or an event-driven refresh renders it directly,
         // then stays warm across subsequent renderPanels calls.
         //
-        // Codex and notes are no longer tray tabs — they render into
+        // Notes is no longer a tray tab — it renders into
         // their own windows (window-campaign-browser.js), launched from the
         // menubar. The tray must not render them: one panel instance holds one
         // AbortController, so a second host re-rendering it silently kills the
@@ -1195,8 +1193,7 @@ export class PanelManager {
         // skips enabled-but-inactive journal/party tabs until they're actually opened)
         const lazyPanelByMode = {
             party: this.partyPanel,
-            notes: this.notesPanel,
-            codex: this.codexPanel
+            notes: this.notesPanel
         };
         const lazyPanel = lazyPanelByMode[mode];
         if (lazyPanel && !lazyPanel._hasRenderedOnce) {
@@ -1224,16 +1221,13 @@ export class PanelManager {
         // Update toggle button icon
         const icon = tray.querySelector('.tray-handle-button-viewcycle i');
         if (icon) {
-            icon.classList.remove('fa-user', 'fa-users', 'fa-sticky-note', 'fa-book');
+            icon.classList.remove('fa-user', 'fa-users', 'fa-sticky-note');
             switch (mode) {
                 case 'party':
                     icon.classList.add('fa-users');
                     break;
                 case 'notes':
                     icon.classList.add('fa-sticky-note');
-                    break;
-                case 'codex':
-                    icon.classList.add('fa-book');
                     break;
                 default:
                     icon.classList.add('fa-user');
@@ -1643,9 +1637,6 @@ export class PanelManager {
         }
         if (PanelManager.instance.gmPanel && typeof PanelManager.instance.gmPanel.destroy === 'function') {
             PanelManager.instance.gmPanel.destroy();
-        }
-        if (PanelManager.instance.codexPanel && typeof PanelManager.instance.codexPanel.destroy === 'function') {
-            PanelManager.instance.codexPanel.destroy();
         }
         if (PanelManager.instance.characterPanel && typeof PanelManager.instance.characterPanel.destroy === 'function') {
             PanelManager.instance.characterPanel.destroy();

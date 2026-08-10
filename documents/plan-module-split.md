@@ -36,8 +36,32 @@ Two things worth remembering from it:
   Until the macro re-stamps them, existing quest pins belong to a module that no longer claims them —
   and once Squire ships without quests, nothing in either module is looking for them.
 
-**Next:** import/export to Blacksmith (unblocks the note in `helpers.js`), then Codex to Librarian
-(which carries the subtype migration), then Notes to Blacksmith.
+**Phase 3 — Codex to Librarian: DONE (13.6.1, unreleased).** The risky one, because codex pages
+are a declared document subtype rather than plain text pages. What that changed:
+
+- **The verification order inverts.** For quests we verified with Squire disabled and then
+  migrated. Here that is meaningless: pages still typed `coffee-pub-squire.codex` fail
+  validation when nothing declares that subtype, so a pre-migration test shows a broken codex
+  for reasons unrelated to the receiving module. Port → migrate with both enabled → verify with
+  the sender disabled → delete.
+- **Foundry enforces the hazard the migration was written around.** It refuses a `type` change
+  unless `system` is force-replaced (`'==system'`), precisely so a subtype swap cannot merge and
+  silently leave every field at the new model's defaults. Writing `{ type, system }` throws.
+- **`documentTypes` is read when the server loads manifests, not on browser refresh.** A freshly
+  declared subtype is invisible until the world is re-entered from Setup — which presented as
+  342 identical validation errors naming nothing useful. The migration now checks
+  `game.documentTypes` up front and says so.
+- **342 pages migrated, zero failures.** The macro re-reads each page after the type change and
+  confirms summary/category/links survived, because a defaulted `system` does not throw. Every
+  page keeps its original type and system in a backup flag; `REVERT = true` restores them.
+
+Also found and fixed on the way: Librarian's import/export dialog had been styled by *Squire's*
+stylesheet the whole time, and Librarian had no journal-update routing at all — for codex *or*
+quests. The quest port missed it because the quest window refreshes its own panel after saving,
+so the round-trip everyone tested worked while every other edit path left the browser stale.
+
+**Next:** import/export to Blacksmith (unblocks the note in `helpers.js`), then Notes to
+Blacksmith. Squire is character, party and notes.
 
 ## Corrections to earlier versions of this doc
 

@@ -58,57 +58,6 @@ export const SQUIRE = {
     TRAY_HANDLE_ADJUSTMENT: '8px'
 }; 
 
-/**
- * Codex category → Font Awesome icon, WITHOUT the `fa-solid` style prefix.
- *
- * The single source of truth. The tray card and the canvas pin each used to keep
- * their own copy, and they drifted: 13.3.9 added Establishments/Landmarks to the
- * tray's map only, so pinning either one silently produced the `fa-book`
- * fallback. Add a category here and both surfaces get it.
- *
- * Keys must match the title-cased form `_refreshData()` produces.
- */
-export const CODEX_CATEGORY_ICONS = Object.freeze({
-    'No Category':    'fa-question-circle',
-    'Artifacts':      'fa-gem',
-    'Books':          'fa-book',
-    'Characters':     'fa-user',
-    'Establishments': 'fa-shop',
-    'Events':         'fa-calendar-star',
-    'Factions':       'fa-shield-cross',
-    'Items':          'fa-box',
-    'Landmarks':      'fa-monument',
-    'Locations':      'fa-location-pin',
-    'Lore':           'fa-scroll',
-    'Maps':           'fa-map'
-});
-
-/** Icon used when a category has no mapping. */
-export const CODEX_CATEGORY_ICON_FALLBACK = 'fa-book';
-
-/**
- * Resolve a codex category to a bare FA icon class.
- * @param {string} category
- * @returns {string} e.g. 'fa-user'
- */
-export function getCodexCategoryIcon(category) {
-    return CODEX_CATEGORY_ICONS[String(category ?? '').trim()] || CODEX_CATEGORY_ICON_FALLBACK;
-}
-
-export const HELPERS = {
-    formatNumber: function(number) {
-        if (number === undefined || number === null) return "0";
-        if (number >= 1000000) {
-            return (number / 1000000).toFixed(1) + "M";
-        } else if (number >= 1000) {
-            return (number / 1000).toFixed(1) + "K";
-        } else {
-            return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        }
-    }
-}; 
-
-// ================================================================== 
 // ===== TEMPLATES ==================================================
 // ================================================================== 
 
@@ -127,7 +76,6 @@ export const TEMPLATES = {
     PANEL_PARTY: `modules/${MODULE.ID}/templates/panel-party.hbs`,
     PANEL_PARTY_STATS: `modules/${MODULE.ID}/templates/panel-party-stats.hbs`,
     PANEL_NOTES: `modules/${MODULE.ID}/templates/panel-notes.hbs`,
-    PANEL_CODEX: `modules/${MODULE.ID}/templates/panel-codex.hbs`,
     HANDLE_PLAYER: `modules/${MODULE.ID}/templates/handle-player.hbs`,
     HANDLE_PARTY: `modules/${MODULE.ID}/templates/handle-party.hbs`,
     CHAT_CARD: `modules/${MODULE.ID}/templates/chat-cards.hbs`,

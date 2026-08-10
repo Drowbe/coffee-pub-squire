@@ -946,49 +946,6 @@ export const registerSettings = function() {
         }
     });
 
-    // codexJournal is registered below, under the Codex heading. It used to be
-    // registered here too — an identical duplicate whose only effect was to
-    // claim this position in the settings list.
-
-    // --------------------------------
-    // ---      CODEX Settings     ---
-    // --------------------------------
-
-    // ---------- Codex Heading ----------
-    game.settings.register(MODULE.ID, "headingH3CodexConfiguration", {
-        name: 'Codex Configuration',
-        hint: 'Settings for the codex system that organizes characters, locations, and artifacts.',
-        scope: "world",
-        config: true,
-        default: "",
-        type: String,
-    });
-
-    // Codex Journal
-    game.settings.register(MODULE.ID, 'codexJournal', {
-        name: "Codex Journal",
-        hint: "The journal to use for codex entries. Each entry will be a separate page in this journal.",
-        scope: "world",
-        config: true,
-        type: String,
-        choices: () => {
-            const choices = {
-                'none': '- Select Journal -'
-            };
-            game.journal.contents.forEach(j => {
-                choices[j.id] = j.name;
-            });
-            return choices;
-        },
-        default: "none",
-        onChange: () => {
-            // Update the codex panel if it exists
-            if (PanelManager.instance?.codexPanel) {
-                PanelManager.instance.codexPanel.render(PanelManager.element);
-            }
-        }
-    });
-
     // ================================
     // ===          CANVAS          ===
     // ================================

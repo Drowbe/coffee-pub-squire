@@ -1,12 +1,12 @@
 import { MODULE } from './const.js';
 
 /**
- * Where the live codex / notes panels are, and how to reach them.
+ * Where the live notes panel is, and how to reach it.
  *
  * These panels are rendered by whatever is hosting them — today the tray,
  * shortly their own windows — and a dozen callers across the pin manager, the
  * notification watcher, and the editor windows need to re-render or reveal one.
- * Those callers used to reach through `api.PanelManager.instance.codexPanel`,
+ * Those callers used to reach through `api.PanelManager.instance.notesPanel`,
  * which hard-codes both the host (the tray) and the way to bring a panel into
  * view (switch the tray's view mode). Neither survives the move to windows.
  *
@@ -14,7 +14,7 @@ import { MODULE } from './const.js';
  * which element the panel renders into, and what "show me this panel" means. A
  * caller then asks for a kind, not for the tray.
  *
- * Kinds: 'codex' | 'notes'.
+ * Kinds: 'notes'.
  */
 
 /** @type {Map<string, {panel: object, getElement: () => (HTMLElement|null), reveal: () => (void|Promise<void>)}>} */

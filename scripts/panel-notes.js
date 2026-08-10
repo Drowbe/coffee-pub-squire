@@ -569,7 +569,7 @@ export class NotesPanel {
                     note.hasPinOnScene = !!(note.pinId && livePinSceneId);
                     // Panning only works on the scene you're looking at, so the pin
                     // control has to know whether this pin is on it (same distinction
-                    // the codex panel makes).
+                    // the codex panel used to make, before it left).
                     note.pinOnActiveScene = !!(livePinSceneId && canvas?.scene?.id && livePinSceneId === canvas.scene.id);
                     // Volatile: depends on who is viewing, so it must not live in the
                     // modifiedTime-keyed parse cache. Only a private note can be handed

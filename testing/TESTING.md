@@ -55,4 +55,31 @@ stylesheets, so these are the things most likely to break silently.
   ```
   both respond to their own module's double-click.
   ```
-- [x] Codex unlock notification still fires and clicking it opens the Codex browser.
+- [x] Codex unlock notification still fires and clicking it opens the Codex browser.## Codex removed (Librarian now owns it)
+
+**Run Librarian's `macros/migrate-codex-from-squire.js` before loading this build.** Codex
+pages are a declared subtype and Squire no longer declares it, so an unmigrated world will
+fail validation on every codex page. Note the manifest change needs Foundry to re-read
+module manifests — return to Setup and re-enter the world, an F5 is not enough.
+
+### Nothing codex-shaped is left in Squire
+- [ ] World loads with no console errors, Squire enabled, after migrating.
+- [ ] Settings → Squire: no Codex Configuration heading, no Codex Journal.
+- [ ] Menubar middle zone: Notes from Squire; Quests and Codex from Librarian. One of each.
+- [ ] Tray cycles Character → Party only.
+
+### Notes survived the extraction
+Notes shares `utility-journal.js`, `utility-base-parser.js` and the pin manager with the
+departed codex, so this is where a bad cut would show.
+- [ ] Notes browser opens, lists notes, filters and sorts.
+- [ ] Create, edit and delete a note; the list updates.
+- [ ] Note pins: place, click (opens the card), double-click (opens the window), context
+      menu View / Edit / Delete, unplace.
+- [ ] Change a note's visibility — ownership still follows.
+- [ ] A note updated by another user raises a menubar notification.
+- [ ] Switch scenes with the notes browser open: pin state re-reads for the new scene.
+
+### Cross-module
+- [ ] Librarian's quest and codex pins coexist with Squire's note pins on one scene.
+- [ ] Codex still works in Librarian with Squire enabled (both installed is the normal case).
+

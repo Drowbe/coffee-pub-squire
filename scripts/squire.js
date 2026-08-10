@@ -15,14 +15,10 @@ import {
 } from './manager-pins.js';
 import { trackModuleTimeout, clearTrackedTimeout, clearAllModuleTimers } from './timer-utils.js';
 import {
-    initTransientNotifications,
-    recordCreatedPageBaseline,
     routeTransientJournalUpdate,
     notifyEffectApplied,
     notifyQuantityChanged
 } from './manager-notifications.js';
-import { CodexPageModel, CODEX_PAGE_TYPE } from './data/codex-page-model.js';
-import { CodexPageSheet } from './sheets/codex-page-sheet.js';
 // HookManager import removed - using Blacksmith HookManager instead
 
 
@@ -155,7 +151,6 @@ Hooks.once('ready', async () => {
         await initPinManager();
         await migrateSquireNotePinTypes();
         await migrateCompendiumAccessSetting();
-        initTransientNotifications();
         await clearNoteEditLocks({ userId: game.user.id, clearExpired: true });
 
         registerNativeHook('userDisconnected', async (user) => {
@@ -205,17 +200,15 @@ Hooks.once('ready', async () => {
                     await pm.instance.characterPanel.render(pm.element);
                 }
 
-                // Codex and notes cards carry per-scene pin state — the "Show on Canvas"
+                // Note cards carry per-scene pin state — the "Show on Canvas"
                 // button, the pin icon's active/dim state, the "pinned on <scene>" tooltip.
                 // All of it is computed in _refreshData(), so after a scene change it
                 // describes the PREVIOUS scene until something else happens to refresh.
                 // reinitializeTrayForCanvas() above returns early whenever the current
                 // actor has a token on the new scene, which is the common case, so the
                 // tray rebuild cannot be relied on to do this.
-                // Only panels that have actually rendered — respects the lazy tabs.
-                for (const panel of [pm?.instance?.codexPanel, pm?.instance?.notesPanel]) {
-                    if (panel?._hasRenderedOnce && pm.element) await panel.render(pm.element);
-                }
+                const notesPanel = pm?.instance?.notesPanel;
+                if (notesPanel?._hasRenderedOnce && pm.element) await notesPanel.render(pm.element);
             }
         });
 
@@ -244,13 +237,12 @@ Hooks.once('ready', async () => {
         // Register all remaining hooks from manager-hooks.js
         const journalHookId = getBlacksmithHookManager().registerHook({
             name: "updateJournalEntryPage",
-            description: "Coffee Pub Squire: Handle journal entry page updates for codex and notes",
+            description: "Coffee Pub Squire: Handle journal entry page updates for notes",
             context: MODULE.ID,
             priority: 2,
             callback: async (page, changes, options, userId) => {
                 // Handle journal entry page updates - route to appropriate panels
                 await Promise.all([
-                    _routeToCodexPanel(page, changes, options, userId),
                     _routeToNotesPanel(page, changes, options, userId),
                     routeTransientJournalUpdate(page, changes, options, userId)
                 ]);
@@ -264,9 +256,6 @@ Hooks.once('ready', async () => {
             context: MODULE.ID,
             priority: 2,
             callback: async (page, options, userId) => {
-                // New pages enter the notification baselines silently — creation
-                // is not a status change, so nothing to toast about yet.
-                recordCreatedPageBaseline(page);
                 // Route to notes panel when a new page is created
                 await _routeToNotesPanel(page, {}, options, userId);
             }
@@ -1008,37 +997,6 @@ async function reinitializeTrayForCanvas() {
     await pm.initialize(controlled?.actor ?? ownedOnScene?.actor ?? getFallbackActor(), { force: true });
 }
 
-// Helper functions to route journal entry updates to appropriate panels
-async function _routeToCodexPanel(page, changes, options, userId) {
-    const panelManager = getPanelManager();
-    const codexPanel = panelManager?.instance?.codexPanel;
-    if (!codexPanel) return;
-
-    // The visibility toggle patches the codex icon in place and opts out of the full
-    // re-render here, so the panel keeps its scroll position and expanded entries.
-    if (options?.squireSkipCodexRender) return;
-
-    try {
-        // Check if this is a CODEX entry and belongs to the selected journal
-        if (codexPanel._isPageInSelectedJournal && 
-            codexPanel._isPageInSelectedJournal(page) &&
-            codexPanel._isCodexEntry && 
-            codexPanel._isCodexEntry(page)) {
-            
-            // Skip panel refresh if currently importing
-            if (codexPanel.isImporting) {
-                return;
-            }
-            
-            if (panelManager?.instance && panelManager.element) {
-                codexPanel.render(panelManager.element);
-            }
-        }
-    } catch (error) {
-        console.error('Error routing to codex panel:', error);
-    }
-}
-
 async function _routeToNotesPanel(page, changes, options, userId) {
     const panelManager = getPanelManager();
     const notesPanel = panelManager?.instance?.notesPanel;
@@ -1690,16 +1648,6 @@ Hooks.once('init', async function() {
         false
     );
 
-    // Register the codex page subtype: data model + sheet
-    Object.assign(CONFIG.JournalEntryPage.dataModels, {
-        [CODEX_PAGE_TYPE]: CodexPageModel
-    });
-    foundry.applications.apps.DocumentSheetConfig.registerSheet(JournalEntryPage, MODULE.ID, CodexPageSheet, {
-        types: [CODEX_PAGE_TYPE],
-        makeDefault: true,
-        label: 'Squire Codex Entry'
-    });
-
     // Register module settings
     //registerSettings();
 
@@ -1756,15 +1704,7 @@ Hooks.once('init', async function() {
     
     // Set up API to expose PanelManager and window open helpers to other modules
     game.modules.get(MODULE.ID).api = {
-        PanelManager,
-        openCodexWindow: (options = {}) => {
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            if (typeof blacksmith?.openWindow !== 'function') {
-                ui.notifications.warn('Codex window is not ready yet.');
-                return null;
-            }
-            return blacksmith.openWindow(`${MODULE.ID}-codex-window`, options);
-        }
+        PanelManager
     };
     
     // Create and store PartyPanel instance
@@ -1809,17 +1749,6 @@ Hooks.once('ready', async function() {
         window.NotesForm = NotesForm;
     } catch (error) {
         console.error('Coffee Pub Squire | Failed to register Note window:', error);
-    }
-
-    try {
-        const { registerCodexWindow, openCodexWindow, CodexWindow, CODEX_WINDOW_ID } = await import('./window-codex.js');
-        registerCodexWindow();
-        game.modules.get(MODULE.ID).api.openCodexWindow = openCodexWindow;
-        game.modules.get(MODULE.ID).api.CodexWindow = CodexWindow;
-        game.modules.get(MODULE.ID).api.CODEX_WINDOW_ID = CODEX_WINDOW_ID;
-        window.CodexWindow = CodexWindow;
-    } catch (error) {
-        console.error('Coffee Pub Squire | Failed to register Codex window:', error);
     }
 
     try {
@@ -1952,11 +1881,10 @@ Hooks.once('ready', async function() {
     }
 
     // Campaign browsers. These live on the menubar rather than in the tray:
-    // codex and notes are campaign content, not properties of the selected
+    // notes are campaign content, not properties of the selected
     // token, and they are moving out of Squire entirely. Quests already have
     // (Librarian, 13.6.1).
     const CAMPAIGN_TOOLS = [
-        { kind: 'codex', id: 'squire-codex', icon: 'fa-solid fa-book', label: 'Codex', tooltip: 'Open the codex', order: 205 },
         { kind: 'notes', id: 'squire-notes', icon: 'fa-solid fa-sticky-note', label: 'Notes', tooltip: 'Open notes', order: 206 }
     ];
 

@@ -17,7 +17,6 @@
 
 @import "window-transfer-tool.css";
 
-@import "window-import-export.css";
 
 
 
@@ -45,14 +44,12 @@
 
 @import "panel-notes.css";
 
-@import "panel-codex.css";
 
 @import "window-campaign-browser.css";
 
 
 /* --- Forms ---------------------- */
 
-@import "window-codex.css";
 
 
 @import "window-note.css";

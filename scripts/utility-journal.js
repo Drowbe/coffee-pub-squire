@@ -1,6 +1,6 @@
 /**
- * Shared journal utilities for the Notes and Codex panels.
- * Extracted from panel-notes and panel-codex.
+ * Shared journal utilities for the Notes panel.
+ * Extracted from panel-notes and the since-departed codex panel.
  */
 
 import { getNativeElement, getTextEditor, escapeHtml } from './helpers.js';
@@ -440,8 +440,8 @@ export async function renderJournalContent(container, page, options = {}) {
  * Show a journal picker dialog: a single, alphabetically-sorted dropdown.
  *
  * There used to be a second "grid" mode — a wall of book cards with a gold
- * thumbtack on the current selection — and it was the DEFAULT, so codex and
- * notes got it simply by never passing `mode`. Only codex opted into the
+ * thumbtack on the current selection — and it was the DEFAULT, so notes got
+ * it simply by never passing `mode`. Only the codex panel opted into the
  * dropdown. The grid is gone: one picker, one behaviour, sorted everywhere.
  *
  * @param {Object} options

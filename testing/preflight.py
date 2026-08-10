@@ -88,8 +88,11 @@ for d, _, fs in os.walk('styles'):
                 fail.append('CSS @import %s -> %s' % (pth, spec))
 
 # 6. any module-absolute asset referenced from a script or template
+SKIP_DIRS = ('.git', 'node_modules', '_backups', '.vscode')
 for d, _, fs in os.walk('.'):
-    if '.git' in d or 'node_modules' in d:
+    # _backups holds gitignored scratch copies of files mid-refactor; they
+    # legitimately reference assets that no longer exist and are not shipped.
+    if any(part in d.split(os.sep) for part in SKIP_DIRS):
         continue
     for f in fs:
         if not f.endswith(('.js', '.hbs')):

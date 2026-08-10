@@ -247,13 +247,12 @@ const HTML_ESCAPES = Object.freeze({
  * Escape text for safe interpolation into an HTML string.
  *
  * Needed wherever we hand-build markup that a template renders through a
- * triple-stash: Handlebars won't escape it, and codex names are
+ * triple-stash: Handlebars won't escape it, and note names are
  * user-authored.
  *
  * Regex rather than a `createElement`/`textContent`/`innerHTML` round-trip.
- * This runs per related name and per location level on every codex render — a
- * real 314-entry codex is thousands of calls per render, and building a DOM
- * node for each is orders of magnitude more expensive than a replace. The DOM
+ * Chosen when this ran thousands of times per render on a large list, where a
+ * regex beat building a DOM node each time by orders of magnitude. The DOM
  * approach also leaves `"` and `'` unescaped, which is wrong for the attribute
  * contexts this is used in.
  *

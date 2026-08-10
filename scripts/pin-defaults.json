@@ -47,54 +47,5 @@
       "blacksmithAccess": "private",
       "blacksmithVisibility": "visible"
     }
-  },
-  "codex": {
-    "size": {
-      "w": 50,
-      "h": 50
-    },
-    "shape": "circle",
-    "style": {
-      "fill": "#022450",
-      "stroke": "#ffffff",
-      "strokeWidth": 4,
-      "iconColor": "#ffffff"
-    },
-    "dropShadow": false,
-    "textLayout": "right",
-    "textDisplay": "hover",
-    "textColor": "#ffffff",
-    "textSize": 12,
-    "textMaxLength": 0,
-    "textMaxWidth": 30,
-    "textScaleWithPin": true,
-    "lockProportions": false,
-    "allowDuplicatePins": false,
-    "eventAnimations": {
-      "hover": {
-        "animation": "ripple",
-        "sound": "interface-pop-01"
-      },
-      "click": {
-        "animation": "scale-small",
-        "sound": "book-open-02"
-      },
-      "doubleClick": {
-        "animation": null,
-        "sound": null
-      },
-      "add": {
-        "animation": null,
-        "sound": null
-      },
-      "delete": {
-        "animation": "fade",
-        "sound": "interface-error-01"
-      }
-    },
-    "config": {
-      "blacksmithAccess": "gm",
-      "blacksmithVisibility": "visible"
-    }
   }
 }
