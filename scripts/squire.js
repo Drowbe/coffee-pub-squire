@@ -4,21 +4,14 @@ import { PartyPanel } from './panel-party.js';
 import { registerSettings, migrateCompendiumAccessSetting } from './settings.js';
 import { getCampaignPanel } from './campaign-panels.js';
 import { getTransferBlocker, registerHelpers, renderTemplate, showSquireToast } from './helpers.js';
-import { QuestPanel } from './panel-quest.js';
 import { CompendiumRequestUtils } from './compendium-request-utils.js';
-import { QuestParser, migrateQuestJournalData } from './utility-quest-parser.js';
-// Legacy PIXI-based quest pins - TO BE REMOVED
-// import { QuestPin, loadPersistedPinsOnCanvasReady, loadPersistedPins } from './quest-pin.js';
 
 import { FavoritesPanel } from './panel-favorites.js';
 import {
     initPinManager,
     teardownPinManager,
     migrateSquireNotePinTypes,
-    migrateSquirePinStyles,
     buildNoteOwnership,
-    updateQuestPinVisibility,
-    updateQuestPinText
 } from './manager-pins.js';
 import { trackModuleTimeout, clearTrackedTimeout, clearAllModuleTimers } from './timer-utils.js';
 import {
@@ -161,7 +154,6 @@ Hooks.once('ready', async () => {
         // Initialize unified pin manager (taxonomy, events, context menus, hooks).
         await initPinManager();
         await migrateSquireNotePinTypes();
-        await migrateSquirePinStyles();
         await migrateCompendiumAccessSetting();
         initTransientNotifications();
         await clearNoteEditLocks({ userId: game.user.id, clearExpired: true });
@@ -234,13 +226,6 @@ Hooks.once('ready', async () => {
             priority: 2,
             callback: async (moduleId) => {
                 if (moduleId === MODULE.ID) {
-                    // Clear quest notifications when module is disabled
-                    try {
-                        getCampaignPanel('quest')?.clearQuestNotifications?.();
-                    } catch (error) {
-                        console.error('Coffee Pub Squire | Error clearing quest notifications on disable:', error);
-                    }
-                    
                     cleanupModule();
                 }
             }
@@ -259,16 +244,14 @@ Hooks.once('ready', async () => {
         // Register all remaining hooks from manager-hooks.js
         const journalHookId = getBlacksmithHookManager().registerHook({
             name: "updateJournalEntryPage",
-            description: "Coffee Pub Squire: Handle journal entry page updates for codex, quest, notes, and quest pins",
+            description: "Coffee Pub Squire: Handle journal entry page updates for codex and notes",
             context: MODULE.ID,
             priority: 2,
             callback: async (page, changes, options, userId) => {
                 // Handle journal entry page updates - route to appropriate panels
                 await Promise.all([
                     _routeToCodexPanel(page, changes, options, userId),
-                    _routeToQuestPanel(page, changes, options, userId),
                     _routeToNotesPanel(page, changes, options, userId),
-                    _routeToQuestPins(page, changes, options, userId),
                     routeTransientJournalUpdate(page, changes, options, userId)
                 ]);
             }
@@ -913,75 +896,6 @@ Hooks.once('ready', async () => {
             }
         });
 
-        // GM pin / active-objective changes must reach player trays and menubar trackers.
-        //
-        // The pinned quest and active objective are stored as per-user flags. The GM
-        // mirrors them onto each player's User document (QuestPanel._mirrorTrackerFlagToPlayers);
-        // this hook is the receiving half. It fires on the player's client when THEIR
-        // user document is changed by someone else, lifts the ×-dismissal suppression
-        // (a GM broadcast is as deliberate as a local repin), and re-runs the notify
-        // and render paths so the tray, handle, and menubar tracker all agree.
-        const questTrackerSyncHookId = getBlacksmithHookManager().registerHook({
-            name: "updateUser",
-            description: "Coffee Pub Squire: Sync quest tracker when the GM updates this player's pinned quest / active objective",
-            context: MODULE.ID,
-            priority: 2,
-            callback: async (userDoc, changes, options, changedByUserId) => {
-                // Only MY flags, only when changed by SOMEONE ELSE — local pin/active
-                // actions already notify and render on this client.
-                if (userDoc.id !== game.user.id || changedByUserId === game.user.id) return;
-
-                // Same diff-key caution as the ownership hook above: keys may carry
-                // `==`/`-=` operator prefixes or arrive as flattened paths, so strip
-                // and split before matching. Collect which tracker flags were touched.
-                const flagChanges = changes?.flags ?? changes?.['==flags'];
-                if (!flagChanges || typeof flagChanges !== 'object') return;
-                const touched = [];
-                for (const [key, value] of Object.entries(flagChanges)) {
-                    const parts = key.replace(/^(==|-=|\+=)/, '').split('.');
-                    if (parts[0] !== MODULE.ID) continue;
-                    if (parts.length > 1) {
-                        touched.push(parts[1]);
-                    } else if (value && typeof value === 'object') {
-                        touched.push(...Object.keys(value).map(k => k.replace(/^(==|-=|\+=)/, '').split('.')[0]));
-                    }
-                }
-                const pinChanged = touched.includes('pinnedQuests');
-                const activeChanged = touched.includes('activeObjectives');
-                if (!pinChanged && !activeChanged) return;
-
-                // A GM broadcast is deliberate: lift the ×-dismissal suppression for
-                // whichever tracker actually changed, leaving the other one alone.
-                if (pinChanged) QuestPanel.questNotificationDismissed = false;
-                if (activeChanged) QuestPanel.activeObjectiveNotificationDismissed = false;
-
-                const panelManager = getPanelManager();
-                const questPanel = panelManager?.instance?.questPanel;
-                if (!questPanel) return;
-
-                // An emptied tracker needs an explicit clear — the notify paths only
-                // ever create or update, and _checkAndNotifyPinnedQuest does nothing
-                // when no quest is pinned.
-                const pinnedQuests = game.user.getFlag(MODULE.ID, 'pinnedQuests') || {};
-                if (!Object.values(pinnedQuests).some(uuid => uuid)) {
-                    questPanel.clearQuestNotifications();
-                }
-
-                if (questPanel.element) {
-                    // Rendered: the render path re-runs both notification checks and
-                    // refreshes the pin/star states in the quest list.
-                    await questPanel.render(questPanel.element);
-                } else {
-                    // Lazy tab never rendered: drive the notifications directly.
-                    // _refreshData populates this.data, which supplies the objective text.
-                    await questPanel._refreshData?.();
-                    await questPanel._checkAndNotifyPinnedQuest?.();
-                    await questPanel._checkAndNotifyActiveObjective?.();
-                }
-                await panelManager?.instance?.updateHandle?.();
-            }
-        });
-
         const globalDeleteTokenHookId = getBlacksmithHookManager().registerHook({
             name: "deleteToken",
             description: "Coffee Pub Squire: Handle global token deletion",
@@ -1015,36 +929,6 @@ Hooks.once('ready', async () => {
             }
         });
         
-        // REMOVED: dropCanvasData quest pin handler - Use "Pin to Scene" button only (like Notes).
-        
-        // REMOVED: questPinCanvasSceneChangeHookId - Migration now handled in canvasReady hook
-        // No need to manually reload pins on scene change - Blacksmith handles this automatically
-        
-        // REMOVED: questPinUpdateSceneHookId - No longer needed with Blacksmith API
-        // Blacksmith automatically handles scene flag updates
-        
-        const questPinUpdateTokenHookId = getBlacksmithHookManager().registerHook({
-            name: "updateToken",
-            description: "Coffee Pub Squire: Handle quest pin token updates",
-            context: MODULE.ID,
-            priority: 2,
-            callback: (token, changes) => {
-                // REMOVED: Pin visibility updates - Blacksmith handles this automatically via ownership
-                // No manual visibility updates needed
-            }
-        });
-        
-        const questPinCreateTokenHookId = getBlacksmithHookManager().registerHook({
-            name: "createToken",
-            description: "Coffee Pub Squire: Handle quest pin token creation",
-            context: MODULE.ID,
-            priority: 2,
-            callback: (token) => {
-                // Update pin visibility
-                // This would need the actual quest pin logic
-            }
-        });
-        
         const globalCreateTokenHookId = getBlacksmithHookManager().registerHook({
             name: "createToken",
             description: "Coffee Pub Squire: Handle global token creation",
@@ -1063,39 +947,6 @@ Hooks.once('ready', async () => {
                 }
                 
                 await panelManager.instance.updateHandle();
-            }
-        });
-        
-        const questPinDeleteTokenHookId = getBlacksmithHookManager().registerHook({
-            name: "deleteToken",
-            description: "Coffee Pub Squire: Handle quest pin token deletion",
-            context: MODULE.ID,
-            priority: 2,
-            callback: (token) => {
-                // Update pin visibility
-                // This would need the actual quest pin logic
-            }
-        });
-        
-        const questPinRenderQuestPanelHookId = getBlacksmithHookManager().registerHook({
-            name: "renderQuestPanel",
-            description: "Coffee Pub Squire: Handle quest pin quest panel rendering",
-            context: MODULE.ID,
-            priority: 2,
-            callback: () => {
-                // REMOVED: Pin visibility updates - Blacksmith handles this automatically via ownership
-                // No manual visibility updates needed
-            }
-        });
-        
-        const questPinSightRefreshHookId = getBlacksmithHookManager().registerHook({
-            name: "sightRefresh",
-            description: "Coffee Pub Squire: Handle quest pin sight refresh",
-            context: MODULE.ID,
-            priority: 2,
-            callback: () => {
-                // Update pin visibility
-                // This would need the actual quest pin logic
             }
         });
         
@@ -1185,27 +1036,6 @@ async function _routeToCodexPanel(page, changes, options, userId) {
         }
     } catch (error) {
         console.error('Error routing to codex panel:', error);
-    }
-}
-
-async function _routeToQuestPanel(page, changes, options, userId) {
-    const panelManager = getPanelManager();
-    const questPanel = panelManager?.instance?.questPanel;
-    if (!questPanel) return;
-    
-    try {
-        // Check if this is a QUEST entry and belongs to the selected journal
-        if (questPanel._isPageInSelectedJournal && 
-            questPanel._isPageInSelectedJournal(page) &&
-            questPanel._isQuestEntry && 
-            questPanel._isQuestEntry(page)) {
-            
-            if (panelManager?.instance && panelManager.element) {
-                questPanel.render(panelManager.element);
-            }
-        }
-    } catch (error) {
-        console.error('Error routing to quest panel:', error);
     }
 }
 
@@ -1451,22 +1281,6 @@ async function _embedNoteMetadataBox(sheet, html, data) {
         }
     } catch (error) {
         console.error('Error embedding note metadata box:', error);
-    }
-}
-
-async function _routeToQuestPins(page, changes, options, userId) {
-    try {
-        // Sync ownership/visibility when the quest visible flag changes.
-        if (changes.flags?.[MODULE.ID]?.visible !== undefined) {
-            await updateQuestPinVisibility(page.uuid, canvas.scene?.id);
-        }
-        // Update pin text/tags when quest content changes (title, objective states).
-        if (changes.text && Object.keys(changes.text).length) {
-            await updateQuestPinText(page, canvas.scene?.id);
-            await updateQuestPinVisibility(page.uuid, canvas.scene?.id);
-        }
-    } catch (error) {
-        console.error('Coffee Pub Squire | Error routing to quest pins:', error);
     }
 }
 
@@ -1899,9 +1713,6 @@ Hooks.once('init', async function() {
     const handlePartyTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-party.hbs`).then(response => response.text());
     Handlebars.registerPartial('handle-party', handlePartyTemplate);
     
-    // Register quest-entry partial
-    const questEntryPartial = await fetch(`modules/${MODULE.ID}/templates/partials/quest-entry.hbs`).then(response => response.text());
-    Handlebars.registerPartial('quest-entry', questEntryPartial);
     
     // Register handle section partials with error handling
     const partials = [
@@ -1946,7 +1757,6 @@ Hooks.once('init', async function() {
     // Set up API to expose PanelManager and window open helpers to other modules
     game.modules.get(MODULE.ID).api = {
         PanelManager,
-        migrateQuestJournalData,
         openCodexWindow: (options = {}) => {
             const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
             if (typeof blacksmith?.openWindow !== 'function') {
@@ -1954,33 +1764,11 @@ Hooks.once('init', async function() {
                 return null;
             }
             return blacksmith.openWindow(`${MODULE.ID}-codex-window`, options);
-        },
-        openQuestWindow: (options = {}) => {
-            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-            if (typeof blacksmith?.openWindow !== 'function') {
-                ui.notifications.warn('Quest window is not ready yet.');
-                return null;
-            }
-            return blacksmith.openWindow(`${MODULE.ID}-quest-window`, options);
         }
     };
     
     // Create and store PartyPanel instance
     game.modules.get(MODULE.ID).PartyPanel = new PartyPanel();
-
-    // Add quest panel to panel manager
-    PanelManager.prototype.initializePanels = function() {
-        // ... existing code ...
-        this.questPanel = new QuestPanel();
-        // ... existing code ...
-    };
-
-    // Add quest panel to render
-    PanelManager.prototype.render = function(element) {
-        // ... existing code ...
-        this.questPanel.render(element);
-        // ... existing code ...
-    };
 
 });
 
@@ -2032,19 +1820,6 @@ Hooks.once('ready', async function() {
         window.CodexWindow = CodexWindow;
     } catch (error) {
         console.error('Coffee Pub Squire | Failed to register Codex window:', error);
-    }
-
-    try {
-        const { registerQuestWindow, openQuestWindow, QuestWindow, QuestForm, QUEST_WINDOW_ID } = await import('./window-quest.js');
-        registerQuestWindow();
-        game.modules.get(MODULE.ID).api.openQuestWindow = openQuestWindow;
-        game.modules.get(MODULE.ID).api.QuestWindow = QuestWindow;
-        game.modules.get(MODULE.ID).api.QuestForm = QuestForm;
-        game.modules.get(MODULE.ID).api.QUEST_WINDOW_ID = QUEST_WINDOW_ID;
-        window.QuestWindow = QuestWindow;
-        window.QuestForm = QuestForm;
-    } catch (error) {
-        console.error('Coffee Pub Squire | Failed to register Quest window:', error);
     }
 
     try {
@@ -2177,10 +1952,10 @@ Hooks.once('ready', async function() {
     }
 
     // Campaign browsers. These live on the menubar rather than in the tray:
-    // quests, codex, and notes are campaign content, not properties of the
-    // selected token, and they are moving out of Squire entirely.
+    // codex and notes are campaign content, not properties of the selected
+    // token, and they are moving out of Squire entirely. Quests already have
+    // (Librarian, 13.6.1).
     const CAMPAIGN_TOOLS = [
-        { kind: 'quest', id: 'squire-quests', icon: 'fa-solid fa-flag', label: 'Quests', tooltip: 'Open the quest log', order: 204 },
         { kind: 'codex', id: 'squire-codex', icon: 'fa-solid fa-book', label: 'Codex', tooltip: 'Open the codex', order: 205 },
         { kind: 'notes', id: 'squire-notes', icon: 'fa-solid fa-sticky-note', label: 'Notes', tooltip: 'Open notes', order: 206 }
     ];
@@ -2287,7 +2062,6 @@ Hooks.once('ready', async function() {
             // The meta box hook should handle individual pages
         });
         
-        // REMOVED: loadPersistedPinsOnCanvasReady() - Quest pins now loaded via migration in canvasReady hook
         
         // Register the controlToken hook AFTER settings are registered
         const controlTokenHookId = getBlacksmithHookManager().registerHook({
@@ -2521,15 +2295,6 @@ Handlebars.registerHelper('add', function(a, b) {
     return a + b;
 });
 
-function getQuestNumber(questUuid) {
-    let hash = 0;
-    for (let i = 0; i < questUuid.length; i++) {
-        hash = ((hash << 5) - hash) + questUuid.charCodeAt(i);
-        hash = hash & hash;
-    }
-    return Math.abs(hash) % 100 + 1;
-}
-
 /**
  * Comprehensive cleanup function for the entire module
  */
@@ -2557,7 +2322,6 @@ function cleanupModule() {
         // Remove any remaining DOM elements
         // v13: Use native DOM instead of jQuery
         document.querySelectorAll('.squire-tray').forEach(el => el.remove());
-        document.querySelectorAll('.squire-questpin-tooltip').forEach(el => el.remove());
 
         if (selectionUpdateFrameId !== null) {
             cancelAnimationFrame(selectionUpdateFrameId);

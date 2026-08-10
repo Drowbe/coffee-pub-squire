@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
-import { showQuestTooltip, hideQuestTooltip, getTaskText, getObjectiveTooltipData, getTransferBlocker, renderTemplate, getCampaignContext, resolveDroppedItem, showSquireToast, getActorDisplayName } from './helpers.js';
+import { getTransferBlocker, renderTemplate, getCampaignContext, resolveDroppedItem, showSquireToast, getActorDisplayName } from './helpers.js';
 import { CharacterPanel } from './panel-character.js';
 import { GmPanel } from './panel-gm.js';
 import { SpellsPanel } from './panel-spells.js';
@@ -14,10 +14,8 @@ import { PartyPanel } from './panel-party.js';
 import { PartyStatsPanel } from './panel-party-stats.js';
 import { NotesPanel } from './panel-notes.js';
 import { CodexPanel } from './panel-codex.js';
-import { QuestPanel } from './panel-quest.js';
 import { PrintCharacterSheet } from './utility-print-character.js';
 import { StatblockUtility } from './utility-statblock.js';
-// REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
 import { HandleManager } from './manager-handle.js';
 import { trackModuleInterval, trackModuleTimeout, registerTimeoutId, registerIntervalId, clearTrackedInterval, clearTrackedTimeout } from './timer-utils.js';
 
@@ -104,7 +102,6 @@ export class PanelManager {
         this.partyStatsPanel = new PartyStatsPanel();
         this.notesPanel = new NotesPanel();
         this.codexPanel = new CodexPanel();
-        this.questPanel = new QuestPanel();
         this.hiddenCategories = new Set();
         
         // Register panels with HookManager
@@ -312,11 +309,6 @@ export class PanelManager {
 
             // Abort if instance was cleared by another hook (e.g. deleteToken) during await
             if (!PanelManager.instance) return;
-            
-            // Initialize quest markers for the current scene
-            if (PanelManager.instance.questMarkers) {
-                await PanelManager.instance.questMarkers.initializeSceneMarkers();
-            }
             
             // Update health panel with current token selection
             await _updateTrayFromSelection();
@@ -534,7 +526,7 @@ export class PanelManager {
         // viewed (setViewMode) or an event-driven refresh renders it directly,
         // then stays warm across subsequent renderPanels calls.
         //
-        // Quests, codex, and notes are no longer tray tabs — they render into
+        // Codex and notes are no longer tray tabs — they render into
         // their own windows (window-campaign-browser.js), launched from the
         // menubar. The tray must not render them: one panel instance holds one
         // AbortController, so a second host re-rendering it silently kills the
@@ -546,10 +538,6 @@ export class PanelManager {
             }
         }
 
-        // The persistent pinned-quest menubar notification used to be restored
-        // by the quest panel's render. Nothing renders that panel on load now,
-        // so ask it directly — it is cheap and does not touch the DOM.
-        this.questPanel?._checkAndNotifyPinnedQuest?.();
         // Party-stats lives inside the party tab — same lazy rules plus its own setting
         if (game.settings.get(MODULE.ID, 'showPartyStatsPanel')) {
             if (this.partyStatsPanel
@@ -1208,8 +1196,7 @@ export class PanelManager {
         const lazyPanelByMode = {
             party: this.partyPanel,
             notes: this.notesPanel,
-            codex: this.codexPanel,
-            quest: this.questPanel
+            codex: this.codexPanel
         };
         const lazyPanel = lazyPanelByMode[mode];
         if (lazyPanel && !lazyPanel._hasRenderedOnce) {
@@ -1237,7 +1224,7 @@ export class PanelManager {
         // Update toggle button icon
         const icon = tray.querySelector('.tray-handle-button-viewcycle i');
         if (icon) {
-            icon.classList.remove('fa-user', 'fa-users', 'fa-sticky-note', 'fa-book', 'fa-flag');
+            icon.classList.remove('fa-user', 'fa-users', 'fa-sticky-note', 'fa-book');
             switch (mode) {
                 case 'party':
                     icon.classList.add('fa-users');
@@ -1247,9 +1234,6 @@ export class PanelManager {
                     break;
                 case 'codex':
                     icon.classList.add('fa-book');
-                    break;
-                case 'quest':
-                    icon.classList.add('fa-flag');
                     break;
                 default:
                     icon.classList.add('fa-user');
@@ -1662,9 +1646,6 @@ export class PanelManager {
         }
         if (PanelManager.instance.codexPanel && typeof PanelManager.instance.codexPanel.destroy === 'function') {
             PanelManager.instance.codexPanel.destroy();
-        }
-        if (PanelManager.instance.questPanel && typeof PanelManager.instance.questPanel.destroy === 'function') {
-            PanelManager.instance.questPanel.destroy();
         }
         if (PanelManager.instance.characterPanel && typeof PanelManager.instance.characterPanel.destroy === 'function') {
             PanelManager.instance.characterPanel.destroy();

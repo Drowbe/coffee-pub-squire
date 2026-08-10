@@ -334,7 +334,7 @@ export function mergeCodexLinks(existing, resolved) {
  * than swallowed.
  *
  * @param {Array<object>} reports collected report objects
- * @param {string} context human label, e.g. 'Quest import'
+ * @param {string} context human label, e.g. 'Codex import'
  */
 export function reportResolution(reports, context) {
     if (!game.user.isGM) return;

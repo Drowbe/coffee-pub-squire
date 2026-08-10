@@ -805,3 +805,74 @@
     font-style: italic;
     opacity: 0.6;
 }
+
+/* ==========================================================================
+   CODEX PIN PLACEMENT
+   Crosshair cursor + the preview marker that follows the mouse while the GM
+   picks a spot. These rules used to live in panel-quest.css under quest names;
+   they moved here with the quest feature's departure, since codex placement is
+   now their only caller.
+   ========================================================================== */
+
+html.squire-codex-pin-placement,
+body.squire-codex-pin-placement {
+    cursor: crosshair;
+}
+
+html.squire-codex-pin-placement *,
+body.squire-codex-pin-placement * {
+    cursor: inherit !important;
+}
+
+body.squire-codex-pin-placement .squire-codex-pin-placement-canvas,
+html.squire-codex-pin-placement .squire-codex-pin-placement-canvas {
+    cursor: crosshair;
+}
+
+.codex-pin-preview {
+    position: fixed;
+    z-index: 10000;
+    width: var(--codex-pin-width, 32px);
+    height: var(--codex-pin-height, 32px);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    border-radius: 50%;
+    background: var(--codex-pin-fill, #ffff00);
+    border: var(--codex-pin-stroke-width, 2px) solid var(--codex-pin-stroke, #000000);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+}
+
+.codex-pin-preview[data-shape="square"] {
+    border-radius: 15%;
+}
+
+.codex-pin-preview .codex-pin-preview-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: rgba(0, 0, 0, 0.9);
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+.codex-pin-preview .codex-pin-preview-inner i {
+    font-size: 0.85em;
+}
+
+/* Pin-to-scene icon state. These rules used to live in panel-quest.css, whose
+   quest classes the codex list was borrowing; they came here under codex names
+   when quests left. */
+.squire-panel-host[data-position="left"] .codex-pin-icon.codex-pin-dim {
+    opacity: 0.4;
+}
+
+.squire-panel-host[data-position="left"] .codex-pin-icon.codex-pin-active {
+    opacity: 1;
+    color: var(--color-border-highlight, #ff6400);
+    text-shadow: 0 0 8px var(--color-shadow-primary);
+}

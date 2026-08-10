@@ -13,7 +13,7 @@ if (!BlacksmithWindowBaseV2) {
 }
 
 /**
- * Standalone browser windows for quests, codex, and notes.
+ * Standalone browser windows for codex and notes.
  *
  * These host the existing panel classes rather than reimplementing them. The
  * panels were always `render(hostElement)` classes that look for their own
@@ -32,15 +32,6 @@ if (!BlacksmithWindowBaseV2) {
  */
 
 const KINDS = {
-    quest: {
-        id: `${MODULE.ID}-quest-browser-window`,
-        title: 'Quests',
-        panelKey: 'panel-quest',
-        headerIcon: 'fa-solid fa-flag',
-        rootClass: 'quest-browser-window',
-        position: { width: 520, height: 860 },
-        constraints: { minWidth: 420, minHeight: 480 }
-    },
     codex: {
         id: `${MODULE.ID}-codex-browser-window`,
         title: 'Codex',
@@ -160,7 +151,6 @@ export class CampaignBrowserWindow extends BlacksmithWindowBaseV2 {
     _getPanel() {
         const instance = game.modules.get(MODULE.ID)?.api?.PanelManager?.instance;
         if (!instance) return null;
-        if (this.kind === 'quest') return instance.questPanel ?? null;
         if (this.kind === 'codex') return instance.codexPanel ?? null;
         return instance.notesPanel ?? null;
     }

@@ -1,5 +1,4 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-// REMOVED: import { QuestPin } from './quest-pin.js'; - Migrated to Blacksmith API
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
 import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getCampaignContext, openHealthWindow, getHealthPercent, openStatusEffectsWindow } from './helpers.js';
@@ -19,7 +18,6 @@ export class HandleManager {
         // Handle element the delegated listeners are bound to (bind once per tray element)
         this._boundHandleElement = null;
 
-        // Parsed pinned-quest cache: { uuid, modifiedTime, data }
     }
 
     /**
@@ -519,9 +517,6 @@ export class HandleManager {
             }
         });
 
-        // Attach objective click handlers
-        // v13: Pass handleElement (the cloned handle that's actually in the DOM)
-        this._attachObjectiveClickHandlers(handleElement);
     }
 
     /**
@@ -557,21 +552,6 @@ export class HandleManager {
         // v13: Use native DOM properties directly
         const isOverflowing = container.scrollHeight > container.clientHeight;
         fade.style.display = isOverflowing ? 'block' : 'none';
-    }
-
-    /**
-     * Attach objective click handlers to the handle
-     * @param {HTMLElement} handle - The handle element (native DOM)
-     * @private
-     */
-    _attachObjectiveClickHandlers(handle) {
-        // Handle objective clicks in quest progress (handle)
-        
-        // Remove existing handlers first - v13: Use native DOM
-        // Cloning elements in the main handler already removes old listeners
-        
-
-        // Add enhanced tooltip functionality
     }
 
     /**

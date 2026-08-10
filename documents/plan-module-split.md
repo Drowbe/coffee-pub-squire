@@ -17,13 +17,33 @@ Working doc. Delete it when the split is done.
 
 Worth carrying forward: Blacksmith pulled rather than Squire pushing. That is the better shape for the rest of the split — the receiving module decides the form the code takes in its own codebase, and the sending module's job is to answer questions and then delete.
 
-**Next:** import/export to Blacksmith (unblocks the note in `helpers.js`), then Librarian.
+**Phase 2 — Quests to Librarian: DONE (13.6.1, unreleased).** Librarian took the quest log, the
+single-quest editor, the parser, the quest/objective pins and their taxonomy, then verified all of it
+in a live world **with Squire disabled** — the pass that caught two leaked Squire class names and a
+Handlebars helper Librarian's templates had been borrowing from Squire's global registration. Only
+then did Squire delete its copies: 3 scripts, 4 templates, 3 stylesheets, the quest half of
+`manager-pins.js` and `manager-notifications.js`, 5 settings, ~2,300 lines.
+
+Two things worth remembering from it:
+
+- **Global namespaces make the "both enabled" test a false pass.** Handlebars helpers and partials are
+  world-global, so while both modules ran, Librarian's templates silently used Squire's helpers. Every
+  one of them broke the moment Squire was disabled. Same story for CSS class names: the codex list and
+  the codex pin-placement cursor were styled by rules living in `panel-quest.css`, so deleting the
+  quest stylesheets would have quietly un-styled the Codex. Both were only findable by running the
+  receiving module *alone*. **Verify with the sending module disabled, every time.**
+- **The pin migration has to run before the sending module updates.** A pin is found by its `moduleId`.
+  Until the macro re-stamps them, existing quest pins belong to a module that no longer claims them —
+  and once Squire ships without quests, nothing in either module is looking for them.
+
+**Next:** import/export to Blacksmith (unblocks the note in `helpers.js`), then Codex to Librarian
+(which carries the subtype migration), then Notes to Blacksmith.
 
 ## Corrections to earlier versions of this doc
 
 Both were wrong in the same direction — they made the job look smaller than it is.
 
-1. **"The tray panels are legacy surface and can be deleted."** They are not. `panel-quest.js`, `panel-codex.js`, and `panel-notes.js` hold the browse experience *and* most of the product: import/export dialogs, pin placement and configuration, objective state, quest status, visibility, category management, notifications. The V2 windows (`window-quest`, `window-codex`, `window-note`) are **single-entry editors** — `QuestWindow` binds one `pageUuid` and has `isEditing`. Librarian inherits essentially the full 15,766 lines, not 8,000.
+1. **"The tray panels are legacy surface and can be deleted."** They are not. `panel-quest.js`, `panel-codex.js`, and `panel-notes.js` hold the browse experience *and* most of the product: import/export dialogs, pin placement and configuration, objective state, quest status, visibility, category management, notifications. The V2 windows (`window-quest`, `window-codex`, `window-note`) are **single-entry editors** — `QuestWindow` binds one `pageUuid` and has `isEditing`. Librarian inherits essentially the full 15,766 lines, not 8,000. (Borne out by the quest move: `panel-quest.js` alone was 4,161 lines and went over whole.)
 
 2. **"The journal substrate needs a merge with Blacksmith's."** It does not. Blacksmith's `manager-journal-tools.js` upgrades entity links to compendium UUIDs and `parsers/parse-journal-area.js` builds page HTML from JSON — both *write* side. Squire's `utility-journal.js` reads and renders pages with permission awareness, and `utility-base-parser.js` reads structured data back out of page HTML. Opposite directions, zero overlap. That piece is a move, not a reconciliation.
 
@@ -108,12 +128,11 @@ Campaign data lives under `coffee-pub-squire.*` on journal pages, entries, pins,
 2. ~~**Shared services to Blacksmith** — dice tray, HP, macros.~~ **Done.** The add → verify → remove order held up; worth repeating.
 3. **Import/export to Blacksmith** — unblocks the note in `helpers.js`.
 4. **Notes → Blacksmith** — Blacksmith-led, design pass first. They will send the API shape before writing the port, since Librarian may want to reference notes.
-5. **Stand up `coffee-pub-librarian`** — Codex and Quests, which leave Squire whole, absorbing the quest persistence refactor, the flag namespace, and the codex subtype migration together.
+5. ~~**Stand up `coffee-pub-librarian`**~~ **Done for Quests** (13.6.1). Codex follows and carries the subtype migration and the flag namespace with it. The quest persistence refactor moved to Librarian's TODO rather than being done in flight — the migration macro copies the existing shape, so the rewrite is now Librarian's to schedule.
 
-Librarian and Notes run in parallel and do not collide: Librarian's first work is Codex and Quests; Notes needs a design pass in Blacksmith before any code moves.
+Librarian and Notes run in parallel and do not collide: Librarian has Quests and is taking Codex next; Notes needs a design pass in Blacksmith before any code moves.
 
 ## Open questions
 
-- **Librarian vs Scribe.** Scribe exists and is under-developed. Worth reading before minting a new id.
-- **Pin taxonomy across two modules.** Blacksmith registers pin types per module. Confirm before step 5 that quest/codex pins registered by Librarian and any pins still registered by Squire coexist cleanly on one scene.
+- ~~**Pin taxonomy across two modules.**~~ **Answered.** Librarian's quest/objective pins and Squire's note/codex pins coexist on one scene without interference — verified live while both modules were enabled, and again with Squire disabled. Registration is per module and the type strings do not collide.
 - **Three modules to install.** Blacksmith is already required, so it's two-to-three. Worth a bundle story.

@@ -1,8 +1,8 @@
 /*
-    Campaign browser windows (quests / codex / notes).
+    Campaign browser windows (codex / notes).
 
-    The panels scroll on their own inner element — .quest-content,
-    .codex-content, .notes-content — each declared `flex: 1; overflow-y: auto`.
+    The panels scroll on their own inner element — .codex-content and
+    .notes-content — each declared `flex: 1; overflow-y: auto`.
     That only produces a scrollbar when every ancestor up to the window body is
     a bounded flex column: a flex child defaults to min-height:auto, refuses to
     shrink below its content, and hands the scroller an unbounded height.

@@ -1,12 +1,12 @@
 import { MODULE } from './const.js';
 
 /**
- * Where the live quest / codex / notes panels are, and how to reach them.
+ * Where the live codex / notes panels are, and how to reach them.
  *
- * These three panels are rendered by whatever is hosting them — today the tray,
+ * These panels are rendered by whatever is hosting them — today the tray,
  * shortly their own windows — and a dozen callers across the pin manager, the
  * notification watcher, and the editor windows need to re-render or reveal one.
- * Those callers used to reach through `api.PanelManager.instance.questPanel`,
+ * Those callers used to reach through `api.PanelManager.instance.codexPanel`,
  * which hard-codes both the host (the tray) and the way to bring a panel into
  * view (switch the tray's view mode). Neither survives the move to windows.
  *
@@ -14,7 +14,7 @@ import { MODULE } from './const.js';
  * which element the panel renders into, and what "show me this panel" means. A
  * caller then asks for a kind, not for the tray.
  *
- * Kinds: 'quest' | 'codex' | 'notes'.
+ * Kinds: 'codex' | 'notes'.
  */
 
 /** @type {Map<string, {panel: object, getElement: () => (HTMLElement|null), reveal: () => (void|Promise<void>)}>} */
@@ -79,14 +79,14 @@ export async function refreshCampaignPanel(kind) {
 
 /**
  * Bring a panel into view and re-render it — the "a pin was clicked, show me
- * that quest" path. What revealing means belongs to the host: switching the
+ * that entry" path. What revealing means belongs to the host: switching the
  * tray's view mode today, focusing a window later.
  */
 export async function revealCampaignPanel(kind) {
     let host = hosts.get(kind);
 
-    // Nothing hosting it means the browser window isn't open. Clicking a quest
-    // pin should open the quests window, not silently do nothing — so ask the
+    // Nothing hosting it means the browser window isn't open. Clicking a pin
+    // should open that browser window, not silently do nothing — so ask the
     // opener, then look again. Registration happens during that window's first
     // render, which is awaited here.
     if (!host) {

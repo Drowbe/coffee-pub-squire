@@ -47,16 +47,13 @@
 
 @import "panel-codex.css";
 
-@import "panel-quest.css";
 @import "window-campaign-browser.css";
 
-@import "quest-markers.css";
 
 /* --- Forms ---------------------- */
 
 @import "window-codex.css";
 
-@import "window-quest.css";
 
 @import "window-note.css";
 

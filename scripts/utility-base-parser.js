@@ -1,6 +1,6 @@
 /**
  * Base parser class for extracting structured data from journal page HTML.
- * Provides common parsing utilities for Codex, Notes, and Quest parsers.
+ * Provides common parsing utilities for the Codex and Notes parsers.
  */
 
 export class BaseParser {

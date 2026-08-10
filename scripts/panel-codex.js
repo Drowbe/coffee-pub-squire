@@ -2032,7 +2032,7 @@ export class CodexPanel {
         // the .codex-content scroll container and recreates it at scrollTop 0, so actions
         // like placing/unplacing a pin or toggling visibility would otherwise jump the GM
         // back to the top and force them to scroll back down to find their place.
-        // (Same fix the quest and notes panels already carry.)
+        // (Same fix the notes panel already carries.)
         const prevScrollTop = codexContainer.querySelector('.codex-content')?.scrollTop ?? 0;
 
         // v13: Use native DOM innerHTML instead of jQuery html()

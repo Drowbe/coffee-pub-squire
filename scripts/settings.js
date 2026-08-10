@@ -575,18 +575,6 @@ export const registerSettings = function() {
         }
     });
 
-    // One-time guard: legacy quest/objective pin stroke normalization (see migrateSquirePinStyles).
-    // Pre-13.3.0 pins baked status ring colors (red=failed, green=completed) into style.stroke.
-    // Runs once to reset them to the current design; never again, so GM stroke tweaks persist.
-    game.settings.register(MODULE.ID, 'pinStrokeMigrationDone', {
-        name: 'Pin Stroke Migration Completed',
-        hint: 'Internal flag. Tracks whether the one-time legacy quest/objective pin stroke normalization has run.',
-        scope: 'world',
-        config: false,
-        type: Boolean,
-        default: false
-    });
-
     // GM's Selected Journal
     game.settings.register(MODULE.ID, 'notesGMJournal', {
         name: 'GM\'s Selected Journal',
@@ -613,8 +601,8 @@ export const registerSettings = function() {
         default: 'none'
     });
 
-    // notesPinDefaultDesign and questPinDefaultDesign removed — initial defaults live in
-    // pin-defaults.json and the GM manages design via Blacksmith Configure Pin.
+    // notesPinDefaultDesign removed — initial defaults live in PIN_DEFAULTS
+    // (manager-pins.js) and the GM manages design via Blacksmith Configure Pin.
 
     // --------------------------------
     // --- Compendium Settings ---
@@ -1001,44 +989,6 @@ export const registerSettings = function() {
         }
     });
 
-    // --------------------------------
-    // ---      QUEST Settings     ---
-    // --------------------------------
-    
-    // ---------- Quest Heading ----------
-    game.settings.register(MODULE.ID, "headingH3QuestConfiguration", {
-        name: 'Quest Configuration',
-        hint: 'Settings for quest pins and their display on the canvas.',
-        scope: "world",
-        config: true,
-        default: "",
-        type: String,
-    });
-    
-    // questPinTitleSize, questPinTitleMaxWidth, questPinTitleOffset, questPinScale removed —
-    // GM adjusts quest pin design via Blacksmith Configure Pin > Update All Quest Pins.
-
-
-
-
-	// -- Search World Items First --
-	game.settings.register(MODULE.ID, 'autoAddPartyMembers', {
-		name: 'Auto Add Party Members',
-		hint: 'When enabled, we will automatically add party members to the quest when the quest is created.',
-		type: Boolean,
-		config: true,
-		scope: 'world',
-		default: true,
-	});
-
-
-
-
-
-
-
-
-
     // ================================
     // ===          CANVAS          ===
     // ================================
@@ -1096,52 +1046,6 @@ export const registerSettings = function() {
 
 
 
-
-
-
-    // --------------------------------------------------------------
-    // THESE QUEST SETTINGS ARE INTERNAL AND NOT EXPOSED IN SETTINGS
-    // --------------------------------------------------------------
-
-
-    // Quest Journal
-    game.settings.register(MODULE.ID, 'questJournal', {
-        name: "Quest Journal",
-        hint: "The journal to use for quest entries. Each quest will be a separate page in this journal.",
-        scope: "world",
-        config: true,
-        type: String,
-        choices: () => {
-            // Create choices object with 'none' as first option
-            const choices = {
-                'none': '- Select Journal -'
-            };
-            
-            // Add all available journals
-            game.journal.contents.forEach(j => {
-                choices[j.id] = j.name;
-            });
-            
-            return choices;
-        },
-        default: "none",
-        onChange: () => {
-            // Update the quest panel if it exists
-            if (PanelManager.instance?.questPanel) {
-                PanelManager.instance.questPanel.render(PanelManager.element);
-            }
-        }
-    });
-
-    // Quest Categories
-    game.settings.register(MODULE.ID, 'questCategories', {
-        name: "Quest Categories",
-        hint: "Available categories for quests",
-        scope: "world",
-        config: false,
-        type: Array,
-        default: ["Main Quest", "Side Quest"]
-    });
 
 
 

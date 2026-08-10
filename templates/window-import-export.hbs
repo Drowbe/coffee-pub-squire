@@ -2,7 +2,7 @@
 {{!-- 
   Usage:
   {{> "modules/coffee-pub-squire/templates/window-import-export" 
-    type="quests|codex" 
+    type="codex" 
     isImport=true|false
     isExport=true|false
     jsonInputId="unique-input-id"
@@ -51,29 +51,12 @@
   </div>
   {{/if}}
 
-  {{!-- Quest Details --}}
-  {{#if (eq type "quests")}}
-  <div class="squire-details-section">
-    <hr class="squire-divider">
-    <div class="squire-details-title">Quest Smart Import</div>
-    <ul class="squire-details-list">
-      <li>Existing Quest entries are updated, not duplicated</li>
-      <li>Progress and states are preserved</li>
-      <li>Scene pins are merged intelligently</li>
-      <li>Pin positions and associations maintained</li>
-    </ul>
-    <hr class="squire-divider">
-  </div>
-  {{/if}}
-
 {{else if isExport}}
   {{!-- ************* EXPORT ************* --}}
 
   {{!-- Title --}}
   <div class="squire-export-title">
-     {{#if (eq type "quests")}}
-      Quests and Scene Pins JSON
-     {{else if (eq type "codex")}}
+     {{#if (eq type "codex")}}
       Codex JSON
      {{/if}}
   </div>

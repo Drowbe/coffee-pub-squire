@@ -12,9 +12,8 @@
 | Codex: clicking a tag filters list by that tag | Medium | M | Open |
 | Codex: “new” flag on added items until client refresh | Medium | S | Open |
 | Codex: drag token to manual add fills description from bio | Medium | M | Open |
-| Codex + Quest: resolve plain-text names to UUIDs on import via Blacksmith `api.compendiums` | Medium | M | Done (13.3.12) |
-| Pins: audit quest/note pin visibility for the same silent no-op fixed for codex | Medium | S | Open |
-| Quest: same latent trim-match collapse bug that was live in codex (`panel-quest.js:4117`) | Medium | S | Open |
+| Codex: resolve plain-text names to UUIDs on import via Blacksmith `api.compendiums` | Medium | M | Done (13.3.12) |
+| Pins: audit note pin visibility for the same silent no-op fixed for codex | Medium | S | Open |
 | Codex: applying a tag filter permanently wipes `codexCollapsedCategories` (`panel-codex.js:717`) | Medium | S | Open |
 | `module.json`: declare a Blacksmith `13.8.4` minimum — link resolution silently no-ops below it | Medium | S | Open |
 | Blacksmith (other repo): `JournalSheet` global is a hard break in v15 (`ui-journal-encounter.js:378`) | Medium | S | Open |
@@ -28,8 +27,7 @@
 | Codex: suggested discoveries — GM-reviewed `related`/name-containment candidates (see `plan-codex-datamodel.md` Phase 5) | Medium | M | Designed |
 | Codex: `related` is missing from the Edit Entry window, the journal page edit form, AND the page view | High | M | Open |
 | Notes future: templates, linking, export, sharing, reactions, mentions | Low | XL | Open |
-| Quest future: relationships, timeline, templates, automation, chains, etc. | Low | XL | Open |
-| Base panel class (`base-panel.js`) + refactor Codex/Notes/Quest panels | Low | L | Open |
+| Base panel class (`base-panel.js`) + refactor Codex/Notes panels | Low | L | Open |
 | Code cleanup: remove legacy fix code | Low | M | Open |
 | Modularize `manager-panel.js` | Low | L | Open |
 | Party transfer refactor follow-up (`panel-party.js` vs `TransferUtils`) | Low | M | Open |
@@ -61,10 +59,10 @@
 
 ### V14/V15 READINESS (audited July 13, 2026 — world moves to v14 within weeks)
 - [x] **AUDIT** v14 removes the *v12*-deprecated globals (AudioHelper, Sound, grid/dice/canvas-source classes, etc.) — grep confirms **zero uses** in this module. helpers.js already namespaces `renderTemplate`/`TextEditor`/`ContextMenu` (v13 style, v14-safe). The codex data model, page subtype, and sheet use v13+ AppV2 APIs that carry into v14 unchanged. module.json already declares `maximum: 14`.
-- [x] **REFACTOR (13.3.19)** Removed all 22 legacy V1 Dialog call sites. Simple confirmations, short choices, clipboard fallback, journal selection, current JSON import forms, and current transfer quantity/approval forms now route through Blacksmith `api.dialog`. Codex and Quest exports share Squire's new multi-instance-safe `DataExportWindow` on `BlacksmithWindowBaseV2`. The duplicate 32 KB Quest import/export listener block was removed. A source audit now finds zero `new Dialog`, `Dialog.confirm`, `Dialog.wait`, or `Dialog.prompt` calls in `scripts/`.
+- [x] **REFACTOR (13.3.19)** Removed all 22 legacy V1 Dialog call sites. Simple confirmations, short choices, clipboard fallback, journal selection, current JSON import forms, and current transfer quantity/approval forms now route through Blacksmith `api.dialog`. Codex export uses Squire's multi-instance-safe `DataExportWindow` on `BlacksmithWindowBaseV2`. A source audit now finds zero `new Dialog`, `Dialog.confirm`, `Dialog.wait`, or `Dialog.prompt` calls in `scripts/`.
 
   **Follow-ups intentionally remain:**
-  - Replace Squire's current Codex/Quest JSON import implementation when Blacksmith publishes the presently proposed `api.importer` namespace. Do not deep-import Blacksmith internals.
+  - Replace Squire's current Codex JSON import implementation when Blacksmith publishes the presently proposed `api.importer` namespace. Do not deep-import Blacksmith internals.
   - [x] Blacksmith verified `api.entityList`, `api.quantitySplit`, and per-instance action delegation; Squire built the unified ephemeral Transfer Tool and removed its upstreamed quantity-control copy.
   - The shared Export window and journal picker are Squire-owned surfaces; they do not expand Blacksmith's scope.
 
@@ -73,7 +71,7 @@
 - [ ] **VERIFY** First v14 session: watch the console for deprecation warnings from Squire paths and log any not already covered by the two items above.
 
 ### CODEX DATA MODEL (custom page subtype)
-- [ ] **REFACTOR** Replace HTML-parsing of codex journal pages with a module-defined `JournalEntryPage` subtype (`coffee-pub-squire.codex`): structured fields in `page.system` via a `TypeDataModel` (schema validation, no parsing), Expanded Details in native `page.text.content`, custom page sheet for view/edit. **No migration** — content will be re-imported and re-pinned; import replaces legacy text pages with typed pages, making re-import the conversion path. Full design and phased plan in `documents/plan-codex-datamodel.md`. Notes and Quest panels adopt the same pattern afterward, in that order.
+- [ ] **REFACTOR** Replace HTML-parsing of codex journal pages with a module-defined `JournalEntryPage` subtype (`coffee-pub-squire.codex`): structured fields in `page.system` via a `TypeDataModel` (schema validation, no parsing), Expanded Details in native `page.text.content`, custom page sheet for view/edit. **No migration** — content will be re-imported and re-pinned; import replaces legacy text pages with typed pages, making re-import the conversion path. Full design and phased plan in `documents/plan-codex-datamodel.md`. The Notes panel adopts the same pattern afterward.
 
 ## MEDIUM PRIORITY
 
@@ -94,7 +92,7 @@
 - [ ] **ENHANCEMENT** Clicking a tag on a codex item should filter the codex by that tag
 - [ ] **ENHANCEMENT** Need to add a "new" flag to added items that goes away at next client refresh
 - [ ] **ENHANCEMENT** When dragging a token to the manual add, pull the bio and put it in the description
-- [x] **ENHANCEMENT — DONE (13.3.12)** ~~Auto-link codex entry names to the assigned actor/item compendiums on import.~~ The blocking prerequisite landed: Blacksmith 13.8.4 shipped `api.compendiums` (`resolve`/`resolveMany`/`resolveLink`), which owns the mapping *and* the search semantics — a better contract than the `api.resolveEntityByName(name, type)` wrapper anticipated here, since world-first/last ordering and Spell/Feature subtype filtering live inside it rather than in each caller. Shipped as specced: prompt now emits `links: [{name, type}]` instead of a hard-coded empty array; import resolves names → UUIDs → `system.links`; the "N of M linked, K unmatched" report exists (split into asserted vs speculative misses, so a self-link that legitimately matches nothing doesn't drown the signal). Squire reads none of Blacksmith's settings — `scripts/utility-resolver.js` is the only contact point. Scope grew past codex: quest treasure (`item`) and participants (`actor`) had the same dead end and are wired too.
+- [x] **ENHANCEMENT — DONE (13.3.12)** ~~Auto-link codex entry names to the assigned actor/item compendiums on import.~~ The blocking prerequisite landed: Blacksmith 13.8.4 shipped `api.compendiums` (`resolve`/`resolveMany`/`resolveLink`), which owns the mapping *and* the search semantics — a better contract than the `api.resolveEntityByName(name, type)` wrapper anticipated here, since world-first/last ordering and Spell/Feature subtype filtering live inside it rather than in each caller. Shipped as specced: prompt now emits `links: [{name, type}]` instead of a hard-coded empty array; import resolves names → UUIDs → `system.links`; the "N of M linked, K unmatched" report exists (split into asserted vs speculative misses, so a self-link that legitimately matches nothing doesn't drown the signal). Squire reads none of Blacksmith's settings — `scripts/utility-resolver.js` is the only contact point. Scope grew past codex: quest treasure (`item`) and participants (`actor`) had the same dead end and were wired too - that half left with Quests in 13.6.1.
   - **Caveat worth remembering**: resolution needs the GM's Blacksmith Compendium Mapping to include the *world* for the type. PCs/NPCs live in the world, so an Actor mapping with world search off resolves nothing and looks like a Squire bug. Nothing in Squire can detect this.
 
 ### PERFORMANCE (measured against a real 314-entry codex, July 15, 2026)
@@ -105,14 +103,14 @@ Real vault: **314 entries** — Characters 120, Books 47, Locations 40, Artifact
 
 ### PERFORMANCE: clone-and-rebind is dead weight (found July 15, 2026)
 
-- [ ] **PERF (High, S)** Panel `_activateListeners()` clones and replaces every node before binding to it — **14 sites in `panel-codex.js`, 19 in `panel-quest.js`**, ~7 of codex's running *per entry*:
+- [ ] **PERF (High, S)** Panel `_activateListeners()` clones and replaces every node before binding to it — **14 sites in `panel-codex.js`**, ~7 of them running *per entry*:
   ```js
   const newBtn = pinBtn.cloneNode(true);
   pinBtn.parentNode?.replaceChild(newBtn, pinBtn);
   newBtn.addEventListener('click', ...);
   ```
   The clone-and-replace idiom exists to strip **pre-existing** listeners when re-binding to live nodes. But `_activateListeners` has exactly **one call site in each panel, immediately after `container.innerHTML = html`** — every node it touches was created microseconds earlier and has no listeners to strip. The whole dance is a no-op with a cost: against the real 314-entry codex that is **~2,200 deep subtree clones plus ~2,200 `replaceChild`** (each invalidating layout) on **every** render — every pin toggle, visibility flip, and import step. `.codex-entry-image img` is cloned too, which can force image re-decode.
-  - Fix: delete the clone/replace; `addEventListener` on the original node. Mechanical and safe **so long as the one-call-site-after-innerHTML invariant holds** — verify per panel before touching it (confirmed for codex and quest; `panel-notes.js` has 17 clone sites but a different call structure and needs its own check).
+  - Fix: delete the clone/replace; `addEventListener` on the original node. Mechanical and safe **so long as the one-call-site-after-innerHTML invariant holds** — verify per panel before touching it (confirmed for codex; `panel-notes.js` has 17 clone sites but a different call structure and needs its own check).
   - Better still, per the handle: **delegate**. 13.3.6 fixed this exact pattern on `HandleManager` — it "cloned the whole `.tray-handle` (plus ~10 individual buttons) and re-attached ~15 listeners on every `updateHandle()`"; handlers are now bound once to the stable parent. Panels never got the same treatment.
   - Related, and the bigger prize: `render()` rebuilds the entire panel via `innerHTML` for any change at all. Delegation is a prerequisite for ever rendering incrementally.
 
@@ -129,11 +127,10 @@ Real vault: **314 entries** — Characters 120, Books 47, Locations 40, Artifact
 
 ### DUPLICATION TAX (found while fixing 13.3.12)
 
-These are all the *same* defect wearing different hats, and each exists because Notes/Codex/Quest each carry their own copy of the panel shell (8,328 lines across three files: `_refreshData` + cache, scroll preservation, collapse persistence, progress bar, import/export, filtering). See "Base panel class" below.
+These are all the *same* defect wearing different hats, and each exists because Notes and Codex each carry their own copy of the panel shell (Quests carried a third until 13.6.1: `_refreshData` + cache, scroll preservation, collapse persistence, progress bar, import/export, filtering). See "Base panel class" below.
 
-- [ ] **BUG (Medium)** `panel-quest.js:4117` has the identical post-render collapse restore that was live in codex until 13.3.12: it iterates every key in `questCollapsedCategories` and matches sections with `.trim()`, on top of the template already applying collapse by exact key. It is **latent, not live**, only because quest's keys come from a fixed status set (`Active`/`Complete`/…) rather than user-authored category names, so they never got polluted. Codex's did — the flag held junk like `" Locations\n "` and `" Artifacts\n \n Browse\n \n \n "` from an older version that derived keys from rendered element text, and trim-matching let a junk key saying *collapsed* override the real key saying *expanded* on every single render. Delete the redundant pass (the template is correct); the same trim-match also sits at `:2043` and `:2200`.
-- [ ] **BUG (Medium)** `panel-codex.js:717` — applying a tag filter does `setFlag('codexCollapsedCategories', {})`. The comment says "temporarily clear ... while filtering", but nothing restores it: filter by any tag once and every category is permanently expanded. Needs the pre-filter state stashed somewhere rather than destroyed. Quest likely has the same shape.
-- [ ] **CHORE (Low)** Keep a link-resolution test fixture in the repo (a quest JSON with a known-good name **and a guaranteed-miss control**; a codex JSON exercising self-link, typed links, and a speculative miss). Name resolution silently did nothing for years and nobody noticed — "it linked" alone can't distinguish a working resolver from indiscriminate linking. The control is the test.
+- [ ] **BUG (Medium)** `panel-codex.js:717` — applying a tag filter does `setFlag('codexCollapsedCategories', {})`. The comment says "temporarily clear ... while filtering", but nothing restores it: filter by any tag once and every category is permanently expanded. Needs the pre-filter state stashed somewhere rather than destroyed.
+- [ ] **CHORE (Low)** Keep a link-resolution test fixture in the repo (a codex JSON exercising self-link, typed links, a speculative miss, **and a guaranteed-miss control**). Name resolution silently did nothing for years and nobody noticed — "it linked" alone can't distinguish a working resolver from indiscriminate linking. The control is the test.
 
 ### RELEASE / COMPATIBILITY
 
@@ -145,12 +142,10 @@ These are all the *same* defect wearing different hats, and each exists because 
 - [ ] **BUG (Medium — other repo: coffee-pub-blacksmith)** `ui-journal-encounter.js:378` reads the bare `JournalSheet` global (`Object.values(ui.windows).find(w => w instanceof JournalSheet && ...)`). Deprecated since v13, **removed in v15** — it becomes a hard `ReferenceError` inside a hook that fires on every journal-page write, which Squire triggers constantly (imports, pin flags). Needs `foundry.appv1.sheets.JournalSheet`, and `ui.windows` on the same line is also v13-deprecated in favour of `foundry.applications.instances`.
 
 ### PINS
-- [ ] **AUDIT** Quest and note pins likely share the silent no-op fixed for codex pins in 13.3.12. Pin visibility in Squire is *derived*, never configured — and the pin's `ownership`, not `config.blacksmithVisibility`, is what actually gates players. A GM editing visibility in Blacksmith's Configure Pin therefore changes nothing for players and gets silently reverted by the next sync. Codex now warns (`_warnIfCodexPinVisibilityEdited()` in `manager-pins.js`, gated on `evt.patch.config.blacksmithVisibility` so Squire's own writes never trip it). The other three derive it differently and may each fail differently:
-  - `createQuestPin` (`manager-pins.js:528`) — derives from the page's `visible` flag; `_syncQuestPinVisibility` re-asserts it.
-  - `createObjectivePin` (`:607`) — derives from quest/objective state.
-  - `createNotePin` (`:910`) — **hardcodes `'visible'`**, ignoring even `PIN_DEFAULTS.note.config.blacksmithVisibility`. Probably the most silent of the three: nothing derives or re-asserts it, so a GM's edit may actually stick — meaning notes may want the opposite treatment (honor it) rather than a warning.
-  - Related: `pin-defaults.json` declares `config.blacksmithVisibility` for all four kinds and **no create path reads it** — only `.blacksmithAccess` is. Dead config; either wire it or delete it.
-  - Also unread: no create path reads `design.config` at all, so a GM's saved "Default for [type]" **Permissions** section (which Blacksmith *does* store — see `window-pin-configuration.js`, the `has('permissions')` branch) is discarded for every pin kind. Design/text/animation defaults are honored; permissions defaults are not. Decide whether that's intentional and document it either way.
+- [ ] **AUDIT** Note pins likely share the silent no-op fixed for codex pins in 13.3.12. Pin visibility in Squire is *derived*, never configured — and the pin's `ownership`, not `config.blacksmithVisibility`, is what actually gates players. A GM editing visibility in Blacksmith's Configure Pin therefore changes nothing for players and gets silently reverted by the next sync. Codex now warns (`_warnIfCodexPinVisibilityEdited()` in `manager-pins.js`, gated on `evt.patch.config.blacksmithVisibility` so Squire's own writes never trip it). Notes derive it differently:
+  - `createNotePin` — **hardcodes `'visible'`**, ignoring even `PIN_DEFAULTS.note.config.blacksmithVisibility`. Probably the most silent of the three: nothing derives or re-asserts it, so a GM's edit may actually stick — meaning notes may want the opposite treatment (honor it) rather than a warning.
+  - Related: `pin-defaults.json` declares `config.blacksmithVisibility` for both remaining kinds and **no create path reads it** — only `.blacksmithAccess` is. In fact **no code reads the file at all**; the live defaults are `PIN_DEFAULTS` in `manager-pins.js`. Either wire the file up or delete it.
+  - Also unread: no create path reads `design.config` at all, so a GM's saved "Default for [type]" **Permissions** section (which Blacksmith *does* store — see `window-pin-configuration.js`, the `has('permissions')` branch) is discarded for both pin kinds. Design/text/animation defaults are honored; permissions defaults are not. Decide whether that's intentional and document it either way.
 
 ## LOW PRIORITY
 
@@ -162,28 +157,17 @@ These are all the *same* defect wearing different hats, and each exists because 
 - [ ] **ENHANCEMENT** Note reactions
 - [ ] **ENHANCEMENT** Note mentions
 
-### Quest Future Enhancements
-- [ ] **ENHANCEMENT** Quest relationships (link quests: prerequisites, follow-ups)
-- [ ] **ENHANCEMENT** Timeline view (chronological quest events)
-- [ ] **ENHANCEMENT** Quest templates (pre-built structures)
-- [ ] **ENHANCEMENT** Automated rewards (auto-grant XP/items on completion)
-- [ ] **ENHANCEMENT** Quest chains (automatic progression through sequences)
-- [ ] **ENHANCEMENT** Player notes (allow players to add personal notes to quests)
-- [ ] **ENHANCEMENT** Quest sharing (share between GMs or worlds)
-- [ ] **ENHANCEMENT** Advanced filtering (by participants, location, timeframe)
-- [ ] **ENHANCEMENT** Quest analytics (completion rates, average time)
-
 ## Architecture & Code Quality
 
 ### Base Panel Class (Phase 1.4 from plan-notes)
-- [ ] **PLANNED** Create `scripts/base-panel.js` - Extract common panel patterns from Codex, Notes, Quest:
+- [ ] **PLANNED** Create `scripts/base-panel.js` - Extract common panel patterns from Codex and Notes:
   - Common methods: `constructor`, `_refreshData()`, `_activateListeners(html)`, `_setupSearchFilter(html)`, `_setupTagFilter(html)`
-  - Refactor `CodexPanel`, `NotesPanel`, `QuestPanel` to extend `BasePanel`
+  - Refactor `CodexPanel` and `NotesPanel` to extend `BasePanel`
   - Lower priority - deferred until needed (~6-8 hours)
 
 **Evidence from 13.3.12 that "Low" is the wrong priority** — three of that release's fixes were pure duplication tax:
-  - *Scroll preservation on re-render*: quest and notes both already had it, with a comment describing the exact symptom. Codex didn't, so pinning an entry threw the GM to the top of the list. The same bug, already solved twice, shipped a third time.
-  - *Trim-match collapse restore*: live in codex, latent in quest (see DUPLICATION TAX above). One bug, two copies, one of them lucky.
+  - *Scroll preservation on re-render*: quest and notes both already had it, with a comment describing the exact symptom. Codex didn't, so pinning an entry threw the GM to the top of the list. The same bug, already solved twice, shipped a third time. (Quests have since left for Librarian; the lesson stands for the two panels that remain.)
+  - *Trim-match collapse restore*: live in codex, latent in quest. One bug, two copies, one of them lucky.
   - *State destroyed on rebuild*: hit five separate sites for codex links alone (import merge, page-sheet drop + remove, Edit window `_normalizeLinks` + `_addLink`).
 
 Also see **FALLOUT FROM THE `instance.element` FIX** above: `PanelManager` declared `this.element` to match the very convention this base class would formalise, then never assigned it — and nothing caught that for as long as it existed, because `render(null)` and `if (null)` both no-op. A base class that owns the element lifecycle is the natural place to make that impossible rather than merely fixed.
