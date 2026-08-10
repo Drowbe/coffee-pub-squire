@@ -33,20 +33,19 @@
 {{/inline}}
 
 <div class="features-panel">
-    {{#if (eq position "left")}}
-    <div class="section-header">
-        <div class="header-left">
-            <i class="fa-solid fa-stars"></i> Features
-        </div>
-        <div class="header-right">
-            {{#if (lookup featuresByType "class")}}<i class="fa-solid fa-graduation-cap features-category-filter active" data-filter-id="category-feature-class" title="Toggle Class Features"></i>{{/if}}
-            {{#if (lookup featuresByType "subclass")}}<i class="fa-solid fa-book-sparkles features-category-filter active" data-filter-id="category-feature-subclass" title="Toggle Subclass Features"></i>{{/if}}
-            {{#if (lookup featuresByType "race")}}<i class="fa-solid fa-users features-category-filter active" data-filter-id="category-feature-race" title="Toggle Racial Features"></i>{{/if}}
-            {{#if (lookup featuresByType "background")}}<i class="fa-solid fa-scroll features-category-filter active" data-filter-id="category-feature-background" title="Toggle Background Features"></i>{{/if}}
-            {{#if (lookup featuresByType "feat")}}<i class="fa-solid fa-hand-sparkles features-category-filter active" data-filter-id="category-feature-feat" title="Toggle Feats"></i>{{/if}}
-        </div>
+<div class="section-header">
+    <div class="header-left">
+        <i class="fa-solid fa-stars"></i> Features
     </div>
-    {{/if}}
+    <div class="header-right">
+        {{#if (lookup featuresByType "class")}}<i class="fa-solid fa-graduation-cap features-category-filter active" data-filter-id="category-feature-class" title="Toggle Class Features"></i>{{/if}}
+        {{#if (lookup featuresByType "subclass")}}<i class="fa-solid fa-book-sparkles features-category-filter active" data-filter-id="category-feature-subclass" title="Toggle Subclass Features"></i>{{/if}}
+        {{#if (lookup featuresByType "race")}}<i class="fa-solid fa-users features-category-filter active" data-filter-id="category-feature-race" title="Toggle Racial Features"></i>{{/if}}
+        {{#if (lookup featuresByType "background")}}<i class="fa-solid fa-scroll features-category-filter active" data-filter-id="category-feature-background" title="Toggle Background Features"></i>{{/if}}
+        {{#if (lookup featuresByType "feat")}}<i class="fa-solid fa-hand-sparkles features-category-filter active" data-filter-id="category-feature-feat" title="Toggle Feats"></i>{{/if}}
+    </div>
+</div>
+
     <div class="features-list">
         {{#if features}}
             {{!-- Class Features --}}

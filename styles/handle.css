@@ -1,6 +1,6 @@
 /* TRAY HANDLE */
 
-.squire-tray[data-position="left"] .tray-handle {
+.squire-tray .tray-handle {
     height: auto;
     width: var(--tray-handle-width); 
     flex: none;
@@ -31,17 +31,17 @@
 
 /* SEPARATORS AND SPACERS */
 
-.squire-tray[data-position="left"] .tray-handle-separator {
+.squire-tray .tray-handle-separator {
     font-weight: 900;
     font-size: 0.8em;
 }
-.squire-tray[data-position="left"] .tray-handle-separator.spacer {
+.squire-tray .tray-handle-separator.spacer {
     width: 0px;
     display: inline-block;
     margin-top: 6px;
     vertical-align: middle;
 }
-.squire-tray[data-position="left"] .tray-handle-separator.dot::before {
+.squire-tray .tray-handle-separator.dot::before {
     content: "•";
     color: #aaaaaa4d;
     font-size: 0.8em;
@@ -55,10 +55,10 @@
     margin-top: 4px;
     margin-bottom: 4px;
 }
-.squire-tray[data-position="left"] .tray-handle-separator.line-solid-thick,
-.squire-tray[data-position="left"] .tray-handle-separator.line-dotted-thick,
-.squire-tray[data-position="left"] .tray-handle-separator.line-double-thick,
-.squire-tray[data-position="left"] .tray-handle-separator.line-ridge-thick {
+.squire-tray .tray-handle-separator.line-solid-thick,
+.squire-tray .tray-handle-separator.line-dotted-thick,
+.squire-tray .tray-handle-separator.line-double-thick,
+.squire-tray .tray-handle-separator.line-ridge-thick {
     width: 22px;
     height: 1px;
     display: inline-block;
@@ -66,10 +66,10 @@
     margin-top: 8px;
     margin-bottom: 8px;
 }
-.squire-tray[data-position="left"] .tray-handle-separator.line-solid-thin,
-.squire-tray[data-position="left"] .tray-handle-separator.line-dotted-thin,
-.squire-tray[data-position="left"] .tray-handle-separator.line-double-thin,
-.squire-tray[data-position="left"] .tray-handle-separator.line-ridge-thin {
+.squire-tray .tray-handle-separator.line-solid-thin,
+.squire-tray .tray-handle-separator.line-dotted-thin,
+.squire-tray .tray-handle-separator.line-double-thin,
+.squire-tray .tray-handle-separator.line-ridge-thin {
     width: 22px;
     height: 1px;
     display: inline-block;
@@ -77,28 +77,28 @@
     margin-top: 8px;
     margin-bottom: 8px;
 }
-.squire-tray[data-position="left"] .tray-handle-separator.line-solid-thick {
+.squire-tray .tray-handle-separator.line-solid-thick {
     border-top: 2px solid rgba(121, 121, 121, 0.3);
 }
-.squire-tray[data-position="left"] .tray-handle-separator.line-solid-thin {
+.squire-tray .tray-handle-separator.line-solid-thin {
     border-top: 1px solid rgba(121, 121, 121, 0.3);
 }
-.squire-tray[data-position="left"] .tray-handle-separator.line-dotted-thick {
+.squire-tray .tray-handle-separator.line-dotted-thick {
     border-top: 2px dotted rgba(121, 121, 121, 0.3);
 }
-.squire-tray[data-position="left"] .tray-handle-separator.line-dotted-thin {
+.squire-tray .tray-handle-separator.line-dotted-thin {
     border-top: 1px dotted rgba(121, 121, 121, 0.3);
 }
-.squire-tray[data-position="left"] .tray-handle-separator.line-double-thick {
+.squire-tray .tray-handle-separator.line-double-thick {
     border-top: 5px double rgba(121, 121, 121, 0.3);
 }
-.squire-tray[data-position="left"] .tray-handle-separator.line-double-thin {
+.squire-tray .tray-handle-separator.line-double-thin {
     border-top: 3px double rgba(121, 121, 121, 0.3);
 }
-.squire-tray[data-position="left"] .tray-handle-separator.line-ridge-thick {
+.squire-tray .tray-handle-separator.line-ridge-thick {
     border-top: 3px ridge rgba(121, 121, 121, 0.3);
 }
-.squire-tray[data-position="left"] .tray-handle-separator.line-ridge-thin {
+.squire-tray .tray-handle-separator.line-ridge-thin {
     border-top: 2px ridge rgba(121, 121, 121, 0.3);
 }
 
@@ -106,9 +106,9 @@
 
 /* TRAY HANDLE BUTTONS */
 
-.squire-tray[data-position="left"] .tray-handle-button-pin,
-.squire-tray[data-position="left"] .tray-handle-button-viewcycle,
-.squire-tray[data-position="left"] .tray-handle-button-toggle {
+.squire-tray .tray-handle-button-pin,
+.squire-tray .tray-handle-button-viewcycle,
+.squire-tray .tray-handle-button-toggle {
     order: 1;
     background: none;
     border: 0px solid #ffffff;
@@ -124,9 +124,9 @@
     box-shadow: none !important;
 }
 
-.squire-tray[data-position="left"] .tray-handle-button-pin:hover,
-.squire-tray[data-position="left"] .tray-handle-button-viewcycle:hover,
-.squire-tray[data-position="left"] .tray-handle-button-toggle:hover {
+.squire-tray .tray-handle-button-pin:hover,
+.squire-tray .tray-handle-button-viewcycle:hover,
+.squire-tray .tray-handle-button-toggle:hover {
     background: rgba(255, 255, 255, 0.05);
     color: rgba(231, 91, 1, 1.0);
     border: none !important;      /* ensures no border is drawn */
@@ -135,14 +135,14 @@
 }
 
 
-.squire-tray[data-position="left"] .tray-handle-button-pin i,
-.squire-tray[data-position="left"] .tray-handle-button-viewcycle i,
-.squire-tray[data-position="left"] .tray-handle-button-toggle i {
+.squire-tray .tray-handle-button-pin i,
+.squire-tray .tray-handle-button-viewcycle i,
+.squire-tray .tray-handle-button-toggle i {
     transition: transform 0.2s ease, color 0.2s ease;
     margin-right: 0;
 }
 
-.squire-tray[data-position="left"] .tray-handle-button-pin:hover i {
+.squire-tray .tray-handle-button-pin:hover i {
     transform: rotate(45deg);
 }
 
@@ -161,7 +161,7 @@
 
 
 /* CHEVRON BUTTON  */
-.squire-tray[data-position="left"] .tray-handle i.fa-chevron-right {
+.squire-tray .tray-handle i.fa-chevron-right {
     order: 2;
     transform: rotate(0deg);
     margin-bottom: 2px;
@@ -171,16 +171,16 @@
     color: #9f9275;
 }
 
-.squire-tray[data-position="left"] .tray-handle:hover i.fa-chevron-right {
+.squire-tray .tray-handle:hover i.fa-chevron-right {
     color: rgba(231, 91, 1, 1.0);
     filter: brightness(1.2);
 }
 
-.squire-tray[data-position="left"].expanded .tray-handle i.fa-chevron-right {
+.squire-tray.expanded .tray-handle i.fa-chevron-right {
     transform: rotate(180deg);
 }
 
-.squire-tray[data-position="left"].expanded .tray-handle:hover i.fa-chevron-right {
+.squire-tray.expanded .tray-handle:hover i.fa-chevron-right {
     color: rgba(231, 91, 1, 1.0);
     filter: brightness(1.2);
 }
@@ -190,7 +190,7 @@
 
 /* TRAY HANDLE CONTENT WRAPPER */
 
-.squire-tray[data-position="left"] .tray-handle-content-wrapper {
+.squire-tray .tray-handle-content-wrapper {
     flex: 1;
     writing-mode: vertical-lr;
     transform: rotate(180deg);
@@ -205,7 +205,7 @@
 
 /* GLOBAL */
 
-.squire-tray[data-position="left"] .tray-handle-label {
+.squire-tray .tray-handle-label {
     font-size: 0.6em;
 	padding-top: 4px;
 	padding-bottom: 0px;
@@ -214,7 +214,7 @@
 	color: #aaaaaab4;
 }
 
-.squire-tray[data-position="left"] .handle-info-container {
+.squire-tray .handle-info-container {
     font-size: 1.2em;
     color: rgba(255, 255, 255, 0.6);
     background-color: rgba(0, 0, 0, 0.3);
@@ -234,7 +234,7 @@
 
 /* NO CHARACTER */
 
-.squire-tray[data-position="left"] .handle-no-character {
+.squire-tray .handle-no-character {
     font-size: 1.2em;
     color: #909090;
     font-weight: 900;
@@ -253,7 +253,7 @@
 
 
 
-.squire-tray[data-position="left"] .tray-handle-content {
+.squire-tray .tray-handle-content {
     font-size: 1.1em;
     color: #ffffff;
     font-weight: 900;
@@ -308,7 +308,7 @@
 
 /* GROUP ICONS  */
 
-.squire-tray[data-position="left"] .handle-group-button {
+.squire-tray .handle-group-button {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -324,18 +324,18 @@
     transform: rotate(180deg);
     min-height: 22px;
 }
-.squire-tray[data-position="left"] .handle-group-button:hover {
+.squire-tray .handle-group-button:hover {
     background: rgba(0, 0, 0, 0.4);
     filter: brightness(1);
     border-color: var(--color-border-highlight);
     box-shadow: 0 0 2px var(--color-shadow-highlight);
 }
-.squire-tray[data-position="left"] .handle-group-button i {
+.squire-tray .handle-group-button i {
     color: rgba(255, 255, 255, 0.9);
     font-size: 1em;
     padding-right: 1px;
 }
-.squire-tray[data-position="left"] .handle-group-button i:hover {
+.squire-tray .handle-group-button i:hover {
     transform: scale(1.05, 1.05);
 }
 
@@ -344,10 +344,10 @@
 
 /* Icon Set Containters */
 
-.squire-tray[data-position="left"] .handle-partymembers,
-.squire-tray[data-position="left"] .handle-characters,
-.squire-tray[data-position="left"] .handle-conditions,
-.squire-tray[data-position="left"] .handle-favorites {
+.squire-tray .handle-partymembers,
+.squire-tray .handle-characters,
+.squire-tray .handle-conditions,
+.squire-tray .handle-favorites {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -362,16 +362,16 @@
    Favorites panel. This replaces a reversed sort in the getHandleFavorites
    helper, which achieved the same visual result but left DOM order backwards —
    making "keep the top 5" mean slicing from the wrong end of the array. */
-.squire-tray[data-position="left"] .handle-favorites {
+.squire-tray .handle-favorites {
     flex-direction: row-reverse;
 }
 
 /* Icon Container */
 
-.squire-tray[data-position="left"] .handle-partymember-icon,
-.squire-tray[data-position="left"] .handle-character-icon,
-.squire-tray[data-position="left"] .handle-condition-icon,
-.squire-tray[data-position="left"] .handle-favorite-icon {
+.squire-tray .handle-partymember-icon,
+.squire-tray .handle-character-icon,
+.squire-tray .handle-condition-icon,
+.squire-tray .handle-favorite-icon {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -391,25 +391,25 @@
 
 /* Icon Overrides */
 
-.squire-tray[data-position="left"] .handle-condition-icon {
+.squire-tray .handle-condition-icon {
     padding: 2px;
 }
-.squire-tray[data-position="left"] .handle-partymember-icon.clickable {
+.squire-tray .handle-partymember-icon.clickable {
     border-color: rgba(49, 132, 57, 0.9);
 }
 
 /* Unavailable Favorites */
-.squire-tray[data-position="left"] .handle-favorite-icon.unavailable {
+.squire-tray .handle-favorite-icon.unavailable {
     border-color: rgba(255, 255, 255, 0.6);
     filter: grayscale(100%) saturate(100%) brightness(45%);
 }
 
 /* Icon Hovers */
 
-.squire-tray[data-position="left"] .handle-partymember-icon.clickable:hover,
-.squire-tray[data-position="left"] .handle-character-icon:hover,
-.squire-tray[data-position="left"] .handle-condition-icon:hover,
-.squire-tray[data-position="left"] .handle-favorite-icon:hover {
+.squire-tray .handle-partymember-icon.clickable:hover,
+.squire-tray .handle-character-icon:hover,
+.squire-tray .handle-condition-icon:hover,
+.squire-tray .handle-favorite-icon:hover {
     background: rgba(0, 0, 0, 0.4);
     filter: brightness(1);
     border-color: var(--color-border-highlight);
@@ -421,10 +421,10 @@
 
 /* Icon Image */
 
-.squire-tray[data-position="left"] .handle-partymember-icon img,
-.squire-tray[data-position="left"] .handle-character-icon img,
-.squire-tray[data-position="left"] .handle-condition-icon img,
-.squire-tray[data-position="left"] .handle-favorite-icon img {
+.squire-tray .handle-partymember-icon img,
+.squire-tray .handle-character-icon img,
+.squire-tray .handle-condition-icon img,
+.squire-tray .handle-favorite-icon img {
     background: rgba(0, 0, 0, 0.5);
     width: 100%;
     height: 100%; 
@@ -436,7 +436,7 @@
 
 /* Roll Mouseover */
 
-.squire-tray[data-position="left"] .handle-favorite-roll-overlay {
+.squire-tray .handle-favorite-roll-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -454,7 +454,7 @@
     padding-right: 1px;
     border-radius: inherit;
 }
-.squire-tray[data-position="left"] .handle-favorite-icon:hover .handle-favorite-roll-overlay {
+.squire-tray .handle-favorite-icon:hover .handle-favorite-roll-overlay {
     opacity: 1;
     pointer-events: auto;
 }
@@ -470,7 +470,7 @@
 
 /* TRAY HANDLE */
 
-.squire-tray[data-position="left"] .tray-handle-content-container {
+.squire-tray .tray-handle-content-container {
     max-height: 100%;
     border: 0px solid #ffffff;
     height: 100%;
@@ -480,7 +480,7 @@
     flex-direction: column;
     align-items: center;
 }
-.squire-tray[data-position="left"] .tray-handle-fade-bottom {
+.squire-tray .tray-handle-fade-bottom {
     position: absolute;
     left: 0; right: 0; bottom: 0;
     height: 80px;
@@ -501,7 +501,7 @@
 
 /* Health Bar Container */
 
-.squire-tray[data-position="left"] .handle-healthbar {
+.squire-tray .handle-healthbar {
     height: 80px;
     width: 20px;
     background: rgba(0, 0, 0, 0.3);
@@ -516,11 +516,11 @@
     position: relative;
     cursor: pointer;
 }
-.squire-tray[data-position="left"] .handle-healthbar.party {
+.squire-tray .handle-healthbar.party {
     height: 40px; /* PARTY WIDTH */
     width: 20px; /* PARTY HEIGHT */
 }
-.squire-tray[data-position="left"] .handle-healthbar:hover {
+.squire-tray .handle-healthbar:hover {
     background: rgba(0, 0, 0, 0.8);
     border-color: var(--color-border-highlight);
     box-shadow: 0 0 2px var(--color-shadow-highlight);
@@ -528,7 +528,7 @@
 
 /* Health Bar Fill */
 
-.squire-tray[data-position="left"] .handle-healthbar-fill {
+.squire-tray .handle-healthbar-fill {
     width: 100%;
     background: inherit;
     transition: height 0.3s ease;
@@ -543,8 +543,8 @@
 
 /* Overlays*/
 
-.squire-tray[data-position="left"] .handle-healthbar-icon,
-.squire-tray[data-position="left"] .handle-healthbar-value {
+.squire-tray .handle-healthbar-icon,
+.squire-tray .handle-healthbar-value {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -554,29 +554,29 @@
     pointer-events: none; 
     text-shadow: 1px 1px 1px rgba(0,0,0,0.3), -1px -1px 1px rgba(0,0,0,0.3);
 }
-.squire-tray[data-position="left"] .handle-healthbar-value {
+.squire-tray .handle-healthbar-value {
     transform: translate(-50%, -50%) rotate(0deg);
     color: rgba(255, 255, 255, 0.65);
     font-size: 0.70em;
     z-index: 2;
 }
-.squire-tray[data-position="left"] .handle-healthbar-icon {
+.squire-tray .handle-healthbar-icon {
     transform: translate(-50%, -50%) translateX(0.1em) rotate(180deg);
     color: rgba(255, 255, 255, 0.60);
     font-size: 0.85em;
     z-index: 3;
 }
-.squire-tray[data-position="left"] .handle-healthbar-icon i {
+.squire-tray .handle-healthbar-icon i {
     display: none;
 }
 
 /* Dead handle fills occupy the full vertical track; color and pulse are shared. */
-.squire-tray[data-position="left"] .handle-healthbar-fill.squire-tray-healthbar-dead {
+.squire-tray .handle-healthbar-fill.squire-tray-healthbar-dead {
     min-height: 100%;
 }
-.squire-tray[data-position="left"] .handle-healthbar-value.dead {
+.squire-tray .handle-healthbar-value.dead {
     display: none;
 }
-.squire-tray[data-position="left"] .handle-healthbar-icon.dead i {
+.squire-tray .handle-healthbar-icon.dead i {
     display: block;
 }

@@ -103,7 +103,6 @@ export class FeaturesPanel {
         const featureData = {
             features: this.features.all,
             featuresByType: this.features.byType,
-            position: game.settings.get(MODULE.ID, 'trayPosition')
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_FEATURES, featureData);

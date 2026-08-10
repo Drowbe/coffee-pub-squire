@@ -129,7 +129,6 @@ export class WeaponsPanel {
         const weaponData = {
             weapons: this.weapons.all,
             weaponsByType: this.weapons.byType,
-            position: game.settings.get(MODULE.ID, 'trayPosition'),
             showOnlyEquipped: this.showOnlyEquipped,
             newlyAddedItems: PanelManager.newlyAddedItems
         };

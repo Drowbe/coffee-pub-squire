@@ -32,7 +32,6 @@ export class GmPanel {
         }
 
         const templateData = {
-            position: game.settings.get(MODULE.ID, 'trayPosition'),
             resistances: details.resistances ?? [],
             immunities: details.immunities ?? [],
             biographyHtml: details.biographyHtml ?? '',

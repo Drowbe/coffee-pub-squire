@@ -42,21 +42,20 @@
 {{/inline}}
 
 <div class="weapons-panel">
-    {{#if (eq position "left")}}
-    <div class="section-header">
-        <div class="header-left">
-            <i class="fa-solid fa-swords"></i> Weapons
-        </div>
-        <div class="header-right">
-            {{#if (lookup weaponsByType "simple-melee")}}<i class="fa-solid fa-hand-fist weapons-category-filter active" data-filter-id="category-weapon-simple-melee" title="Toggle Simple Melee"></i>{{/if}}
-            {{#if (lookup weaponsByType "martial-melee")}}<i class="fa-solid fa-sword weapons-category-filter active" data-filter-id="category-weapon-martial-melee" title="Toggle Martial Melee"></i>{{/if}}
-            {{#if (lookup weaponsByType "simple-ranged")}}<i class="fa-solid fa-bow-arrow weapons-category-filter active" data-filter-id="category-weapon-simple-ranged" title="Toggle Simple Ranged"></i>{{/if}}
-            {{#if (lookup weaponsByType "martial-ranged")}}<i class="fa-solid fa-crosshairs weapons-category-filter active" data-filter-id="category-weapon-martial-ranged" title="Toggle Martial Ranged"></i>{{/if}}
-            {{#if (lookup weaponsByType "natural")}}<i class="fa-solid fa-paw weapons-category-filter active" data-filter-id="category-weapon-natural" title="Toggle Natural Weapons"></i>{{/if}}
-            <i class="fa-solid fa-shield-halved weapon-filter-toggle filter-toggle {{#if showOnlyEquipped}}active{{else}}faded{{/if}}" title="Toggle Equipped Weapons"></i>
-        </div>
+<div class="section-header">
+    <div class="header-left">
+        <i class="fa-solid fa-swords"></i> Weapons
     </div>
-    {{/if}}
+    <div class="header-right">
+        {{#if (lookup weaponsByType "simple-melee")}}<i class="fa-solid fa-hand-fist weapons-category-filter active" data-filter-id="category-weapon-simple-melee" title="Toggle Simple Melee"></i>{{/if}}
+        {{#if (lookup weaponsByType "martial-melee")}}<i class="fa-solid fa-sword weapons-category-filter active" data-filter-id="category-weapon-martial-melee" title="Toggle Martial Melee"></i>{{/if}}
+        {{#if (lookup weaponsByType "simple-ranged")}}<i class="fa-solid fa-bow-arrow weapons-category-filter active" data-filter-id="category-weapon-simple-ranged" title="Toggle Simple Ranged"></i>{{/if}}
+        {{#if (lookup weaponsByType "martial-ranged")}}<i class="fa-solid fa-crosshairs weapons-category-filter active" data-filter-id="category-weapon-martial-ranged" title="Toggle Martial Ranged"></i>{{/if}}
+        {{#if (lookup weaponsByType "natural")}}<i class="fa-solid fa-paw weapons-category-filter active" data-filter-id="category-weapon-natural" title="Toggle Natural Weapons"></i>{{/if}}
+        <i class="fa-solid fa-shield-halved weapon-filter-toggle filter-toggle {{#if showOnlyEquipped}}active{{else}}faded{{/if}}" title="Toggle Equipped Weapons"></i>
+    </div>
+</div>
+
     <div class="weapons-list">
         {{#if weapons}}
             {{!-- Simple Melee Weapons --}}

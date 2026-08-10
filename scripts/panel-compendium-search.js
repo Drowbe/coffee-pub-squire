@@ -94,7 +94,6 @@ export class CompendiumSearchPanel {
             panelTitle: canAdd
                 ? 'Add From Compendiums'
                 : (canRequest ? 'Request From Compendiums' : 'Browse Compendiums'),
-            position: game.settings.get(MODULE.ID, 'trayPosition'),
             query: this.query,
             searching: this.searching,
             minLength: CompendiumSearchUtility.getMinQueryLength(),

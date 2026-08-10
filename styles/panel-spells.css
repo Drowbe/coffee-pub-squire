@@ -9,30 +9,6 @@
     color: #fff;
 }
 
-/* Spell Slots */
-.spell-slots {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 3px;
-    margin: 0 0.5rem 0.5rem;
-}
-
-.slot-group {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-.slot-label {
-    font-size: 0.8em;
-    color: #aaa;
-}
-
-
 /* Hard-coded spell category headers */
 
 .category-header[data-category-id="category-spell-at-will"],

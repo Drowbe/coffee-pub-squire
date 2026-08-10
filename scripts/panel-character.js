@@ -424,7 +424,6 @@ export class CharacterPanel {
                 actor: this.actor,
                 ownedCharacters: PanelManager.getOwnedCharacters(this.actor),
                 displayName: this.displayName,
-                position: game.settings.get(MODULE.ID, 'trayPosition'),
                 isGM: game.user.isGM,
                 speeds,
                 speedUnits: units,

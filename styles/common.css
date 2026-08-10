@@ -70,7 +70,7 @@
 
 /* PROGRESS BAR*/
 
-.squire-tray[data-position="left"] .tray-progress-bar-wrapper {
+.squire-tray .tray-progress-bar-wrapper {
     margin: 8px 4px 8px 0px;
     padding: 8px;
     background: rgba(0, 0, 0, 0.3);
@@ -80,13 +80,13 @@
 }
 
 /* Completion state styling */
-.squire-tray[data-position="left"] .tray-progress-bar-wrapper.scan-complete {
+.squire-tray .tray-progress-bar-wrapper.scan-complete {
     background: rgba(54, 112, 56, 0.1);
     border: 1px solid rgba(54, 112, 56, 0.4);
     box-shadow: 0 0 0px rgba(54, 112, 56, 0.2);
 }
 
-.squire-tray[data-position="left"] .tray-progress-bar-wrapper.scan-complete .tray-progress-bar-inner {
+.squire-tray .tray-progress-bar-wrapper.scan-complete .tray-progress-bar-inner {
     background: rgba(54, 112, 56, 1);
     animation: completionPulse 1s ease-in-out infinite;
 }
@@ -97,7 +97,7 @@
     100% { opacity: 1; }
 }
 
-.squire-tray[data-position="left"] .tray-progress-bar-outter {
+.squire-tray .tray-progress-bar-outter {
     width: 100%;
     height: auto;
     background: rgba(255, 255, 255, 0.1);
@@ -105,7 +105,7 @@
     overflow: hidden;
 }
 
-.squire-tray[data-position="left"] .tray-progress-bar-inner {
+.squire-tray .tray-progress-bar-inner {
     height: 100%;
     background: rgba(54, 112, 56, 0.9);
     width: 0%;
@@ -114,7 +114,7 @@
     padding: 2px;
 }
 
-.squire-tray[data-position="left"] .tray-progress-bar-text {
+.squire-tray .tray-progress-bar-text {
     font-size: 0.95em;
     color: rgba(255, 255, 255, 0.9);
     text-align: left;
@@ -169,8 +169,8 @@
 
 /* --- NORMALIZED PANEL CONTENT CONTAINERS --- */
 /* All panel content containers use the .tray-panel-content class */
-.squire-tray[data-position="left"] [data-panel] .tray-panel-content,
-.squire-popout[data-position="left"] [data-panel] .tray-panel-content {
+.squire-tray [data-panel] .tray-panel-content,
+.squire-popout [data-panel] .tray-panel-content {
     max-height: 200px;
     overflow-y: auto;
     overflow-x: hidden;
@@ -178,28 +178,28 @@
     display: block;
 }
 
-.squire-tray[data-position="left"] [data-panel] .tray-panel-content.collapsed,
-.squire-popout[data-position="left"] [data-panel] .tray-panel-content.collapsed {
+.squire-tray [data-panel] .tray-panel-content.collapsed,
+.squire-popout [data-panel] .tray-panel-content.collapsed {
     max-height: 0;
     display: none;
 }
 
 /* --- NORMALIZED PANEL TOGGLES --- */
 /* All panel toggle icons with IDs ending in "-toggle" */
-.squire-tray[data-position="left"] [data-panel] #gm-toggle,
-.squire-popout[data-position="left"] [data-panel] #gm-toggle {
+.squire-tray [data-panel] #gm-toggle,
+.squire-popout [data-panel] #gm-toggle {
     color: #9f9275;
     transition: transform 0.3s ease;
     cursor: pointer;
 }
 
-.squire-tray[data-position="left"] [data-panel] #gm-toggle:hover,
-.squire-tray[data-position="left"] [data-panel] #macros-toggle:hover,
-.squire-tray[data-position="left"] [data-panel] #dicetray-toggle:hover,
-.squire-tray[data-position="left"] [data-panel] #health-toggle:hover,
-.squire-popout[data-position="left"] [data-panel] #gm-toggle:hover,
-.squire-popout[data-position="left"] [data-panel] #macros-toggle:hover,
-.squire-popout[data-position="left"] [data-panel] #dicetray-toggle:hover,
-.squire-popout[data-position="left"] [data-panel] #health-toggle:hover {
+.squire-tray [data-panel] #gm-toggle:hover,
+.squire-tray [data-panel] #macros-toggle:hover,
+.squire-tray [data-panel] #dicetray-toggle:hover,
+.squire-tray [data-panel] #health-toggle:hover,
+.squire-popout [data-panel] #gm-toggle:hover,
+.squire-popout [data-panel] #macros-toggle:hover,
+.squire-popout [data-panel] #dicetray-toggle:hover,
+.squire-popout [data-panel] #health-toggle:hover {
     color: #fff;
 }

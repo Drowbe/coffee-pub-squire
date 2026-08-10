@@ -1,4 +1,4 @@
-.squire-tray[data-position="left"] [data-panel="gm"] .gmdetails-controls {
+.squire-tray [data-panel="gm"] .gmdetails-controls {
     display: flex;
     gap: 8px;
     align-items: center;
@@ -6,24 +6,24 @@
 
 /* Toggle and content styles are now normalized in common.css */
 /* Panel-specific overrides for GM content */
-.squire-tray[data-position="left"] [data-panel="gm"] .tray-panel-content {
+.squire-tray [data-panel="gm"] .tray-panel-content {
     display: flex;
     flex-direction: column;
     font-size: 0.75em;
 }
 
-.squire-tray[data-position="left"] [data-panel="gm"] .gm-row {
+.squire-tray [data-panel="gm"] .gm-row {
     border: 0px dotted rgba(155, 142, 114, 0.5);
     padding-top: 4px;
 }
 
-.squire-tray[data-position="left"] [data-panel="gm"] .details-biography {
+.squire-tray [data-panel="gm"] .details-biography {
     font-size: inherit;
     line-height: inherit;
     text-transform: inherit;
 }
 
-.squire-tray[data-position="left"] [data-panel="gm"] h1.gm-row-title {
+.squire-tray [data-panel="gm"] h1.gm-row-title {
     font-size: 1.0em;
     line-height: inherit;
     text-transform: uppercase;
@@ -36,12 +36,12 @@
 
 /* Biography blocks — one <p> per source block, headings kept distinct */
 
-.squire-tray[data-position="left"] [data-panel="gm"] .gm-row p.bio-text {
+.squire-tray [data-panel="gm"] .gm-row p.bio-text {
     margin: 0 0 6px 0;
     line-height: 1.4;
 }
 
-.squire-tray[data-position="left"] [data-panel="gm"] .gm-row p.bio-heading {
+.squire-tray [data-panel="gm"] .gm-row p.bio-heading {
     margin: 8px 0 4px 0;
     font-weight: 700;
     text-transform: uppercase;
@@ -49,6 +49,6 @@
     color: rgba(190, 176, 145, 0.95);
 }
 
-.squire-tray[data-position="left"] [data-panel="gm"] .gm-row p.bio-heading:first-child {
+.squire-tray [data-panel="gm"] .gm-row p.bio-heading:first-child {
     margin-top: 0;
 }

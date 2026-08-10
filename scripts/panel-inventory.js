@@ -124,7 +124,6 @@ export class InventoryPanel {
         const itemData = {
             items: this.items.all,
             itemsByType: this.items.byType,
-            position: game.settings.get(MODULE.ID, 'trayPosition'),
             showOnlyEquipped: this.showOnlyEquipped,
             newlyAddedItems: PanelManager.newlyAddedItems,
             flags: this.items.all.reduce((acc, item) => {

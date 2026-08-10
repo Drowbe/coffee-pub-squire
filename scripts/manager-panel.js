@@ -385,8 +385,7 @@ export class PanelManager {
         document.body.appendChild(trayElement);
         PanelManager.element = trayElement;
         
-        // Set initial position and restore pin state
-        trayElement.setAttribute('data-position', 'left');
+        // Restore pin state
         PanelManager.isPinned = game.settings.get(MODULE.ID, 'isPinned');
         if (PanelManager.isPinned) {
             trayElement.classList.add('pinned', 'expanded');

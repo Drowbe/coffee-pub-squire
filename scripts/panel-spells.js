@@ -102,14 +102,12 @@ export class SpellsPanel {
         });
 
         const spellSlots = this._getSpellSlots();
-        
-        const position = game.settings.get(MODULE.ID, 'trayPosition');
+
         const spellData = {
             spells: this.spells,
             spellsByLevel,
             spellsByType,
             spellSlots,
-            position,
             showOnlyPrepared: this.showOnlyPrepared
         };
 

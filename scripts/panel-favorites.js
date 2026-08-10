@@ -746,7 +746,6 @@ export class FavoritesPanel {
         
         const favoritesData = {
             favorites: this.favorites,
-            position: game.settings.get(MODULE.ID, 'trayPosition'),
             showSpells: this.showSpells,
             showWeapons: this.showWeapons,
             showFeatures: this.showFeatures,

@@ -77,7 +77,7 @@
 
 /* Drop Zone Styles */
 /* TRAY Left Position */
-.squire-tray[data-position="left"] {
+.squire-tray {
     top: calc(var(--squire-tray-top-offset) + var(--blacksmith-menubar-interface-offset));
     left: 0px;
     height: calc(100vh - var(--squire-tray-top-offset) - var(--squire-tray-bottom-offset) - var(--blacksmith-menubar-interface-offset));
@@ -89,19 +89,19 @@
 }
 
 /* Pinned state positioning */
-.squire-tray[data-position="left"].pinned {
+.squire-tray.pinned {
     /* we need to allow for the blacksmith menubar interface offset */
     top: calc(var(--squire-tray-pinned-offset) + var(--blacksmith-menubar-interface-offset)); 
     height: calc(100vh - calc(var(--squire-tray-pinned-offset) * 2) - var(--blacksmith-menubar-interface-offset));
 }
 
 /* Expanded Position */
-.squire-tray[data-position="left"].expanded {
+.squire-tray.expanded {
     transform: translateX(0);
 }
 
 /* Closing Position */
-.squire-tray[data-position="left"]:not(.expanded) {
+.squire-tray:not(.expanded) {
     transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment)));
 }
 
@@ -152,7 +152,7 @@
 
 
 /* TRAY Content */
-.squire-tray[data-position="left"] .tray-content {
+.squire-tray .tray-content {
     flex: 1;
     min-width: 0;
     display: flex;
@@ -168,7 +168,7 @@
 }
 
 /* TRAY Panel Wrapper */
-.squire-tray[data-position="left"] .tray-panel-wrapper {
+.squire-tray .tray-panel-wrapper {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -177,13 +177,13 @@
 
 
 /* Ensure content stays on top of background */
-.squire-tray[data-position="left"] .tray-content > * {
+.squire-tray .tray-content > * {
     position: relative;
     z-index: 1;
 }
 
 /* TRAY Panel Top Container */
-.squire-tray[data-position="left"] .panel-container {
+.squire-tray .panel-container {
     display: block;
     background: transparent;
     border: none;
@@ -193,17 +193,17 @@
 }
 
 /* Clickable Character Panel */
-.squire-tray[data-position="left"] .panel-container[data-clickable="true"] {
+.squire-tray .panel-container[data-clickable="true"] {
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
 
-.squire-tray[data-position="left"] .panel-container[data-clickable="true"]:hover {
+.squire-tray .panel-container[data-clickable="true"]:hover {
     background: rgba(255, 255, 255, 0.05);
 }
 
 /* Panel Placeholder - for docking panels back into tray */
-.squire-tray[data-position="left"] .panel-placeholder {
+.squire-tray .panel-placeholder {
     display: block;
     background: transparent;
     border: none;
@@ -214,7 +214,7 @@
 }
 
 /* Collapse placeholder when empty to remove gap */
-.squire-tray[data-position="left"] .panel-placeholder:empty {
+.squire-tray .panel-placeholder:empty {
     min-height: 0 !important;
     height: 0 !important;
     padding: 0 !important;
@@ -227,7 +227,7 @@
 
 
 /* TRAY Panel Bottom Container */
-.squire-tray[data-position="left"] .panel-containers {
+.squire-tray .panel-containers {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -243,7 +243,7 @@
 
 /* GAP Between Panels */
 
-.squire-tray[data-position="left"] .stacked {
+.squire-tray .stacked {
     gap: 22px;
 }
 
@@ -252,15 +252,15 @@
 /* --------------- SHARED PANEL STYLES --------------- */
 
 /* TOP PANEL SHELLS */
-.squire-tray[data-position="left"] [data-panel="health"],
-.squire-tray[data-position="left"] [data-panel="experience"],
-.squire-tray[data-position="left"] [data-panel="abilities"],
-.squire-tray[data-position="left"] [data-panel="stats"],
-.squire-tray[data-position="left"] [data-panel="gm"],
-.squire-tray[data-position="left"] [data-panel="character-summary"],
-.squire-tray[data-position="left"] [data-panel="control"],
-.squire-tray[data-position="left"] [data-panel="dicetray"],
-.squire-tray[data-position="left"] [data-panel="macros"] {
+.squire-tray [data-panel="health"],
+.squire-tray [data-panel="experience"],
+.squire-tray [data-panel="abilities"],
+.squire-tray [data-panel="stats"],
+.squire-tray [data-panel="gm"],
+.squire-tray [data-panel="character-summary"],
+.squire-tray [data-panel="control"],
+.squire-tray [data-panel="dicetray"],
+.squire-tray [data-panel="macros"] {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -272,18 +272,18 @@
 
 /* LIST CONTAINERS */
 
-.squire-tray[data-position="left"] .inventory-list,
-.squire-tray[data-position="left"] .features-list,
-.squire-tray[data-position="left"] .spells-list,
-.squire-tray[data-position="left"] .weapons-list,
-.squire-tray[data-position="left"] .favorites-list {
+.squire-tray .inventory-list,
+.squire-tray .features-list,
+.squire-tray .spells-list,
+.squire-tray .weapons-list,
+.squire-tray .favorites-list {
     padding: 0px;
 }
 
 
 /* SECTION HEADERS */
 
-.squire-tray[data-position="left"] .section-header {
+.squire-tray .section-header {
     background: rgba(0, 0, 0, 0.9) !important;
     color: rgba(159, 146, 117, 1.0);
     padding: 8px;
@@ -297,53 +297,53 @@
     border-radius: 6px;
 }
 
-.squire-tray[data-position="left"] .section-header .header-left {
+.squire-tray .section-header .header-left {
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
-.squire-tray[data-position="left"] .section-header i {
+.squire-tray .section-header i {
     font-size: .85em;
     margin-right: 4px;
     padding-top: 3px;
     color: rgba(159, 146, 117, 0.9);
 }
-.squire-tray[data-position="left"] .section-header .header-right {
+.squire-tray .section-header .header-right {
     display: flex;
     align-items: center;
     gap: 4px;
     flex: 1;
     justify-content: flex-end;
 }
-.squire-tray[data-position="left"] .section-header .header-right i,
-.squire-tray[data-position="left"] .section-header .weapons-category-filter,
-.squire-tray[data-position="left"] .section-header .spell-level-filter,
-.squire-tray[data-position="left"] .section-header .inventory-category-filter,
-.squire-tray[data-position="left"] .section-header .features-category-filter {
+.squire-tray .section-header .header-right i,
+.squire-tray .section-header .weapons-category-filter,
+.squire-tray .section-header .spell-level-filter,
+.squire-tray .section-header .inventory-category-filter,
+.squire-tray .section-header .features-category-filter {
     cursor: pointer;
     transition: color 0.2s ease;
     font-size: 0.85em;
 }
-.squire-tray[data-position="left"] .section-header .header-right i:hover,
-.squire-tray[data-position="left"] .section-header .weapons-category-filter:hover,
-.squire-tray[data-position="left"] .section-header .spell-level-filter:hover,
-.squire-tray[data-position="left"] .section-header .inventory-category-filter:hover,
-.squire-tray[data-position="left"] .section-header .features-category-filter:hover {
+.squire-tray .section-header .header-right i:hover,
+.squire-tray .section-header .weapons-category-filter:hover,
+.squire-tray .section-header .spell-level-filter:hover,
+.squire-tray .section-header .inventory-category-filter:hover,
+.squire-tray .section-header .features-category-filter:hover {
     color: rgba(185, 38, 37, 1.0);
     opacity: 1.0;
 }
-.squire-tray[data-position="left"] .section-header .filter-toggle.faded,
-.squire-tray[data-position="left"] .section-header .weapons-category-filter:not(.active),
-.squire-tray[data-position="left"] .section-header .spell-level-filter:not(.active),
-.squire-tray[data-position="left"] .section-header .inventory-category-filter:not(.active),
-.squire-tray[data-position="left"] .section-header .features-category-filter:not(.active) {
+.squire-tray .section-header .filter-toggle.faded,
+.squire-tray .section-header .weapons-category-filter:not(.active),
+.squire-tray .section-header .spell-level-filter:not(.active),
+.squire-tray .section-header .inventory-category-filter:not(.active),
+.squire-tray .section-header .features-category-filter:not(.active) {
     opacity: 0.3;
 }
 
 /* CATEGORY HEADERS */
 
-.squire-tray[data-position="left"] .category-header {
+.squire-tray .category-header {
     background: rgba(0, 0, 0, 0.4);
     padding: 4px 8px;
     margin-top: 8px;
@@ -360,7 +360,7 @@
 
 /* CATEGORY SPELL PIPS */
 
-.squire-tray[data-position="left"] .slot-pip {
+.squire-tray .slot-pip {
     width: 8px;
     height: 8px;
     border-radius: 2px;
@@ -368,12 +368,12 @@
     background: transparent;
 }
 
-.squire-tray[data-position="left"] .slot-pip.filled {
+.squire-tray .slot-pip.filled {
     background: #9f9275;
     border-color: #9f9275;
 }
 
-.squire-tray[data-position="left"] .slot-pip:hover {
+.squire-tray .slot-pip:hover {
     transform: scale(1.3);
     border-color: rgba(255, 100, 0, 0.6) !important;
     box-shadow: 0 0 4px rgba(74, 144, 226, 0.5);
@@ -383,7 +383,7 @@
 /* ITEMS */
 
 
-.squire-tray[data-position="left"] .panel-item {
+.squire-tray .panel-item {
     background: rgba(0, 0, 0, 0.2);
     border: none;
     border-radius: 3px;
@@ -391,17 +391,17 @@
     margin-bottom: 2px;
 }
 
-.squire-tray[data-position="left"] .panel-item:hover {
+.squire-tray .panel-item:hover {
     background: rgba(185, 84, 61, 0.2);
 }
 
-.squire-tray[data-position="left"] .panel-item.prepared {
+.squire-tray .panel-item.prepared {
     background: rgba(74, 144, 226, 0.1);
 }
 
 
 
-.squire-tray[data-position="left"] .panel-item-row {
+.squire-tray .panel-item-row {
     gap: 4px;
     padding: 4px;
     display: flex;
@@ -579,9 +579,9 @@
 
 
 
-.squire-tray[data-position="left"] .inventory-controls,
-.squire-tray[data-position="left"] .spell-controls,
-.squire-tray[data-position="left"] .weapon-controls {
+.squire-tray .inventory-controls,
+.squire-tray .spell-controls,
+.squire-tray .weapon-controls {
     padding: 8px;
     background: rgba(0, 0, 0, 0.2);
     display: flex;
@@ -590,8 +590,8 @@
 }
 
 
-.squire-tray[data-position="left"] .spell-controls i, 
-.squire-tray[data-position="left"] .weapon-controls i {
+.squire-tray .spell-controls i, 
+.squire-tray .weapon-controls i {
     color: #aaa;
     transition: color 0.2s ease;
     
@@ -601,17 +601,17 @@
     padding: 0.5rem;
 }
 
-.squire-tray[data-position="left"] .spell-controls i:hover, 
-.squire-tray[data-position="left"] .weapon-controls i:hover {
+.squire-tray .spell-controls i:hover, 
+.squire-tray .weapon-controls i:hover {
     color: rgba(231, 91, 1, 1.0);
 }
 
-.squire-tray[data-position="left"] .weapon-controls i.faded {
+.squire-tray .weapon-controls i.faded {
     opacity: 0.3;
 }
 
-.squire-tray[data-position="left"] .spell-controls i.faded:hover,
-.squire-tray[data-position="left"] .weapon-controls i.faded:hover {
+.squire-tray .spell-controls i.faded:hover,
+.squire-tray .weapon-controls i.faded:hover {
     opacity: 1;
 }
 
@@ -780,14 +780,14 @@
 }
 
 /* Hide tabs in left position */
-.squire-tray[data-position="left"] .tray-tabs {
+.squire-tray .tray-tabs {
     display: none;
 }
 
 
 /* BUTTONS */
 
-.squire-tray[data-position="left"] [data-panel="control"] .control-icons {
+.squire-tray [data-panel="control"] .control-icons {
     display: flex;
     gap: 8px;
     width: 100%;
@@ -797,7 +797,7 @@
     padding: 0px;
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .control-toggle {
+.squire-tray [data-panel="control"] .control-toggle {
     flex: 1;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.05);
@@ -815,7 +815,7 @@
     letter-spacing: 0.03em;
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .control-toggle.active {
+.squire-tray [data-panel="control"] .control-toggle.active {
     background: rgba(145, 133, 107, 0.4);
     border-color: rgba(145, 133, 107, 0.6);
     color: rgba(255, 255, 255, 0.9);
@@ -823,12 +823,12 @@
     outline: 2px solid rgba(183, 81, 58, 0.2);
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .control-toggle.faded {
+.squire-tray [data-panel="control"] .control-toggle.faded {
     opacity: 0.4 !important;
 }
-.squire-tray[data-position="left"] [data-panel="control"] .control-toggle.faded:hover,
-.squire-tray[data-position="left"] [data-panel="control"] .control-toggle.active:hover,
-.squire-tray[data-position="left"] [data-panel="control"] .control-toggle:hover {
+.squire-tray [data-panel="control"] .control-toggle.faded:hover,
+.squire-tray [data-panel="control"] .control-toggle.active:hover,
+.squire-tray [data-panel="control"] .control-toggle:hover {
     border-color: rgba(255, 100, 0, 0.6);
     color: rgba(255, 255, 255, 0.9);
     background: rgba(183, 82, 58, 0.9);
@@ -844,12 +844,12 @@
 /* SEARCH */
 
 
-.squire-tray[data-position="left"] [data-panel="control"] .control-search {
+.squire-tray [data-panel="control"] .control-search {
     padding: 0px;
     position: relative;
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .global-search {
+.squire-tray [data-panel="control"] .global-search {
     width: 100%;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -860,7 +860,7 @@
     font-size: 13px;
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .search-clear {
+.squire-tray [data-panel="control"] .search-clear {
     position: absolute;
     right: 12px;
     top: 50%;
@@ -881,12 +881,12 @@
     pointer-events: auto;
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .search-clear:hover {
+.squire-tray [data-panel="control"] .search-clear:hover {
     color: rgba(0, 0, 0, 1.0);
     background: rgba(181, 80, 57, 1.0);
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .global-search:not(:placeholder-shown) + .search-clear {
+.squire-tray [data-panel="control"] .global-search:not(:placeholder-shown) + .search-clear {
     opacity: 1;
 }
 
@@ -895,13 +895,13 @@
 /* Lives in the title bar's right zone, the same slot the GM Details and
    Character Summary chevrons occupy — so a right-edge icon consistently means
    "this header has an action". */
-.squire-tray[data-position="left"] [data-panel="control"] .control-mode-toggles {
+.squire-tray [data-panel="control"] .control-mode-toggles {
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .control-mode-toggle {
+.squire-tray [data-panel="control"] .control-mode-toggle {
     cursor: pointer;
     color: rgba(159, 146, 117, 1.0);
     font-size: 0.85em;
@@ -912,16 +912,16 @@
 
 /* Selected side lit, the other dimmed — same active/faded vocabulary as the
    panel toggles below, at header scale. */
-.squire-tray[data-position="left"] [data-panel="control"] .control-mode-toggle.active {
+.squire-tray [data-panel="control"] .control-mode-toggle.active {
     color: rgba(255, 255, 255, 0.9);
     background: rgba(145, 133, 107, 0.4);
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .control-mode-toggle.faded {
+.squire-tray [data-panel="control"] .control-mode-toggle.faded {
     opacity: 0.4;
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .control-mode-toggle:hover {
+.squire-tray [data-panel="control"] .control-mode-toggle:hover {
     color: rgba(255, 255, 255, 0.9);
     background: rgba(183, 82, 58, 0.9);
     opacity: 1;
@@ -929,17 +929,17 @@
 
 /* Panel toggles have nothing to act on while quick-add is showing, so the whole
    row collapses instead of sitting greyed out and eating vertical space. */
-.squire-tray[data-position="left"] [data-panel="control"].compendium-mode .control-icons {
+.squire-tray [data-panel="control"].compendium-mode .control-icons {
     display: none;
 }
 
 /* The inverse: this option only means anything while searching compendiums, so
    it appears with that mode rather than sitting inert on the sheet. */
-.squire-tray[data-position="left"] [data-panel="control"] .control-search-option {
+.squire-tray [data-panel="control"] .control-search-option {
     display: none;
 }
 
-.squire-tray[data-position="left"] [data-panel="control"].compendium-mode .control-search-option {
+.squire-tray [data-panel="control"].compendium-mode .control-search-option {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -950,25 +950,25 @@
     user-select: none;
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .control-search-option:hover {
+.squire-tray [data-panel="control"] .control-search-option:hover {
     color: rgba(255, 255, 255, 0.85);
 }
 
-.squire-tray[data-position="left"] [data-panel="control"] .control-search-option input {
+.squire-tray [data-panel="control"] .control-search-option input {
     margin: 0;
     flex: 0 0 auto;
     cursor: pointer;
 }
 
 /* Hidden until quick-add mode is entered.
-   Must carry the same `.squire-tray[data-position="left"]` scoping as the base
+   Must carry the same `.squire-tray` scoping as the base
    .panel-container rule above, which sets `display: block` at (0,3,0). Without
    it this rule loses on specificity and the panel can never be hidden. */
-.squire-tray[data-position="left"] .panel-container[data-panel="compendium-search"] {
+.squire-tray .panel-container[data-panel="compendium-search"] {
     display: none;
 }
 
-.squire-tray[data-position="left"] .panel-container[data-panel="compendium-search"].visible {
+.squire-tray .panel-container[data-panel="compendium-search"].visible {
     display: block;
 }
 
@@ -1008,7 +1008,7 @@
 
 /* Momentary "here" after scrolling a freshly added item into view. The NEW badge
    from the createItem hook is the lasting marker; this just lands the eye. */
-.squire-tray[data-position="left"] .panel-item.just-added {
+.squire-tray .panel-item.just-added {
     animation: squire-just-added 2.5s ease-out;
 }
 
@@ -1024,7 +1024,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .squire-tray[data-position="left"] .panel-item.just-added {
+    .squire-tray .panel-item.just-added {
         animation: none;
         outline: 2px solid rgba(231, 91, 1, 0.6);
     }
@@ -1105,13 +1105,13 @@
 
 
 
-.squire-tray[data-position="left"] .search-container {
+.squire-tray .search-container {
     position: relative;
     flex: 1;
 }
 
 
-.squire-tray[data-position="left"] .search-container .search-clear {
+.squire-tray .search-container .search-clear {
     position: absolute;
     right: 8px;
     top: 50%;
@@ -1123,7 +1123,7 @@
     transition: opacity 0.2s ease, color 0.2s ease;
 }
 
-.squire-tray[data-position="left"] .search-container .search-clear:hover {
+.squire-tray .search-container .search-clear:hover {
     color: rgba(231, 91, 1, 1.0);
 }
 
@@ -1166,7 +1166,7 @@
 
 
 /* there are DUPLICATE/SIMILAR STYLES IN PANEL-SPELLS.CSS */
-.squire-tray[data-position="left"] .category-header .slot-pips {
+.squire-tray .category-header .slot-pips {
     display: flex;
     gap: 2px;
     margin-left: 8px;

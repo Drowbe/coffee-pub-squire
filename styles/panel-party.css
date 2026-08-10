@@ -440,7 +440,7 @@
    assumption that it is campaign-wide.
    ========================================================================== */
 
-.squire-panel-host[data-position="left"] .party-reputation-card {
+.squire-panel-host .party-reputation-card {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 6px;
@@ -448,7 +448,7 @@
     margin-bottom: 8px;
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-header {
+.squire-panel-host .party-reputation-header {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -456,14 +456,14 @@
     margin-bottom: 6px;
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-title {
+.squire-panel-host .party-reputation-title {
     font-weight: bold;
     text-transform: uppercase;
     font-size: 0.85em;
     color: rgba(255, 255, 255, 0.9);
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-where {
+.squire-panel-host .party-reputation-where {
     font-size: 0.75em;
     font-style: italic;
     color: rgba(205, 204, 179, 0.75);
@@ -474,34 +474,34 @@
     white-space: nowrap;
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-where i {
+.squire-panel-host .party-reputation-where i {
     margin-right: 4px;
     opacity: 0.7;
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-body {
+.squire-panel-host .party-reputation-body {
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
 /* Readout takes the slack; the button clusters keep their intrinsic width. */
-.squire-panel-host[data-position="left"] .party-reputation-readout {
+.squire-panel-host .party-reputation-readout {
     flex: 1;
     min-width: 0;
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-readout.clickable {
+.squire-panel-host .party-reputation-readout.clickable {
     cursor: pointer;
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-controls {
+.squire-panel-host .party-reputation-controls {
     display: flex;
     gap: 3px;
     flex: 0 0 auto;
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-adjust {
+.squire-panel-host .party-reputation-adjust {
     width: 28px;
     height: 24px;
     padding: 0;
@@ -516,12 +516,12 @@
     outline: none;
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-adjust:hover {
+.squire-panel-host .party-reputation-adjust:hover {
     background: rgba(194, 86, 61, 1.0);
     border-color: rgba(194, 86, 61, 1.0);
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-bar {
+.squire-panel-host .party-reputation-bar {
     position: relative;
     height: 10px;
     background: rgba(0, 0, 0, 0.55);
@@ -529,23 +529,23 @@
     overflow: hidden;
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-fill {
+.squire-panel-host .party-reputation-fill {
     height: 100%;
     transition: width 0.25s ease, background-color 0.25s ease;
     background: rgba(160, 160, 160, 0.7);
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-bar[data-tone="positive"] .party-reputation-fill {
+.squire-panel-host .party-reputation-bar[data-tone="positive"] .party-reputation-fill {
     background: rgba(67, 163, 77, 0.85);
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-bar[data-tone="negative"] .party-reputation-fill {
+.squire-panel-host .party-reputation-bar[data-tone="negative"] .party-reputation-fill {
     background: rgba(194, 86, 61, 0.9);
 }
 
 /* Zero is the meaningful centre of a -100..+100 scale, so it gets a tick.
    Without it a half-full bar reads as "half good" rather than "neutral". */
-.squire-panel-host[data-position="left"] .party-reputation-midpoint {
+.squire-panel-host .party-reputation-midpoint {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -554,7 +554,7 @@
     background: rgba(255, 255, 255, 0.35);
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-scale {
+.squire-panel-host .party-reputation-scale {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -562,7 +562,7 @@
     margin-top: 4px;
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-label {
+.squire-panel-host .party-reputation-label {
     font-size: 0.8em;
     font-weight: bold;
     color: rgba(255, 255, 255, 0.9);
@@ -571,18 +571,18 @@
     white-space: nowrap;
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-value {
+.squire-panel-host .party-reputation-value {
     font-size: 0.8em;
     font-variant-numeric: tabular-nums;
     color: rgba(205, 204, 179, 0.9);
     flex: 0 0 auto;
 }
 
-.squire-panel-host[data-position="left"] .party-reputation-value[data-tone="positive"] { color: rgba(67, 163, 77, 0.95); }
-.squire-panel-host[data-position="left"] .party-reputation-value[data-tone="negative"] { color: rgba(255, 74, 47, 0.95); }
+.squire-panel-host .party-reputation-value[data-tone="positive"] { color: rgba(67, 163, 77, 0.95); }
+.squire-panel-host .party-reputation-value[data-tone="negative"] { color: rgba(255, 74, 47, 0.95); }
 
 /* Party members with no recorded combats still appear on the MVP board,
    dimmed, so the roster is complete and the absence is legible. */
-.squire-panel-host[data-position="left"] .mvp-table__row--unranked {
+.squire-panel-host .mvp-table__row--unranked {
     opacity: 0.55;
 }

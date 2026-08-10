@@ -1,14 +1,13 @@
 <div class="compendium-search-panel">
-    {{#if (eq position "left")}}
-    <div class="section-header">
-        <div class="header-left">
-            <i class="fa-solid {{panelIcon}}"></i> {{panelTitle}}
-        </div>
-        <div class="header-right">
-            <i class="fa-solid fa-xmark compendium-search-close" title="Back to Panels"></i>
-        </div>
+<div class="section-header">
+    <div class="header-left">
+        <i class="fa-solid {{panelIcon}}"></i> {{panelTitle}}
     </div>
-    {{/if}}
+    <div class="header-right">
+        <i class="fa-solid fa-xmark compendium-search-close" title="Back to Panels"></i>
+    </div>
+</div>
+
     <div class="compendium-search-list">
         {{#unless available}}
         <div class="compendium-search-message">

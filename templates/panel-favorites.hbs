@@ -1,20 +1,19 @@
 <div class="favorites-panel">
-    {{#if (eq position "left")}}
-    <div class="section-header">
-        <div class="header-left">
-            <i class="fa-solid fa-heart"></i> Favorites
-        </div>
-        <div class="header-right">
-            {{#if hasFavorites}}
-            <i class="fa-solid fa-heart-circle-xmark favorites-clear-all" title="Clear All Favorites"></i>
-            {{/if}}
-            <i class="fa-solid fa-sparkles favorites-spell-toggle filter-toggle {{#if showSpells}}active{{else}}faded{{/if}}" title="Toggle Spell Favorites"></i>
-            <i class="fa-solid fa-swords favorites-weapon-toggle filter-toggle {{#if showWeapons}}active{{else}}faded{{/if}}" title="Toggle Weapon Favorites"></i>
-            <i class="fa-solid fa-stars favorites-features-toggle filter-toggle {{#if showFeatures}}active{{else}}faded{{/if}}" title="Toggle Feature Favorites"></i>
-            <i class="fa-solid fa-backpack favorites-inventory-toggle filter-toggle {{#if showInventory}}active{{else}}faded{{/if}}" title="Toggle Inventory Favorites"></i>
-        </div>
+<div class="section-header">
+    <div class="header-left">
+        <i class="fa-solid fa-heart"></i> Favorites
     </div>
-    {{/if}}
+    <div class="header-right">
+        {{#if hasFavorites}}
+        <i class="fa-solid fa-heart-circle-xmark favorites-clear-all" title="Clear All Favorites"></i>
+        {{/if}}
+        <i class="fa-solid fa-sparkles favorites-spell-toggle filter-toggle {{#if showSpells}}active{{else}}faded{{/if}}" title="Toggle Spell Favorites"></i>
+        <i class="fa-solid fa-swords favorites-weapon-toggle filter-toggle {{#if showWeapons}}active{{else}}faded{{/if}}" title="Toggle Weapon Favorites"></i>
+        <i class="fa-solid fa-stars favorites-features-toggle filter-toggle {{#if showFeatures}}active{{else}}faded{{/if}}" title="Toggle Feature Favorites"></i>
+        <i class="fa-solid fa-backpack favorites-inventory-toggle filter-toggle {{#if showInventory}}active{{else}}faded{{/if}}" title="Toggle Inventory Favorites"></i>
+    </div>
+</div>
+
     <div class="favorites-list">
         {{#if favorites}}
         {{#each favorites}}

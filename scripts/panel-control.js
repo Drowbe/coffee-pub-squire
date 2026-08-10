@@ -25,7 +25,6 @@ export class ControlPanel {
         // here after adding" is meaningless to a player who can only look.
         const canAdd = CompendiumSearchUtility.canAdd(this.actor);
         const templateData = {
-            position: game.settings.get(MODULE.ID, 'trayPosition'),
             canUseCompendiums: CompendiumSearchUtility.canBrowse(this.actor),
             canAddFromCompendiums: canAdd,
             compendiumToggleTitle: canAdd

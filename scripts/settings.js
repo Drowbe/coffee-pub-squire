@@ -170,29 +170,6 @@ export const registerSettings = function() {
     
 
 
-    // TODO: Remove trayPosition and make left positioning an implementation detail.
-    // This requires untangling the panel template data reads and the many
-    // `.squire-tray[data-position="left"]` CSS selectors before the compatibility
-    // setting and its onChange handler can be deleted safely.
-    game.settings.register(MODULE.ID, 'trayPosition', {
-        name: 'Tray Position',
-        hint: 'Where should the tray appear on the screen',
-        scope: 'client',
-        config: false,
-        type: String,
-        choices: {
-            'left': 'Left Side'
-        },
-        default: 'left',
-        onChange: value => {
-            // Update tray position in real-time
-            const tray = document.querySelector('.squire-tray');
-            if (tray) {
-                tray.dataset.position = value;
-            }
-        }
-    });
-
     // // Theme -- THIS IS NOT USED ANYMORE
     // game.settings.register(MODULE.ID, 'theme', {
     //     name: 'Color Theme',
