@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getTokenDisplayName, getNativeElement, getTextEditor, renderTemplate, getHealthPercent, getHealthPercentFromHP } from './helpers.js';
+import { getTokenDisplayName, getNativeElement, getTextEditor, renderTemplate, getHealthPercent, getHealthPercentFromHP, getActorHP } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -45,6 +45,7 @@ export class CharacterPanel {
         if (!nativeElement) return;
 
         // Update the health overlay
+        const hp = getActorHP(this.actor);
         const remaining = getHealthPercent(this.actor);
         const percentage = remaining === null ? 0 : Math.round(100 - remaining);
         const portraitElement = nativeElement.querySelector('.character-portrait');
@@ -58,7 +59,9 @@ export class CharacterPanel {
         
         // Update death skull
         const deathSkull = portraitElement.querySelector('.death-skull');
-        if (hp.value <= 0) {
+        // `hp` is null when HP is unreadable, which is not the same as zero —
+        // an actor with no usable HP should not sprout a death skull.
+        if (hp && hp.value <= 0) {
             if (!deathSkull) {
                 const skullIcon = globalThis.document.createElement('i');
                 skullIcon.className = 'fa-solid fa-skull death-skull';

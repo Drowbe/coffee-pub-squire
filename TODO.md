@@ -19,7 +19,9 @@
 
 ## Module split
 
-Tracked in full in `documents/plan-module-split.md`. Phase 0 (campaign content out of the tray) and Phase 1 (dice tray, macros, health to Blacksmith) are done. Next: import/export to Blacksmith, then standing up Librarian.
+Tracked in full in `documents/plan-module-split.md`. Phase 0 (campaign content out of the tray) and Phase 1 (dice tray, macros, health, status effects to Blacksmith) are done.
+
+Split decided 2026-08-09: **Codex and Quests go to Librarian; Notes goes to Blacksmith.** The discriminator is document-subtype ownership — Codex declares one, Notes writes plain text pages. Next: stand up Librarian for Codex and Quests. Notes is Blacksmith-led and needs a design pass there first; import/export stays on hold.
 
 ## Cross-module work
 

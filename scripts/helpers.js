@@ -95,6 +95,17 @@ export async function showBlacksmithWait(config = {}, renderOptions = {}) {
  * @returns {string}
  */
 /**
+ * An actor's `{ value, max }`, or null when HP is unreadable.
+ *
+ * Blacksmith's resolver: it knows the shapes different systems use and returns
+ * null rather than zeros for a missing or unusable pair.
+ */
+export function getActorHP(actor) {
+    const hp = getBlacksmith()?.getActorHP?.(actor);
+    return hp ?? null;
+}
+
+/**
  * Remaining health as a percentage, or null when HP is unreadable.
  *
  * Blacksmith's `getHealthPercent` clamps to 0-100 and resolves the HP object

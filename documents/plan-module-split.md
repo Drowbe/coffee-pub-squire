@@ -34,15 +34,25 @@ Squire is two products sharing a bootstrap. Character/party is per-token, per-se
 | Destination | Gets |
 |---|---|
 | **Squire** (stays) | Character, party, tray, handle, transfer, compendium search, statblock repair, inventory/quantity |
-| **coffee-pub-librarian** (new) | Quests, codex, **notes**, pin adapter, journal utils, parsers |
-| **Blacksmith** | Dice tray, HP window, macros, **all import/export**, note-binding service, notification watcher |
+| **coffee-pub-librarian** (new) | Quests, codex, parsers, whatever survives of the pin adapter |
+| **Blacksmith** | Dice tray, HP window, macros, status effects, **all import/export**, **Notes**, notification watcher |
 
 Decisions taken:
 
-- **Notes go to Librarian**, not Blacksmith. What goes to Blacksmith is note *binding* — attach a journal page to any document uuid, resolve it, own its permissions — because Cartographer wants notes on drawings and Artificer wants notes on items, and nobody orchestrates that today. Blacksmith owns primitives; Librarian owns the reading and authoring experience.
+- **Notes go to Blacksmith. Codex and Quests go to Librarian.** Decided 2026-08-09, reversing the earlier "notes with codex" position recorded here.
+
+  The discriminator is **document subtype ownership**, not content-vs-primitive: owning a subtype means owning a domain; a surface over core documents does not. Codex declares `coffee-pub-squire.codex` with its own data model and sheet — a kind of thing. Notes writes plain `type: 'text'` pages and declares nothing — a view. Pins, Tags and GM Notes are all views over core documents, all already in Blacksmith, none declaring a subtype.
+
+  That line is sharper than the one this doc previously argued from, and it makes "Blacksmith declares no document subtypes, ever" a rule rather than an accident — which the import/export phase depends on.
+
+- **Notes is not a straight port, so don't plan around one.** Blacksmith's `GMNotesAPI` already attaches rich text to any Document by UUID with a per-module section registry. Squire's Notes is the opposite direction: the note is a document that references targets. Shipping both would give the hub two overlapping annotation layers. The intended shape is one relationship with several views — note as document, annotation as a link to a target, gmNotes as "notes about this thing", pins as "note on the canvas". Cartographer's hand-rolled freehand-plus-tooltip system is the third anchor: document, canvas point, map region.
+
+  **The gate, which is the author's:** if Notes is a fancy journal it should not ship — Foundry journals are already better at narrative and GM authoring. The value has to be the relationship, and the test is whether any surface can ask *what is attached to this thing* and get an answer.
 - **Blacksmith owns import and export of all data.** This unblocks something already waiting: `helpers.js` says Squire's two complex JSON-import surfaces are "blocked on the public Blacksmith Importer API". So `_openImportQuestsDialog` / `_openExportQuestsDialog` and `window-data-export.js` go to Blacksmith, not Librarian. The *parsers* stay with Librarian — import is JSON→page, parsing is page→data.
 - **Campaign content gets its own windows and does not appear in the tray.** Done as of Phase 0.
-- **`manager-pins.js` goes to Librarian, not Blacksmith.** Blacksmith already owns pins; Squire's 2,342 lines are an adapter, and every caller is campaign code.
+- **`manager-pins.js` — most of it stops existing.** It was going to Librarian as a 2,325-line adapter. Under the annotation model, pins become one view of the same relationship, so the wrapper largely dissolves rather than moving. Librarian takes whatever is genuinely quest/codex-specific and no more. **Do not port it wholesale.**
+
+- **`utility-base-parser.js` stays in Squire for now.** An earlier version of this doc had it hoisted to Blacksmith with the journal helpers; that is withdrawn. It is shared by Notes and Codex today, and if Notes converges on an annotation model it may not survive at all — in which case Librarian simply takes it. Leave it until the Notes shape settles.
 
 ## Evidence
 
@@ -97,8 +107,10 @@ Campaign data lives under `coffee-pub-squire.*` on journal pages, entries, pins,
 1. ~~**Phase 0** — campaign content out of the tray, internal boundary made real.~~ **Done.**
 2. ~~**Shared services to Blacksmith** — dice tray, HP, macros.~~ **Done.** The add → verify → remove order held up; worth repeating.
 3. **Import/export to Blacksmith** — unblocks the note in `helpers.js`.
-4. **Design the note-binding API** — with Cartographer's and Artificer's needs in scope, not just Squire's.
-5. **Stand up `coffee-pub-librarian`** — windows, panels, parsers, journal utils, pin adapter, absorbing the quest persistence refactor and the namespace migration together.
+4. **Notes → Blacksmith** — Blacksmith-led, design pass first. They will send the API shape before writing the port, since Librarian may want to reference notes.
+5. **Stand up `coffee-pub-librarian`** — Codex and Quests, which leave Squire whole, absorbing the quest persistence refactor, the flag namespace, and the codex subtype migration together.
+
+Librarian and Notes run in parallel and do not collide: Librarian's first work is Codex and Quests; Notes needs a design pass in Blacksmith before any code moves.
 
 ## Open questions
 
