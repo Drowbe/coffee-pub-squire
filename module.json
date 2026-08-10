@@ -2,7 +2,7 @@
   "id": "coffee-pub-squire",
   "title": "Coffee Pub Squire",
   "description": "A sleek, customizable character tray for quick access to your character's abilities, items and party, with shared notes.",
-  "version": "13.6.1",
+  "version": "13.7.0",
   "manifest": "https://github.com/Drowbe/coffee-pub-squire/releases/latest/download/module.json",
   "download": "https://github.com/Drowbe/coffee-pub-squire/releases/latest/download/coffee-pub-squire.zip",
   "url": "https://github.com/Drowbe/coffee-pub-squire",
@@ -98,9 +98,10 @@
         "manifest": "https://github.com/Drowbe/coffee-pub-scribe/releases/latest/download/module.json"
       },
       {
-        "id": "coffee-pub-squire",
+        "id": "coffee-pub-librarian",
         "type": "module",
-        "manifest": "https://github.com/Drowbe/coffee-pub-squire/releases/latest/download/module.json"
+        "manifest": "https://github.com/Drowbe/coffee-pub-librarian/releases/latest/download/module.json",
+        "reason": "Quests and Codex moved to Coffee Pub Librarian in Squire 13.7.0. Install it to keep using them, and run its migration macros before updating a world that had them."
       }
     ],
     "requires": [

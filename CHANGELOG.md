@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [13.7.0]
+
+Squire is now character, party and notes. Quests and Codex both moved to
+**[Coffee Pub Librarian](https://github.com/Drowbe/coffee-pub-librarian)** in this release.
+
+> **Upgrading a world that used them: install Librarian and run its migration macros FIRST.**
+> `macros/migrate-quests-from-squire.js` and `macros/migrate-codex-from-squire.js`, with both
+> modules enabled, each defaulting to a dry run. The codex one matters most — Squire no longer
+> declares the `coffee-pub-squire.codex` page subtype, so an unmigrated world will fail
+> validation on every codex page. Those pages are refused, not damaged: migrating (or
+> re-enabling Squire 13.6.1) brings them back.
+
+### Added
+- **`testing/preflight.py`** — a static pre-flight run from the module root before loading a world. It checks that every script parses **as an ES module**, that every manifest path exists, that every static and dynamic import resolves *and* that the target actually exports each named binding, and that every stylesheet `@import` and `modules/coffee-pub-squire/...` asset path resolves on disk. It exists because this class of mistake has shipped a broken build twice. Note it checks a `.mjs` copy of each file: `node --check foo.js` parses as CommonJS *script* and accepted a real `SyntaxError` that broke the world at load — checking the `.js` directly is worse than no check, because it reports success.
+- **`coffee-pub-librarian` is declared as a recommended module**, so Foundry surfaces it where Quests and Codex used to be.
+
+### Fixed
+- **Squire no longer recommends itself.** `coffee-pub-squire` was in its own `relationships.recommends` list — a copy-paste artifact that offered users a module they already had installed.
+
+### Changed
+- **`testing/preflight.py` skips `_backups/` and other ignored directories.** It was scanning gitignored scratch copies and reporting their stale asset paths as failures — a false positive is as corrosive to a pre-flight check as a false pass.
+
 ### Removed
 - **Codex moved to Coffee Pub Librarian**, following Quests. Squire is now character, party and notes.
   - **Run Librarian's `macros/migrate-codex-from-squire.js` with both modules enabled before updating.** This migration is not like the quest one: codex pages are a declared document subtype, so it rewrites `type` on live documents from `coffee-pub-squire.codex` to `coffee-pub-librarian.codex`. It updates in place so page ids — and the `codexUuid` every codex pin references — survive, force-replaces `system` in the same update so entries are not reset to model defaults, and backs both up in a flag so it can be reverted.
@@ -17,17 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `initTransientNotifications()` and `recordCreatedPageBaseline()` went with it: both existed only to snapshot codex visibility, and had nothing left to track.
   - `utility-base-parser.js` and `utility-journal.js` **stay** — the Notes panel still uses both. They move, or dissolve, when Notes goes to Blacksmith.
 
-### Changed
-- **`testing/preflight.py` skips `_backups/` and other ignored directories.** It was scanning gitignored scratch copies and reporting their stale asset paths as failures — a false positive is as corrosive to a pre-flight check as a false pass.
-
-### Removed
 - **Quests moved to Coffee Pub Librarian.** Quests are campaign knowledge, not character sheet, and they belong beside the Codex rather than beside inventory. Librarian now owns the quest log, the single-quest editor, the parser, and the quest/objective pins; Squire's copies are gone. A migration macro shipped with Librarian copies the journal setting, the categories, the per-page and per-user quest flags, and re-stamps every existing quest and objective pin — **run it with both modules enabled before updating Squire**, or the pins stay addressed to a module that no longer claims them.
   - Removed here: `panel-quest.js`, `window-quest.js`, `utility-quest-parser.js`, four templates, three stylesheets, the quest half of `manager-pins.js`, the quest notifier, the quest browser-window kind, the quest settings, and the quest tooltip and task helpers — about 2,300 lines.
   - Settings removed: `questJournal`, `questCategories`, `headingH3QuestConfiguration`, and `pinStrokeMigrationDone` (a one-time quest-pin repair that had nothing left to repair). `autoAddPartyMembers` went too — it was registered but never read by anything.
-  - The codex list and the codex pin-placement cursor were quietly borrowing quest CSS class names. They now have their own (`codex-pin-icon`, `codex-pin-preview`, `squire-codex-pin-placement`), so deleting the quest stylesheets does not silently un-style the Codex.
-
-### Added
-- **`testing/preflight.py`** — a static pre-flight run from the module root before loading a world. It checks that every script parses **as an ES module**, that every manifest path exists, that every static and dynamic import resolves *and* that the target actually exports each named binding, and that every stylesheet `@import` and `modules/coffee-pub-squire/...` asset path resolves on disk. It exists because this class of mistake has shipped a broken build twice. Note it checks a `.mjs` copy of each file: `node --check foo.js` parses as CommonJS *script* and accepted a real `SyntaxError` that broke the world at load — checking the `.js` directly is worse than no check, because it reports success.
+  - The codex list and the codex pin-placement cursor turned out to be borrowing quest CSS class names, so removing the quest stylesheets would have silently un-styled the Codex. They were given their own; those rules have since travelled to Librarian with the codex itself.
 
 
 ## [13.6.1]
