@@ -550,61 +550,6 @@ export const registerSettings = function() {
 
 
     // --------------------------------
-    // ---      NOTES Settings      ---
-    // --------------------------------
-
-	// The Notes heading is registered further down, immediately before the Notes
-	// Journal picker. It used to be registered here as well; a duplicate key
-	// keeps its FIRST registration position but takes the LAST one's values, so
-	// the heading rendered up here with nothing under it while its own setting
-	// appeared much later with no heading at all.
-
-    // Persistent Journal for Players
-    game.settings.register(MODULE.ID, 'notesPersistentJournal', {
-        name: 'Persistent Journal for Players',
-        hint: 'Journal that is always visible to players in the notes panel',
-        scope: 'world',
-        config: false,
-        type: String,
-        default: 'none',
-        onChange: () => {
-            // Update the notes panel if it exists
-            if (PanelManager.instance?.notesPanel) {
-                PanelManager.instance.notesPanel.render(PanelManager.element);
-            }
-        }
-    });
-
-    // GM's Selected Journal
-    game.settings.register(MODULE.ID, 'notesGMJournal', {
-        name: 'GM\'s Selected Journal',
-        hint: 'Journal currently selected by the GM for their own view',
-        scope: 'world',
-        config: false,
-        type: String,
-        default: 'none',
-        onChange: () => {
-            // Update the notes panel if it exists
-            if (PanelManager.instance?.notesPanel) {
-                PanelManager.instance.notesPanel.render(PanelManager.element);
-            }
-        }
-    });
-    
-    // Notes Shared Journal Page setting
-    game.settings.register(MODULE.ID, 'notesSharedJournalPage', {
-        name: 'Notes Shared Journal Page',
-        hint: 'Page within the journal to display in the Notes tab',
-        scope: 'world',
-        config: false,
-        type: String,
-        default: 'none'
-    });
-
-    // notesPinDefaultDesign removed — initial defaults live in PIN_DEFAULTS
-    // (manager-pins.js) and the GM manages design via Blacksmith Configure Pin.
-
-    // --------------------------------
     // --- Compendium Settings ---
     // --------------------------------
 
@@ -903,49 +848,6 @@ export const registerSettings = function() {
     // source now: see getCampaignContext() in helpers.js.
 
 
-    // --------------------------------
-    // ---      NOTES Settings     ---
-    // --------------------------------
-
-    // ---------- Notes Heading ----------
-    game.settings.register(MODULE.ID, "headingH3NotesConfiguration", {
-        name: 'Notes Configuration',
-        hint: 'Settings for the notes system that allows players to quickly capture and organize memories.',
-        scope: "world",
-        config: true,
-        default: "",
-        type: String,
-    });
-
-    // Notes Journal
-    game.settings.register(MODULE.ID, 'notesJournal', {
-        name: 'Notes Journal',
-        hint: 'The journal to use for player notes. Journal must have "All Players = Observer" ownership to allow players to create notes.',
-        scope: 'world',
-        config: true,
-        type: String,
-        default: 'none',
-        choices: () => {
-            const choices = { 'none': '- Select Journal -' };
-            game.journal.contents.forEach(j => {
-                choices[j.id] = j.name;
-            });
-            return choices;
-        },
-        onChange: async (journalId) => {
-            // Verify journal ownership when selected
-            if (journalId && journalId !== 'none') {
-                const journal = game.journal.get(journalId);
-                if (journal) {
-                    const defaultPerm = journal.ownership.default;
-                    if (defaultPerm < CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) {
-                        ui.notifications.warn(`Warning: Notes journal "${journal.name}" should have "All Players = Observer" ownership to allow players to create notes.`);
-                    }
-                }
-            }
-        }
-    });
-
     // ================================
     // ===          CANVAS          ===
     // ================================
@@ -1006,12 +908,6 @@ export const registerSettings = function() {
 
 
 
-    game.settings.register(MODULE.ID, 'notesWindowPosition', {
-        scope: 'client',
-        config: false,
-        type: Object,
-        default: {}
-    });
 
 };
 

@@ -1,23 +1,21 @@
 /**
- * manager-notifications.js — Transient menubar notifications for party-visible events.
+ * manager-notifications.js — Transient menubar notifications.
  *
- * Local UI actions already notify the acting user (the panels' own click
- * handlers). This file covers everyone ELSE: it watches the document
- * updates that broadcast a change to every client and shows a short-lived
- * Blacksmith menubar notification, with an onClick link to the relevant panel
- * entry where one exists. The initiating user is always skipped — you don't
- * need a toast for something you just did.
+ * Local UI actions already notify the acting user. This file covers everyone
+ * ELSE: it watches the document updates that broadcast a change to every client
+ * and shows a short-lived Blacksmith menubar notification. The initiating user
+ * is always skipped — you don't need a toast for something you just did.
  *
  * Events:
- *  - Active effect applied to an actor you own                      → no link
- *  - Party note updated (visibility 'party' or 'all')               → link to note
+ *  - Active effect applied to an actor you own
+ *  - Item quantity changed on an actor you own
  *
- * Wiring lives in squire.js: the existing updateJournalEntryPage /
- * createJournalEntryPage / createActiveEffect hooks route into the handlers
- * exported here.
+ * The journal half of this file left with Notes; what remains is actor-scoped,
+ * which is why it stayed in Squire at all.
+ *
+ * Wiring lives in squire.js.
  */
 
-import { getCampaignPanel } from './campaign-panels.js';
 import { MODULE } from './const.js';
 import { showSquireToast } from './helpers.js';
 
@@ -25,10 +23,6 @@ const NOTIFICATION_SECONDS = 5;
 
 function getBlacksmith() {
     return game.modules.get('coffee-pub-blacksmith')?.api;
-}
-
-function _getNotesPanel() {
-    return getCampaignPanel('notes');
 }
 
 function _notify(text, icon, options = null) {
@@ -39,40 +33,6 @@ function _notify(text, icon, options = null) {
     } catch (error) {
         console.error('Coffee Pub Squire | Error sending transient notification:', error);
     }
-}
-
-function _getConfiguredJournalId(settingKey) {
-    const journalId = game.settings.get(MODULE.ID, settingKey);
-    return (!journalId || journalId === 'none') ? null : journalId;
-}
-
-/**
- * Route one journal page update through the note notifier.
- * Called from the updateJournalEntryPage hook in squire.js.
- */
-export async function routeTransientJournalUpdate(page, changes, options, userId) {
-    try {
-        _handleNoteUpdate(page, changes, userId);
-    } catch (error) {
-        console.error('Coffee Pub Squire | Error routing transient notification:', error);
-    }
-}
-
-function _handleNoteUpdate(page, changes, userId) {
-    if (page.getFlag(MODULE.ID, 'noteType') !== 'sticky') return;
-    if (page?.parent?.id !== _getConfiguredJournalId('notesJournal')) return;
-    if (userId === game.user.id) return;
-
-    const visibility = page.getFlag(MODULE.ID, 'visibility') || 'private';
-    if (visibility === 'private') return; // private notes are the author's business
-
-    // Only content or title edits — flag-only updates (pinId bookkeeping,
-    // visibility toggles) would make this fire on housekeeping.
-    if (!changes?.text && !changes?.name && !changes?.['==text']) return;
-
-    _notify(`Note updated: ${page.name}`, 'fa-solid fa-note-sticky', {
-        onClick: () => _getNotesPanel()?.showNote?.(page.uuid)
-    });
 }
 
 /**

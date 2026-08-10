@@ -12,7 +12,6 @@ import { FeaturesPanel } from './panel-features.js';
 import { CharacterSummaryPanel } from './panel-character-summary.js';
 import { PartyPanel } from './panel-party.js';
 import { PartyStatsPanel } from './panel-party-stats.js';
-import { NotesPanel } from './panel-notes.js';
 import { PrintCharacterSheet } from './utility-print-character.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { HandleManager } from './manager-handle.js';
@@ -22,8 +21,6 @@ import { trackModuleInterval, trackModuleTimeout, registerTimeoutId, registerInt
 export let _multiSelectTimeout = null;
 export let _lastSelectionTime = 0;
 export let _selectionCount = 0;
-export const MULTI_SELECT_DELAY = 150; // ms to wait after last selection event
-export const SINGLE_SELECT_THRESHOLD = 300; // ms threshold to consider as single selection
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -99,7 +96,6 @@ export class PanelManager {
         // Always create these panels regardless of actor (for handle icons and multi-select functionality)
         this.partyPanel = new PartyPanel();
         this.partyStatsPanel = new PartyStatsPanel();
-        this.notesPanel = new NotesPanel();
         this.hiddenCategories = new Set();
         
         // Register panels with HookManager
@@ -455,7 +451,6 @@ export class PanelManager {
 
         this.partyPanel = new PartyPanel();
         this.partyStatsPanel = new PartyStatsPanel();
-        this.notesPanel = new NotesPanel();
 
         // Update panel element references for non-popped panels
         this.characterPanel.element = PanelManager.element;
@@ -524,11 +519,6 @@ export class PanelManager {
         // viewed (setViewMode) or an event-driven refresh renders it directly,
         // then stays warm across subsequent renderPanels calls.
         //
-        // Notes is no longer a tray tab — it renders into
-        // their own windows (window-campaign-browser.js), launched from the
-        // menubar. The tray must not render them: one panel instance holds one
-        // AbortController, so a second host re-rendering it silently kills the
-        // first host's listeners.
         if (this.partyPanel && game.settings.get(MODULE.ID, 'showTabParty')) {
             if (PanelManager.viewMode === 'party' || this.partyPanel._hasRenderedOnce) {
                 this.partyPanel._hasRenderedOnce = true;
@@ -571,7 +561,7 @@ export class PanelManager {
             });
         }
 
-        // Drag items out of the tray — to chat, a journal, a note, the hotbar, another
+        // Drag items out of the tray — to chat, a journal, the hotbar, another
         // sheet, or any of Squire's own drop zones. Nothing in Foundry drags unless it
         // is wired to: the row carries draggable="true" (in the templates, so it
         // survives a re-render for free) and this supplies the payload.
@@ -1192,8 +1182,7 @@ export class PanelManager {
         // Lazy tabs: first view triggers the deferred initial render (renderPanels
         // skips enabled-but-inactive journal/party tabs until they're actually opened)
         const lazyPanelByMode = {
-            party: this.partyPanel,
-            notes: this.notesPanel
+            party: this.partyPanel
         };
         const lazyPanel = lazyPanelByMode[mode];
         if (lazyPanel && !lazyPanel._hasRenderedOnce) {
@@ -1221,13 +1210,10 @@ export class PanelManager {
         // Update toggle button icon
         const icon = tray.querySelector('.tray-handle-button-viewcycle i');
         if (icon) {
-            icon.classList.remove('fa-user', 'fa-users', 'fa-sticky-note');
+            icon.classList.remove('fa-user', 'fa-users');
             switch (mode) {
                 case 'party':
                     icon.classList.add('fa-users');
-                    break;
-                case 'notes':
-                    icon.classList.add('fa-sticky-note');
                     break;
                 default:
                     icon.classList.add('fa-user');
@@ -1632,9 +1618,6 @@ export class PanelManager {
         if (!PanelManager.instance) return;
         
         // Destroy individual panels to clean up their hooks and event listeners
-        if (PanelManager.instance.notesPanel && typeof PanelManager.instance.notesPanel.destroy === 'function') {
-            PanelManager.instance.notesPanel.destroy();
-        }
         if (PanelManager.instance.gmPanel && typeof PanelManager.instance.gmPanel.destroy === 'function') {
             PanelManager.instance.gmPanel.destroy();
         }

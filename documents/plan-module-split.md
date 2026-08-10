@@ -75,8 +75,31 @@ The third step is the one that earns its keep. It has caught something every tim
 `registerHelpers`, a stylesheet borrowed across a module boundary, and journal routing that was
 never ported at all.
 
-**Next:** import/export to Blacksmith (unblocks the note in `helpers.js`), then Notes to
-Blacksmith. Squire is character, party and notes.
+**Phase 4 — Notes to Blacksmith: DONE.** Notes was the last tenant of the journal/pin
+substrate, so its departure took the substrate with it: the pin manager, the campaign panel
+registry, the browser window, both parsers, the journal utilities, every journal hook, and the
+transfer tool's note mode. Squire no longer uses Blacksmith's Pins API and no longer watches
+journals at all.
+
+Import/export never needed its own phase — codex took the last import surface to Librarian, so
+the `api.importer` note in `helpers.js` is now a standing rule for whoever owns importing next,
+not a Squire task.
+
+**The split is done.** Squire is character and party: the tray, the handle, and the panels that
+describe the token you have selected. It went from 15,766 lines of campaign content to none.
+
+What the four moves taught, in one line each:
+
+- **Verify with the sending module disabled.** Handlebars helpers, partials and CSS class names
+  are world-global, so a both-enabled test is a false pass. This caught something every time.
+- **Migrate before the sender drops anything.** Pins are found by `moduleId`; a page subtype is
+  only valid while some manifest declares it.
+- **Delete a bounded slice, don't extract one.** Extraction loses the module-level constants and
+  odd declaration forms the survivors close over.
+- **Check what a removal orphans.** Every one of these moves left dead exports behind, found by
+  sweeping for consumers rather than by reading.
+
+This document can be deleted.
 
 ## Corrections to earlier versions of this doc
 

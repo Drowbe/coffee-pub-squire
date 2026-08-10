@@ -36,55 +36,6 @@ export function showSquireToast(title, options = {}) {
 }
 
 /**
- * Adapt Squire's two remaining complex JSON-import surfaces to Blacksmith's
- * DialogV2 wait contract while their eventual importer replacement is blocked
- * on the public Blacksmith Importer API.
- */
-export async function showBlacksmithWait(config = {}, renderOptions = {}) {
-  const buttons = Object.entries(config.buttons || {}).map(([action, button]) => ({
-    action,
-    label: button?.label || action,
-    icon: String(button?.icon || '').match(/class=["'][^"']*?(fa-(?:solid|regular|brands)\s+fa-[\w-]+)[^"']*["']/)?.[1]
-      || String(button?.icon || '').match(/(fa-(?:solid|regular|brands)\s+fa-[\w-]+)/)?.[1]
-      || undefined,
-    default: config.default === action,
-    destructive: Boolean(button?.destructive),
-    disabled: Boolean(button?.disabled),
-    callback: typeof button?.callback === 'function' ? form => button.callback(form) : undefined
-  }));
-  const onRender = config.onRender || config.render || renderOptions.onRender || renderOptions.render;
-  const outcome = await getBlacksmithDialog().wait({
-    title: config.title || '',
-    content: config.content || '',
-    buttons,
-    onRender: root => {
-      if (typeof onRender === 'function') onRender(root);
-      root?.querySelectorAll?.('.transfer-dialog input[type="range"][name^="quantity_"]').forEach(input => {
-        const container = input.closest('.transfer-quantity');
-        const selected = container?.querySelector('.quantity-label');
-        const remaining = container?.querySelector('.range-value');
-        const update = () => {
-          const value = Number(input.value) || 1;
-          const maximum = Number(input.max) || value;
-          if (selected) selected.textContent = String(value);
-          if (remaining) remaining.textContent = String(Math.max(0, maximum - value));
-        };
-        input.addEventListener('input', update);
-        update();
-      });
-    },
-    closeValue: null,
-    cancelValue: null,
-    classes: [...(config.classes || []), ...(renderOptions.classes || [])],
-    position: config.position || { width: config.width || renderOptions.width || 600 }
-  });
-  if (outcome.action === 'close' && typeof config.close === 'function') {
-    await config.close();
-  }
-  return outcome;
-}
-
-/**
  * Resolve the shared semantic health-bar color class.
  * Party, handle, and Health tool surfaces all consume this same scale.
  *
@@ -242,26 +193,6 @@ const HTML_ESCAPES = Object.freeze({
   '"': '&quot;',
   "'": '&#39;'
 });
-
-/**
- * Escape text for safe interpolation into an HTML string.
- *
- * Needed wherever we hand-build markup that a template renders through a
- * triple-stash: Handlebars won't escape it, and note names are
- * user-authored.
- *
- * Regex rather than a `createElement`/`textContent`/`innerHTML` round-trip.
- * Chosen when this ran thousands of times per render on a large list, where a
- * regex beat building a DOM node each time by orders of magnitude. The DOM
- * approach also leaves `"` and `'` unescaped, which is wrong for the attribute
- * contexts this is used in.
- *
- * @param {string} text
- * @returns {string}
- */
-export function escapeHtml(text) {
-  return String(text ?? '').replace(/[&<>"']/g, ch => HTML_ESCAPES[ch]);
-}
 
 /**
  * v13: Convert jQuery object to native DOM element, or return native DOM as-is
@@ -448,44 +379,6 @@ export function getCampaignContext() {
         console.warn('Coffee Pub Squire | Could not read campaign data from Blacksmith:', error);
         return empty;
     }
-}
-
-/**
- * Fill an import template's `[ADD-*-HERE]` placeholders from campaign data.
- *
- * A placeholder whose value isn't configured in Blacksmith is left in place —
- * the point of a placeholder is to show what's missing, and blanking it would
- * hide the gap rather than prompt the GM to fill it.
- *
- * @param {string} template
- * @returns {string}
- */
-export function fillCampaignPlaceholders(template) {
-    if (typeof template !== 'string') return template;
-
-    const campaign = getCampaignContext();
-    const p = campaign.prompt ?? {};
-
-    const substitutions = {
-        '[ADD-RULEBOOKS-HERE]': campaign.rulebooks,
-        '[ADD-CAMPAIGN-HERE]': campaign.name,
-        '[ADD-PARTY-HERE]': campaign.party,
-        '[ADD-PARTY-SIZE-HERE]': p.partySize,
-        '[ADD-PARTY-LEVEL-HERE]': p.partyLevel,
-        '[ADD-PARTY-MAKEUP-HERE]': p.partyMakeup,
-        '[ADD-PARTY-CLASSES-HERE]': Array.isArray(p.partyClasses) ? p.partyClasses.join(', ') : p.partyClasses,
-        '[ADD-REALM-HERE]': p.realm,
-        '[ADD-REGION-HERE]': p.region,
-        '[ADD-SITE-HERE]': p.site,
-        '[ADD-AREA-HERE]': p.area
-    };
-
-    let output = template;
-    for (const [token, value] of Object.entries(substitutions)) {
-        const text = value === null || value === undefined ? '' : String(value).trim();
-        if (text) output = output.split(token).join(text);
-    }
-    return output;
 }
 
 /**

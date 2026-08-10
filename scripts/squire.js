@@ -2,20 +2,12 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager, _updateTrayFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings, migrateCompendiumAccessSetting } from './settings.js';
-import { getCampaignPanel } from './campaign-panels.js';
 import { getTransferBlocker, registerHelpers, renderTemplate, showSquireToast } from './helpers.js';
 import { CompendiumRequestUtils } from './compendium-request-utils.js';
 
 import { FavoritesPanel } from './panel-favorites.js';
-import {
-    initPinManager,
-    teardownPinManager,
-    migrateSquireNotePinTypes,
-    buildNoteOwnership,
-} from './manager-pins.js';
 import { trackModuleTimeout, clearTrackedTimeout, clearAllModuleTimers } from './timer-utils.js';
 import {
-    routeTransientJournalUpdate,
     notifyEffectApplied,
     notifyQuantityChanged
 } from './manager-notifications.js';
@@ -63,36 +55,6 @@ function queueSelectionDisplayUpdate() {
             console.error('Coffee Pub Squire | Failed to update selection display:', error);
         }
     });
-}
-
-const NOTE_EDIT_LOCK_FLAG = 'editLock';
-const NOTE_EDIT_LOCK_TTL_MS = 30 * 60 * 1000;
-
-async function clearNoteEditLocks({ userId = null, clearExpired = false } = {}) {
-    if (!game.settings?.settings?.has(`${MODULE.ID}.notesJournal`)) {
-        return;
-    }
-    const journalId = game.settings.get(MODULE.ID, 'notesJournal');
-    if (!journalId || journalId === 'none') return;
-    const journal = game.journal.get(journalId);
-    if (!journal) return;
-    const now = Date.now();
-
-    for (const page of journal.pages.contents) {
-        const lock = page.getFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG);
-        if (!lock || typeof lock !== 'object') continue;
-        const lockUserId = lock.userId;
-        const lockAt = Number(lock.at);
-        const expired = !Number.isFinite(lockAt) || (now - lockAt > NOTE_EDIT_LOCK_TTL_MS);
-        if ((userId && lockUserId === userId) || (clearExpired && expired)) {
-            if (!page.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) continue;
-            if (typeof page.unsetFlag === 'function') {
-                await page.unsetFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG);
-            } else {
-                await page.setFlag(MODULE.ID, NOTE_EDIT_LOCK_FLAG, null);
-            }
-        }
-    }
 }
 
 
@@ -147,16 +109,7 @@ Hooks.once('ready', async () => {
         // may be newer than the Blacksmith a given world has installed.
         blacksmithApi?.inventory?.registerTransientFlag?.(`${MODULE.ID}.isNew`);
 
-        // Initialize unified pin manager (taxonomy, events, context menus, hooks).
-        await initPinManager();
-        await migrateSquireNotePinTypes();
         await migrateCompendiumAccessSetting();
-        await clearNoteEditLocks({ userId: game.user.id, clearExpired: true });
-
-        registerNativeHook('userDisconnected', async (user) => {
-            if (!user?.id) return;
-            await clearNoteEditLocks({ userId: user.id });
-        });
 
         // Register all hooks after Blacksmith is ready
         if (!getBlacksmithHookManager()?.registerHook) {
@@ -199,16 +152,6 @@ Hooks.once('ready', async () => {
                 if (pm?.instance?.characterPanel && pm.element) {
                     await pm.instance.characterPanel.render(pm.element);
                 }
-
-                // Note cards carry per-scene pin state — the "Show on Canvas"
-                // button, the pin icon's active/dim state, the "pinned on <scene>" tooltip.
-                // All of it is computed in _refreshData(), so after a scene change it
-                // describes the PREVIOUS scene until something else happens to refresh.
-                // reinitializeTrayForCanvas() above returns early whenever the current
-                // actor has a token on the new scene, which is the common case, so the
-                // tray rebuild cannot be relied on to do this.
-                const notesPanel = pm?.instance?.notesPanel;
-                if (notesPanel?._hasRenderedOnce && pm.element) await notesPanel.render(pm.element);
             }
         });
 
@@ -233,72 +176,6 @@ Hooks.once('ready', async () => {
                 cleanupModule();
             }
         });
-        
-        // Register all remaining hooks from manager-hooks.js
-        const journalHookId = getBlacksmithHookManager().registerHook({
-            name: "updateJournalEntryPage",
-            description: "Coffee Pub Squire: Handle journal entry page updates for notes",
-            context: MODULE.ID,
-            priority: 2,
-            callback: async (page, changes, options, userId) => {
-                // Handle journal entry page updates - route to appropriate panels
-                await Promise.all([
-                    _routeToNotesPanel(page, changes, options, userId),
-                    routeTransientJournalUpdate(page, changes, options, userId)
-                ]);
-            }
-        });
-
-        // Hook for creating journal pages (for notes)
-        const createJournalPageHookId = getBlacksmithHookManager().registerHook({
-            name: "createJournalEntryPage",
-            description: "Coffee Pub Squire: Handle journal entry page creation for notes panel",
-            context: MODULE.ID,
-            priority: 2,
-            callback: async (page, options, userId) => {
-                // Route to notes panel when a new page is created
-                await _routeToNotesPanel(page, {}, options, userId);
-            }
-        });
-
-        // Hook for deleting journal pages (for notes)
-        const deleteJournalPageHookId = getBlacksmithHookManager().registerHook({
-            name: "deleteJournalEntryPage",
-            description: "Coffee Pub Squire: Handle journal entry page deletion for notes panel",
-            context: MODULE.ID,
-            priority: 2,
-            callback: async (page, options, userId) => {
-                // Route to notes panel when a page is deleted
-                await _routeToNotesPanel(page, {}, options, userId);
-            }
-        });
-
-        // Hook to embed note metadata box in journal entry page sheet
-        // Try multiple hook names for compatibility
-        const renderJournalPageSheetHookId = getBlacksmithHookManager().registerHook({
-            name: "renderJournalPageSheet",
-            description: "Coffee Pub Squire: Embed note metadata box in journal entry page sheet",
-            context: MODULE.ID,
-            priority: 2,
-            callback: async (sheet, html, data) => {
-                await _embedNoteMetadataBox(sheet, html, data);
-            }
-        });
-        
-        // Also try renderApplication hook with filter
-        const renderApplicationHookId = getBlacksmithHookManager().registerHook({
-            name: "renderApplication",
-            description: "Coffee Pub Squire: Embed note metadata box in journal entry page sheet (via renderApplication)",
-            context: MODULE.ID,
-            priority: 2,
-            callback: async (app, html, data) => {
-                // Check if this is a JournalPageSheet
-                if (app?.constructor?.name === 'JournalPageSheet' || app?.object?.constructor?.name === 'JournalEntryPage') {
-                    await _embedNoteMetadataBox(app, html, data);
-                }
-            }
-        });
-
         
         // Character Panel Hooks
         const characterActorHookId = getBlacksmithHookManager().registerHook({
@@ -997,254 +874,6 @@ async function reinitializeTrayForCanvas() {
     await pm.initialize(controlled?.actor ?? ownedOnScene?.actor ?? getFallbackActor(), { force: true });
 }
 
-async function _routeToNotesPanel(page, changes, options, userId) {
-    const panelManager = getPanelManager();
-    const notesPanel = panelManager?.instance?.notesPanel;
-    if (!notesPanel) return;
-    try {
-        // Check if this is a note (has noteType flag)
-        const noteType = page.getFlag(MODULE.ID, 'noteType');
-        if (noteType !== 'sticky') {
-            // Not a note, ignore it
-            return;
-        }
-        
-        // Check if this page belongs to the notes journal
-        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
-        if (!journalId || journalId === 'none') return;
-        
-        const journal = game.journal.get(journalId);
-        if (!journal || page.parent.id !== journal.id) {
-            // Page doesn't belong to notes journal
-            return;
-        }
-        
-        if (panelManager?.instance && panelManager.element) {
-            notesPanel.render(panelManager.element);
-        }
-    } catch (error) {
-        console.error('Error routing to notes panel:', error);
-    }
-}
-
-/**
- * Embed note metadata box in journal entry page sheet
- * @private
- */
-async function _embedNoteMetadataBox(sheet, html, data) {
-    try {
-        
-        // Only show for notes journal
-        const journalId = game.settings.get(MODULE.ID, 'notesJournal');
-        if (!journalId || journalId === 'none') {
-            return;
-        }
-        
-        // For JournalEntrySheet, we need to get the current page being viewed
-        let page = sheet?.object;
-        if (!page && sheet?.pages) {
-            // This is a JournalEntrySheet, get the active page
-            const activePageId = sheet.pages?.active;
-            if (activePageId) {
-                page = sheet.pages?.get(activePageId);
-            }
-        }
-        
-        if (!page) {
-            return;
-        }
-        
-        if (!page.parent) {
-            return;
-        }
-        
-        // Check if this page belongs to the notes journal
-        if (page.parent.id !== journalId) {
-            return;
-        }
-        
-        
-        // Check if this is a note (has noteType flag) or if we're creating a new page
-        const noteType = page.getFlag(MODULE.ID, 'noteType');
-        const isNote = noteType === 'sticky';
-        
-        // If it's a new page without noteType, set it
-        if (!isNote && page.id) {
-            try {
-                await page.setFlag(MODULE.ID, 'noteType', 'sticky');
-                if (!page.getFlag(MODULE.ID, 'authorId')) {
-                    await page.setFlag(MODULE.ID, 'authorId', game.user.id);
-                }
-                if (!page.getFlag(MODULE.ID, 'timestamp')) {
-                    await page.setFlag(MODULE.ID, 'timestamp', new Date().toISOString());
-                }
-                if (!page.getFlag(MODULE.ID, 'visibility')) {
-                    await page.setFlag(MODULE.ID, 'visibility', 'private');
-                }
-                if (!page.getFlag(MODULE.ID, 'tags')) {
-                    await page.setFlag(MODULE.ID, 'tags', []);
-                }
-            } catch (error) {
-                console.error('_embedNoteMetadataBox: Error setting flags:', error);
-            }
-        }
-        
-        // Get note metadata from flags - read directly for reliability
-        const tags = page.getFlag(MODULE.ID, 'tags') || [];
-        const visibility = page.getFlag(MODULE.ID, 'visibility') || 'private';
-        const authorId = page.getFlag(MODULE.ID, 'authorId') || game.user.id;
-        
-        // Ensure tags is an array
-        const tagsArray = Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(t => t) : []);
-        
-        // Look up author name
-        let authorName = 'Unknown';
-        if (authorId) {
-            try {
-                let user = game.users.get(authorId);
-                if (!user) user = game.users.find(u => u.id === authorId);
-                authorName = user?.name || authorId;
-            } catch (e) {
-                authorName = authorId;
-            }
-        }
-        
-        // Convert jQuery/html to native DOM if needed
-        let nativeHtml = html;
-        if (html && (html.jquery || typeof html.find === 'function')) {
-            nativeHtml = html[0] || html.get?.(0) || html;
-        }
-        if (!nativeHtml || !nativeHtml.querySelector) {
-            // Try getting native element from jQuery
-            if (html && html.length) nativeHtml = html[0];
-            if (!nativeHtml) return;
-        }
-        
-        
-        // Find where to insert the meta box (after title, before content)
-        // Try multiple selectors for different Foundry versions
-        const titleElement = nativeHtml.querySelector('.journal-entry-page-title, .journal-page-title, .page-title, h1.page-title, h1');
-        const contentArea = nativeHtml.querySelector('.journal-entry-content, .editor-content, .editor, .editor-edit, textarea[name="text.content"]');
-        
-        // Escape HTML in values
-        const escapeHtml = (str) => {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        };
-        
-        // Create meta box HTML
-        const metaBoxHtml = `
-            <div class="squire-note-metadata-box" data-page-id="${page.id}">
-                <div class="squire-note-meta-header">
-                    <i class="fa-solid fa-sticky-note"></i> Note Metadata
-                </div>
-                <div class="squire-note-meta-fields">
-                    <div class="squire-note-meta-field">
-                        <label>Tags:</label>
-                        <input type="text" class="squire-note-tags-input" 
-                               value="${escapeHtml(tagsArray.join(', '))}" 
-                               placeholder="npc, phlan, informant">
-                        <small>Comma-separated tags</small>
-                    </div>
-                    <div class="squire-note-meta-field">
-                        <label>Visibility:</label>
-                        <div class="squire-note-visibility-options">
-                            <label>
-                                <input type="radio" name="squire-note-visibility-${page.id}" value="private" ${visibility === 'private' ? 'checked' : ''}>
-                                <i class="fa-solid fa-lock"></i> Private
-                            </label>
-                            <label>
-                                <input type="radio" name="squire-note-visibility-${page.id}" value="party" ${visibility === 'party' ? 'checked' : ''}>
-                                <i class="fa-solid fa-users"></i> Party
-                            </label>
-                        </div>
-                    </div>
-                    <div class="squire-note-meta-field">
-                        <label>Author:</label>
-                        <span class="squire-note-author">${escapeHtml(authorName)}</span>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Create DOM element from HTML
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = metaBoxHtml;
-        const metaBoxElement = tempDiv.firstElementChild;
-        
-        // Insert meta box
-        let inserted = false;
-        if (titleElement && titleElement.parentNode) {
-            titleElement.parentNode.insertBefore(metaBoxElement, titleElement.nextSibling);
-            inserted = true;
-        } else if (contentArea && contentArea.parentNode) {
-            contentArea.parentNode.insertBefore(metaBoxElement, contentArea);
-            inserted = true;
-        } else {
-            // Fallback: insert at top of sheet content
-            const sheetContent = nativeHtml.querySelector('.sheet-content, .window-content, form');
-            if (sheetContent) {
-                sheetContent.insertBefore(metaBoxElement, sheetContent.firstChild);
-                inserted = true;
-            } else {
-            }
-        }
-        
-        if (!inserted) {
-            console.error('_embedNoteMetadataBox: Failed to insert meta box!');
-            return;
-        }
-        
-        // Set up event listeners for meta box
-        const metaBox = nativeHtml.querySelector('.squire-note-metadata-box');
-        if (metaBox) {
-            // Handle tags input
-            const tagsInput = metaBox.querySelector('.squire-note-tags-input');
-            if (tagsInput) {
-                const handleTagsChange = async function() {
-                    const tagsValue = this.value;
-                    const tagsArray = tagsValue.split(',').map(t => t.trim()).filter(t => t);
-                    await page.setFlag(MODULE.ID, 'tags', tagsArray);
-                    // Ensure noteType is set
-                    if (!isNote) {
-                        await page.setFlag(MODULE.ID, 'noteType', 'sticky');
-                    }
-                };
-                tagsInput.addEventListener('change', handleTagsChange);
-                tagsInput.addEventListener('blur', handleTagsChange);
-            }
-            
-            // Handle visibility radio buttons
-            const visibilityRadios = metaBox.querySelectorAll('input[name^="squire-note-visibility"]');
-            visibilityRadios.forEach(radio => {
-                radio.addEventListener('change', async function() {
-                    const newVisibility = this.value;
-                    await page.setFlag(MODULE.ID, 'visibility', newVisibility);
-                    // Ensure noteType is set
-                    if (!isNote) {
-                        await page.setFlag(MODULE.ID, 'noteType', 'sticky');
-                    }
-                    // Update ownership if GM
-                    if (game.user.isGM) {
-                        const ownership = {};
-                        ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-                        ownership.default = newVisibility === 'party' 
-                            ? CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER 
-                            : CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
-                        await page.update({ ownership });
-                    }
-                });
-            });
-        }
-    } catch (error) {
-        console.error('Error embedding note metadata box:', error);
-    }
-}
-
-
-
-
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;
@@ -1737,72 +1366,6 @@ Hooks.once('ready', async function() {
 
 
 
-    try {
-        const { registerNoteWindow, openNotesWindow, NoteWindow, NotesForm, NOTE_WINDOW_ID } = await import('./window-note.js');
-        registerNoteWindow();
-        game.modules.get(MODULE.ID).api.openNotesWindow = openNotesWindow;
-        game.modules.get(MODULE.ID).api.openNotesForm = openNotesWindow;
-        game.modules.get(MODULE.ID).api.NoteWindow = NoteWindow;
-        game.modules.get(MODULE.ID).api.NotesForm = NotesForm;
-        game.modules.get(MODULE.ID).api.NOTE_WINDOW_ID = NOTE_WINDOW_ID;
-        window.NoteWindow = NoteWindow;
-        window.NotesForm = NotesForm;
-    } catch (error) {
-        console.error('Coffee Pub Squire | Failed to register Note window:', error);
-    }
-
-    try {
-        const { registerCampaignBrowserWindows, openCampaignBrowser } = await import('./window-campaign-browser.js');
-        registerCampaignBrowserWindows();
-        game.modules.get(MODULE.ID).api.openCampaignBrowser = openCampaignBrowser;
-    } catch (error) {
-        console.error('Coffee Pub Squire | Failed to register campaign browser windows:', error);
-    }
-
-    // Pin type names and taxonomy registered by manager-pins.js initPinManager().
-
-    // Register socket handler for GM ownership sync on notes
-    try {
-        await blacksmith.sockets?.register('squire:updateNoteOwnership', async (data) => {
-            if (!game.user.isGM) return;
-            if (!data?.pageUuid) return;
-            const page = await foundry.utils.fromUuid(data.pageUuid);
-            if (!page) return;
-            const visibility = data.visibility === 'party' ? 'party' : 'private';
-            const authorId = data.authorId || page.getFlag(MODULE.ID, 'authorId') || null;
-
-            const ownership = {
-                default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE
-            };
-            if (visibility === 'party') {
-                game.users.forEach(user => {
-                    if (!user.isGM) {
-                        ownership[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-                    }
-                });
-                if (authorId && !ownership[authorId]) {
-                    ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-                }
-            } else if (authorId) {
-                ownership[authorId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-            }
-
-            await page.setFlag(MODULE.ID, 'visibility', visibility);
-            if (authorId) {
-                await page.setFlag(MODULE.ID, 'authorId', authorId);
-            }
-            await page.update({ ownership });
-        });
-    } catch (error) {
-        blacksmith.utils?.postConsoleAndNotification?.(
-            MODULE.NAME,
-            'Failed to register notes ownership socket handler',
-            { error },
-            true,
-            false
-        );
-    }
-
     // Check if current user is excluded - with safety check for setting registration
     let excludedUsers = [];
     try {
@@ -1842,90 +1405,6 @@ Hooks.once('ready', async function() {
     // Menubar tools (require tray / PanelManager — register only for non-excluded users)
 
 
-
-    try {
-        const openQuickNote = () => {
-            const api = game.modules.get(MODULE.ID)?.api;
-            if (typeof api?.openNotesWindow === 'function') {
-                return api.openNotesWindow({});
-            }
-            ui.notifications.warn('Note window is not ready yet.');
-            return null;
-        };
-
-        const noteOk = blacksmith.registerMenubarTool('squire-quick-note', {
-            icon: "fa-solid fa-note-sticky",
-            name: "squire-quick-note",
-            title: null,
-            tooltip: "Quick Note",
-            onClick: openQuickNote,
-            zone: "left",
-            group: "general",
-            groupOrder: 999,
-            order: 203,
-            moduleId: MODULE.ID,
-            gmOnly: false,
-            leaderOnly: false,
-            visible: true,
-            toggleable: false,
-            active: false,
-            iconColor: "rgba(205, 200, 117, 0.9)",
-            buttonNormalTint: null,
-            buttonSelectedTint: null
-        });
-        if (!noteOk) {
-            console.error('Coffee Pub Squire | Failed to register quick note with Blacksmith menubar');
-        }
-    } catch (error) {
-        console.error('Coffee Pub Squire | Error registering quick note with Blacksmith menubar:', error);
-    }
-
-    // Campaign browsers. These live on the menubar rather than in the tray:
-    // notes are campaign content, not properties of the selected
-    // token, and they are moving out of Squire entirely. Quests already have
-    // (Librarian, 13.6.1).
-    const CAMPAIGN_TOOLS = [
-        { kind: 'notes', id: 'squire-notes', icon: 'fa-solid fa-sticky-note', label: 'Notes', tooltip: 'Open notes', order: 206 }
-    ];
-
-    for (const tool of CAMPAIGN_TOOLS) {
-        try {
-            const ok = blacksmith.registerMenubarTool(tool.id, {
-                icon: tool.icon,
-                name: tool.id,
-                // `title` renders as the visible label beside the icon; `tooltip`
-                // is what shows on hover. Icon-only tools pass null for title.
-                title: tool.label,
-                tooltip: tool.tooltip,
-                onClick: async () => {
-                    const open = game.modules.get(MODULE.ID)?.api?.openCampaignBrowser;
-                    if (typeof open !== 'function') {
-                        ui.notifications.warn(`${tool.label} window is not ready yet.`);
-                        return;
-                    }
-                    await open(tool.kind);
-                },
-                zone: "middle",
-                group: "campaign",
-                groupOrder: 20,
-                order: tool.order,
-                moduleId: MODULE.ID,
-                gmOnly: false,
-                leaderOnly: false,
-                visible: true,
-                toggleable: false,
-                active: false,
-                iconColor: null,
-                buttonNormalTint: null,
-                buttonSelectedTint: null
-            });
-            if (!ok) {
-                console.error(`Coffee Pub Squire | Failed to register ${tool.label} with Blacksmith menubar`);
-            }
-        } catch (error) {
-            console.error(`Coffee Pub Squire | Error registering ${tool.label} with Blacksmith menubar:`, error);
-        }
-    }
 
     blacksmith.renderMenubar?.(true);
 
@@ -1968,28 +1447,6 @@ Hooks.once('ready', async function() {
 
         // Hook management is now handled by Blacksmith HookManager
         // No need to initialize local HookManager
-        
-        // Fallback: Direct hook registration for journal page sheet (in case Blacksmith doesn't support it)
-        // Try multiple hook names for FoundryVTT v12/v13 compatibility
-        registerNativeHook('renderJournalPageSheet', async (sheet, html, data) => {
-            await _embedNoteMetadataBox(sheet, html, data);
-        });
-        
-        // Also try renderApplication with filter
-        registerNativeHook('renderApplication', async (app, html, data) => {
-            const className = app?.constructor?.name;
-            const objectName = app?.object?.constructor?.name;
-            if (className === 'JournalPageSheet' || className === 'JournalTextPageSheet' || objectName === 'JournalEntryPage') {
-                await _embedNoteMetadataBox(app, html, data);
-            }
-        });
-        
-        // Also try the JournalEntrySheet hook (for the parent journal)
-        registerNativeHook('renderJournalEntrySheet', async (sheet, html, data) => {
-            // This is for the journal itself, but we can check if a page is being viewed
-            // The meta box hook should handle individual pages
-        });
-        
         
         // Register the controlToken hook AFTER settings are registered
         const controlTokenHookId = getBlacksmithHookManager().registerHook({
@@ -2234,7 +1691,6 @@ function cleanupModule() {
         }
 
         unregisterNativeHooks();
-        teardownPinManager();
 
         // Clean up PanelManager
         if (PanelManager.cleanup) {

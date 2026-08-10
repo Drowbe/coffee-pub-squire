@@ -80,19 +80,6 @@ function actorRecipients(sourceActor) {
     });
 }
 
-function userRecipients() {
-    return (game.users?.contents || []).map(user => ({
-        id: user.id,
-        name: user.name,
-        img: user.avatar || DEFAULT_IMAGE,
-        type: user.isGM ? 'Game Master' : 'Player',
-        disabled: user.id === game.user?.id,
-        disabledReason: user.id === game.user?.id ? 'Cannot give this note to yourself.' : '',
-        badges: user.active ? ['Online'] : ['Offline'],
-        metadata: { user }
-    }));
-}
-
 export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
     static DEFAULT_OPTIONS = foundry.utils.mergeObject(
         foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}),
@@ -124,7 +111,6 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
         mode = 'item',
         sourceActor = null,
         item = null,
-        note = null,
         targetActor = null,
         requestedQuantity = 1,
         onSubmit = null,
@@ -143,10 +129,9 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
         );
         super(opts);
 
-        this.mode = ['note', 'approval'].includes(mode) ? mode : 'item';
+        this.mode = mode === 'approval' ? 'approval' : 'item';
         this.sourceActor = sourceActor;
         this.item = item;
-        this.note = note;
         this.targetActor = targetActor;
         this.requestedQuantity = Math.max(1, Number(requestedQuantity) || 1);
         this.onSubmit = onSubmit;
@@ -160,16 +145,11 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
         }
 
         if (!this.targetActor && this.mode !== 'approval') {
-            const entities = this.mode === 'note'
-                ? userRecipients()
-                : actorRecipients(this.sourceActor);
             this.entityList = blacksmith.entityList.create({
-                entities,
+                entities: actorRecipients(this.sourceActor),
                 mode: 'single',
                 inputName: `${this.id}-recipient`,
-                emptyMessage: this.mode === 'note'
-                    ? 'No other users are available.'
-                    : 'No eligible characters are on this scene.',
+                emptyMessage: 'No eligible characters are on this scene.',
                 onSelectionChange: () => this._syncSubmitState()
             });
         }
@@ -185,7 +165,6 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
     }
 
     get title() {
-        if (this.mode === 'note') return 'Give Note';
         if (this.mode === 'approval') return 'Item Transfer Request';
         return 'Transfer Item';
     }
@@ -206,7 +185,7 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
     }
 
     async getData() {
-        const subject = this.mode === 'note' ? this.note : this.item;
+        const subject = this.item;
         const fixedRecipient = this.targetActor
             ? {
                 name: this.targetActor.name,
@@ -216,18 +195,17 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
             : null;
         const bodyContent = await renderTemplate(TRANSFER_TOOL_TEMPLATE, {
             mode: this.mode,
-            isNote: this.mode === 'note',
             isApproval: this.mode === 'approval',
             subjectName: subject?.name || 'Unknown',
-            subjectImg: subject?.img || subject?.src || (this.mode === 'note' ? 'icons/svg/book.svg' : DEFAULT_IMAGE),
+            subjectImg: subject?.img || subject?.src || DEFAULT_IMAGE,
             sourceName: this.sourceActor?.name || game.user?.name || '',
             fixedRecipient,
             requestedQuantity: this.requestedQuantity,
             entityListHtml: this.entityList?.html || '',
             // The actor list supplies its own Party / NPCs headings; the
             // generic "Recipient" one above them would be a third header
-            // saying less than either. Note recipients are users and stay flat.
-            groupedRecipients: !!this.entityList && this.mode !== 'note' && !this.targetActor,
+            // saying less than either.
+            groupedRecipients: !!this.entityList && !this.targetActor,
             quantityHtml: this.quantitySplit?.html || ''
         });
 
@@ -241,8 +219,8 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
                 </button>`,
             toolFooterRight: `
                 <button type="button" class="blacksmith-window-btn-primary" data-action="submit" ${this.canSubmit ? '' : 'disabled'}>
-                    <i class="fa-solid ${this.mode === 'note' ? 'fa-share' : (this.mode === 'approval' ? 'fa-check' : 'fa-right-left')}"></i>
-                    ${this.mode === 'note' ? 'Give Note' : (this.mode === 'approval' ? 'Accept' : 'Transfer')}
+                    <i class="fa-solid ${this.mode === 'approval' ? 'fa-check' : 'fa-right-left'}"></i>
+                    ${this.mode === 'approval' ? 'Accept' : 'Transfer'}
                 </button>`
         };
     }
@@ -303,12 +281,6 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
 
 export async function openItemTransferTool(options = {}) {
     const app = new TransferToolWindow({ ...options, mode: 'item' });
-    await app.render(true);
-    return app;
-}
-
-export async function openNoteTransferTool(options = {}) {
-    const app = new TransferToolWindow({ ...options, mode: 'note' });
     await app.render(true);
     return app;
 }

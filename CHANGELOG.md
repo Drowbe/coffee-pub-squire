@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **Notes moved to Coffee Pub Blacksmith.** Squire is now character and party — the tray, the handle, and the panels that describe the token you have selected. Nothing else.
+  - **Run Blacksmith's notes migration before updating.** Note pages are plain journal pages with no document subtype, so unlike the codex move there is no validation cliff: an unmigrated world loses the tray's view of its notes but the pages themselves are untouched and Blacksmith can adopt them at any point.
+  - Notes was the last tenant of Squire's journal/pin substrate, so the substrate went with it: `panel-notes.js`, `window-note.js`, `utility-notes-parser.js`, `utility-base-parser.js`, `utility-journal.js`, `manager-pins.js`, `campaign-panels.js`, `window-campaign-browser.js`, two templates, four stylesheets, and `pin-defaults.json`.
+  - **Squire no longer uses Blacksmith's Pins API, and no longer watches journals at all.** Five journal hooks and four native ones went, including the note metadata box embedded in the journal page sheet and the `blacksmith.pins.resolveOwnership` responder.
+  - Six settings removed: `notesJournal`, `notesPersistentJournal`, `notesGMJournal`, `notesSharedJournalPage`, `notesWindowPosition`, `headingH3NotesConfiguration`.
+  - The transfer tool loses its **`note` mode** — "Give Note", and the user-recipient list that only note transfers used. Item transfer and transfer approval are unaffected.
+- **Five dead exports.** `escapeHtml` was orphaned by this change; `fillCampaignPlaceholders` and `showBlacksmithWait` had been dead since the codex removal, and `MULTI_SELECT_DELAY` / `SINGLE_SELECT_THRESHOLD` longer than that. Found by sweeping every export for a consumer rather than by reading.
+
+
 
 ## [13.7.0]
 

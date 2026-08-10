@@ -4,13 +4,11 @@
             <img src="{{subjectImg}}" alt="">
         </div>
         <div class="squire-transfer-subject-copy">
-            <div class="squire-transfer-kicker">{{#if isNote}}Note{{else}}Item{{/if}}</div>
+            <div class="squire-transfer-kicker">Item</div>
             <div class="squire-transfer-subject-name">{{subjectName}}</div>
             <div class="squire-transfer-description">
                 {{#if isApproval}}
                     {{sourceName}} wants to transfer this item.
-                {{else if isNote}}
-                    Give this private note to another user.
                 {{else}}
                     Transfer from {{sourceName}}.
                 {{/if}}
