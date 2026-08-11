@@ -544,6 +544,11 @@
    scale whose neutral is the middle, so the track is always full width and the
    marker moves. */
 .party-view .party-reputation-bar {
+    /* The track draws its own border inside this container, so the visible
+       gradient starts this far below the container's padding edge. The marker
+       has to clear the same distance to sit flush with the bar rather than with
+       the track's border. Declared once so the two cannot drift apart. */
+    --squire-rep-track-border: 2px;
     position: relative;
     display: flex;
     align-items: center;
@@ -562,7 +567,7 @@
     width: 100%;
     height: 100%;
     z-index: 1;
-    border: 2px solid rgba(0, 0, 0, 0.9);
+    border: var(--squire-rep-track-border) solid rgba(0, 0, 0, 0.9);
     border-radius: 4px;
     box-sizing: border-box;
     /* Hostile reds left, friendly greens right, gold through the centre.
@@ -587,7 +592,8 @@
 .party-view .party-reputation-marker {
     position: absolute;
     z-index: 3;
-    top: 0;
+    /* Flush with the top of the gradient, not the top of the track's border. */
+    top: var(--squire-rep-track-border);
     width: 0;
     height: 0;
     transform: translateX(-50%);
@@ -603,8 +609,9 @@
 .party-view .party-reputation-midpoint {
     position: absolute;
     z-index: 2;
-    top: 0;
-    bottom: 0;
+    /* Inset to match: the tick marks the gradient, not the frame around it. */
+    top: var(--squire-rep-track-border);
+    bottom: var(--squire-rep-track-border);
     left: 50%;
     width: 1px;
     background: rgba(0, 0, 0, 0.45);
