@@ -135,9 +135,9 @@ export class PartyPanel {
                 value,
                 label: entry?.label ?? 'Unknown',
                 description: entry?.description ?? '',
-                // -100..100 mapped to 0..100 so the bar can be a plain width %.
+                // -100..100 mapped to 0..100 — the marker's position along the
+                // spectrum, not a fill width. 0 sits at 50%.
                 percent: Math.round(((value + 100) / 200) * 100),
-                tone: value > 0 ? 'positive' : (value < 0 ? 'negative' : 'neutral'),
                 // setPartyReputation is GM-only in Blacksmith and returns false for
                 // anyone else, so the controls are GM-only here too rather than
                 // offering buttons that silently do nothing.

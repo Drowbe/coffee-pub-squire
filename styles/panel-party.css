@@ -435,151 +435,181 @@
    PARTY REPUTATION
 
    Blacksmith owns the value; this is a readout with adjustment controls.
+   Deliberately built on the Party Health card's shape — same `.party-view`
+   scope, same background, colour, radius and title treatment — so the two read
+   as a pair of party summaries rather than two designs stacked on each other.
+
    Reputation is stored per scene, so the scene name is shown as part of the
-   reading rather than as decoration — a number with no "where" invites the
+   reading rather than as decoration: a number with no "where" invites the
    assumption that it is campaign-wide.
    ========================================================================== */
 
-.squire-panel-host .party-reputation-card {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
-    padding: 8px;
+.party-view .party-reputation-card {
+    background: rgba(0, 0, 0, 0.4);
+    color: #9f9275;
+    padding: 3px;
+    font-size: 1.0em;
+    border: 2px solid rgba(68, 68, 68, 0.0);
     margin-bottom: 8px;
+    border-radius: 6px;
 }
 
-.squire-panel-host .party-reputation-header {
+.party-view .party-reputation-header {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 6px;
 }
 
-.squire-panel-host .party-reputation-title {
-    font-weight: bold;
+/* Matches .party-health-card-title exactly. */
+.party-view .party-reputation-title {
+    display: block;
+    font-size: 1.0em;
+    font-weight: 900;
     text-transform: uppercase;
-    font-size: 0.85em;
-    color: rgba(255, 255, 255, 0.9);
 }
 
-.squire-panel-host .party-reputation-where {
-    font-size: 0.75em;
-    font-style: italic;
-    color: rgba(205, 204, 179, 0.75);
-    /* A long scene name truncates rather than pushing the title around. */
+.party-view .party-reputation-where {
+    font-size: 0.8em;
+    font-weight: 400;
+    text-transform: none;
+    opacity: 0.75;
+    /* A long scene name truncates rather than shoving the title around. */
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.squire-panel-host .party-reputation-where i {
+.party-view .party-reputation-where i {
     margin-right: 4px;
     opacity: 0.7;
 }
 
-.squire-panel-host .party-reputation-body {
+.party-view .party-reputation-body {
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-top: 2px;
 }
 
-/* Readout takes the slack; the button clusters keep their intrinsic width. */
-.squire-panel-host .party-reputation-readout {
+/* The readout takes the slack; the button clusters keep their intrinsic width. */
+.party-view .party-reputation-readout {
     flex: 1;
     min-width: 0;
 }
 
-.squire-panel-host .party-reputation-readout.clickable {
+.party-view .party-reputation-readout.clickable {
     cursor: pointer;
 }
 
-.squire-panel-host .party-reputation-controls {
+.party-view .party-reputation-controls {
     display: flex;
     gap: 3px;
     flex: 0 0 auto;
 }
 
-.squire-panel-host .party-reputation-adjust {
-    width: 28px;
-    height: 24px;
+.party-view .party-reputation-adjust {
+    width: 26px;
+    height: 22px;
     padding: 0;
-    background: rgba(92, 84, 66, 0.9);
-    border: 1px solid rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(68, 68, 68, 0.9);
     border-radius: 4px;
-    color: rgba(255, 255, 255, 0.9);
+    color: #9f9275;
     font-size: 0.75em;
-    font-weight: bold;
+    font-weight: 900;
+    line-height: 1;
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: all 0.2s ease;
     outline: none;
 }
 
-.squire-panel-host .party-reputation-adjust:hover {
-    background: rgba(194, 86, 61, 1.0);
-    border-color: rgba(194, 86, 61, 1.0);
+.party-view .party-reputation-adjust:hover {
+    background: rgba(0, 0, 0, 0.9);
+    border-color: rgba(255, 150, 0, 1);
+    box-shadow: 0 0 8px rgba(255, 150, 0, 0.3);
+    color: rgba(255, 255, 255, 1);
 }
 
-.squire-panel-host .party-reputation-bar {
+/* The frame is .party-health-card-hp-bar's, exactly: same height, border,
+   radius and background. The inner track then mirrors what .hp-fill does inside
+   .party-hp-bar -- absolutely positioned with its own 2px dark border, which is
+   what actually produces the inset look on the health bar. Painting the gradient
+   straight onto the container made it run edge to edge and read as a different
+   component sitting next to a matching one.
+
+   The metaphor is still deliberately not shared: health is a quantity that
+   depletes from full, so its fill is width-driven. Reputation is a position on a
+   scale whose neutral is the middle, so the track is always full width and the
+   marker moves. */
+.party-view .party-reputation-bar {
     position: relative;
-    height: 10px;
-    background: rgba(0, 0, 0, 0.55);
-    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(68, 68, 68, 0.9);
+    border-radius: 4px;
+    padding: 0px;
+    height: 28px;
     overflow: hidden;
 }
 
-.squire-panel-host .party-reputation-fill {
-    height: 100%;
-    transition: width 0.25s ease, background-color 0.25s ease;
-    background: rgba(160, 160, 160, 0.7);
-}
-
-.squire-panel-host .party-reputation-bar[data-tone="positive"] .party-reputation-fill {
-    background: rgba(67, 163, 77, 0.85);
-}
-
-.squire-panel-host .party-reputation-bar[data-tone="negative"] .party-reputation-fill {
-    background: rgba(194, 86, 61, 0.9);
-}
-
-/* Zero is the meaningful centre of a -100..+100 scale, so it gets a tick.
-   Without it a half-full bar reads as "half good" rather than "neutral". */
-.squire-panel-host .party-reputation-midpoint {
+.party-view .party-reputation-track {
     position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    border: 2px solid rgba(0, 0, 0, 0.9);
+    border-radius: 4px;
+    box-sizing: border-box;
+    /* Hostile reds left, friendly greens right, gold through the centre.
+       The gold leans toward the card's own #9f9275 rather than a pure yellow:
+       red-amber-green is a traffic light, and a bright yellow centre would read
+       as "caution" -- a mild kind of bad -- when neutral means no opinion either
+       way. Pitched as the tray's own resting tone, it reads as absence instead.
+
+       Tune here; the stops are deliberately in one place. Widen the two centre
+       stops to make neutral a broader band, narrow them to sharpen the swing. */
+    background: linear-gradient(
+        to right,
+        var(--squire-rep-hostile, rgba(150, 40, 30, 0.95)) 0%,
+        rgba(194, 86, 61, 0.85) 22%,
+        var(--squire-rep-neutral, rgba(186, 162, 92, 0.85)) 44%,
+        var(--squire-rep-neutral, rgba(186, 162, 92, 0.85)) 56%,
+        rgba(78, 150, 80, 0.85) 78%,
+        var(--squire-rep-friendly, rgba(58, 160, 70, 0.95)) 100%
+    );
+}
+
+.party-view .party-reputation-marker {
+    position: absolute;
+    z-index: 3;
+    top: 0;
+    width: 0;
+    height: 0;
+    transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 10px solid rgba(255, 255, 255, 0.95);
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.8));
+    transition: left 0.25s ease;
+    pointer-events: none;
+}
+
+/* Zero gets a tick so the marker can be read against it at a glance. */
+.party-view .party-reputation-midpoint {
+    position: absolute;
+    z-index: 2;
     top: 0;
     bottom: 0;
     left: 50%;
     width: 1px;
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(0, 0, 0, 0.45);
 }
 
-.squire-panel-host .party-reputation-scale {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-    margin-top: 4px;
-}
-
-.squire-panel-host .party-reputation-label {
-    font-size: 0.8em;
-    font-weight: bold;
-    color: rgba(255, 255, 255, 0.9);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.squire-panel-host .party-reputation-value {
-    font-size: 0.8em;
-    font-variant-numeric: tabular-nums;
-    color: rgba(205, 204, 179, 0.9);
-    flex: 0 0 auto;
-}
-
-.squire-panel-host .party-reputation-value[data-tone="positive"] { color: rgba(67, 163, 77, 0.95); }
-.squire-panel-host .party-reputation-value[data-tone="negative"] { color: rgba(255, 74, 47, 0.95); }
 
 /* Party members with no recorded combats still appear on the MVP board,
    dimmed, so the roster is complete and the absence is legible. */
