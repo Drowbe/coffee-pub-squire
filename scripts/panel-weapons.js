@@ -56,7 +56,7 @@ export class WeaponsPanel {
                 categoryId: `category-weapon-${weaponType}`,
                 isLightSource: isLightSource,
                 isLightActive: isLightActive,
-                statblockIssue: StatblockUtility.getBadge(issueMap.get(weapon.id)),
+                statblockIssue: StatblockUtility.getBadge(issueMap.get(weapon.id), this.actor),
                 canEditQuantity: canEditQuantity && weapon.system?.quantity !== undefined,
                 isNew: !!(weapon.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(weapon.id)),
                 container: getContainerInfo(weapon, this.actor)

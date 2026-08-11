@@ -729,7 +729,7 @@ export class FavoritesPanel {
                     showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
                     showStarIcon: item.type === 'feat',
                     isPrepared: isSpellPrepared(item),
-                    statblockIssue: StatblockUtility.getBadge(issueMap.get(item.id)),
+                    statblockIssue: StatblockUtility.getBadge(issueMap.get(item.id), this.actor),
                     canEditQuantity: canEditQuantity && item.system?.quantity !== undefined,
                     isNew: !!(item.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(item.id)),
                     container: getContainerInfo(item, this.actor),

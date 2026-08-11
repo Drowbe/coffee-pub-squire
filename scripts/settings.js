@@ -472,9 +472,18 @@ export const registerSettings = function() {
 		type: String,
 	});
 
+    game.settings.register(MODULE.ID, 'inventoryWarnings', {
+        name: 'Inventory Warnings',
+        hint: 'Flag player characters whose weapons have no usable ammunition. The owning player sees the warning on their own characters; only the GM can act on it, and clicking it asks the GM rather than adding anything.',
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
     game.settings.register(MODULE.ID, 'statblockShowWarnings', {
         name: 'Show Statblock Warnings',
-        hint: 'Display a clickable warning badge on NPC weapons and spells that cannot be used as configured. GM only — players never see these.',
+        hint: 'Display a clickable warning badge on NPC weapons and spells that cannot be used as configured. GM only. Player characters are covered by Inventory Warnings instead.',
         scope: 'world',
         config: true,
         type: Boolean,
@@ -483,7 +492,7 @@ export const registerSettings = function() {
 
     game.settings.register(MODULE.ID, 'statblockAutoFix', {
         name: 'Repair Statblocks Automatically',
-        hint: 'Repair these problems as soon as an NPC is selected, instead of waiting for a click. Adds missing ammunition and grants the spell slots the creature\'s own spell list requires. Never removes or changes anything else.',
+        hint: 'Repair these problems as soon as an NPC is selected, instead of waiting for a click. Adds missing ammunition and grants the spell slots the creature\'s own spell list requires. Never removes or changes anything else. NPCs only — a player character is never repaired without the GM clicking.',
         scope: 'world',
         config: true,
         type: Boolean,

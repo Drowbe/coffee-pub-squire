@@ -1,5 +1,5 @@
-import { MODULE } from './const.js';
-import { showSquireToast } from './helpers.js';
+import { MODULE, TEMPLATES } from './const.js';
+import { showSquireToast, renderTemplate } from './helpers.js';
 
 /**
  * Statblock usability checks and repairs.
@@ -41,18 +41,78 @@ export const STATBLOCK_ISSUES = {
 
 export class StatblockUtility {
 
-    /** Warnings are a GM authoring aid, not player-facing information. */
-    static isEnabledFor(actor) {
-        if (!game.user.isGM) return false;
-        if (!actor || actor.type === 'character') return false;
+    /**
+     * The three questions this utility answers are NOT the same question, and
+     * conflating them is how a GM authoring aid turns into something that writes
+     * to a player's sheet.
+     *
+     *   canWarnFor    may this user SEE problems on this actor
+     *   canRepairFor  may this user FIX them
+     *   canAutoFixFor may they be fixed without anyone asking
+     *
+     * For an NPC all three collapse to "GM, warnings on" — the GM owns the
+     * statblock and repairing it is authoring. For a player character they come
+     * apart completely: the owner sees their own empty quiver, only the GM can
+     * act on it, and nothing is ever automatic.
+     */
+    static _isRepairable(actor) {
         // A compendium actor can't be repaired and isn't in play.
-        if (actor.pack || (actor.collection && actor.collection.locked)) return false;
+        if (!actor) return false;
+        return !(actor.pack || (actor.collection && actor.collection.locked));
+    }
+
+    static _setting(key) {
         try {
-            return game.settings.get(MODULE.ID, 'statblockShowWarnings');
+            return game.settings.get(MODULE.ID, key);
         } catch (error) {
             return false;
         }
     }
+
+    /** Whether this user should see warnings on this actor at all. */
+    static canWarnFor(actor) {
+        if (!this._isRepairable(actor)) return false;
+
+        if (actor.type === 'character') {
+            // Their own characters only. The tray follows canvas selection, so
+            // without this a player who can select another PC's token would get
+            // a badge about someone else's ammunition.
+            if (!actor.isOwner) return false;
+            return this._setting('inventoryWarnings');
+        }
+
+        // NPC statblock warnings stay a GM authoring aid.
+        if (!game.user.isGM) return false;
+        return this._setting('statblockShowWarnings');
+    }
+
+    /**
+     * Whether this user may carry out a repair.
+     *
+     * GM only, for characters as well as NPCs, and deliberately not "whoever has
+     * permission". A player owns their character and Foundry would happily let
+     * them create the arrows themselves — but restocking is a table decision,
+     * not a permissions one. The GM may want them to have searched the area, or
+     * to have stocked up before the fight.
+     */
+    static canRepairFor(actor) {
+        return game.user.isGM && this._isRepairable(actor);
+    }
+
+    /**
+     * Whether repairs may be applied unattended.
+     *
+     * NPCs only. Auto-fix exists to save the GM doing at the table what they
+     * would have done anyway while building the statblock; on a player character
+     * the same write invents equipment nobody acquired, and it would happen the
+     * moment their tray opened.
+     */
+    static canAutoFixFor(actor) {
+        return this.canRepairFor(actor)
+            && actor.type !== 'character'
+            && this._setting('statblockAutoFix');
+    }
+
 
     static getAmmoQuantity() {
         try {
@@ -87,14 +147,34 @@ export class StatblockUtility {
      * quantity as `disabled`. Using it means subtype matching stays correct
      * without us maintaining a weapon→ammo table.
      */
+    /**
+     * How to refer to the actor in a warning.
+     *
+     * The same sentence is read by a GM auditing a monster and by a player
+     * looking at their own character, so "this creature has none" is wrong half
+     * the time.
+     */
+    static _subjectFor(actor) {
+        if (actor?.type !== 'character') return { subject: 'this creature', verb: 'has' };
+        // The owner reading about their own character.
+        if (actor.isOwner && !game.user.isGM) return { subject: 'you', verb: 'have' };
+        return { subject: actor.name, verb: 'has' };
+    }
+
+    /** A readable name for an ammunition subtype ("Arrows", "Bolts", ...). */
+    static getAmmoLabel(ammoType) {
+        const typeLabel = CONFIG.DND5E?.consumableTypes?.ammo?.subtypes?.[ammoType];
+        return typeLabel ? game.i18n.localize(typeLabel) : 'ammunition';
+    }
+
     static getWeaponIssues(actor, weapon) {
         if (!actor || weapon?.type !== 'weapon') return [];
         if (!weapon.system?.properties?.has?.('amm')) return [];
 
+        const { subject, verb } = this._subjectFor(actor);
         const options = weapon.system.ammunitionOptions ?? [];
         const ammoType = this.getRequiredAmmoType(weapon);
-        const typeLabel = CONFIG.DND5E?.consumableTypes?.ammo?.subtypes?.[ammoType];
-        const ammoLabel = typeLabel ? game.i18n.localize(typeLabel) : 'ammunition';
+        const ammoLabel = this.getAmmoLabel(ammoType);
 
         if (options.length === 0) {
             return [{
@@ -102,7 +182,7 @@ export class StatblockUtility {
                 itemId: weapon.id,
                 itemName: weapon.name,
                 ammoType,
-                message: `${weapon.name} requires ${ammoLabel} but this creature has none.`,
+                message: `${weapon.name} requires ${ammoLabel} but ${subject} ${verb} none.`,
                 fixLabel: `Add ${ammoLabel}`
             }];
         }
@@ -207,11 +287,20 @@ export class StatblockUtility {
 
     /** Every issue on an actor. */
     static getIssues(actor) {
-        if (!this.isEnabledFor(actor)) return [];
+        if (!this.canWarnFor(actor)) return [];
         try {
             const weaponIssues = actor.items
                 .filter(item => item.type === 'weapon')
                 .flatMap(weapon => this.getWeaponIssues(actor, weapon));
+
+            // Ammunition only for player characters. The spell-slot check asks
+            // "can every known spell be cast right now", which for a statblock
+            // means it is broken and for a character is routine: a wizard scribes
+            // spells above their casting level, a multiclass or a feat grants one
+            // with no matching slots. It would fire constantly and correctly
+            // teach people to ignore the badge.
+            if (actor.type === 'character') return weaponIssues;
+
             return [...weaponIssues, ...this.getSpellIssues(actor)];
         } catch (error) {
             console.error(`${MODULE.ID}: Error checking statblock:`, error);
@@ -250,16 +339,35 @@ export class StatblockUtility {
      * Shared by the Favorites, Weapons, and Spells panels so all three describe
      * the same problem identically.
      */
-    static getBadge(issues) {
+    static getBadge(issues, actor = null) {
         if (!issues?.length) return null;
-        const canFix = issues.every(issue => issue.canFix !== false);
+
         const body = issues.map(issue => this._escapeAttr(issue.message)).join('<br>');
+
+        // A player is being told what is wrong and offered a way to ask; a GM is
+        // being offered the repair itself. Promising "click to fix" to someone
+        // whose click opens a request would be a lie about what happens next.
+        const canRepair = actor ? this.canRepairFor(actor) : true;
+        const isCharacter = actor?.type === 'character';
+        const title = isCharacter ? 'Inventory Problem' : 'Statblock Problem';
+
+        if (!canRepair) {
+            return {
+                // `canFix` drives the `no-fix` class, and the click handler
+                // returns early on it — a request is still an action, so this
+                // stays clickable.
+                canFix: true,
+                tooltip: `<strong>${title}</strong><br>${body}<br><em>Click to ask the GM</em>`
+            };
+        }
+
+        const canFix = issues.every(issue => issue.canFix !== false);
         const action = canFix
             ? `Click to fix: ${this._escapeAttr(issues[0].fixLabel)}`
             : this._escapeAttr(issues[0].fixLabel);
         return {
             canFix,
-            tooltip: `<strong>Statblock Problem</strong><br>${body}<br><em>${action}</em>`
+            tooltip: `<strong>${title}</strong><br>${body}<br><em>${action}</em>`
         };
     }
 
@@ -293,6 +401,16 @@ export class StatblockUtility {
 
             try {
                 const issues = this.getIssueMap(actor).get(itemId) ?? [];
+
+                // A player clicking their own empty quiver is asking, not
+                // fixing. Restocking is a table decision — the GM may want them
+                // to have searched the area, or to have stocked up before the
+                // fight — so the click sends a request and the GM decides.
+                if (!this.canRepairFor(actor)) {
+                    for (const issue of issues) await this.requestRepair(actor, issue);
+                    return;
+                }
+
                 let applied = 0;
                 for (const issue of issues) {
                     if (await this.fixIssue(actor, issue)) applied++;
@@ -361,6 +479,191 @@ export class StatblockUtility {
         }
     }
 
+    /**
+     * Ask the GM to restock. Mirrors the compendium add request, because it is
+     * the same decision wearing different clothes: whether this character may
+     * have this equipment now.
+     *
+     * Sends the actor's UUID rather than its id — a token actor on a scene is
+     * not reachable through `game.actors.get()`.
+     */
+    static async requestRepair(actor, issue) {
+        if (issue.type !== STATBLOCK_ISSUES.AMMO_MISSING && issue.type !== STATBLOCK_ISSUES.AMMO_EMPTY) {
+            return false;
+        }
+
+        const socket = game.modules.get(MODULE.ID)?.socket;
+        if (!socket) {
+            ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
+            return false;
+        }
+
+        if (!game.users.some(user => user.isGM && user.active)) {
+            showSquireToast('No GM is online', {
+                subtitle: 'Restocking needs GM approval.',
+                icon: 'fa-solid fa-triangle-exclamation',
+                color: '#e05c3c'
+            });
+            return false;
+        }
+
+        const ammoLabel = this.getAmmoLabel(issue.ammoType);
+        await socket.executeAsGM('createAmmoRequestChat', {
+            actorUuid: actor.uuid,
+            actorName: actor.name,
+            weaponId: issue.itemId,
+            weaponName: issue.itemName,
+            ammoType: issue.ammoType,
+            ammoItemId: issue.ammoItemId ?? null,
+            ammoLabel,
+            quantity: this.getAmmoQuantity(),
+            issueType: issue.type,
+            requesterId: game.user.id,
+            requesterName: game.user.name
+        });
+
+        showSquireToast(`Requested ${ammoLabel}`, {
+            subtitle: 'Waiting for the GM.',
+            icon: 'fa-solid fa-hourglass-half',
+            stackKey: `squire-ammo-request-${issue.itemId}`
+        });
+        return true;
+    }
+
+    /** GM side: put the request in front of every GM. */
+    static async createRequestChat(data) {
+        if (!game.user.isGM) return;
+
+        const gmIds = game.users.filter(user => user.isGM).map(user => user.id);
+        if (!gmIds.length) return;
+
+        await ChatMessage.create({
+            content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                isPublic: false,
+                cardType: 'ammo-request',
+                ...data
+            }),
+            speaker: { alias: 'System' },
+            whisper: gmIds,
+            flags: { [MODULE.ID]: { type: 'ammoRequest', data } }
+        });
+    }
+
+    /**
+     * Wire Approve/Deny on a request card. Called for every chat render, so it
+     * returns immediately for anything that isn't ours.
+     */
+    static handleRequestButtons(message, html) {
+        if (message?.flags?.[MODULE.ID]?.type !== 'ammoRequest') return;
+        if (!game.user.isGM) return;
+
+        let nativeHtml = html;
+        if (html && (html.jquery || typeof html.find === 'function')) {
+            nativeHtml = html[0] || html.get?.(0) || html;
+        }
+        if (!nativeHtml) return;
+
+        const buttons = nativeHtml.querySelectorAll('.ammo-request-button');
+        if (!buttons.length) return;
+        // Chat re-renders on edit and on scrollback; without this the same
+        // button collects a second handler and one click approves twice.
+        if (buttons[0].dataset.handlersAttached === 'true') return;
+
+        const data = message.flags[MODULE.ID].data ?? {};
+
+        buttons.forEach(button => {
+            button.dataset.handlersAttached = 'true';
+            button.addEventListener('click', async (event) => {
+                event.preventDefault();
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.classList.add('disabled');
+                });
+                await this.resolveRequest(data, button.classList.contains('approve'), message);
+            });
+        });
+    }
+
+    /** Carry out the GM's decision and tell the player either way. */
+    static async resolveRequest(data, approved, message) {
+        const requester = game.users.get(data.requesterId);
+        const whisperIds = [data.requesterId, ...game.users.filter(u => u.isGM).map(u => u.id)]
+            .filter(Boolean);
+
+        const outcome = async (cardType, extra = {}) => {
+            await ChatMessage.create({
+                content: await renderTemplate(TEMPLATES.CHAT_CARD, {
+                    isPublic: false,
+                    cardType,
+                    ...data,
+                    ...extra
+                }),
+                speaker: { alias: 'System' },
+                whisper: whisperIds
+            });
+        };
+
+        try {
+            if (!approved) {
+                await outcome('ammo-denied');
+                return;
+            }
+
+            const actor = await fromUuid(data.actorUuid);
+            if (!actor) {
+                await outcome('ammo-failed', {
+                    failureReason: `${data.actorName} could not be found, so no ${data.ammoLabel} was added.`
+                });
+                return;
+            }
+
+            // The request may have outlived the ownership that justified it —
+            // a character reassigned between the click and the approval. The GM
+            // is approving "restock that player's character", not "write to
+            // whatever this actor is now".
+            if (requester && !actor.testUserPermission(requester, 'OWNER')) {
+                await outcome('ammo-failed', {
+                    failureReason: `${data.requesterName} no longer owns ${data.actorName}, so no ${data.ammoLabel} was added.`
+                });
+                return;
+            }
+
+            // Re-detected rather than trusted: the issue was described when the
+            // player clicked, and they may have bought arrows since.
+            const weapon = actor.items.get(data.weaponId);
+            const issues = weapon ? this.getWeaponIssues(actor, weapon) : [];
+            if (!issues.length) {
+                await outcome('ammo-failed', {
+                    failureReason: `${data.actorName} no longer needs ${data.ammoLabel}.`
+                });
+                return;
+            }
+
+            let applied = 0;
+            for (const issue of issues) {
+                if (await this.fixIssue(actor, issue)) applied++;
+            }
+
+            if (!applied) {
+                await outcome('ammo-failed', {
+                    failureReason: `${data.ammoLabel} could not be added to ${data.actorName}.`
+                });
+                return;
+            }
+
+            await outcome('ammo-approved');
+            await this.refreshPanels();
+        } catch (error) {
+            console.error(`${MODULE.ID}: Failed to resolve ammo request:`, error);
+            await outcome('ammo-failed', {
+                failureReason: `Something went wrong adding ${data.ammoLabel} to ${data.actorName}.`
+            });
+        } finally {
+            const current = game.messages.get(message?.id);
+            if (current) await current.delete();
+        }
+    }
+
     static async _fixMissingAmmo(actor, issue) {
         const uuid = CONFIG.DND5E?.ammoIds?.[issue.ammoType];
         if (!uuid) {
@@ -424,12 +727,7 @@ export class StatblockUtility {
      * Auto-repair on actor selection when the GM has opted in.
      */
     static async autoFixIfEnabled(actor) {
-        if (!this.isEnabledFor(actor)) return 0;
-        try {
-            if (!game.settings.get(MODULE.ID, 'statblockAutoFix')) return 0;
-        } catch (error) {
-            return 0;
-        }
+        if (!this.canAutoFixFor(actor)) return 0;
 
         const applied = await this.fixAll(actor);
         if (applied > 0) {

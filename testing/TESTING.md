@@ -137,3 +137,34 @@ departed codex, so this is where a bad cut would show.
 - [ ] Spells show casting time, range, components, duration; weapons show damage
       and range — i.e. the card is the system's, not an approximation.
 
+### Inventory warnings on player characters
+
+New **Inventory Warnings** setting (on by default). NPC statblock warnings are
+unchanged and still use **Show Statblock Warnings**.
+
+#### As a player, on your own character
+- [ ] Give the character an ammo-using weapon (bow) and no arrows: a warning badge
+      appears on the weapon in Weapons/Favourites.
+- [ ] The tooltip reads **Inventory Problem**, says *you* have none (not "this
+      creature"), and offers **Click to ask the GM**.
+- [ ] Click it: you get a "waiting for the GM" toast and **nothing is added to your
+      inventory**.
+- [ ] A spell you cannot currently cast (a scroll-scribed spell above your level)
+      shows **no** warning. Ammunition only.
+- [ ] Select another player's token: no badge for their equipment.
+
+#### As the GM
+- [ ] The request arrives as a whispered card with Approve / Deny.
+- [ ] **Deny**: the player is told, nothing is added.
+- [ ] **Approve**: the ammunition is added, both of you see the confirmation, and
+      the request card disappears.
+- [ ] Buy the arrows on the sheet *before* approving an outstanding request, then
+      approve: it declines gracefully rather than adding a second stack.
+- [ ] Looking at a player's character yourself, the badge says **Click to fix** and
+      repairs directly.
+
+#### Auto-fix stays NPC-only
+- [ ] Turn on **Repair Statblocks Automatically**. Open a player character with no
+      arrows: **nothing is added**, the badge stays.
+- [ ] Select an NPC with the same problem: it is repaired automatically, as before.
+

@@ -40,7 +40,7 @@ export class SpellsPanel {
                 actionType: this._getActionType(spell),
                 isFavorite: isFavorite,
                 categoryId: isAtWill ? 'category-spell-at-will' : `category-spell-level-${level}`,
-                statblockIssue: StatblockUtility.getBadge(issueMap.get(spell.id)),
+                statblockIssue: StatblockUtility.getBadge(issueMap.get(spell.id), this.actor),
                 isNew: !!(spell.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(spell.id))
             };
         });

@@ -4,6 +4,7 @@ import { PartyPanel } from './panel-party.js';
 import { registerSettings, migrateCompendiumAccessSetting } from './settings.js';
 import { getTransferBlocker, registerHelpers, renderTemplate, showSquireToast } from './helpers.js';
 import { CompendiumRequestUtils } from './compendium-request-utils.js';
+import { StatblockUtility } from './utility-statblock.js';
 
 import { FavoritesPanel } from './panel-favorites.js';
 import { trackModuleTimeout, clearTrackedTimeout, clearAllModuleTimers } from './timer-utils.js';
@@ -335,6 +336,9 @@ Hooks.once('ready', async () => {
             priority: 2,
             callback: (message, html) => {
                 CompendiumRequestUtils.handleRequestButtons(message, html);
+                // Ammunition restock requests ride the same hook: both are a
+                // player asking the GM to approve equipment reaching a sheet.
+                StatblockUtility.handleRequestButtons(message, html);
             }
         });
         
@@ -1301,6 +1305,18 @@ Hooks.once('socketlib.ready', () => {
                 }
             } catch (error) {
                 console.error('Error deleting sender waiting message:', { transferId, error });
+            }
+        });
+
+        // A player asking the GM to restock ammunition. Players never write to
+        // their own inventory for this — see StatblockUtility.canRepairFor.
+        socket.register("createAmmoRequestChat", async (data) => {
+            if (!game.user.isGM) return;
+
+            try {
+                await StatblockUtility.createRequestChat(data);
+            } catch (error) {
+                console.error('Error creating ammo request message:', { data, error });
             }
         });
 

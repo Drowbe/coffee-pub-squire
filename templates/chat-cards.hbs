@@ -384,6 +384,57 @@
     </div>
 
   {{!-- COMPENDIUM ADD REQUEST --}}
+  {{!-- AMMO REQUEST — a player asking the GM to restock. Same shape as a
+        compendium request because it is the same decision: whether the table
+        lets this character have this equipment now. --}}
+  {{else if (eq cardType "ammo-request")}}
+    <div class="blacksmith-card theme-green">
+      <div class="card-header">
+        <i class="fa-solid fa-quiver"></i> Ammunition Request
+      </div>
+      <div class="section-content">
+        <p><strong>{{requesterName}}</strong> is out of <strong>{{ammoLabel}}</strong> for <strong>{{weaponName}}</strong> on <strong>{{actorName}}</strong>.</p>
+        <p><em>Approving adds {{quantity}}.</em></p>
+        <div class="transfer-request-buttons blacksmith-chat-buttons">
+          <button class="ammo-request-button chat-button approve"><i class="fa-solid fa-circle-check"></i> Approve</button>
+          <button class="ammo-request-button chat-button deny"><i class="fa-solid fa-circle-xmark"></i> Deny</button>
+        </div>
+      </div>
+    </div>
+
+  {{!-- AMMO REQUEST APPROVED --}}
+  {{else if (eq cardType "ammo-approved")}}
+    <div class="blacksmith-card theme-default">
+      <div class="card-header">
+        <i class="fa-solid fa-circle-check"></i> Request Approved
+      </div>
+      <div class="section-content">
+        <p><strong>{{actorName}}</strong> restocked {{quantity}} {{ammoLabel}}.</p>
+      </div>
+    </div>
+
+  {{!-- AMMO REQUEST DENIED --}}
+  {{else if (eq cardType "ammo-denied")}}
+    <div class="blacksmith-card theme-default">
+      <div class="card-header">
+        <i class="fa-solid fa-circle-xmark"></i> Request Denied
+      </div>
+      <div class="section-content">
+        <p>The GM declined the request for <strong>{{ammoLabel}}</strong>.</p>
+      </div>
+    </div>
+
+  {{!-- AMMO REQUEST FAILED --}}
+  {{else if (eq cardType "ammo-failed")}}
+    <div class="blacksmith-card theme-default">
+      <div class="card-header">
+        <i class="fa-solid fa-triangle-exclamation"></i> Request Failed
+      </div>
+      <div class="section-content">
+        <p>{{failureReason}}</p>
+      </div>
+    </div>
+
   {{else if (eq cardType "compendium-request")}}
     <div class="blacksmith-card theme-green">
       <div class="card-header">
