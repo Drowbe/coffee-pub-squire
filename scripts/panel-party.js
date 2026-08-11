@@ -44,6 +44,7 @@ export class PartyPanel {
                 const hp = token.actor.system.attributes.hp;
                 token.healthbarStatus = this._calculateHealthbarStatus(hp);
             }
+            token.speedDisplay = this._getSpeedDisplay(token.actor);
         });
 
         // Add health status to non-player tokens as well
@@ -52,6 +53,7 @@ export class PartyPanel {
                 const hp = token.actor.system.attributes.hp;
                 token.healthbarStatus = this._calculateHealthbarStatus(hp);
             }
+            token.speedDisplay = this._getSpeedDisplay(token.actor);
         });
         
         // Get currently controlled tokens' token IDs (UUIDs)
@@ -106,6 +108,28 @@ export class PartyPanel {
         partyContainer.innerHTML = html;
 
         this.activateListeners(partyContainer);
+    }
+
+    /**
+     * Walking speed as a display string, or null when there isn't one.
+     *
+     * dnd5e stores movement values either as plain numbers or as `{value: n}`
+     * depending on version, so this normalises rather than reading `.walk`
+     * directly. Only walking speed: the card has one line to spend, and a
+     * creature's fly or swim speed is a detail for the sheet, not the roster.
+     */
+    _getSpeedDisplay(actor) {
+        const movement = actor?.system?.attributes?.movement;
+        if (!movement) return null;
+
+        let walk = movement.walk;
+        if (walk && typeof walk === 'object' && 'value' in walk) walk = walk.value;
+
+        const speed = Number(walk);
+        if (!Number.isFinite(speed) || speed <= 0) return null;
+
+        const units = movement.units || '';
+        return units ? `${speed} ${units}` : `${speed}`;
     }
 
     /**

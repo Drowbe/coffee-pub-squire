@@ -33,7 +33,7 @@
                 </div>
                 <div class="details-secondary">
                     {{#if speeds}}
-                        <div>SPEED: {{#each speeds}}{{#unless @first}}, {{/unless}}{{label}} {{value}}{{#if ../speedUnits}} {{../speedUnits}}{{/if}}{{#if (and (eq type "fly") ../canHover)}} (hover){{/if}}{{/each}}</div>
+                        <div>SPEED: {{#each speeds}}{{#unless @first}}, {{/unless}}{{#unless hideLabel}}{{label}} {{/unless}}{{value}}{{#if ../speedUnits}} {{../speedUnits}}{{/if}}{{#if (and (eq type "fly") ../canHover)}} (hover){{/if}}{{/each}}</div>
                     {{/if}}
                 </div>
             </div>

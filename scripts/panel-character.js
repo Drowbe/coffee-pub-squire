@@ -171,7 +171,10 @@ export class CharacterPanel {
                 if (v != null && v !== "" && !Number.isNaN(Number(v))) {
                     const n = Number(v);
                     if (n > 0) {
-                        speeds.push({ type, label: speedLabelFor(type), value: n });
+                        // dnd5e labels walking speed "Speed", which the template
+                        // already says as its "SPEED:" prefix — so the walk entry
+                        // renders its number alone rather than "Speed: Speed 45 ft".
+                        speeds.push({ type, label: speedLabelFor(type), value: n, hideLabel: type === 'walk' });
                         log(`CHARACTER DETAILS Added speed: ${type}=${n}`, '', false, false);
                     }
                 }
