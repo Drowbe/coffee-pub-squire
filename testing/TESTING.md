@@ -83,3 +83,38 @@ departed codex, so this is where a bad cut would show.
 - [ ] Librarian's quest and codex pins coexist with Squire's note pins on one scene.
 - [ ] Codex still works in Librarian with Squire enabled (both installed is the normal case).
 
+## Favourites sync with the character sheet
+
+`system.favorites` is real sheet data, so the first sync on each character
+**writes to the actor**. Try it on a character you can afford to fiddle with first.
+
+### First sync merges
+- [ ] Take a character with favourites in Squire but not on the sheet. Open the tray:
+      the sheet's Favourites tab now lists them.
+- [ ] Reverse case: favourites on the sheet, none in Squire. Open the tray: they
+      appear in the tray, in sheet order.
+- [ ] Both populated and different: the merged list is the union, Squire's order first.
+
+### Then each side is honoured
+- [ ] Favourite an item in the tray → it appears on the sheet.
+- [ ] Unfavourite it in the tray → it disappears from the sheet.
+- [ ] Favourite an item on the sheet → it appears in the tray.
+- [ ] **Unfavourite an item on the sheet → it stays gone.** If it reappears, the
+      merge is treating a removal as an addition; stop and say so.
+- [ ] Reorder favourites in the tray → the sheet follows.
+
+### What must NOT be touched
+- [ ] Favourite an **activity** on the sheet (a spell's cast activity, say), and a
+      **feature/effect**. Toggle some Squire favourites. The activity and effect
+      favourites are still there afterwards.
+- [ ] Set a resource favourite (Primary/Secondary/Tertiary) — still there.
+- [ ] An NPC with the tray open: no errors, nothing written. NPCs have no
+      `system.favorites`.
+- [ ] As a player who does not own a character, that character's favourites are
+      not modified.
+
+### Housekeeping
+- [ ] Delete a favourited item from the actor: it leaves both lists.
+- [ ] Reload with both sides already in agreement — no console errors, and no
+      actor updates fired (nothing should be written when there is nothing to do).
+

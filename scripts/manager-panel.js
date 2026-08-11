@@ -6,6 +6,7 @@ import { SpellsPanel } from './panel-spells.js';
 import { WeaponsPanel } from './panel-weapons.js';
 import { InventoryPanel } from './panel-inventory.js';
 import { FavoritesPanel } from './panel-favorites.js';
+import { syncFavorites } from './manager-favorites-sync.js';
 import { ControlPanel } from './panel-control.js';
 import { CompendiumSearchPanel } from './panel-compendium-search.js';
 import { FeaturesPanel } from './panel-features.js';
@@ -284,6 +285,13 @@ export class PanelManager {
             // actor type, unlike auto-favoriting, since characters accumulated
             // these too.
             if (actor) await FavoritesPanel.normalizeHandleFavorites(actor);
+
+            // Reconcile with the character sheet's own favourites. On an actor
+            // that has never synced this is the initial merge; afterwards it
+            // catches anything that changed while Squire was not watching — a
+            // sheet edit by another client, or with Squire disabled. It writes
+            // nothing when the two already agree.
+            if (actor) await syncFavorites(actor);
 
             // Check if this is a monster/NPC and auto-favorite items
             if (actor && actor.type !== "character") {

@@ -11,6 +11,7 @@ import {
     notifyEffectApplied,
     notifyQuantityChanged
 } from './manager-notifications.js';
+import { syncFavorites, onActorUpdated, onItemRemoved } from './manager-favorites-sync.js';
 // HookManager import removed - using Blacksmith HookManager instead
 
 
@@ -355,6 +356,30 @@ Hooks.once('ready', async () => {
             }
         });
         
+        // Favourites are kept in step with the dnd5e character sheet's own
+        // favourites, in both directions. The handler is a no-op unless the
+        // update actually touched one of the two lists, and it writes nothing
+        // when they already agree — which is what stops it re-triggering itself.
+        const favoritesSyncHookId = getBlacksmithHookManager().registerHook({
+            name: "updateActor",
+            description: "Coffee Pub Squire: Keep Squire and character sheet favourites in sync",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (actor, changes) => {
+                await onActorUpdated(actor, changes);
+            }
+        });
+
+        const favoritesItemDeleteHookId = getBlacksmithHookManager().registerHook({
+            name: "deleteItem",
+            description: "Coffee Pub Squire: Drop deleted items from both favourites lists",
+            context: MODULE.ID,
+            priority: 2,
+            callback: async (item) => {
+                await onItemRemoved(item);
+            }
+        });
+
         const partyStatsUpdateActorHookId = getBlacksmithHookManager().registerHook({
             name: "updateActor",
             description: "Coffee Pub Squire: Handle actor updates for party stats panel",
