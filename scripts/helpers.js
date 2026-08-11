@@ -21,6 +21,36 @@ export function isGMOrPartyLeader() {
 }
 
 /**
+ * The item's own name from a `.panel-item` row, without the trimmings.
+ *
+ * `.panel-item-name` is a container: besides the name it holds the NEW tag, the
+ * quantity badge and the container chip. Reading its `textContent` therefore
+ * returns things like "Longsword NEW x3", which is why searching for "new"
+ * used to match every recently added item.
+ *
+ * `.panel-item-label` wraps exactly the name, so it is read directly when
+ * present. The fallback reproduces the old strip-the-children approach for any
+ * row that predates the label.
+ *
+ * @param {HTMLElement} row  a `.panel-item` element
+ * @returns {string} the trimmed name, or '' if there isn't one
+ */
+export function getPanelItemName(row) {
+    if (!row) return '';
+
+    const label = row.querySelector('.panel-item-label');
+    if (label) return label.textContent.trim();
+
+    const nameElement = row.querySelector('.panel-item-name');
+    if (!nameElement) return '';
+
+    // Strip every child, leaving the bare text nodes.
+    const clone = nameElement.cloneNode(true);
+    clone.querySelectorAll('*').forEach(child => child.remove());
+    return clone.textContent.trim();
+}
+
+/**
  * Give the tray's items the same rich hover card the dnd5e sheet shows.
  *
  * dnd5e's tooltip layer is declarative and application-agnostic: its

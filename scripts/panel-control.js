@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate } from './helpers.js';
+import { getNativeElement, renderTemplate, getPanelItemName} from './helpers.js';
 import { CompendiumSearchUtility } from './utility-compendium-search.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
@@ -273,17 +273,8 @@ export class ControlPanel {
             // Process items
             // v13: Use native DOM forEach
             items.forEach(item => {
-                const nameElement = item.querySelector('.panel-item-name');
-                
-                // Skip if no name element found
-                if (!nameElement) {
-                    return;
-                }
-
-                // v13: Clone element, remove children, get text content
-                const clonedName = nameElement.cloneNode(true);
-                clonedName.querySelectorAll('*').forEach(child => child.remove());
-                const itemName = clonedName.textContent.toLowerCase().trim();
+                const itemName = getPanelItemName(item).toLowerCase();
+                if (!itemName) return;
                 
                 const shouldShow = normalizedTerm === '' || itemName.includes(normalizedTerm);
                 

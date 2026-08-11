@@ -119,6 +119,13 @@ departed codex, so this is where a bad cut would show.
 - [ ] Reload with both sides already in agreement — no console errors, and no
       actor updates fired (nothing should be written when there is nothing to do).
 
+### Search
+- [ ] Type in the tray's search box: items filter as you type, across Favourites,
+      Inventory, Spells, Weapons and Features.
+- [ ] Clear the search: everything comes back.
+- [ ] Search for `new` — it should match items whose NAME contains "new", not
+      every item wearing a NEW badge.
+
 ### Item hover cards
 - [ ] Hover an item name in Favourites, Inventory, Spells, Weapons, Features: the
       dnd5e rich card appears, matching what the sheet shows for the same item.

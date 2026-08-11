@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
-import { getTransferBlocker, renderTemplate, getCampaignContext, resolveDroppedItem, showSquireToast, getActorDisplayName, isGMOrPartyLeader } from './helpers.js';
+import { getTransferBlocker, renderTemplate, getCampaignContext, resolveDroppedItem, showSquireToast, getActorDisplayName, isGMOrPartyLeader, getPanelItemName} from './helpers.js';
 import { CharacterPanel } from './panel-character.js';
 import { GmPanel } from './panel-gm.js';
 import { SpellsPanel } from './panel-spells.js';
@@ -1343,7 +1343,7 @@ export class PanelManager {
         let hasVisibleItems = false;
 
         items.forEach(item => {
-            const name = item.querySelector('.panel-item-name')?.textContent.toLowerCase() || '';
+            const name = getPanelItemName(item).toLowerCase();
             const categoryId = item.dataset.categoryId;
             const matchesSearch = !normalizedSearch || name.includes(normalizedSearch);
             const categoryVisible = !this.hiddenCategories.has(categoryId);

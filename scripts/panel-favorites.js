@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, showSquireToast, getHandleFavoriteLimit, getContainerInfo, activateContainerListener, applyItemTooltips} from './helpers.js';
+import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, showSquireToast, getHandleFavoriteLimit, getContainerInfo, activateContainerListener, applyItemTooltips, getPanelItemName} from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { QuantityEditor } from './utility-quantity.js';
@@ -906,7 +906,7 @@ export class FavoritesPanel {
         
         favoriteItems.each((_, item) => {
             const $item = $(item);
-            const itemName = $item.find('.panel-item-name').text().toLowerCase();
+            const itemName = getPanelItemName(item).toLowerCase();
             
             if (searchTerm === '' || itemName.includes(searchTerm)) {
                 $item.show();
