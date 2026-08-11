@@ -323,6 +323,50 @@ export class FavoritesPanel {
         return [];
     }
 
+    /**
+     * Repaint everything that shows favourite state, after the flag has changed.
+     *
+     * The heart icons live in four other panels and the handle, none of which
+     * watch the flag — so whoever writes it is responsible for saying so. This
+     * was inline in manageFavorite; it was extracted when the character-sheet
+     * sync became a second writer and favourites toggled on the sheet did not
+     * appear until the tray was rebuilt.
+     *
+     * @param {Actor} actor
+     */
+    static async refreshFavoritesUI(actor) {
+        const panelManager = PanelManager.instance;
+        if (!panelManager) return;
+
+        // The handle carries its own favourites row.
+        await panelManager.updateHandle();
+
+        if (panelManager.favoritesPanel) {
+            panelManager.favoritesPanel.favorites = FavoritesPanel.getPanelFavorites(actor);
+            if (panelManager.favoritesPanel.element) {
+                await panelManager.favoritesPanel.render(panelManager.favoritesPanel.element);
+            }
+        }
+
+        // The others only need their hearts repainted, not a full re-render.
+        if (panelManager.inventoryPanel) {
+            panelManager.inventoryPanel.items = await panelManager.inventoryPanel._getItems();
+            panelManager.inventoryPanel._updateHeartIcons();
+        }
+        if (panelManager.weaponsPanel) {
+            panelManager.weaponsPanel.weapons = await panelManager.weaponsPanel._getWeapons();
+            panelManager.weaponsPanel._updateHeartIcons();
+        }
+        if (panelManager.spellsPanel) {
+            panelManager.spellsPanel.spells = await panelManager.spellsPanel._getSpells();
+            panelManager.spellsPanel._updateHeartIcons();
+        }
+        if (panelManager.featuresPanel) {
+            panelManager.featuresPanel.features = await panelManager.featuresPanel._getFeatures();
+            panelManager.featuresPanel._updateHeartIcons();
+        }
+    }
+
     static async manageFavorite(actor, itemId) {
         const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
         try {
@@ -359,42 +403,7 @@ export class FavoritesPanel {
 
             // Handle favorites are now completely manual - but must also be panel favorites
 
-            // Get the PanelManager instance directly
-            const panelManager = PanelManager.instance;
-            if (panelManager) {
-                // Handle favorites are now completely manual - no auto-syncing
-                
-                // Update just the handle to refresh favorites
-                await panelManager.updateHandle();
-                
-                // Update the favorites panel data and refresh display
-                if (panelManager.favoritesPanel) {
-                    panelManager.favoritesPanel.favorites = FavoritesPanel.getPanelFavorites(actor);
-                    
-                    // Refresh the favorites panel display to show changes
-                    if (panelManager.favoritesPanel.element) {
-                        await panelManager.favoritesPanel.render(panelManager.favoritesPanel.element);
-                    }
-                }
-                
-                // Update other panels' data without full re-render
-                if (panelManager.inventoryPanel) {
-                    panelManager.inventoryPanel.items = await panelManager.inventoryPanel._getItems();
-                    panelManager.inventoryPanel._updateHeartIcons();
-                }
-                if (panelManager.weaponsPanel) {
-                    panelManager.weaponsPanel.weapons = await panelManager.weaponsPanel._getWeapons();
-                    panelManager.weaponsPanel._updateHeartIcons();
-                }
-                if (panelManager.spellsPanel) {
-                    panelManager.spellsPanel.spells = await panelManager.spellsPanel._getSpells();
-                    panelManager.spellsPanel._updateHeartIcons();
-                }
-                if (panelManager.featuresPanel) {
-                    panelManager.featuresPanel.features = await panelManager.featuresPanel._getFeatures();
-                    panelManager.featuresPanel._updateHeartIcons();
-                }
-            }
+            await FavoritesPanel.refreshFavoritesUI(actor);
 
             return newPanelFavorites.includes(itemId);
         } catch (error) {

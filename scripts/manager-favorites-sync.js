@@ -188,8 +188,9 @@ export async function syncFavorites(actor) {
         const merged = mergeFavorites(squire, sheet, Array.isArray(last) ? last : null);
 
         let wrote = false;
+        const squireChanged = !sameList(merged, squire);
 
-        if (!sameList(merged, squire)) {
+        if (squireChanged) {
             await actor.setFlag(MODULE.ID, 'favoritePanel', merged);
             wrote = true;
         }
@@ -215,6 +216,19 @@ export async function syncFavorites(actor) {
         if (!Array.isArray(last) || !sameList(merged, last)) {
             await actor.setFlag(MODULE.ID, 'favoritesSyncState', merged);
             wrote = true;
+        }
+
+        // Nothing in the tray watches the favourites flag, so a write has to say
+        // so — otherwise a favourite toggled on the character sheet did not show
+        // up until the tray was rebuilt by switching actors and back.
+        //
+        // Only when Squire's own list moved: a sheet-only write (Squire already
+        // agreed) changes nothing the tray is showing. Dynamic import because
+        // panel-favorites.js imports manager-panel.js, which imports this file —
+        // a static import would close that loop at module-evaluation time.
+        if (squireChanged && actor.id === game.modules.get(MODULE.ID)?.api?.PanelManager?.currentActor?.id) {
+            const { FavoritesPanel } = await import('./panel-favorites.js');
+            await FavoritesPanel.refreshFavoritesUI(actor);
         }
 
         return wrote;

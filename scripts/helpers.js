@@ -67,9 +67,14 @@ export function applyItemTooltips(html, actor) {
         // No richTooltip means a non-dnd5e system: leave whatever is there.
         if (typeof item?.richTooltip !== 'function') continue;
 
-        const target = row.querySelector('.panel-item-name') ?? row;
-        // Never clobber a tooltip a template set deliberately on a row.
-        if (target.dataset.tooltip) continue;
+        // `.panel-item-label` wraps the words; `.panel-item-name` is its parent
+        // and carries `flex: 1`, so it spans the whole row — hanging the card
+        // there put it on everything but the icons, which is indistinguishable
+        // from putting it on the row.
+        const target = row.querySelector('.panel-item-label');
+        // No label element means a row this doesn't understand; leave it alone
+        // rather than fall back to something row-width.
+        if (!target || target.dataset.tooltip) continue;
         decorate(target, item);
     }
 

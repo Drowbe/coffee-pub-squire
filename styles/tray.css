@@ -1484,3 +1484,10 @@
     from { opacity: 0.2; }
     to { opacity: 1; }
 }
+
+/* The hover target for an item's rich card. Inline, so it is exactly as wide as
+   the words: its parent .panel-item-name is `flex: 1` and spans the whole row,
+   which would make the card fire from anywhere on it. */
+.panel-item-label {
+    display: inline;
+}

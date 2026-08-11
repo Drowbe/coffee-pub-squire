@@ -98,7 +98,8 @@ departed codex, so this is where a bad cut would show.
 ### Then each side is honoured
 - [ ] Favourite an item in the tray → it appears on the sheet.
 - [ ] Unfavourite it in the tray → it disappears from the sheet.
-- [ ] Favourite an item on the sheet → it appears in the tray.
+- [ ] Favourite an item on the sheet → it appears in the tray **immediately**, without
+      switching characters and back.
 - [ ] **Unfavourite an item on the sheet → it stays gone.** If it reappears, the
       merge is treating a removal as an addition; stop and say so.
 - [ ] Reorder favourites in the tray → the sheet follows.
