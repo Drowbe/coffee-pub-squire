@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getCampaignContext, openHealthWindow, getHealthPercent, openStatusEffectsWindow } from './helpers.js';
+import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getCampaignContext, openHealthWindow, getHealthPercent, openStatusEffectsWindow, applyItemTooltips } from './helpers.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
 // FoundryVTT function imports
@@ -187,6 +187,10 @@ export class HandleManager {
         const handleLeft = PanelManager.element?.querySelector('.tray-handle-content-wrapper');
         if (handleLeft) {
             handleLeft.innerHTML = handleContent;
+            // Per update, not in _attachHandleEventListeners: the listeners are
+            // delegated and bind once per tray, but this innerHTML swap builds
+            // fresh favourite icons every time.
+            applyItemTooltips(handleLeft, this.actor || PanelManager.currentActor);
         }
 
         // Set up resize listener if not already set up

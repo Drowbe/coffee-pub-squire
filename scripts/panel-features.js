@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getActivityList } from './helpers.js';
+import { getNativeElement, renderTemplate, getActivityList, applyItemTooltips} from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -201,6 +201,9 @@ export class FeaturesPanel {
         if (html && (html.jquery || typeof html.find === 'function')) {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
+
+        // Same rich hover card the dnd5e sheet shows for these items.
+        applyItemTooltips(nativeHtml, this.actor);
 
         // Use event delegation for all handlers
         const panel = nativeHtml.querySelector('[data-panel="features"]');

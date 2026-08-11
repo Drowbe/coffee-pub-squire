@@ -20,6 +20,66 @@ export function isGMOrPartyLeader() {
     return blacksmith.isCurrentUserPartyLeader();
 }
 
+/**
+ * Give the tray's items the same rich hover card the dnd5e sheet shows.
+ *
+ * dnd5e's tooltip layer is declarative and application-agnostic: its
+ * `_onTooltipActivate` fires for ANY tooltip whose content is a
+ * `.loading[data-uuid]` placeholder, resolves that uuid, and swaps in the
+ * document's `richTooltip()`. So this sets three dataset attributes and the
+ * system renders the card — no imports, no reaching into sheet internals, and
+ * the card stays right when dnd5e changes what one contains.
+ *
+ * Two element families, treated differently:
+ *
+ *   `.panel-item`           the tray rows. The card goes on the item NAME, not
+ *                           the row, because the row also holds roll/equip/
+ *                           favourite controls with tooltips of their own that a
+ *                           row-level one would cover.
+ *
+ *   `.handle-favorite-icon` the collapsed handle. These carry a hand-built
+ *                           tooltip from the template — a long Handlebars
+ *                           expression re-deriving spell/weapon/equipment/feat
+ *                           details that `richTooltip()` already does properly.
+ *                           It is REPLACED where the system can do better and
+ *                           left alone where it cannot, so the handle keeps a
+ *                           tooltip if Squire is ever run without dnd5e (which
+ *                           module.json does not currently forbid).
+ *
+ * @param {HTMLElement} html   a rendered panel or handle
+ * @param {Actor} actor        the actor those items belong to
+ */
+export function applyItemTooltips(html, actor) {
+    if (!html || !actor) return;
+
+    const decorate = (target, item) => {
+        target.dataset.tooltip =
+            `<section class="loading" data-uuid="${item.uuid}"><i class="fas fa-spinner fa-spin-pulse"></i></section>`;
+        target.dataset.tooltipClass = 'dnd5e2 dnd5e-tooltip item-tooltip themed theme-light';
+        // The tray is pinned to the left edge, so the card opens rightward into
+        // the canvas rather than off-screen. dnd5e's own sheet defaults to LEFT
+        // for the mirror-image reason.
+        target.dataset.tooltipDirection ??= 'RIGHT';
+    };
+
+    for (const row of html.querySelectorAll('.panel-item[data-item-id]')) {
+        const item = actor.items.get(row.dataset.itemId);
+        // No richTooltip means a non-dnd5e system: leave whatever is there.
+        if (typeof item?.richTooltip !== 'function') continue;
+
+        const target = row.querySelector('.panel-item-name') ?? row;
+        // Never clobber a tooltip a template set deliberately on a row.
+        if (target.dataset.tooltip) continue;
+        decorate(target, item);
+    }
+
+    for (const icon of html.querySelectorAll('.handle-favorite-icon[data-item-id]')) {
+        const item = actor.items.get(icon.dataset.itemId);
+        if (typeof item?.richTooltip !== 'function') continue;
+        decorate(icon, item);
+    }
+}
+
 // Helper function to safely get Blacksmith API
 export function getBlacksmith() {
   return game.modules.get('coffee-pub-blacksmith')?.api;

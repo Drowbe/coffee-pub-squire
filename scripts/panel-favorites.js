@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, showSquireToast, getHandleFavoriteLimit, getContainerInfo, activateContainerListener } from './helpers.js';
+import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, showSquireToast, getHandleFavoriteLimit, getContainerInfo, activateContainerListener, applyItemTooltips} from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { QuantityEditor } from './utility-quantity.js';
@@ -919,6 +919,9 @@ export class FavoritesPanel {
         if (html && (html.jquery || typeof html.find === 'function')) {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
+
+        // Same rich hover card the dnd5e sheet shows for these items.
+        applyItemTooltips(nativeHtml, this.actor);
 
         const panel = nativeHtml.querySelector('[data-panel="favorites"]');
         if (!panel) return;

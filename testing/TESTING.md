@@ -118,3 +118,14 @@ departed codex, so this is where a bad cut would show.
 - [ ] Reload with both sides already in agreement — no console errors, and no
       actor updates fired (nothing should be written when there is nothing to do).
 
+### Item hover cards
+- [ ] Hover an item name in Favourites, Inventory, Spells, Weapons, Features: the
+      dnd5e rich card appears, matching what the sheet shows for the same item.
+- [ ] The card opens to the RIGHT of the tray, not off the left edge of the screen.
+- [ ] Hovering the roll / equip / favourite icons on a row still shows their own
+      small tooltips, not the big card.
+- [ ] Collapse the tray and hover a favourite on the handle: the rich card appears
+      there too.
+- [ ] Spells show casting time, range, components, duration; weapons show damage
+      and range — i.e. the card is the system's, not an approximation.
+

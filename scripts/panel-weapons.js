@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
-import { getNativeElement, renderTemplate, getActivityList, getContainerInfo, activateContainerListener } from './helpers.js';
+import { getNativeElement, renderTemplate, getActivityList, getContainerInfo, activateContainerListener, applyItemTooltips} from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { QuantityEditor } from './utility-quantity.js';
@@ -268,6 +268,9 @@ export class WeaponsPanel {
         if (html && (html.jquery || typeof html.find === 'function')) {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
+
+        // Same rich hover card the dnd5e sheet shows for these items.
+        applyItemTooltips(nativeHtml, this.actor);
 
         // Use event delegation for all handlers
         const panel = nativeHtml.querySelector('[data-panel="weapons"]');

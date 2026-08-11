@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getActivityList, isSpellPrepared } from './helpers.js';
+import { getNativeElement, renderTemplate, getActivityList, isSpellPrepared, applyItemTooltips} from './helpers.js';
 import { StatblockUtility } from './utility-statblock.js';
 
 export class SpellsPanel {
@@ -278,6 +278,9 @@ export class SpellsPanel {
         if (html && (html.jquery || typeof html.find === 'function')) {
             nativeHtml = html[0] || html.get?.(0) || html;
         }
+
+        // Same rich hover card the dnd5e sheet shows for these items.
+        applyItemTooltips(nativeHtml, this.actor);
 
         // v13: Use native DOM querySelector instead of jQuery find
         const panel = nativeHtml.querySelector('[data-panel="spells"]');
