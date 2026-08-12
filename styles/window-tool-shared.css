@@ -34,7 +34,9 @@
     flex-direction: column;
     gap: 10px;
     min-width: 0;
-    padding: 0 8px 8px;
+    /* All four sides. Loot omits the top because its sticky header supplies it;
+       neither Squire window has one, so the first section sat flush. */
+    padding: 8px;
     color: var(--blacksmith-tool-text);
 }
 
@@ -175,66 +177,91 @@
    Blacksmith's `.blacksmith-entity`, and for the same reason: a class can
    drift out of step with the input, a `:has()` cannot. */
 .squire-tool-row-select {
-    grid-template-columns: 16px 38px minmax(0, 1fr) auto;
+    position: relative;
+    grid-template-columns: 15px 38px minmax(0, 1fr) auto;
     cursor: pointer;
 }
 
+/* Ticked is the resting state for most of a cleanup list — a couple of hundred
+   rows arrive ticked — so it must not shout. It gets a faint wash and keeps the
+   transparent border; the tick itself carries the signal. Bordering every
+   checked row turned the list into a wall of boxes. */
 .squire-tool-row-select:has(input:checked) {
-    border-color: var(--blacksmith-tool-accent);
     background: var(--blacksmith-tool-surface-hover);
 }
 
-.squire-tool-row-select:focus-within {
-    outline: 2px solid var(--blacksmith-tool-accent);
+/* Keyboard focus only. `:focus-within` fired on every mouse click, because
+   clicking a label focuses the input it wraps — which is what put a hard
+   outline around whatever row was last clicked. A checkbox focused by pointer
+   does not match `:focus-visible`, so this rings only on Tab. */
+.squire-tool-row-select:has(input:focus-visible) {
+    outline: 2px solid var(--blacksmith-color-brand-accent, #c15701);
     outline-offset: 1px;
 }
 
-/* Drawn here rather than left native. Foundry themes bare inputs, so an
-   unstyled checkbox changes size and colour with the Foundry theme while the
-   row around it follows the Blacksmith tool theme — the two never agree. */
+/* The native input is taken out of the picture entirely rather than restyled.
+   Overriding it in place meant competing with Foundry's own checkbox rules,
+   and Foundry styles `:checked` separately — so the two states ended up
+   different sizes and different fills. Visually hidden rather than
+   `display: none`, because the input still has to be focusable and it is what
+   `:has()` reads for both the tick and the focus ring.
+
+   The box below is a plain span, so checked and unchecked are the same element
+   at the same size, and the only difference between them is a border colour, a
+   faint tint, and the tick. */
+.squire-tool-check-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
 .squire-tool-check {
     position: relative;
-    display: grid !important;
-    flex: 0 0 16px;
-    width: 16px !important;
-    height: 16px !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    place-items: center;
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    border: 1px solid var(--blacksmith-tool-border) !important;
-    border-radius: 4px;
-    background: var(--blacksmith-tool-surface-raised) !important;
-    box-shadow: none !important;
-    cursor: pointer;
-    transition: background 0.12s ease, border-color 0.12s ease;
+    display: block;
+    width: 15px;
+    height: 15px;
+    border: 1px solid var(--blacksmith-tool-border);
+    border-radius: 3px;
+    background: var(--blacksmith-tool-surface-raised);
+    transition: border-color 0.12s ease, background 0.12s ease;
 }
 
-.squire-tool-check:hover { border-color: var(--blacksmith-tool-accent) !important; }
+.squire-tool-row-select:hover .squire-tool-check { border-color: var(--blacksmith-color-brand-accent, #c15701); }
 
-.squire-tool-check:checked {
-    border-color: var(--blacksmith-tool-accent) !important;
-    background: var(--blacksmith-tool-accent) !important;
+/* The house interactive orange, NOT --blacksmith-tool-accent. That token is a
+   text colour: under Light it resolves to #2f241a, so using it as a border drew
+   a near-black box on every ticked row. Blacksmith's own window-tool.css calls
+   out the same trap. Orange reads on all three themes with no per-theme value.
+
+   A tint rather than a solid fill, so the tick can be the same colour as the
+   border and stay legible whatever the surface underneath is. */
+.squire-tool-row-select:has(input:checked) .squire-tool-check {
+    border-color: var(--blacksmith-color-brand-accent, #c15701);
+    background: color-mix(in srgb, var(--blacksmith-color-brand-accent, #c15701) 16%, var(--blacksmith-tool-surface-raised));
 }
 
-/* The tick: a rotated corner rather than a glyph font, so it cannot go missing
-   when Font Awesome is scoped out of a window. */
+/* A rotated corner rather than a glyph font, so it cannot go missing when Font
+   Awesome is scoped out of a window. */
 .squire-tool-check::after {
     content: "";
-    width: 8px;
-    height: 4px;
-    border: 2px solid var(--blacksmith-tool-surface-raised);
-    border-top: 0;
-    border-right: 0;
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    width: 4px;
+    height: 8px;
+    border: solid var(--blacksmith-color-brand-accent, #c15701);
+    border-width: 0 2px 2px 0;
     opacity: 0;
-    transform: translateY(-1px) rotate(-45deg);
+    transform: rotate(45deg);
+    transition: opacity 0.12s ease;
 }
 
-.squire-tool-check:checked::after { opacity: 1; }
-.squire-tool-check:focus-visible { outline: 2px solid var(--blacksmith-tool-accent); outline-offset: 2px; }
+.squire-tool-row-select:has(input:checked) .squire-tool-check::after { opacity: 1; }
 
 /* --- Inline flag --------------------------------------------------------
    Marks a row as needing a look. No border and no background, precisely so it
@@ -271,7 +298,7 @@
 
 .squire-tool-coin small { color: var(--blacksmith-tool-text-muted); font-size: 0.62rem; text-transform: uppercase; }
 .squire-tool-coin-was { opacity: 0.55; }
-.squire-tool-coin-is { border-color: var(--blacksmith-tool-accent); }
+.squire-tool-coin-is { border-color: var(--blacksmith-color-brand-accent, #c15701); }
 .squire-tool-arrow { color: var(--blacksmith-tool-text-muted); font-size: 0.7rem; }
 
 /* The claim "same money, fewer coins" is only checkable if the money is on

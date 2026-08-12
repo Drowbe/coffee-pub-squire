@@ -45,12 +45,14 @@
     {{#if result.linked}}
     <section class="squire-tool-section">
         <h3>
-            <span><i class="fa-solid fa-link"></i> Source links written</span>
+            <span><i class="fa-solid fa-link"></i> Items linked</span>
             <span class="squire-tool-count">{{result.linked}}</span>
         </h3>
         <p class="squire-tool-note">
-            {{result.linked}} item{{#unless (eq result.linked 1)}}s{{/unless}} now record where they came
-            from, so they can be refreshed from the compendium if the world entry behind them changes.
+            {{result.linked}} item{{#unless (eq result.linked 1)}}s{{/unless}}
+            {{#if (eq result.linked 1)}}is{{else}}are{{/if}} now linked to
+            {{#if (eq result.linked 1)}}its{{else}}their{{/if}} compendium entry, and can be refreshed
+            from it if the world changes underneath {{#if (eq result.linked 1)}}it{{else}}them{{/if}}.
         </p>
     </section>
     {{/if}}
@@ -75,7 +77,7 @@
         <i class="fa-solid fa-broom"></i>
         <div>
             <p>Nothing is created, removed, or replaced. Coins are re-counted into the same value, and
-               items are told which compendium entry they came from.</p>
+               items are linked to the compendium entry they came from.</p>
             <p>Untick anything you would rather leave alone.</p>
         </div>
     </div>
@@ -87,7 +89,8 @@
             <span class="squire-tool-count">{{scan.currency.coinCountBefore}} &rarr; {{scan.currency.coinCountAfter}}</span>
         </h3>
         <label class="squire-tool-row squire-tool-row-select squire-cleanup-currency-row">
-            <input type="checkbox" class="squire-tool-check" data-cleanup="currency" checked>
+            <input type="checkbox" class="squire-tool-check-input" data-cleanup="currency" checked>
+            <span class="squire-tool-check" aria-hidden="true"></span>
             <div class="squire-cleanup-currency-body">
                 <div class="squire-tool-coins">
                     <span class="squire-cleanup-coins-label">Now</span>
@@ -137,8 +140,9 @@
             <div class="squire-tool-list">
                 {{#each scan.links.review}}
                 <label class="squire-tool-row squire-tool-row-select">
-                    <input type="checkbox" class="squire-tool-check" data-cleanup="link"
+                    <input type="checkbox" class="squire-tool-check-input" data-cleanup="link"
                            data-item-id="{{this.id}}" data-uuid="{{this.uuid}}">
+                    <span class="squire-tool-check" aria-hidden="true"></span>
                     <img class="squire-tool-row-img" src="{{this.img}}" alt="">
                     <div class="squire-tool-row-copy">
                         <strong>{{this.name}}</strong>
@@ -158,8 +162,9 @@
             <div class="squire-tool-list">
                 {{#each scan.links.ready}}
                 <label class="squire-tool-row squire-tool-row-select">
-                    <input type="checkbox" class="squire-tool-check" data-cleanup="link"
+                    <input type="checkbox" class="squire-tool-check-input" data-cleanup="link"
                            data-item-id="{{this.id}}" data-uuid="{{this.uuid}}" checked>
+                    <span class="squire-tool-check" aria-hidden="true"></span>
                     <img class="squire-tool-row-img" src="{{this.img}}" alt="">
                     <div class="squire-tool-row-copy">
                         <strong>{{this.name}}</strong>
@@ -193,8 +198,8 @@
 
     {{#if scan.links.alreadyLinked}}
     <p class="squire-tool-note squire-cleanup-quiet">
-        {{scan.links.alreadyLinked}} of {{scan.links.considered}} already know where they came from and
-        are left alone.
+        {{scan.links.alreadyLinked}} of {{scan.links.considered}} are already linked to their compendium
+        entry and are left alone.
     </p>
     {{/if}}
 
@@ -204,7 +209,7 @@
     <div class="squire-tool-banner">
         <i class="fa-solid fa-circle-check"></i>
         <div><p><strong>{{actorName}}</strong> is tidy. Coins are already consolidated, and every item that
-               could be matched knows where it came from.</p></div>
+               could be matched is linked to its compendium entry.</p></div>
     </div>
 {{/if}}
 
