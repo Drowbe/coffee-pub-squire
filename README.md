@@ -4,7 +4,6 @@
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Drowbe/coffee-pub-squire/release.yml)
 ![GitHub all releases](https://img.shields.io/github/downloads/Drowbe/coffee-pub-squire/total)
 ![MIT License](https://img.shields.io/badge/license-MIT-blue)
-![Foundry v12](https://img.shields.io/badge/foundry-v12-yellow)
 ![Foundry v13](https://img.shields.io/badge/foundry-v13-green)
 
 ## Disclaimer
@@ -15,11 +14,13 @@ If you stumble upon this repository and find it useful, feel free to try it out!
 
 **Use at your own risk.** I am not responsible for any issues, data loss, or unexpected behavior resulting from using this project.
 
-A comprehensive FoundryVTT module that provides an extensive suite of character management tools, quest systems, and quality-of-life features through an intuitive sliding tray interface. Part of the Coffee Pub suite of modules.
+Squire puts a character's own tools within reach: a sliding tray that follows the token you have selected, with spells, weapons, inventory, favourites and health where you can get at them without opening a sheet. Part of the Coffee Pub suite of modules.
 
 ## IMPORTANT NOTICE
 
-Blacksmith version 12.1.14 is the final build of SQUIRE that will be compatible with FoundryVTT v12. All future builds will be compatible with FoundryVTT v13 and later. There are no current plans to continue to improve or maintain Squire on FoundryVTT v12.
+**Squire 12.1.14 was the last build compatible with FoundryVTT v12.** Everything since targets v13 and later, and there are no plans to maintain the v12 line.
+
+**Quests, the Codex, and Notes have moved out of Squire.** Quests and the Codex now live in [Coffee Pub Librarian](https://github.com/Drowbe/coffee-pub-librarian); Notes moved to [Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith). Existing data was migrated rather than dropped — install Librarian to keep using them. Squire's charter is narrower now, and deliberately so: *help me understand what my character can do, and let me do it with ease.*
 
 ## Visual Showcase
 
@@ -35,18 +36,6 @@ Blacksmith version 12.1.14 is the final build of SQUIRE that will be compatible 
 ![Party Features](product/squire-party.webp)
 *Party coordination, participant management, and group statistics*
 
-### **Notes & Journal**
-![Notes Panel](product/squire-notes.webp)
-*Quick access to journal entries and notes with live content updates*
-
-### **Codex & World Building**
-![Codex System](product/squire-codex.webp)
-*Enhanced codex creation with drag & drop functionality and smart form auto-population*
-
-### **Quest Management**
-![Quest System](product/squire-quests.webp)
-*Comprehensive quest creation, editing, and organization with task tracking*
-
 ### **Item Transfers**
 ![Transfer System](product/squire-transfers.webp)
 *GM-mediated item transfers with request/accept/reject workflow*
@@ -54,7 +43,7 @@ Blacksmith version 12.1.14 is the final build of SQUIRE that will be compatible 
 ## Features
 
 ### **Core Character Management**
-- **Sliding tray interface** that automatically appears on the left side of the screen
+- **Sliding tray interface** that appears on the left side of the screen
 - **Automatic character detection** and token-based selection
 - **Comprehensive character panels** with real-time data synchronization
 
@@ -71,10 +60,25 @@ Blacksmith version 12.1.14 is the final build of SQUIRE that will be compatible 
   - Ammunition tracking
   - Damage calculation and display
 - **Inventory management** with:
+  - A currency section alongside the item categories, with a send flow for handing coins over
   - Item categorization and filtering
   - Weight and quantity tracking
   - Item favorites and quick access
   - Drag & drop functionality
+- **Item hover cards** — hovering an item in Favourites, Inventory, Spells, Weapons or Features brings up the dnd5e system's own rich tooltip, the same card its character sheet shows
+
+### **Favourites**
+- **Two-way sync with the dnd5e character sheet.** Favourite something in the tray and it appears on the sheet; favourite it on the sheet and it appears in the tray. Removals on either side are honoured, and activity, effect, and resource favourites the sheet owns are left untouched.
+- **Quick access from the collapsed handle**, with a configurable limit
+
+### **Sheet Upkeep**
+- **Character sheet cleanup**, behind a broom in the Character Sheet title bar. It previews everything before it acts, every row can be unticked, and it reports what it did rather than closing behind a toast:
+  - **Consolidate currency** to the fewest coins, through the dnd5e system's own conversion, with the total shown before and after so "same money, fewer coins" is checkable rather than promised
+  - **Link items to their compendium entry**, so an item records what it is a copy of and can be repaired later if the entry behind it changes
+  - **Merge duplicate stacks**, with strict identity rules, anything skipped explained in plain language, and a one-step undo
+  - **Players can request it** on characters they own. They never write to their own sheet — applying sends the plan to the GM, who reviews the same rows in the same window and decides
+- **Inventory warnings** for weapons with no usable ammunition. The owning player sees the warning on their own characters; clicking it asks the GM rather than adding anything
+- **Statblock warnings** for NPCs, with optional automatic repair
 
 ### **Tools & Utilities**
 - **Standalone Blacksmith Micro dice tool** with fixed controls and a compact, independently scrolling recent-roll history
@@ -82,48 +86,12 @@ Blacksmith version 12.1.14 is the final build of SQUIRE that will be compatible 
 - **Condition management** with visual indicators and quick application
 - **Standalone Blacksmith Micro macro tool** with execution, favorites, reordering, and drag-and-drop assignment
 - **Character Summary panel** combining labeled combat stats, interactive ability checks/saves, and level progression in one compact card
-
-### **Quest & Adventure Management**
-- **Comprehensive quest system** with:
-  - Quest creation, editing, and organization
-  - Task management with completion tracking
-  - Progress visualization and status management
-  - GM notes and player hints
-  - Treasure and reward tracking
-  - Participant management and party coordination
-- **Scene pin system** with:
-  - Quest pin placement on canvas
-  - Objective-specific pin management
-  - Visual quest state indicators
-  - Pin visibility controls for GMs and players
-- **Quest import/export** with:
-  - JSON-based quest data transfer
-  - Scene pin preservation
-  - Progress state maintenance
-  - Rich data preservation (GM notes, treasure, etc.)
-- **Menubar notifications** (via Coffee Pub Blacksmith) with:
-  - Persistent pinned-quest and active-objective trackers — click to jump to the quest, dismiss to silence for the session
-  - GM-directed pins and active objectives synced to every player
-  - Transient alerts for quest and objective status changes, codex unlocks, applied effects, and party note updates — clickable where there's somewhere to go
-
-### **Codex & World Building**
-- **Enhanced codex system** with:
-  - Drag & drop entity creation
-  - Smart auto-population of form fields
-  - Category and tag management
-  - Image handling and organization
-  - Location and plot hook management
-- **Journal integration** with:
-  - Notes panel for quick access
-  - Live content updates
-  - Multi-page journal support
-  - Edit and open functionality
+- **Compendium search** with a configurable access rung for players — open, ask the GM, or off
 
 ### **Party & Social Features**
-- **Party management** with:
-  - Character status overview
-  - Party statistics and coordination
-  - Participant management for quests
+- **Party panel** with character status overview and party statistics
+- **Party toolbar** for the GM and party leader: award **Experience**, call a **Vote**, and **Deploy** or **Clear** the party, all through Blacksmith
+- **Party reputation** shown with the scene it belongs to, since reputation is stored per scene. The bar is a balance rather than a progress bar — the track carries the whole −100..+100 spectrum and a marker shows where the party sits. GMs get ±1 / ±5 controls
 - **Item transfer system** with:
   - GM-mediated transfers
   - Request/accept/reject workflow
@@ -132,13 +100,12 @@ Blacksmith version 12.1.14 is the final build of SQUIRE that will be compatible 
 
 ### **Customization & Settings**
 - **Theme system** with Dark, Light, and Custom options
-- **Layout customization** with tray positioning and behavior
-- **User preferences** with individual settings per user
-- **Accessibility features** with configurable UI elements
-- **Integration settings** for Coffee Pub Blacksmith API
+- **Panel visibility** — show or hide the GM details, character summary, and party stats panels
+- **Handle configuration** — conditions, favourites, and health bar on the collapsed handle
+- **Per-user preferences**, including excluding specific users from the tray entirely
 
 ### **Technical Features**
-- **FoundryVTT v12+ compatibility** with v13 readiness
+- **FoundryVTT v13** (verified 13, maximum 14)
 - **Performance optimized** with efficient data handling
 - **Hook system** with centralized event management
 - **Error handling** with comprehensive logging and recovery
@@ -152,9 +119,12 @@ Blacksmith version 12.1.14 is the final build of SQUIRE that will be compatible 
 
 ## Dependencies
 
-- [Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith)
-- Foundry VTT (Version 12 compatible, V13 ready)
-- DnD5e System (Version 4.0+)
+- [Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith) — required, 13.12.2 or later
+- [socketlib](https://github.com/manuelVo/foundryvtt-socketlib) — required
+- Foundry VTT v13 (verified 13, maximum 14)
+- Built for the DnD5e system
+
+Optional: [Coffee Pub Librarian](https://github.com/Drowbe/coffee-pub-librarian) for quests and the codex, which Squire used to provide.
 
 ## Usage
 
@@ -169,70 +139,52 @@ After installation and enabling the module:
 ### **Character Management**
 5. **Combat Tools**: Access spells, weapons, and inventory through dedicated panels
 6. **Health & Status**: Monitor HP and conditions in real-time from the handle or optional Health menubar tool
-7. **Favorites System**: Bookmark frequently used items, spells, and features
-8. **Dice Tray**: Open the compact Blacksmith Micro dice tool from the handle or menubar; its recent-roll history scrolls independently
-9. **Character Summary**: Optionally show one compact tray card for level, initiative, speed, armor, proficiency, abilities, and experience
+7. **Favorites System**: Bookmark frequently used items, spells, and features — the dnd5e character sheet stays in step, both ways
+8. **Item Cards**: Hover any item for the system's full card, without opening a sheet
+9. **Dice Tray**: Open the compact Blacksmith Micro dice tool from the handle or menubar; its recent-roll history scrolls independently
+10. **Character Summary**: Optionally show one compact tray card for level, initiative, speed, armor, proficiency, abilities, and experience
 
-### **Quest & Adventure**
-10. **Quest Management**: Create, edit, and organize quests with task tracking
-11. **Scene Pins**: Place quest pins on canvas for visual quest management
-12. **Progress Tracking**: Monitor quest completion and participant progress
-13. **Import/Export**: Transfer quests between worlds with full data preservation
+### **Sheet Upkeep**
+11. **Cleanup**: Click the broom in the Character Sheet title bar to consolidate coins, link items to their compendium entries, and merge duplicate stacks. Nothing is written until you review the plan
+12. **Requests**: As a player, cleanup sends its plan to the GM for approval rather than applying it
+13. **Warnings**: Watch for the ammunition badge on weapons with nothing to fire; clicking asks the GM to restock
 
-### **World Building**
-14. **Codex System**: Create and manage world entities with drag & drop
-15. **Journal Integration**: Access notes and journal entries through the tray
-16. **Party Management**: Coordinate with other players and manage group activities
+### **Party**
+14. **Party Management**: Coordinate with other players and see group statistics
+15. **Party Toolbar**: Award experience, call a vote, deploy or clear the party
+16. **Reputation**: Track how the party stands on the current scene
 17. **Item Transfers**: Facilitate item exchanges between characters
 
 ### **Customization**
 18. **Theme Selection**: Choose from Dark, Light, or Custom themes
-19. **Layout Options**: Customize tray position and behavior
+19. **Layout Options**: Set tray width and top/bottom offsets
 20. **User Preferences**: Set individual settings for your playstyle
-20. **Integration**: Configure Coffee Pub Blacksmith API settings
+21. **Integration**: Configure Coffee Pub Blacksmith API settings
 
 ## Settings
 
 ### **Appearance & Layout**
-- **Tray Position**: Left side of the screen (configurable)
-- **Open on Hover**: Automatically expand the tray when hovering
-- **Theme Selection**: Choose between Dark, Light, or Custom themes
-- **Custom Theme Colors**: Define your own color scheme and branding
-- **Move Foundry Toolbar**: Add padding to accommodate the tray
-- **Move UI When Pinned**: Shift the UI when the tray is pinned open
+- **Color Theme**: Dark, Light, or Custom
+- **Tray Width**, **Top Offset**, **Bottom Offset**: Fit the tray to your screen
+- **Default Tab**: Which panel the tray opens on
+- **Show Party Tab**, **Show GM Details Panel**, **Show Character Summary Panel**, **Show Party Stats Panel**
 
-### **Quest & Adventure**
-- **Quest Pin Visibility**: Control quest pin display for GMs and players
-- **Auto-show Pins**: Automatically display pins when dragging quests to canvas
-- **Pin Labels**: Toggle quest pin title visibility
-- **Quest Import/Export**: Configure quest data transfer settings
+### **The Handle**
+- **Show Conditions in Handle**, **Show Favorites in Handle**, **Show Health Bar in Handle**
+- **Maximum Handle Favorites**
+
+### **Sheet Upkeep**
+- **Players Can Request Cleanup**: Let players run cleanup on characters they own; applying sends the plan to the GM to approve
+- **Inventory Warnings**: Flag player characters whose weapons have no usable ammunition
+- **Show Statblock Warnings**, **Repair Statblocks Automatically**: The NPC equivalents; automatic repair is NPC-only by design
+- **Ammunition Restock Quantity**: How much a GM hands over when approving a restock
+- **Auto-Favorite NPC Statblock Content**, **Also Ignore These Actions**, **Generic Actions to Keep**
+
+### **Items & Transfers**
+- **GM Approves Transfers** and **Transfer Request Timeout**
+- **Confirm Deleting Items Worth More Than**: A guard against deleting something valuable by accident
+- **Let Players Use Compendiums**: Open, ask the GM, or off
 
 ### **User Preferences**
-- **Auto-add Party Members**: Automatically include party members in quests
 - **Excluded Users**: Hide the tray for specific users
-- **Individual Settings**: Per-user customization options
-- **Accessibility**: Configurable UI elements and interactions
-
-### **Integration & Performance**
-- **Coffee Pub Blacksmith**: API integration settings and configuration
-- **Performance Options**: Optimize for different hardware capabilities
-- **Debug Logging**: Configure logging levels for troubleshooting
-- **Data Persistence**: Control how user preferences are saved
-
-## License
-
-[MIT License](LICENSE)
-
-## Support
-
-For support, bug reports, or feature requests:
-- Create an issue on [GitHub](https://github.com/Drowbe/coffee-pub-squire/issues)
-- Contact me on Discord: drowbe 
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for a detailed list of all version updates and feature releases.
-
-## Development Status
-
-The module is actively maintained and regularly updated. See [TODO.md](TODO.md) for current development priorities and [ROADMAP.md](ROADMAP.md) for planned features.
+- **Remember Prepared Spells / Equipped Weapons / Equipped Inventory Filter**: Keep each panel's filter between sessions

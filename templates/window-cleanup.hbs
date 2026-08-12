@@ -27,13 +27,54 @@
             favourites that pointed at them resolve again.
         </p>
         <div class="squire-tool-row-actions squire-cleanup-undo-actions">
+            {{!-- Hidden inside a restore approval: the footer already carries
+                  Approve and Deny, and a third control here would be a second
+                  way to answer the same question. --}}
+            {{#unless isRestoreRequest}}
             <button type="button" class="blacksmith-window-btn-secondary" data-action="revert" {{#if busy}}disabled{{/if}}>
-                <i class="fa-solid fa-rotate-left"></i> Restore
+                <i class="fa-solid {{restoreIcon}}"></i> {{restoreLabel}}
             </button>
+            {{/unless}}
         </div>
     </section>
 {{/if}}{{/if}}
 
+{{#if restored}}
+    {{!-- Terminal on purpose. The window used to re-scan and show a fresh plan
+          here, which put Cancel and Apply under a restore notice — and those
+          read as "cancel the restore" and "apply the restore" rather than as a
+          new cleanup. Reopening the broom is the way to tidy again. --}}
+    <div class="squire-tool-banner">
+        <i class="fa-solid fa-rotate-left"></i>
+        <div>
+            <p>Restored <strong>{{restored.count}}</strong>
+               stack{{#unless (eq restored.count 1)}}s{{/unless}} to <strong>{{actorName}}</strong>,
+               with their original ids — so favourites that pointed at them resolve again.</p>
+            <p>Nothing else was changed. Open cleanup again if you want to tidy the sheet.</p>
+        </div>
+    </div>
+{{/if}}
+
+{{#if isRestoreRequest}}
+    <div class="squire-tool-banner">
+        <i class="fa-solid fa-rotate-left"></i>
+        <div>
+            <p><strong>{{requesterName}}</strong> is asking to undo the last merge on
+               <strong>{{actorName}}</strong>.</p>
+            {{#if restoreGone}}
+                <p>There is nothing left to restore — the snapshot has already been used, or a newer
+                   merge has replaced it. Nothing has been done.</p>
+            {{else}}
+                <p>Approving puts <strong>{{snapshot.count}}</strong> saved
+                   stack{{#unless (eq snapshot.count 1)}}s{{/unless}} back with their original ids, so
+                   favourites that pointed at them resolve again. Saved {{snapshot.atLabel}}, and it is
+                   all or nothing.</p>
+            {{/if}}
+        </div>
+    </div>
+{{/if}}
+
+{{#unless isRestoreRequest}}
 {{#if isApproval}}
     {{!-- The GM is answering a question, not making a plan. Said first, because
           everything below looks exactly like their own cleanup window and the
@@ -48,6 +89,7 @@
         </div>
     </div>
 {{/if}}
+{{/unless}}
 
 {{#if result}}
     {{!-- ================= RECEIPT: what just happened ================= --}}

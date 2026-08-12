@@ -225,6 +225,11 @@ re-scans and offers what the linking just unlocked, in the same visit.
 - [ ] **Undo.** The window offers "Undo the last merge" with a count and a
       timestamp. Restore, and all three rows come back with their original
       quantities.
+- [ ] After restoring, the window shows **only** what it put back and a single
+      **Close** button. There must be no Cancel/Apply pair underneath a restore
+      notice — read in that position, those mean "cancel the restore".
+- [ ] The undo section is gone after restoring (the snapshot was consumed), and
+      reopening the broom offers a normal plan again.
 - [ ] **Favourites survive a merge.** Favourite one of the three copies in the
       tray, merge, and the surviving row is still favourited — in the tray *and*
       on the dnd5e character sheet. Then undo, and the favourite is still right.
@@ -285,6 +290,23 @@ Needs two clients. **Players Can Request Cleanup** must be on.
 - [ ] Send a request with no GM online: the player is told, and nothing is sent.
 - [ ] A GM can have their own cleanup window AND a player's request for the same
       character open at once — they are separate windows.
+
+**Restore requests.**
+
+- [ ] As a player, after a GM has merged something, the undo section appears with
+      the button reading **Request Restore** (not Restore).
+- [ ] Clicking it sends to the GM and closes the player's window with a toast.
+- [ ] The GM's popup names the requester, says how many stacks would come back
+      and when they were saved, and offers Approve / Deny — with **no** extra
+      Restore button inside the section itself.
+- [ ] Approve: the stacks come back and the player gets a toast naming the count.
+- [ ] Deny, and separately close-with-X: the player is told either way.
+- [ ] Have the GM restore it themselves first, THEN approve the player's pending
+      request: the popup says there is nothing left to restore rather than
+      claiming the request no longer applies.
+- [ ] A player with a cleanup request AND a restore request in flight for the
+      same character gets two separate windows on the GM's screen, not one
+      overwriting the other.
 
 ### Tool window presentation (Cleanup and Transfer)
 

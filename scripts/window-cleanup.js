@@ -82,7 +82,7 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
         // A GM may be looking at their own cleanup for this actor and a player's
         // request for it at the same time; they are different windows.
         opts.id = request
-            ? `${MODULE.ID}-cleanup-request-${actor.id}-${request.requesterId}`
+            ? `${MODULE.ID}-cleanup-${request.type ?? 'plan'}-${actor.id}-${request.requesterId}`
             : `${MODULE.ID}-cleanup-${actor.id}`;
         super(opts);
 
@@ -90,6 +90,7 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
         this.request = request;
         this.scan = null;
         this.result = null;
+        this.restored = null;
         this._busy = false;
         this._answered = false;
 
@@ -99,6 +100,16 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
     /** Reviewing somebody else's proposal rather than making one. */
     get isApproval() {
         return Boolean(this.request);
+    }
+
+    /**
+     * An undo somebody else asked for.
+     *
+     * All-or-nothing, unlike a cleanup request: there is one snapshot and it
+     * goes back whole, so there is nothing here for the GM to tick.
+     */
+    get isRestoreRequest() {
+        return this.request?.type === 'restore';
     }
 
     /**
@@ -128,7 +139,11 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
         // Scanned once, then held. Re-scanning on every render would fight the
         // ticks the GM has just set; `apply()` clears it deliberately so the
         // next render picks up what the writes just made possible.
-        if (!this.scan) {
+        //
+        // Skipped entirely after a restore. A plan rendered under a restore
+        // notice reads as part of it, and the scan is expensive enough that
+        // building one nobody asked for is worth avoiding on its own.
+        if (!this.scan && !this.restored && !this.isRestoreRequest) {
             this.scan = await scanActor(this.actor);
             // An approval shows the request, not the GM's own idea of what this
             // sheet needs. Everything the player did not ask for is dropped, so
@@ -145,18 +160,28 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
             // A receipt can carry a fresh plan underneath it — linking items is
             // what reveals which of them are duplicates — so "nothing to do
             // here" is its own state rather than the absence of a result.
-            isTidy: !this.result && !this._hasWork() && !this.isApproval,
+            restored: this.restored,
+            isRestoreRequest: this.isRestoreRequest,
+            // Nothing to put back: the GM may have already restored it, or run a
+            // fresh merge, either of which replaces the snapshot the player saw.
+            restoreGone: this.isRestoreRequest && !getSnapshot(this.actor),
+            // A player asks; a GM does. Same section, same place, different verb.
+            restoreLabel: game.user.isGM ? 'Restore' : 'Request Restore',
+            restoreIcon: game.user.isGM ? 'fa-rotate-left' : 'fa-paper-plane',
+            isTidy: !this.result && !this.restored && !this._hasWork() && !this.isApproval,
             // The request resolved to nothing on this side. Rare, but reachable:
             // the sheet may have moved on, or the GM's compendium access may
             // resolve an item differently than the player's did. "This actor is
             // tidy" would be the wrong thing to say about somebody else's ask.
-            requestEmpty: this.isApproval && !this.result && !this._hasWork(),
+            requestEmpty: this.isApproval && !this.isRestoreRequest && !this.result && !this._hasWork(),
             isApproval: this.isApproval,
             needsApproval: this.needsApproval,
             // The undo writes to the actor, so it stays with the GM. Inside an
             // approval it would also be answering a different question than the
             // one on screen.
-            canRevert: game.user.isGM && !this.isApproval,
+            // Owners see the undo too. A player's button asks rather than acts,
+            // for the same reason their Apply does.
+            canRevert: !this.isApproval,
             requesterName: this.request?.requesterName ?? '',
             busy: this._busy,
             // Read at render time rather than carried on the scan: the receipt
@@ -171,7 +196,14 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
         // Keyed on whether work remains, not on whether something has been
         // applied: after the first pass there is usually a second one to offer,
         // and closing the window would be the wrong default.
-        const done = !this._hasWork();
+        //
+        // A restore is the exception and says so explicitly. It would fall out
+        // of `_hasWork()` anyway, but only because the scan is skipped — and a
+        // footer whose buttons depend on a scan not having happened is one
+        // refactor away from offering Cancel and Apply under a restore notice
+        // again, which is exactly the confusion this avoids.
+        const done = Boolean(this.restored)
+            || (this.isRestoreRequest ? !getSnapshot(this.actor) : !this._hasWork());
         const label = this.needsApproval ? 'Request Approval' : 'Apply';
         const icon = this.needsApproval ? 'fa-paper-plane' : 'fa-broom';
 
@@ -321,6 +353,64 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
         }
     }
 
+    /** Player side: ask a GM to put the last merge back. */
+    async _requestRestore() {
+        const socket = game.modules.get(MODULE.ID)?.socket;
+        if (!socket) {
+            ui.notifications.error('Socketlib is not ready. Please wait for Foundry to finish loading, then try again.');
+            return;
+        }
+
+        if (!game.users.some(user => user.isGM && user.active)) {
+            showSquireToast('No GM is online', {
+                subtitle: 'Restoring needs GM approval.',
+                icon: 'fa-solid fa-triangle-exclamation',
+                color: '#e05c3c'
+            });
+            return;
+        }
+
+        this._busy = true;
+        await this.render(false);
+        try {
+            await socket.executeAsGM('requestCleanupApproval', {
+                type: 'restore',
+                actorUuid: this.actor.uuid,
+                actorName: this.actor.name,
+                requesterId: game.user.id,
+                requesterName: game.user.name
+            });
+            showSquireToast('Sent to the GM', {
+                subtitle: 'Waiting for approval to restore.',
+                icon: 'fa-solid fa-hourglass-half',
+                stackKey: `squire-restore-request-${this.actor.id}`
+            });
+            await this.close();
+        } catch (error) {
+            console.error(`${MODULE.ID}: restore request failed:`, error);
+            ui.notifications.error('The restore request could not be sent. See the console for details.');
+        } finally {
+            this._busy = false;
+        }
+    }
+
+    /** GM side: carry out a restore somebody asked for. */
+    async _approveRestore() {
+        this._busy = true;
+        await this.render(false);
+        try {
+            const { restored, failed } = await revertMerge(this.actor);
+            if (failed) {
+                ui.notifications.error('The merge could not be undone. See the console for details.');
+                return;
+            }
+            await this._notifyRequester(true, `${restored} ${restored === 1 ? 'stack' : 'stacks'} restored`);
+            await this.close();
+        } finally {
+            this._busy = false;
+        }
+    }
+
     /** The GM says no. */
     async deny() {
         await this._notifyRequester(false);
@@ -329,6 +419,7 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
 
     async apply() {
         if (this._busy) return;
+        if (this.isRestoreRequest) return this._approveRestore();
 
         const plan = this._collectPlan();
         if (!plan.currency && !plan.linkItemIds.length && !plan.merges.length) {
@@ -394,11 +485,14 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
      */
     async revert() {
         if (this._busy) return;
+        if (!game.user.isGM) return this._requestRestore();
+
         this._busy = true;
         await this.render(false);
 
         try {
             const { restored, failed } = await revertMerge(this.actor);
+            if (!failed) this.restored = { count: restored };
             if (failed) {
                 showSquireToast('The merge could not be undone. See the console for details.', {
                     icon: 'fa-solid fa-triangle-exclamation',

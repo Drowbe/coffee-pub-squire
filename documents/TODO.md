@@ -10,6 +10,9 @@
 | Blacksmith (other repo): pin renderer leaks elements — `unplace()` GM path and `delete()` unplaced path never call `PinRenderer.removePin()` | Medium | S | Open |
 | Blacksmith (other repo): `api.inventory` has no `requestGM` escape, so every write fails for a non-owner | Medium | S | Open |
 | Blacksmith (other repo): promote the shared tool-window row/section components out of Squire and Curator | Medium | M | Open |
+| Migrate the four hand-rolled item-transfer copies to Blacksmith `api.inventory` | High | M | Open |
+| Blacksmith (other repo): co-sign the dnd5e `updateEncumbrance` upstream report after v14 | Low | S | Open |
+| Let the handle filter which statuses it shows (`showHandleConditions` is all-or-nothing) | Low | M | Open |
 | Watch: AC/movement re-render branch went live in 13.3.14 (was dead) — real cost in combat | High | S | Open |
 | `PanelManager`: static-vs-instance state is unresolved; it's what let `element` go unassigned | Medium | M | Open |
 | Code cleanup: remove legacy fix code | Low | M | Open |
@@ -125,6 +128,29 @@
     less obviously general, and the coin strip in particular may belong to whoever owns currency.
   - Once it lands, Squire's `window-tool-shared.css` should shrink to nothing and be deleted.
 
+### CROSS-MODULE WORK
+
+- [ ] **Migrate item mutation to Blacksmith `api.inventory`.** Unblocked since 2026-08-08: the API
+  shipped with `transferItem`, `transferItems`, `grantItem`, `grantItems`, currency, `stack: 'merge'`
+  by default, `ignoreFlags`, and a `flags` parameter so arrival flags ride the create.
+  - Four copies of `_completeItemTransfer` collapse into `transferItem` calls — `transfer-utils.js`,
+    `panel-party.js`, `manager-panel.js`, and the `squire.js` socket handler. The four drop-create
+    sites become `grantItem`.
+  - Pass `ignoreFlags: ['coffee-pub-squire.isNew', 'coffee-pub-squire.isHandleFavorite']`, and
+    `flags` for `isNew`, on every call. The quantity re-checks in the three copies become redundant.
+  - The container guard in `getTransferBlocker()` **stays**: it puts the refusal in front of the
+    quantity dialog rather than after it, and Blacksmith refuses the same case with
+    `CONTAINER_HAS_CONTENTS`.
+  - Worth doing sooner than later. One session found four separate bugs across those hand-rolled
+    copies — unlinked-token classification, guard placement, prototype names, duplicate chat cards —
+    every one of which the API handles centrally.
+
+- [ ] **Revisit the dnd5e `updateEncumbrance` upstream report after the v14 migration.**
+  `Actor5e#updateEncumbrance` is an unguarded check-then-create against a fixed effect id, so any two
+  writes to one actor can collide. Blacksmith holds a prepared report in its `TODO-GLOBAL.md`; filing
+  was deferred because a report against a system version this world cannot run earns "upgrade and
+  retry". Squire offered to co-sign. Blacksmith's `enableEncumbranceGuard` mitigates it meanwhile.
+
 ### RELEASE / COMPATIBILITY
 
 - [x] **CHORE — DONE.** `module.json` now declares `"compatibility": { "minimum": "13.12.2" }` on the Blacksmith requirement, so Foundry refuses to enable Squire against a Blacksmith too old to serve it. (The original driver, codex link resolution needing `api.compendiums` 13.8.4+, has since left for Librarian — but Squire's window, dialog, pin-free menubar and inventory usage set a higher floor anyway.)
@@ -135,6 +161,11 @@
 - [ ] **BUG (Medium — other repo: coffee-pub-blacksmith)** `ui-journal-encounter.js:378` reads the bare `JournalSheet` global (`Object.values(ui.windows).find(w => w instanceof JournalSheet && ...)`). Deprecated since v13, **removed in v15** — it becomes a hard `ReferenceError` inside a hook that fires on every journal-page write, which Squire triggers constantly (imports, pin flags). Needs `foundry.appv1.sheets.JournalSheet`, and `ui.windows` on the same line is also v13-deprecated in favour of `foundry.applications.instances`.
 
 ## LOW PRIORITY
+
+- [ ] **Manage which statuses the handle shows.** The handle renders every active effect on the actor
+  (`manager-handle.js`, the `effects:` map). Add a way to filter which ones appear — conditions only
+  vs all effects, hide passive item effects, or a per-condition toggle. `showHandleConditions` is
+  all-or-nothing and does not cover this.
 
 ## Architecture & Code Quality
 
