@@ -93,6 +93,10 @@
     actually on real sheets.
 
 - [ ] **PHASE 2 FOLLOW-UPS**, deliberately not built yet — wait for the blocked list on real sheets:
+  - **`system.identified` and `system.container` still split a group.** Equipped was relaxed on the
+    reasoning that a stack can be equipped and the merged state can be resolved safely. The same
+    argument may hold for those two and was deliberately not extended to them in the same pass —
+    wait for real sheets to say whether it matters.
   - **Partial groups are not reported.** If three copies split into a mergeable pair and one loner,
     the pair merges and the loner is silently not mentioned. Correct, but possibly confusing.
   - **Only one level of undo.** The snapshot flag holds the last merge; a second merge overwrites it.

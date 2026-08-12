@@ -14,8 +14,8 @@ import { MODULE } from './const.js';
  * Same name is not the same item. Phase 1 exists so that identity can be an
  * equality check on `_stats.compendiumSource` rather than a guess — but a
  * shared source is necessary, not sufficient. Two copies from one compendium
- * entry can still be different things: one equipped and one not, one in a bag
- * and one loose, one identified and one not, one with a GM's edits.
+ * entry can still be different things: one in a bag and one loose, one
+ * identified and one not, one with a GM's edits.
  *
  * So the rule here is not a list of fields to compare. It is: **serialise both
  * copies, ignore the handful of properties that are per-instance bookkeeping,
@@ -82,7 +82,6 @@ const IGNORED_ROOT = ['_id', 'sort', 'folder', 'ownership', '_stats', 'flags'];
 const SPLIT_REASONS = [
     { path: 'name', text: 'they have been renamed differently' },
     { path: 'system.container', text: 'they are in different containers' },
-    { path: 'system.equipped', text: 'one copy is equipped and another is not' },
     { path: 'system.identified', text: 'one copy is unidentified' },
     { path: 'system.attuned', text: 'one copy is attuned' },
     { path: 'system.rarity', text: 'their rarity differs' },
@@ -96,11 +95,27 @@ const SPLIT_REASONS = [
  * `system.quantity` is excluded because it is the thing being summed. Effect
  * ids and origins are excluded because they are generated per embedded copy and
  * would make two otherwise identical items look different.
+ *
+ * `system.equipped` is excluded because a stack can be equipped — a handful of
+ * throwing daggers is one row, carried and thrown as one row. It is the only
+ * field the fingerprint deliberately looks past, and it costs a rule to do it:
+ * the merged row has to be given an equipped state, and there is no answer that
+ * preserves both copies. So the state is resolved rather than compared —
+ * equipped always wins, below. `false` winning would silently unequip somebody's
+ * weapon, which is a far worse trade than losing "one of these was a spare",
+ * a distinction a single row cannot express anyway.
+ *
+ * Nothing else is relaxed this way. Attuned items and items carrying active
+ * effects are refused outright, which is what keeps this carve-out narrow: the
+ * cases where being equipped actually does something are already excluded.
  */
 function mergeFingerprint(item) {
     const data = item.toObject();
     for (const key of IGNORED_ROOT) delete data[key];
-    if (data.system) delete data.system.quantity;
+    if (data.system) {
+        delete data.system.quantity;
+        delete data.system.equipped;
+    }
     data.effects = (data.effects ?? []).map(effect => {
         const copy = foundry.utils.deepClone(effect);
         delete copy._id;
@@ -194,6 +209,7 @@ export function scanDuplicates(actor) {
             // survives matters only for the remapping.
             const survivor = cluster.find(item => favourites.has(item.id)) ?? cluster[0];
             const losers = cluster.filter(item => item !== survivor);
+            const equipped = cluster.some(item => item.system?.equipped);
 
             result.groups.push({
                 id: survivor.id,
@@ -203,6 +219,10 @@ export function scanDuplicates(actor) {
                 totalQuantity: cluster.reduce((sum, item) => sum + (Number(item.system?.quantity) || 0), 0),
                 quantities: cluster.map(item => Number(item.system?.quantity) || 0),
                 favourited: cluster.some(item => favourites.has(item.id)),
+                // Surfaced in the plan, because it is the one thing a merge
+                // decides rather than preserves.
+                equipped,
+                mixedEquipped: equipped && cluster.some(item => !item.system?.equipped),
                 survivorId: survivor.id,
                 loserIds: losers.map(item => item.id),
                 // Flattened here rather than joined in the template: a dataset
@@ -346,7 +366,11 @@ export async function applyMerges(actor, groups = []) {
 
         const total = [survivor, ...losers]
             .reduce((sum, item) => sum + (Number(item.system?.quantity) || 0), 0);
-        updates.push({ _id: survivor.id, 'system.quantity': total });
+        const update = { _id: survivor.id, 'system.quantity': total };
+        // Equipped wins, whichever copy happened to be the survivor. See the
+        // fingerprint note: the alternative unequips somebody mid-session.
+        if ([survivor, ...losers].some(item => item.system?.equipped)) update['system.equipped'] = true;
+        updates.push(update);
         for (const loser of losers) {
             deletes.push(loser.id);
             remap.set(loser.id, survivor.id);

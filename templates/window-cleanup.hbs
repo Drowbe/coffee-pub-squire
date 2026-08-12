@@ -247,7 +247,10 @@
                 <img class="squire-tool-row-img" src="{{this.img}}" alt="">
                 <div class="squire-tool-row-copy">
                     <strong>{{this.name}}</strong>
-                    <span>{{this.stacks}} rows &rarr; 1{{#if this.favourited}} · favourited{{/if}}</span>
+                    {{!-- The equipped note is not decoration: it is the one thing a
+                          merge decides rather than preserves, so it is said before
+                          Apply rather than discovered after. --}}
+                    <span>{{this.stacks}} rows &rarr; 1{{#if this.favourited}} · favourited{{/if}}{{#if this.equipped}} · {{#if this.mixedEquipped}}will stay equipped{{else}}equipped{{/if}}{{/if}}</span>
                 </div>
                 <span class="squire-cleanup-aside">qty {{this.totalQuantity}}</span>
             </label>

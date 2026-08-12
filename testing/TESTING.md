@@ -222,8 +222,11 @@ says so; check that it does.
       on the dnd5e character sheet. Then undo, and the favourite is still right.
 - [ ] Favourite one copy and confirm it is the one that survives (the plan row
       says "favourited").
-- [ ] Equip one of three copies: it is NOT merged with the other two, and the
-      pair that remains identical still is.
+- [ ] **Equipped daggers.** Equip one of three identical daggers: all three DO
+      merge, the plan row says "will stay equipped", and the surviving stack is
+      equipped afterwards. It must never come out unequipped.
+- [ ] Merge three copies where NONE is equipped: the result is unequipped, and
+      the plan row says nothing about equipping.
 - [ ] Put one copy in a bag: listed under "Duplicates left alone" with "they are
       in different containers".
 - [ ] Edit one copy's description: listed as blocked with "their descriptions
