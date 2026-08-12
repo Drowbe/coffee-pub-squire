@@ -15,7 +15,13 @@
 
 
 
+/* Shared tool-window components first: Transfer and Cleanup both consume the
+   .squire-tool-* vocabulary, so it has to be defined before they override it. */
+@import "window-tool-shared.css";
+
 @import "window-transfer-tool.css";
+
+@import "window-cleanup.css";
 
 
 
@@ -34,6 +40,7 @@
 @import "panel-character-summary.css";
 
 @import "panel-favorites.css"; 
+@import "panel-inventory.css";
 
 @import "panel-spells.css"; 
 

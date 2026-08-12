@@ -8,6 +8,9 @@
 | v14/v15 readiness: migrate remaining V1 Dialog call sites to Blacksmith `api.dialog` | High | M | Done (13.3.19) |
 | Blacksmith (other repo): `JournalSheet` global is a hard break in v15 (`ui-journal-encounter.js:378`) | Medium | S | Open |
 | Blacksmith (other repo): pin renderer leaks elements — `unplace()` GM path and `delete()` unplaced path never call `PinRenderer.removePin()` | Medium | S | Open |
+| Blacksmith (other repo): `api.inventory` has no `requestGM` escape, so every write fails for a non-owner | Medium | S | Open |
+| Blacksmith (other repo): promote the shared tool-window row/section components out of Squire and Curator | Medium | M | Open |
+| Cleanup phase 2: merge duplicate stacks — needs favourite/container reference remapping | Medium | L | Open |
 | Watch: AC/movement re-render branch went live in 13.3.14 (was dead) — real cost in combat | High | S | Open |
 | `PanelManager`: static-vs-instance state is unresolved; it's what let `element` go unassigned | Medium | M | Open |
 | Code cleanup: remove legacy fix code | Low | M | Open |
@@ -64,6 +67,56 @@
 - **Lesson for the base-panel work**: a declared-but-never-assigned field fails *silently* here, because both things that consume it (`render(el)` and `if (el)`) no-op on `null`. Worth an assert or a guard when panel lifecycle gets refactored — this bug was invisible for as long as it existed.
 
 - [ ] **REFACTOR (Medium, M)** `PanelManager` keeps its state static (`element`, `currentActor`, `instance`, `viewMode`) while also being instantiated and carrying instance fields. That unresolved "singleton or object?" ambiguity is exactly what let `element` be declared on the instance and only ever assigned on the class. The getter bridges the two spellings; it does not settle the question. Settle it as part of **Modularize `manager-panel.js`** — pick one home for tray state and delete the other.
+
+### CHARACTER SHEET CLEANUP
+
+- [ ] **ASK (other repo: coffee-pub-blacksmith)** `api.inventory` writes to actors directly and
+  has no GM-routing escape, so every call fails for a non-owner. Their `api.pins` already solves
+  exactly this with `pins.requestGM('create', ...)`, so the pattern exists in their own codebase.
+  With `requestGM` on inventory, Squire would not need permission checks at all — only the
+  approval *experience*, which is Squire's by charter. It blocks two things:
+  - Player-to-player currency transfer. Today `transferCurrency` needs ownership of BOTH actors,
+    so it works for a GM, or for a player moving coins between their own characters, and not
+    otherwise.
+  - Cleanup phase 2, which deletes and re-creates items on an actor the runner may not own.
+
+- [ ] **PHASE 2 — merge duplicate stacks.** What phase 1 was groundwork for. Design settled in
+  discussion; recorded so it is not re-litigated:
+  - **"Duplicate" is the hard part, not "merge".** Same name is not the same item. Blockers:
+    `system.identified` (merging an unidentified item into an identified stack spoils a mystery,
+    irreversibly), `system.uses` (a wand with 3 charges and one with 7 become what?), attunement,
+    equipped state, `system.container` (two torches in different bags are not one stack),
+    attached ActiveEffects, and a differing `_stats.compendiumSource`. **Containers must never
+    merge** — each has contents, and merging orphans a bagful.
+  - **Merging deletes documents, and every reference to the loser breaks with it.** Favourites
+    are the immediate casualty: `favoritePanel` holds item ids and `system.favorites` holds
+    `.Item.<id>`, so a naive merge silently unfavourites a merged item — undoing the sync we just
+    built. The cleanup must **remap** references to the survivor, not just delete. Same for
+    container children (`system.container` points at the container id) and effect `origin`s.
+  - **"Prefer the compendium version" is a separate, more dangerous feature.** Merging quantities
+    is arithmetic; swapping the survivor for a compendium copy is a re-import that discards every
+    GM customisation on that item. Opt-in, separately, possibly never.
+  - **Snapshot before writing.** Proven on the codex migration: stash the pre-merge item data in
+    a flag and offer one revert.
+  - Phase 1 already backfills `_stats.compendiumSource`, which is what turns identity from a
+    guess by name into an equality check.
+
+### SHARED TOOL-WINDOW COMPONENTS
+
+- [ ] **ASK (other repo: coffee-pub-blacksmith)** The row-and-section vocabulary every tool window
+  needs now exists three times: Curator's Loot window, Squire's `styles/window-tool-shared.css`,
+  and — partially — Blacksmith's own `styles/window-list.css`. Squire's copy matches Loot's
+  measurements by hand, which is the interim step, not the answer: two files that agree today
+  because somebody copied numbers will disagree the first time either is touched.
+  - `.blacksmith-list` already covers the plain row (`-row`, `-row-img`, `-row-main`, `-row-title`,
+    `-row-meta`, `-row-action`, `.is-active`) and `.blacksmith-entity` covers the selectable row.
+    What is missing is the **section** — the bordered box with an uppercase accent heading, an
+    optional count pill, and a head-actions slot — plus the **height chain** that lets a capped,
+    resizable tool window scroll instead of growing, and a **drawn checkbox** so multi-select rows
+    stop inheriting Foundry's theming of bare inputs.
+  - Also missing: `-note` / `-banner` copy styles, the coin strip, and the totals rule. Those are
+    less obviously general, and the coin strip in particular may belong to whoever owns currency.
+  - Once it lands, Squire's `window-tool-shared.css` should shrink to nothing and be deleted.
 
 ### RELEASE / COMPATIBILITY
 

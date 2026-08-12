@@ -1,5 +1,11 @@
-<div class="squire-transfer-tool-content">
-    <section class="squire-transfer-section squire-transfer-subject">
+{{!-- Item / currency transfer, and the GM approval of one.
+
+     Sections, rows, and counts are the shared `.squire-tool-*` components from
+     styles/window-tool-shared.css — the same ones the Cleanup window uses.
+     Only the subject card is specific to this window. --}}
+
+<div class="squire-tool-content squire-transfer-tool-content">
+    <section class="squire-tool-section squire-transfer-subject">
         <div class="squire-transfer-subject-image">
             <img src="{{subjectImg}}" alt="">
         </div>
@@ -19,33 +25,53 @@
     </section>
 
     {{#if quantityHtml}}
-        <section class="squire-transfer-section">
-            <h3><i class="fa-solid fa-layer-group"></i> Quantity</h3>
+        <section class="squire-tool-section">
+            <h3><span><i class="fa-solid fa-layer-group"></i> Quantity</span></h3>
             {{{quantityHtml}}}
         </section>
     {{/if}}
 
     {{#if isApproval}}
-        <section class="squire-transfer-section squire-transfer-request-summary">
-            <h3><i class="fa-solid fa-right-left"></i> Request</h3>
-            <p><strong>{{sourceName}}</strong> wants to give <strong>{{requestedQuantity}} × {{subjectName}}</strong> to <strong>{{fixedRecipient.name}}</strong>.</p>
+        <section class="squire-tool-section">
+            <h3><span><i class="fa-solid fa-right-left"></i> Request</span></h3>
+            <p class="squire-tool-note">
+                <strong>{{sourceName}}</strong> wants to give
+                <strong>{{requestedQuantity}} &times; {{subjectName}}</strong> to
+                <strong>{{fixedRecipient.name}}</strong>.
+            </p>
         </section>
     {{/if}}
 
-    <section class="squire-transfer-section squire-transfer-recipient">
-        {{#unless groupedRecipients}}
-        <h3><i class="fa-solid fa-user-check"></i> Recipient</h3>
-        {{/unless}}
-        {{#if fixedRecipient}}
-            <div class="squire-transfer-fixed-recipient">
-                <img src="{{fixedRecipient.img}}" alt="">
-                <div>
+    {{#if fixedRecipient}}
+        <section class="squire-tool-section">
+            <h3><span><i class="fa-solid fa-user-check"></i> Recipient</span></h3>
+            <div class="squire-tool-row">
+                <img class="squire-tool-row-img" src="{{fixedRecipient.img}}" alt="">
+                <div class="squire-tool-row-copy">
                     <strong>{{fixedRecipient.name}}</strong>
                     <span>{{fixedRecipient.type}}</span>
                 </div>
             </div>
-        {{else}}
-            {{{entityListHtml}}}
+        </section>
+    {{else}}
+        {{!-- Party and NPCs each get their own section, the way Items and
+              Currency do in the Loot window. They are two lists sharing one
+              radio name, so the choice is still one recipient overall. --}}
+        {{#each recipientGroups}}
+            <section class="squire-tool-section squire-transfer-recipient">
+                <h3>
+                    <span><i class="{{this.icon}}"></i> {{this.label}}</span>
+                    <span class="squire-tool-count">{{this.count}}</span>
+                </h3>
+                {{{this.html}}}
+            </section>
+        {{/each}}
+
+        {{#if noRecipients}}
+            <section class="squire-tool-section">
+                <h3><span><i class="fa-solid fa-user-slash"></i> Recipient</span></h3>
+                <div class="squire-tool-empty">No eligible characters are on this scene.</div>
+            </section>
         {{/if}}
-    </section>
+    {{/if}}
 </div>

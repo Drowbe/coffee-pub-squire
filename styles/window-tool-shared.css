@@ -1,0 +1,297 @@
+/* ==========================================================================
+   SHARED TOOL-WINDOW COMPONENTS
+
+   One vocabulary for every Squire tool window — Transfer, Cleanup, and
+   whatever comes next. Before this file each window invented its own section,
+   row, and badge, so the same idea ("a clickable row with a picture, a name,
+   and something on the right") had two implementations that drifted apart in
+   padding, radius, and type size.
+
+   The numbers deliberately match Curator's Loot window, which is the house
+   reference for this shape. Matching it by hand is the interim step: the
+   component really belongs in Blacksmith next to `.blacksmith-list` so every
+   module gets it, and that ask is recorded in documents/TODO.md.
+
+   Every colour is a `--blacksmith-tool-*` token. Blacksmith re-declares that
+   set per theme on the window root, so consuming the tokens is what makes a
+   window work in light, dark, and glass — no theme-specific selectors here.
+
+   ITALICS: body copy is upright. Italics are for a word, not a paragraph;
+   a window set mostly in italic is measurably harder to read.
+   ========================================================================== */
+
+/* --- The height chain ---------------------------------------------------
+   A capped, resizable window only scrolls if every ancestor between the
+   clamped frame and the scrolling body is allowed to shrink. Miss one and the
+   body grows past the cap instead of scrolling, which is how a tool window
+   ends up as tall as the screen. */
+.squire-tool-window .window-content { min-height: 0; overflow: hidden; }
+.squire-tool-window .blacksmith-window-tool-root { min-height: 0; max-height: 100%; }
+.squire-tool-window .blacksmith-window-tool-body { min-height: 0; overflow: auto; }
+
+.squire-tool-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding: 0 8px 8px;
+    color: var(--blacksmith-tool-text);
+}
+
+/* --- Section ------------------------------------------------------------ */
+.squire-tool-section {
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-radius: 6px;
+    background: var(--blacksmith-tool-surface-raised);
+}
+
+.squire-tool-section > h3 {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 7px;
+    padding: 0 0 6px;
+    border: none;
+    border-bottom: 1px solid var(--blacksmith-tool-divider);
+    color: var(--blacksmith-tool-accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.squire-tool-section > h3 i { width: 18px; text-align: center; }
+.squire-tool-section > h3 > span { display: inline-flex; gap: 4px; align-items: center; min-width: 0; }
+
+.squire-tool-head-actions { display: flex; gap: 6px; align-items: center; }
+
+/* A count, not a control: pill-shaped and muted so it cannot be mistaken for
+   a button the way a bordered rectangle can. */
+.squire-tool-count {
+    min-width: 20px;
+    padding: 1px 7px;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-radius: 999px;
+    background: var(--blacksmith-tool-surface-sunken);
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-align: center;
+}
+
+/* --- Copy --------------------------------------------------------------- */
+.squire-tool-note {
+    margin: 0 0 7px;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.74rem;
+    line-height: 1.45;
+}
+
+.squire-tool-note:last-child { margin-bottom: 0; }
+.squire-tool-note strong { color: var(--blacksmith-tool-text); font-weight: 600; }
+
+/* Leading explanation for a whole window. The accent rule on the left marks it
+   as orientation rather than as one more row of data. */
+.squire-tool-banner {
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+    padding: 8px 10px;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-left: 3px solid var(--blacksmith-tool-accent);
+    border-radius: 5px;
+    background: var(--blacksmith-tool-surface-sunken);
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.76rem;
+    line-height: 1.45;
+}
+
+.squire-tool-banner i { margin-top: 2px; color: var(--blacksmith-tool-accent); }
+.squire-tool-banner strong { color: var(--blacksmith-tool-text); font-weight: 600; }
+.squire-tool-banner p { margin: 0 0 5px; }
+.squire-tool-banner p:last-child { margin-bottom: 0; }
+
+.squire-tool-empty {
+    padding: 8px 3px;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.76rem;
+    text-align: center;
+}
+
+/* --- Row ---------------------------------------------------------------- */
+.squire-tool-list { display: flex; flex-direction: column; gap: 4px; }
+
+.squire-tool-row {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+    padding: 5px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: var(--blacksmith-tool-surface-sunken);
+}
+
+.squire-tool-row:hover {
+    border-color: var(--blacksmith-tool-divider);
+    background: var(--blacksmith-tool-surface-hover);
+}
+
+.squire-tool-row-img {
+    display: block;
+    width: 38px !important;
+    height: 38px !important;
+    max-width: 38px !important;
+    object-fit: cover;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-radius: 4px;
+}
+
+.squire-tool-row-copy { min-width: 0; }
+
+.squire-tool-row-copy strong,
+.squire-tool-row-copy span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.squire-tool-row-copy strong { font-size: 0.82rem; font-weight: 600; }
+.squire-tool-row-copy span { margin-top: 1px; color: var(--blacksmith-tool-text-muted); font-size: 0.66rem; }
+
+.squire-tool-row-actions { display: flex; gap: 4px; align-items: center; }
+.squire-tool-row-actions > button { min-width: 0; min-height: 28px; margin: 0; padding: 2px 7px; font-size: 0.7rem; white-space: nowrap; }
+
+/* --- Selectable row -----------------------------------------------------
+   A `<label>` wrapping a native checkbox, so the whole row is the hit target
+   and the tick stays reachable by keyboard. Selection is drawn from
+   `:has(input:checked)` rather than a JS-applied class — the same approach as
+   Blacksmith's `.blacksmith-entity`, and for the same reason: a class can
+   drift out of step with the input, a `:has()` cannot. */
+.squire-tool-row-select {
+    grid-template-columns: 16px 38px minmax(0, 1fr) auto;
+    cursor: pointer;
+}
+
+.squire-tool-row-select:has(input:checked) {
+    border-color: var(--blacksmith-tool-accent);
+    background: var(--blacksmith-tool-surface-hover);
+}
+
+.squire-tool-row-select:focus-within {
+    outline: 2px solid var(--blacksmith-tool-accent);
+    outline-offset: 1px;
+}
+
+/* Drawn here rather than left native. Foundry themes bare inputs, so an
+   unstyled checkbox changes size and colour with the Foundry theme while the
+   row around it follows the Blacksmith tool theme — the two never agree. */
+.squire-tool-check {
+    position: relative;
+    display: grid !important;
+    flex: 0 0 16px;
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    place-items: center;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    border: 1px solid var(--blacksmith-tool-border) !important;
+    border-radius: 4px;
+    background: var(--blacksmith-tool-surface-raised) !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.squire-tool-check:hover { border-color: var(--blacksmith-tool-accent) !important; }
+
+.squire-tool-check:checked {
+    border-color: var(--blacksmith-tool-accent) !important;
+    background: var(--blacksmith-tool-accent) !important;
+}
+
+/* The tick: a rotated corner rather than a glyph font, so it cannot go missing
+   when Font Awesome is scoped out of a window. */
+.squire-tool-check::after {
+    content: "";
+    width: 8px;
+    height: 4px;
+    border: 2px solid var(--blacksmith-tool-surface-raised);
+    border-top: 0;
+    border-right: 0;
+    opacity: 0;
+    transform: translateY(-1px) rotate(-45deg);
+}
+
+.squire-tool-check:checked::after { opacity: 1; }
+.squire-tool-check:focus-visible { outline: 2px solid var(--blacksmith-tool-accent); outline-offset: 2px; }
+
+/* --- Inline flag --------------------------------------------------------
+   Marks a row as needing a look. No border and no background, precisely so it
+   does not read as a button the way a bordered pill does. */
+.squire-tool-flag {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    /* The status tokens are single fixed colours, not per-theme ones —
+       --blacksmith-status-warning is #aa6000, which vanishes against the dark
+       theme's surfaces. Mixing toward the theme's own text keeps the warning
+       cast while guaranteeing it stays legible in light, dark, and glass. */
+    color: color-mix(in srgb, var(--blacksmith-status-warning, #aa6000) 62%, var(--blacksmith-tool-text));
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+/* --- Coins -------------------------------------------------------------- */
+.squire-tool-coins { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+.squire-tool-coin {
+    display: inline-flex;
+    gap: 4px;
+    align-items: baseline;
+    padding: 3px 8px;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-radius: 4px;
+    background: var(--blacksmith-tool-surface-sunken);
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.squire-tool-coin small { color: var(--blacksmith-tool-text-muted); font-size: 0.62rem; text-transform: uppercase; }
+.squire-tool-coin-was { opacity: 0.55; }
+.squire-tool-coin-is { border-color: var(--blacksmith-tool-accent); }
+.squire-tool-arrow { color: var(--blacksmith-tool-text-muted); font-size: 0.7rem; }
+
+/* The claim "same money, fewer coins" is only checkable if the money is on
+   screen, so the total is part of the component rather than an optional extra. */
+.squire-tool-total {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 7px;
+    padding-top: 6px;
+    border-top: 1px solid var(--blacksmith-tool-divider);
+    font-size: 0.76rem;
+}
+
+.squire-tool-total > span { color: var(--blacksmith-tool-text-muted); }
+.squire-tool-total > strong { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+@media (max-width: 430px) {
+    .squire-tool-row { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 6px; }
+    .squire-tool-row-select { grid-template-columns: 16px 34px minmax(0, 1fr) auto; }
+    .squire-tool-row-img { width: 34px !important; height: 34px !important; max-width: 34px !important; }
+}

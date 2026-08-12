@@ -84,17 +84,24 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
     static DEFAULT_OPTIONS = foundry.utils.mergeObject(
         foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}),
         {
-            classes: ['squire-transfer-tool-window'],
-            position: { width: 440, height: 'auto' },
+            // squire-tool-window carries the shared height chain; without it the
+            // body cannot scroll and the window grows to fill the screen instead.
+            classes: ['squire-tool-window', 'squire-transfer-tool-window'],
+            // An explicit height rather than auto: a resizable window needs a
+            // height it can be dragged from, and auto plus a max-height lets the
+            // cap silently refuse the drag. A crowded scene would otherwise open
+            // a recipient list as tall as the monitor.
+            position: { width: 460, height: 540 },
             window: {
                 title: 'Transfer',
-                resizable: false,
+                resizable: true,
                 minimizable: true
             },
             windowSizeConstraints: {
-                minWidth: 360,
-                maxWidth: 560,
-                maxHeight: 'calc(100vh - 16px)'
+                minWidth: 380,
+                minHeight: 300,
+                maxWidth: 700,
+                maxHeight: 'calc(100vh - 80px)'
             },
             toolTitlebar: 'full',
             rememberPosition: false,
@@ -146,14 +153,42 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
             throw new Error('Coffee Pub Squire | Blacksmith entityList and quantitySplit APIs are required');
         }
 
+        // Party and NPCs are built as two lists rather than one list with
+        // internal group headings, so each gets a real section of its own —
+        // the same separation the Loot window gives Items and Currency.
+        //
+        // They share one `inputName`, which is what keeps the choice single:
+        // radios group by name across the whole document, so ticking an NPC
+        // clears the party selection. Each list only knows its own entities,
+        // so a list whose row is not the checked one reports no selection and
+        // `recipient` takes the first list that has one.
+        this.recipientLists = [];
         if (!this.targetActor && this.mode !== 'approval') {
-            this.entityList = blacksmith.entityList.create({
-                entities: actorRecipients(this.sourceActor),
-                mode: 'single',
-                inputName: `${this.id}-recipient`,
-                emptyMessage: 'No eligible characters are on this scene.',
-                onSelectionChange: () => this._syncSubmitState()
-            });
+            const inputName = `${this.id}-recipient`;
+            const recipients = actorRecipients(this.sourceActor);
+            const groups = [
+                { key: 'party', label: 'Party', icon: 'fa-solid fa-users' },
+                { key: 'npcs', label: 'NPCs', icon: 'fa-solid fa-masks-theater' }
+            ];
+
+            for (const group of groups) {
+                const entities = recipients.filter(entity => entity.group === group.label);
+                if (!entities.length) continue;
+                this.recipientLists.push({
+                    ...group,
+                    count: entities.length,
+                    list: blacksmith.entityList.create({
+                        // `group` is dropped on the way in: the list emits a
+                        // heading wherever a group starts, and every row in this
+                        // list shares one group, so it would print a second
+                        // heading directly under the section heading.
+                        entities: entities.map(({ group: _group, ...entity }) => entity),
+                        mode: 'single',
+                        inputName,
+                        onSelectionChange: () => this._syncSubmitState()
+                    })
+                });
+            }
         }
 
         const maxQuantity = this.mode === 'currency'
@@ -182,7 +217,11 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
 
     get recipient() {
         if (this.targetActor) return { actor: this.targetActor };
-        return this.entityList?.getSelection?.()[0]?.metadata || null;
+        for (const group of this.recipientLists ?? []) {
+            const selected = group.list?.getSelection?.()[0]?.metadata;
+            if (selected) return selected;
+        }
+        return null;
     }
 
     get canSubmit() {
@@ -209,11 +248,15 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
             sourceName: this.sourceActor?.name || game.user?.name || '',
             fixedRecipient,
             requestedQuantity: this.requestedQuantity,
-            entityListHtml: this.entityList?.html || '',
-            // The actor list supplies its own Party / NPCs headings; the
-            // generic "Recipient" one above them would be a third header
-            // saying less than either.
-            groupedRecipients: !!this.entityList && !this.targetActor,
+            recipientGroups: (this.recipientLists ?? []).map(group => ({
+                label: group.label,
+                icon: group.icon,
+                count: group.count,
+                html: group.list?.html || ''
+            })),
+            // Nobody eligible is on the scene: said once, rather than repeated
+            // as an empty state inside each of two sections.
+            noRecipients: !this.targetActor && this.mode !== 'approval' && !(this.recipientLists ?? []).length,
             quantityHtml: this.quantitySplit?.html || ''
         });
 
@@ -235,7 +278,9 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
 
     _onRender(context, options) {
         super._onRender?.(context, options);
-        this.entityList?.attach?.(this.element);
+        // Attached to the window root rather than to each section: the lists
+        // share one input name, so either root sees every radio in the group.
+        for (const group of this.recipientLists ?? []) group.list?.attach?.(this.element);
         this.quantitySplit?.attach?.(this.element);
         this._syncSubmitState();
     }
@@ -280,7 +325,7 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
     }
 
     _onClose(options) {
-        this.entityList?.destroy?.();
+        for (const group of this.recipientLists ?? []) group.list?.destroy?.();
         this.quantitySplit?.destroy?.();
         this._notifyClosed();
         super._onClose?.(options);

@@ -180,12 +180,20 @@ and only on a character. Nothing here creates or deletes anything.
 
 - [ ] As a player: no broom. As GM on an NPC: no broom. As GM on a character: broom.
 - [ ] Give a character messy coins (say 1247 cp, 30 sp) and open it: the plan shows
-      the before struck through and the after highlighted, and says the total value
-      is unchanged.
+      a NOW strip and an AFTER strip, and the total value stated once, identical
+      before and after.
+- [ ] A denomination that does not change must look the same in both strips — only
+      the ones that actually move are marked. This was the bug: every denomination
+      used to look like it was changing.
 - [ ] Apply, then check the sheet: same total value, fewest coins. Compare against
       the sheet's own Convert Currency button — they should agree exactly.
-- [ ] Items list: exact matches pre-ticked, looser matches shown dimmed and
-      unticked with their match type.
+- [ ] Links section leads with the rows whose compendium entry has a *different*
+      name, under a heading that says so; they arrive unticked. The exact-name
+      matches follow, ticked. There are no EXACT / STARTSWITH tags anywhere.
+- [ ] Each row names the compendium the way the sidebar does ("D&D Player's
+      Handbook · Feats"), never a pack id.
+- [ ] "No compendium match" shows a denominator (*30 of 47*) and a breakdown by
+      item type.
 - [ ] Untick everything and Apply: it says nothing is selected and writes nothing.
 - [ ] Untick *some* links and Apply: only the ticked ones gain a source.
 - [ ] Reopen after applying: the window says the character is tidy.
@@ -193,4 +201,30 @@ and only on a character. Nothing here creates or deletes anything.
       and is NOT re-written, even if its name would resolve elsewhere.
 - [ ] Homebrew items with no compendium match are listed as unmatched and left alone.
 - [ ] Open cleanup twice in quick succession: one window, not two.
+
+### Tool window presentation (Cleanup and Transfer)
+
+Both windows now draw from the same shared components, so check them together —
+a difference between them is the bug.
+
+- [ ] Sections, row height, thumbnail size, corner radius, and heading type are
+      identical in both windows, and match Curator's Loot window.
+- [ ] Both windows are **resizable** by dragging a corner.
+- [ ] On a character with a lot of unlinked items, Cleanup opens at a sensible
+      height and **scrolls** — it must never open as tall as the screen, and it must
+      never be draggable taller than roughly the viewport.
+- [ ] Same for Transfer on a crowded scene with many tokens.
+- [ ] No paragraph anywhere is set in italics.
+- [ ] Cleanup's checkboxes are square, theme-coloured, and the same size in every
+      row; ticking one also lights the whole row. Switch the Foundry theme — they
+      must not change size or colour with it.
+- [ ] Switch the Blacksmith tool theme through light, dark, and glass. Every window
+      stays readable, including the orange "different name" flag and the red
+      "Not applied" heading.
+- [ ] Transfer shows **Party** and **NPCs** as two separate bordered sections, each
+      with its own count, not as headings inside one box.
+- [ ] Selecting a party member then an NPC leaves exactly one selected — the choice
+      is single across both sections.
+- [ ] A section with nobody in it does not render at all; if there is nobody at all,
+      one "No eligible characters are on this scene." appears rather than two.
 

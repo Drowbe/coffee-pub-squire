@@ -87,6 +87,18 @@ for d, _, fs in os.walk('styles'):
             if not os.path.exists(os.path.normpath(os.path.join(d, spec))):
                 fail.append('CSS @import %s -> %s' % (pth, spec))
 
+# 5b. every stylesheet on disk is actually reachable from default.css
+#     A rule in an unimported file is dead and silent: the selectors are valid,
+#     the file parses, nothing warns, and the styling simply never appears.
+imported = set()
+for spec in re.findall(r"@import\s+(?:url\()?['\"]([^'\"]+)['\"]", io.open('styles/default.css', encoding='utf-8').read()):
+    imported.add(os.path.basename(spec))
+for f in sorted(os.listdir('styles')):
+    if not f.endswith('.css') or f == 'default.css':
+        continue
+    if f not in imported:
+        fail.append('ORPHAN styles/%s is never imported by default.css' % f)
+
 # 6. any module-absolute asset referenced from a script or template
 SKIP_DIRS = ('.git', 'node_modules', '_backups', '.vscode')
 for d, _, fs in os.walk('.'):

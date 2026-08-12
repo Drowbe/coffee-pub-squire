@@ -1,0 +1,85 @@
+/* ==========================================================================
+   CLEANUP WINDOW
+
+   Only what is specific to this window. Sections, rows, checkboxes, coins, and
+   totals all come from styles/window-tool-shared.css, which the Transfer
+   window uses too — see the note at the top of that file for why they are
+   shared rather than reinvented per window.
+   ========================================================================== */
+
+/* The currency row has no thumbnail, so it drops the image column and lets the
+   two coin strips stack in the space instead. */
+.squire-cleanup-currency-row {
+    grid-template-columns: 16px minmax(0, 1fr);
+    align-items: start;
+    padding: 7px;
+    cursor: default;
+}
+
+.squire-cleanup-currency-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.squire-cleanup-coins-label {
+    min-width: 42px;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* A heading for a run of rows inside a section. Quieter than the section
+   heading above it, and upright — this is the sentence that explains why the
+   rows below are ticked or not, so it has to be easy to read. */
+.squire-cleanup-subhead {
+    display: flex;
+    gap: 7px;
+    align-items: baseline;
+    margin: 10px 0 6px;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.72rem;
+    line-height: 1.4;
+}
+
+.squire-cleanup-subhead i { color: var(--blacksmith-tool-accent); }
+.squire-cleanup-subhead-warn i { color: color-mix(in srgb, var(--blacksmith-status-warning, #aa6000) 62%, var(--blacksmith-tool-text)); }
+
+/* Right-hand column on a settled row: information, deliberately without a
+   border or a fill so it cannot be mistaken for something clickable. */
+.squire-cleanup-aside {
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.66rem;
+    white-space: nowrap;
+}
+
+.squire-cleanup-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.72rem;
+}
+
+.squire-cleanup-breakdown strong {
+    color: var(--blacksmith-tool-text);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+/* Same mixing as the warning flag: --blacksmith-status-danger is #8b0000 and
+   is unreadable against the dark theme on its own. */
+.squire-cleanup-failed > h3,
+.squire-cleanup-failed > h3 > span > i {
+    color: color-mix(in srgb, var(--blacksmith-status-danger, #8b0000) 58%, var(--blacksmith-tool-text));
+}
+
+.squire-cleanup-quiet { padding: 0 2px; }
+
+.squire-cleanup-coins-after { margin-top: 2px; }

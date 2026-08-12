@@ -36,13 +36,20 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
     static DEFAULT_OPTIONS = foundry.utils.mergeObject(
         foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}),
         {
-            classes: ['squire-cleanup-window'],
-            position: { width: 520, height: 'auto' },
-            window: { title: 'Cleanup', resizable: false, minimizable: true },
+            // squire-tool-window carries the shared height chain; without it the
+            // body cannot scroll and the window grows to fill the screen instead.
+            classes: ['squire-tool-window', 'squire-cleanup-window'],
+            // An explicit height rather than auto: a resizable window needs a
+            // height it can be dragged from, and auto plus a max-height lets the
+            // cap silently refuse the drag. A sheet with forty unlinked items
+            // would otherwise open as tall as the monitor.
+            position: { width: 560, height: 620 },
+            window: { title: 'Cleanup', resizable: true, minimizable: true },
             windowSizeConstraints: {
                 minWidth: 420,
-                maxWidth: 680,
-                maxHeight: 'calc(100vh - 16px)'
+                minHeight: 320,
+                maxWidth: 820,
+                maxHeight: 'calc(100vh - 80px)'
             },
             toolTitlebar: 'full',
             rememberPosition: false,
@@ -101,12 +108,33 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
             busy: this._busy
         });
 
-        return { appId: this.id, bodyContent };
+        // Buttons live in the tool footer, not in bodyContent. That is where the
+        // base renders them, and Blacksmith's own button classes are theme-aware
+        // — the same reason the body consumes tool tokens rather than colours.
+        const done = Boolean(this.result) || !this._hasWork();
+
+        return {
+            appId: this.id,
+            bodyContent,
+            showToolFooter: true,
+            toolFooterRight: done
+                ? `
+                    <button type="button" class="blacksmith-window-btn-primary" data-action="cancel">
+                        <i class="fa-solid fa-check"></i> Close
+                    </button>`
+                : `
+                    <button type="button" class="blacksmith-window-btn-secondary" data-action="cancel">
+                        <i class="fa-solid fa-xmark"></i> Cancel
+                    </button>
+                    <button type="button" class="blacksmith-window-btn-primary" data-action="apply" ${this._busy ? 'disabled' : ''}>
+                        <i class="fa-solid fa-broom"></i> ${this._busy ? 'Working…' : 'Apply'}
+                    </button>`
+        };
     }
 
     _hasWork() {
         if (!this.scan) return false;
-        return Boolean(this.scan.currency?.changed) || this.scan.links.candidates.length > 0;
+        return Boolean(this.scan.currency?.changed) || this.scan.candidateCount > 0;
     }
 
     /** What the GM has left ticked. */
@@ -144,11 +172,17 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
 
             // The window becomes the receipt. A toast alone would be the only
             // record of a bulk write, and it disappears.
+            // The receipt reuses the scan's own coin strips and total, so what
+            // it reports is literally the plan that was shown, not a second
+            // calculation that could disagree with it.
+            const currency = this.scan?.currency ?? null;
             this.result = {
                 currency: applied.currency,
-                currencyBefore: this.scan?.currency?.before ?? null,
-                currencyAfter: this.scan?.currency?.after ?? null,
-                denominations: this.scan?.currency?.denominations ?? [],
+                beforeCoins: currency?.beforeCoins ?? [],
+                afterCoins: currency?.afterCoins ?? [],
+                coinCountBefore: currency?.coinCountBefore ?? 0,
+                coinCountAfter: currency?.coinCountAfter ?? 0,
+                totalLabel: currency?.totalLabel ?? '',
                 linked: applied.linked,
                 failed: applied.failed
             };

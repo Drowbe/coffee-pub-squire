@@ -16,20 +16,36 @@ import { MODULE } from './const.js';
  * to a deleted id breaks with it — including favourites, which Squire and the
  * character sheet now share.
  *
- * ## Why backfilling links comes first
+ * ## Why backfilling links is the point, not the warm-up
  *
- * It looks like the least interesting step and it is the one that makes phase 2
- * possible. Deciding whether two items called "Torch" are the same thing is
- * guesswork by name; with a compendium source on each it is an equality check.
- * Doing it now also means the guessing happens once, under a GM's eye, rather
- * than silently inside a merge.
+ * An item with no `compendiumSource` is an orphan. It is a copy of something,
+ * with no record of what it is a copy of, so nothing downstream can ever
+ * reason about it:
+ *
+ *   - **It cannot be repaired.** If the world item it was dragged from is
+ *     edited, renamed, or deleted, the copy silently keeps whatever it had at
+ *     the moment it was dragged — including a broken activity or a stale
+ *     formula from an older system version. With a source recorded, Squire can
+ *     later offer to refresh it from the compendium and the item survives the
+ *     world changing underneath it.
+ *   - **It cannot be identified.** Deciding whether two items called "Torch"
+ *     are the same thing is guesswork by name; with a source on each it is an
+ *     equality check. That is what phase 2 needs.
+ *
+ * The linking itself is a guess — a name lookup — so it happens once, in front
+ * of a GM who can veto each row, rather than silently inside some later
+ * operation that depends on it.
  *
  * ## What is deliberately NOT done
  *
  * Nothing is written to an item that already has a `compendiumSource`. A wrong
  * source is worse than a missing one — it would make two unrelated items look
- * identical to phase 2 — so an existing value is always left alone, even when
- * the resolver is confident it knows better.
+ * identical to phase 2, and would aim any future refresh at the wrong entry —
+ * so an existing value is always left alone, even when the resolver is
+ * confident it knows better.
+ *
+ * And nothing is replaced today. Recording where an item came from is the
+ * prerequisite for upgrading it later; it is not the upgrade.
  */
 
 /** Only these item types are worth linking; the rest are character-specific. */
@@ -50,13 +66,47 @@ export function getCompendiumSource(item) {
 }
 
 /**
+ * A pack id is not a name anybody chose. `dnd-players-handbook.feats` is the
+ * key; "D&D Player's Handbook · Feats" is what the GM sees in the sidebar, and
+ * it is the only form that lets them judge whether the match came from a book
+ * they trust.
+ */
+function packLabel(packId) {
+    if (!packId) return '';
+    if (packId === 'world') return 'This world';
+
+    const pack = game.packs?.get(packId);
+    if (!pack) return packId;
+
+    const label = pack.metadata?.label ?? packId;
+    const packageName = pack.metadata?.packageName;
+
+    let owner = null;
+    if (pack.metadata?.packageType === 'world') owner = game.world?.title;
+    else if (packageName === game.system?.id) owner = game.system?.title;
+    else owner = game.modules?.get(packageName)?.title ?? null;
+
+    return owner && owner !== label ? `${owner} · ${label}` : label;
+}
+
+/** dnd5e's own label for an item type, so the wording matches the sheet. */
+function typeLabel(type) {
+    const key = CONFIG.Item?.typeLabels?.[type];
+    return key ? game.i18n.localize(key) : type;
+}
+
+/**
  * What consolidating this actor's coins would do.
  *
  * Reports rather than acts, so the window can show the before and after and the
  * GM can decline. The arithmetic is dnd5e's — this mirrors it for the preview
  * only, and the actual write goes through the system.
  *
- * @returns {{changed: boolean, before: object, after: object, denominations: Array}|null}
+ * Reports the total as well as the split. "Same value, fewer coins" is a claim,
+ * and a claim the GM cannot check at a glance is worth nothing; the total is
+ * what makes it checkable. It also reports which denominations actually move,
+ * because rendering every denomination in a before/after strip made unchanged
+ * ones look like they were changing too.
  */
 export function scanCurrency(actor) {
     const currency = actor?.system?.currency;
@@ -68,12 +118,13 @@ export function scanCurrency(actor) {
     if (!currencies.length) return null;
 
     const smallest = currencies.at(-1)[1].conversion;
-    let amount = currencies.reduce(
+    const totalSmallest = currencies.reduce(
         (total, [denomination, config]) =>
             total + ((Number(currency[denomination]) || 0) * (smallest / config.conversion)),
         0
     );
 
+    let amount = totalSmallest;
     const after = {};
     for (const [denomination, config] of currencies) {
         const ratio = smallest / config.conversion;
@@ -86,16 +137,34 @@ export function scanCurrency(actor) {
 
     const changed = currencies.some(([d]) => before[d] !== after[d]);
 
+    const denominations = currencies.map(([denomination, config]) => ({
+        key: denomination,
+        label: game.i18n.localize(config.abbreviation ?? denomination),
+        before: before[denomination],
+        after: after[denomination],
+        moved: before[denomination] !== after[denomination]
+    }));
+
+    // Expressed in the standard denomination (gp in stock dnd5e) rather than in
+    // the smallest, because that is the unit people hold prices in.
+    const standard = currencies.find(([, config]) => config.conversion === 1) ?? currencies.at(-1);
+    const totalValue = totalSmallest * standard[1].conversion / smallest;
+
+    const countCoins = source => currencies.reduce((sum, [d]) => sum + (source[d] || 0), 0);
+
     return {
         changed,
         before,
         after,
-        denominations: currencies.map(([denomination, config]) => ({
-            key: denomination,
-            label: game.i18n.localize(config.abbreviation ?? denomination),
-            before: before[denomination],
-            after: after[denomination]
-        }))
+        denominations,
+        // Only the denominations that hold something, so a row of zeroes does
+        // not pad out the strip.
+        beforeCoins: denominations.filter(d => d.before > 0),
+        afterCoins: denominations.filter(d => d.after > 0),
+        coinCountBefore: countCoins(before),
+        coinCountAfter: countCoins(after),
+        totalValue,
+        totalLabel: `${totalValue.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${game.i18n.localize(standard[1].abbreviation ?? standard[0])}`
     };
 }
 
@@ -107,14 +176,24 @@ export function scanCurrency(actor) {
  * configured, so Squire is not inventing a second opinion about which
  * compendium wins.
  *
- * Results carry the resolver's own confidence. Only exact matches are proposed
- * ticked — a `startsWith` hit on "Potion of Healing" against "Potion of Healing
- * (Greater)" is exactly the kind of thing that should need a human.
+ * The results are split by whether they need a human, not by the resolver's
+ * internal tier names. `exact` and `startsWith` are the resolver's vocabulary;
+ * putting them on screen as tags made the GM learn an implementation detail in
+ * order to read their own sheet. What they need to know is only ever "this one
+ * is safe" or "look at this one before you accept it".
  *
- * @returns {Promise<{candidates: Array, alreadyLinked: number, unmatched: Array, skipped: number}>}
+ * @returns {Promise<object>}
  */
 export async function scanCompendiumLinks(actor) {
-    const result = { candidates: [], alreadyLinked: 0, unmatched: [], skipped: 0 };
+    const result = {
+        review: [],
+        ready: [],
+        alreadyLinked: 0,
+        unmatched: [],
+        unmatchedByType: [],
+        skipped: 0,
+        considered: 0
+    };
 
     const compendiums = getBlacksmith()?.compendiums;
     if (!compendiums?.resolveMany) return result;
@@ -122,6 +201,7 @@ export async function scanCompendiumLinks(actor) {
     const needsLink = [];
     for (const item of actor?.items ?? []) {
         if (!LINKABLE_TYPES.has(item.type)) { result.skipped++; continue; }
+        result.considered++;
         // An existing source is never second-guessed: a wrong link is worse
         // than none, because phase 2 would treat it as identity.
         if (getCompendiumSource(item)) { result.alreadyLinked++; continue; }
@@ -158,33 +238,57 @@ export async function scanCompendiumLinks(actor) {
                 result.unmatched.push({ id: item.id, name: item.name, type: item.type });
                 return;
             }
-            result.candidates.push({
+
+            const exact = match.matchType === 'exact';
+            result[exact ? 'ready' : 'review'].push({
                 id: item.id,
                 name: item.name,
                 type: item.type,
+                typeLabel: typeLabel(item.type),
                 img: item.img,
                 uuid: match.uuid,
                 matchedName: match.matchedName ?? match.name,
-                source: match.source ?? '',
-                matchType: match.matchType ?? 'unknown',
-                confidence: match.confidence ?? 'low',
+                sourceLabel: packLabel(match.packId ?? match.source),
+                // Said in the GM's terms, not the resolver's. The only thing
+                // that matters is whether the two names are actually the same.
+                reason: exact ? '' : 'Different name',
                 // Exact matches are safe to propose; anything looser is shown
                 // but left for the GM to tick.
-                selected: match.matchType === 'exact'
+                selected: exact
             });
         });
     }
+
+    const byName = (a, b) => a.name.localeCompare(b.name);
+    result.review.sort(byName);
+    result.ready.sort(byName);
+    result.unmatched.sort(byName);
+
+    // A bare "30 items could not be found" is unreadable: 30 out of what, and
+    // is that a problem? The breakdown answers both, because seeing that they
+    // are class features and species traits is what makes it obviously fine.
+    const counts = new Map();
+    for (const item of result.unmatched) {
+        counts.set(item.type, (counts.get(item.type) ?? 0) + 1);
+    }
+    result.unmatchedByType = [...counts.entries()]
+        .map(([type, count]) => ({ type, label: typeLabel(type), count }))
+        .sort((a, b) => b.count - a.count);
 
     return result;
 }
 
 /** Everything phase 1 would do to this actor. */
 export async function scanActor(actor) {
+    const links = await scanCompendiumLinks(actor);
     return {
         actorId: actor?.id ?? null,
         actorName: actor?.name ?? '',
         currency: scanCurrency(actor),
-        links: await scanCompendiumLinks(actor)
+        links,
+        // Precomputed for the template: Handlebars has no arithmetic, and the
+        // counts are needed as denominators in several places.
+        candidateCount: links.ready.length + links.review.length
     };
 }
 

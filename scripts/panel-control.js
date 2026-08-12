@@ -389,14 +389,27 @@ export class ControlPanel {
      * The cleanup launcher. Separate from the mode toggles it sits beside: those
      * switch what the panel shows, this opens a window that writes to the sheet.
      */
-    _activateCleanupListener(nativeHtml) {
-        const button = nativeHtml.querySelector('.control-cleanup');
-        if (!button) return;
+    /**
+     * The cleanup launcher.
+     *
+     * DELEGATED to the panel's stable container rather than bound to the icon,
+     * and bound once per container. The control panel replaces its own innerHTML
+     * on every render, so a listener attached to the icon dies with the node the
+     * next time anything re-renders the panel — which is what made this button
+     * silently do nothing. The handle solved the same problem the same way.
+     */
+    _activateCleanupListener(container) {
+        if (!container || container.dataset.cleanupBound === 'true') return;
+        container.dataset.cleanupBound = 'true';
 
-        button.addEventListener('click', async (event) => {
+        container.addEventListener('click', async (event) => {
+            const button = event.target.closest('.control-cleanup');
+            if (!button) return;
+
             event.preventDefault();
             event.stopPropagation();
             if (!this.actor) return;
+
             try {
                 // Dynamic, like every other Squire tool window. window-cleanup.js
                 // resolves BlacksmithToolWindowBaseV2 at module scope, and a static
@@ -420,7 +433,9 @@ export class ControlPanel {
         const controlPanel = html.querySelector('[data-panel="control"]');
         if (!controlPanel) return;
 
-        this._activateCleanupListener(controlPanel);
+        // The tray root, not the panel: the panel's innerHTML is replaced on
+        // every render, the root is not.
+        this._activateCleanupListener(html);
 
         // Control toggle buttons
         const toggleButtons = controlPanel.querySelectorAll('.control-toggle');

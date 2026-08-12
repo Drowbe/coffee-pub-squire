@@ -1,41 +1,20 @@
-.squire-transfer-tool-window .blacksmith-window-tool-body {
-    min-height: 0;
-    overflow: auto;
-}
+/* ==========================================================================
+   TRANSFER WINDOW
 
-.squire-transfer-tool-content {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-width: 0;
-    padding: 8px;
-}
+   Only what is specific to this window. The content wrapper, sections,
+   headings, rows, counts, and empty state all come from
+   styles/window-tool-shared.css, which the Cleanup window uses too.
+   ========================================================================== */
 
-.squire-transfer-section {
-    min-width: 0;
-    padding: 8px;
-    border: 1px solid var(--blacksmith-tool-divider);
-    border-radius: 5px;
-    background: var(--blacksmith-tool-surface-raised);
-}
-
-.squire-transfer-section > h3 {
-    margin: 0 0 7px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid var(--blacksmith-tool-divider);
-    color: var(--blacksmith-tool-accent);
-    font-size: 0.85rem;
-    text-transform: uppercase;
-}
-
+/* The subject of the transfer: bigger than a list row, because it is the one
+   thing the window is about rather than one of several choices. */
 .squire-transfer-subject {
     display: flex;
-    align-items: center;
     gap: 10px;
+    align-items: center;
 }
 
-.squire-transfer-subject-image,
-.squire-transfer-fixed-recipient > img {
+.squire-transfer-subject-image {
     width: 48px;
     height: 48px;
     flex: 0 0 48px;
@@ -44,21 +23,19 @@
     border-radius: 4px;
 }
 
-.squire-transfer-subject-image img,
-.squire-transfer-fixed-recipient > img {
+.squire-transfer-subject-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.squire-transfer-subject-copy {
-    min-width: 0;
-}
+.squire-transfer-subject-copy { min-width: 0; }
 
 .squire-transfer-kicker {
     color: var(--blacksmith-tool-accent);
     font-size: 0.68rem;
     font-weight: 700;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
 }
 
@@ -73,60 +50,13 @@
 .squire-transfer-description {
     margin-top: 2px;
     color: var(--blacksmith-tool-text-muted);
-    font-size: 0.78rem;
+    font-size: 0.74rem;
 }
 
-.squire-transfer-fixed-recipient {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 5px;
-    border: 1px solid var(--blacksmith-tool-divider);
-    border-radius: 4px;
-}
-
-.squire-transfer-fixed-recipient > img {
-    width: 40px;
-    height: 40px;
-    flex-basis: 40px;
-}
-
-.squire-transfer-fixed-recipient strong,
-.squire-transfer-fixed-recipient span {
-    display: block;
-}
-
-.squire-transfer-fixed-recipient span {
-    margin-top: 2px;
-    color: var(--blacksmith-tool-text-muted);
-    font-size: 0.72rem;
-}
-
-.squire-transfer-tool-window.squire-transfer-busy {
-    cursor: progress;
-}
+/* In-flight feedback while the transfer is running. */
+.squire-transfer-tool-window.squire-transfer-busy { cursor: progress; }
 
 .squire-transfer-tool-window.squire-transfer-busy .blacksmith-window-tool-body {
     pointer-events: none;
     opacity: 0.72;
-}
-
-/* Group headings inside the recipient list are section headings for this
-   window, so they match `.squire-transfer-section > h3` rather than the
-   entity list's quieter default — the list no longer has a heading of its
-   own above them. */
-.squire-transfer-recipient .blacksmith-entity-group {
-    margin: 12px 0 7px;
-    padding: 0 0 5px;
-    border: none;
-    border-bottom: 1px solid var(--blacksmith-tool-divider);
-    color: var(--blacksmith-tool-accent);
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: normal;
-    text-transform: uppercase;
-}
-
-.squire-transfer-recipient .blacksmith-entity-group:first-child {
-    margin-top: 0;
 }
