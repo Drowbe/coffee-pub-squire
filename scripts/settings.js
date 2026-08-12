@@ -481,6 +481,15 @@ export const registerSettings = function() {
         default: true
     });
 
+    game.settings.register(MODULE.ID, 'cleanupPlayerRequests', {
+        name: 'Players Can Request Cleanup',
+        hint: 'Let players run the character sheet cleanup on characters they own. They never write to their own sheet: applying sends the plan to the GM as an approval window, and the GM decides row by row.',
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
     game.settings.register(MODULE.ID, 'statblockShowWarnings', {
         name: 'Show Statblock Warnings',
         hint: 'Display a clickable warning badge on NPC weapons and spells that cannot be used as configured. GM only. Player characters are covered by Inventory Warnings instead.',

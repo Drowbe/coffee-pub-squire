@@ -257,6 +257,35 @@ re-scans and offers what the linking just unlocked, in the same visit.
 - [ ] Items with **no** compendium source are never merge candidates, however
       identical they look.
 
+### Cleanup as a player request
+
+Needs two clients. **Players Can Request Cleanup** must be on.
+
+- [ ] As a player, the broom appears on a character you own, and NOT on one you
+      do not — select another player's token and check.
+- [ ] Turn the setting off: the broom is gone for players, still there for the GM.
+- [ ] As a player, the primary button reads **Request Approval**, not Apply, and the
+      banner says nothing is written by you.
+- [ ] The backup warning ("there is no undo") does NOT appear for a player — they
+      are not the one applying — and the undo section never appears for them.
+- [ ] Send with some rows unticked. The GM's popup opens showing **only** the
+      ticked rows. The unticked ones must not be there at all.
+- [ ] **Everything in the GM's popup arrives ticked**, including rows from the
+      "check these" list — the player already made that call, and the GM is
+      confirming it. A row arriving unticked means the ticked state is being
+      inferred from which list it is in rather than read from the request.
+- [ ] The GM's popup names the requester and says nothing has been applied.
+- [ ] Approve: the changes land on the character, and the player gets a toast
+      naming what happened.
+- [ ] Deny: nothing changes, and the player gets a declined toast.
+- [ ] Close the GM popup with the X instead of answering: the player still gets
+      the declined toast rather than waiting forever.
+- [ ] The GM unticks a row before approving: that row is not applied, everything
+      else is.
+- [ ] Send a request with no GM online: the player is told, and nothing is sent.
+- [ ] A GM can have their own cleanup window AND a player's request for the same
+      character open at once — they are separate windows.
+
 ### Tool window presentation (Cleanup and Transfer)
 
 Both windows now draw from the same shared components, so check them together —

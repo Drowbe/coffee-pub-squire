@@ -13,7 +13,7 @@
 
 <div class="squire-tool-content squire-cleanup">
 
-{{#if snapshot}}
+{{#if canRevert}}{{#if snapshot}}
     {{!-- Offered on every state, not just the receipt. The moment somebody
           wants a merge back is rarely the moment they finished it. --}}
     <section class="squire-tool-section squire-cleanup-undo">
@@ -32,6 +32,21 @@
             </button>
         </div>
     </section>
+{{/if}}{{/if}}
+
+{{#if isApproval}}
+    {{!-- The GM is answering a question, not making a plan. Said first, because
+          everything below looks exactly like their own cleanup window and the
+          only difference that matters is whose idea it was. --}}
+    <div class="squire-tool-banner">
+        <i class="fa-solid fa-user-check"></i>
+        <div>
+            <p><strong>{{requesterName}}</strong> is asking to tidy <strong>{{actorName}}</strong>.
+               Nothing below has been applied.</p>
+            <p>Only what they asked for is shown. Untick anything you would rather they did not do,
+               then Approve — or Deny to apply none of it.</p>
+        </div>
+    </div>
 {{/if}}
 
 {{#if result}}
@@ -128,16 +143,22 @@
                    items are linked to the compendium entry they came from.</p>
             {{/if}}
             <p>Untick anything you would rather leave alone.</p>
+            {{#if needsApproval}}
+                <p><strong>Nothing here is written by you.</strong> Sending passes this plan to your GM,
+                   who sees these same rows and decides.</p>
+            {{/if}}
             {{!-- Phase 1 cannot lose anything, but it also cannot be undone: the
                   coin split is not recoverable from the total, and a written
                   source is not distinguishable afterwards from one that was
                   always there. Saying "safe" without saying "one-way" is the
                   half of the truth that gets someone burned. --}}
+            {{#unless needsApproval}}
             <p class="squire-cleanup-backup">
                 <i class="fa-solid fa-triangle-exclamation"></i>
                 <span>There is no undo. If you want a way back, duplicate the actor — or right-click it in
                       the sidebar and Export Data — before applying.</span>
             </p>
+            {{/unless}}
         </div>
     </div>
 
@@ -148,7 +169,8 @@
             <span class="squire-tool-count">{{scan.currency.coinCountBefore}} &rarr; {{scan.currency.coinCountAfter}}</span>
         </h3>
         <label class="squire-tool-row squire-tool-row-select squire-cleanup-currency-row">
-            <input type="checkbox" class="squire-tool-check-input" data-cleanup="currency" checked>
+            <input type="checkbox" class="squire-tool-check-input" data-cleanup="currency"
+                   {{#if scan.currency.selected}}checked{{/if}}>
             <span class="squire-tool-check" aria-hidden="true"></span>
             <div class="squire-cleanup-currency-body">
                 <div class="squire-tool-coins">
@@ -199,8 +221,14 @@
             <div class="squire-tool-list">
                 {{#each scan.links.review}}
                 <label class="squire-tool-row squire-tool-row-select">
+                    {{!-- Ticked state comes from the scan, never from the list a row
+                          happens to be in. On the GM's own plan the scan leaves these
+                          unticked; on an approval it has already marked what the
+                          player chose, and hardcoding either one here would throw
+                          that away. --}}
                     <input type="checkbox" class="squire-tool-check-input" data-cleanup="link"
-                           data-item-id="{{this.id}}" data-uuid="{{this.uuid}}">
+                           data-item-id="{{this.id}}" data-uuid="{{this.uuid}}"
+                           {{#if this.selected}}checked{{/if}}>
                     <span class="squire-tool-check" aria-hidden="true"></span>
                     <img class="squire-tool-row-img" src="{{this.img}}" alt="">
                     <div class="squire-tool-row-copy">
@@ -222,7 +250,8 @@
                 {{#each scan.links.ready}}
                 <label class="squire-tool-row squire-tool-row-select">
                     <input type="checkbox" class="squire-tool-check-input" data-cleanup="link"
-                           data-item-id="{{this.id}}" data-uuid="{{this.uuid}}" checked>
+                           data-item-id="{{this.id}}" data-uuid="{{this.uuid}}"
+                           {{#if this.selected}}checked{{/if}}>
                     <span class="squire-tool-check" aria-hidden="true"></span>
                     <img class="squire-tool-row-img" src="{{this.img}}" alt="">
                     <div class="squire-tool-row-copy">
@@ -256,7 +285,8 @@
             {{#each scan.duplicates.groups}}
             <label class="squire-tool-row squire-tool-row-select">
                 <input type="checkbox" class="squire-tool-check-input" data-cleanup="merge"
-                       data-survivor-id="{{this.survivorId}}" data-loser-ids="{{this.loserIdsCsv}}" checked>
+                       data-survivor-id="{{this.survivorId}}" data-loser-ids="{{this.loserIdsCsv}}"
+                       {{#if this.selected}}checked{{/if}}>
                 <span class="squire-tool-check" aria-hidden="true"></span>
                 <img class="squire-tool-row-img" src="{{this.img}}" alt="">
                 <div class="squire-tool-row-copy">
@@ -331,6 +361,16 @@
     {{/if}}
 {{/if}}
 
+
+{{#if requestEmpty}}
+    <section class="squire-tool-section">
+        <h3><span><i class="fa-solid fa-circle-question"></i> Nothing left to apply</span></h3>
+        <p class="squire-tool-note">
+            None of what {{requesterName}} asked for still applies to {{actorName}} — the sheet has
+            changed since they sent it, or those items resolve differently here. Nothing has been done.
+        </p>
+    </section>
+{{/if}}
 
 {{#if isTidy}}
     {{!-- ================= NOTHING TO DO ================= --}}

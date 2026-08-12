@@ -155,6 +155,10 @@ export function scanCurrency(actor) {
 
     return {
         changed,
+        // Whether the row arrives ticked, kept separate from whether there is
+        // anything to do. Every tickable row in this window carries its own
+        // state so the template never has to infer one from which list it is in.
+        selected: changed,
         before,
         after,
         denominations,

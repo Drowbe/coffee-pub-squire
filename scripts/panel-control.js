@@ -31,9 +31,19 @@ export class ControlPanel {
                 ? 'Search Compendiums to Add Items'
                 : 'Search Compendiums',
             clearOnAdd: game.settings.get(MODULE.ID, 'compendiumClearOnAdd'),
-            // GM-only for now. Cleanup writes to the sheet, and the same button
-            // grows into merging duplicates in phase 2, which deletes items.
-            canCleanup: game.user.isGM && this.actor?.type === 'character'
+            // Owners, not just GMs. A player never writes to their own sheet
+            // here: applying sends the plan to the GM as an approval window, and
+            // the GM decides. `isOwner` rather than a player check, because the
+            // tray follows canvas selection and a player who can select another
+            // character's token must not be able to propose changes to it.
+            // A player's click asks; a GM's click does. The tooltip has to say
+            // which, or the same icon promises two different things.
+            cleanupTooltip: game.user.isGM
+                ? 'Clean up this sheet — consolidate coins, link items to their compendium entry, and merge duplicates'
+                : 'Tidy this sheet — consolidate coins, link items, and merge duplicates. Sends the plan to your GM to approve.',
+            canCleanup: this.actor?.type === 'character'
+                && this.actor?.isOwner
+                && (game.user.isGM || game.settings.get(MODULE.ID, 'cleanupPlayerRequests'))
         };
 
         const content = await renderTemplate(TEMPLATES.PANEL_CONTROL, templateData);

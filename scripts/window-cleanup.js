@@ -61,7 +61,8 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
     static ACTION_HANDLERS = {
         cancel: (_event, _target, win) => win.close(),
         apply: (_event, _target, win) => win.apply(),
-        revert: (_event, _target, win) => win.revert()
+        revert: (_event, _target, win) => win.revert(),
+        deny: (_event, _target, win) => win.deny()
     };
 
     /**
@@ -76,18 +77,44 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
 
     constructor(actor, options = {}) {
         const opts = foundry.utils.mergeObject({}, options);
-        opts.id = `${MODULE.ID}-cleanup-${actor.id}`;
+        const request = opts.request ?? null;
+        delete opts.request;
+        // A GM may be looking at their own cleanup for this actor and a player's
+        // request for it at the same time; they are different windows.
+        opts.id = request
+            ? `${MODULE.ID}-cleanup-request-${actor.id}-${request.requesterId}`
+            : `${MODULE.ID}-cleanup-${actor.id}`;
         super(opts);
 
         this.actor = actor;
+        this.request = request;
         this.scan = null;
         this.result = null;
         this._busy = false;
+        this._answered = false;
 
-        CleanupWindow.open.set(actor.id, this);
+        if (!request) CleanupWindow.open.set(actor.id, this);
+    }
+
+    /** Reviewing somebody else's proposal rather than making one. */
+    get isApproval() {
+        return Boolean(this.request);
+    }
+
+    /**
+     * A player proposing rather than writing.
+     *
+     * The same reasoning as the ammunition request: Foundry would allow it —
+     * they own the character and could do every one of these edits by hand — but
+     * consolidating coins, rewriting item provenance and deleting rows in one
+     * click is a table decision, not a permissions one.
+     */
+    get needsApproval() {
+        return !game.user.isGM && !this.isApproval;
     }
 
     get title() {
+        if (this.isApproval) return `Cleanup request: ${this.actor?.name ?? ''}`;
         return `Cleanup: ${this.actor?.name ?? ''}`;
     }
 
@@ -101,7 +128,14 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
         // Scanned once, then held. Re-scanning on every render would fight the
         // ticks the GM has just set; `apply()` clears it deliberately so the
         // next render picks up what the writes just made possible.
-        if (!this.scan) this.scan = await scanActor(this.actor);
+        if (!this.scan) {
+            this.scan = await scanActor(this.actor);
+            // An approval shows the request, not the GM's own idea of what this
+            // sheet needs. Everything the player did not ask for is dropped, so
+            // the question stays "do I allow this?" rather than becoming a
+            // second cleanup the GM has to re-read.
+            if (this.isApproval) this._narrowToRequest();
+        }
 
         const bodyContent = await renderTemplate(CLEANUP_TEMPLATE, {
             actorName: this.actor?.name ?? '',
@@ -111,7 +145,19 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
             // A receipt can carry a fresh plan underneath it — linking items is
             // what reveals which of them are duplicates — so "nothing to do
             // here" is its own state rather than the absence of a result.
-            isTidy: !this.result && !this._hasWork(),
+            isTidy: !this.result && !this._hasWork() && !this.isApproval,
+            // The request resolved to nothing on this side. Rare, but reachable:
+            // the sheet may have moved on, or the GM's compendium access may
+            // resolve an item differently than the player's did. "This actor is
+            // tidy" would be the wrong thing to say about somebody else's ask.
+            requestEmpty: this.isApproval && !this.result && !this._hasWork(),
+            isApproval: this.isApproval,
+            needsApproval: this.needsApproval,
+            // The undo writes to the actor, so it stays with the GM. Inside an
+            // approval it would also be answering a different question than the
+            // one on screen.
+            canRevert: game.user.isGM && !this.isApproval,
+            requesterName: this.request?.requesterName ?? '',
             busy: this._busy,
             // Read at render time rather than carried on the scan: the receipt
             // clears the scan, and that is exactly the moment an undo is most
@@ -126,6 +172,8 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
         // applied: after the first pass there is usually a second one to offer,
         // and closing the window would be the wrong default.
         const done = !this._hasWork();
+        const label = this.needsApproval ? 'Request Approval' : 'Apply';
+        const icon = this.needsApproval ? 'fa-paper-plane' : 'fa-broom';
 
         return {
             appId: this.id,
@@ -137,11 +185,13 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
                         <i class="fa-solid fa-check"></i> Close
                     </button>`
                 : `
-                    <button type="button" class="blacksmith-window-btn-secondary" data-action="cancel">
-                        <i class="fa-solid ${this.result ? 'fa-check' : 'fa-xmark'}"></i> ${this.result ? 'Close' : 'Cancel'}
+                    <button type="button" class="blacksmith-window-btn-secondary" data-action="${this.isApproval ? 'deny' : 'cancel'}">
+                        <i class="fa-solid ${this.isApproval ? 'fa-ban' : (this.result ? 'fa-check' : 'fa-xmark')}"></i>
+                        ${this.isApproval ? 'Deny' : (this.result ? 'Close' : 'Cancel')}
                     </button>
                     <button type="button" class="blacksmith-window-btn-primary" data-action="apply" ${this._busy ? 'disabled' : ''}>
-                        <i class="fa-solid fa-broom"></i> ${this._busy ? 'Working…' : 'Apply'}
+                        <i class="fa-solid ${this.isApproval ? 'fa-check' : icon}"></i>
+                        ${this._busy ? 'Working…' : (this.isApproval ? 'Approve' : label)}
                     </button>`
         };
     }
@@ -179,12 +229,115 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
         return { currency, linkItemIds, linkUuids, merges };
     }
 
+    /**
+     * Keep only what the request asked for.
+     *
+     * Filtering rather than merely unticking: an approval that also shows the
+     * rows the player declined invites the GM to accept things nobody asked
+     * for, which turns "approve this request" into "do a cleanup" — and the
+     * player would have no idea it happened.
+     */
+    _narrowToRequest() {
+        const wanted = new Set(this.request?.linkItemIds ?? []);
+        const merges = new Set((this.request?.merges ?? []).map(group => group.survivorId));
+
+        if (!this.request?.currency && this.scan.currency) this.scan.currency.changed = false;
+
+        this.scan.links.ready = this.scan.links.ready.filter(row => wanted.has(row.id));
+        this.scan.links.review = this.scan.links.review.filter(row => wanted.has(row.id));
+        // Review rows arrive ticked here, unlike on the player's own plan. The
+        // player already made that judgement; the GM is confirming it, and an
+        // unticked row would read as rejected before they had even looked.
+        for (const row of this.scan.links.review) row.selected = true;
+        this.scan.candidateCount = this.scan.links.ready.length + this.scan.links.review.length;
+
+        this.scan.duplicates.groups = this.scan.duplicates.groups
+            .filter(group => merges.has(group.survivorId));
+        // Not part of the question being asked.
+        this.scan.duplicates.blocked = [];
+        this.scan.links.unmatched = [];
+        this.scan.mergeNeedsRescan = false;
+    }
+
+    /** Hand the plan to a GM instead of writing it. */
+    async _sendForApproval(plan) {
+        const socket = game.modules.get(MODULE.ID)?.socket;
+        if (!socket) {
+            ui.notifications.error('Socketlib is not ready. Please wait for Foundry to finish loading, then try again.');
+            return;
+        }
+
+        if (!game.users.some(user => user.isGM && user.active)) {
+            showSquireToast('No GM is online', {
+                subtitle: 'Cleanup needs GM approval.',
+                icon: 'fa-solid fa-triangle-exclamation',
+                color: '#e05c3c'
+            });
+            return;
+        }
+
+        this._busy = true;
+        await this.render(false);
+        try {
+            // The actor's UUID, not its id: a token actor on a scene is not
+            // reachable through game.actors.get(). A Map does not survive a
+            // socket, so the uuid lookup travels as pairs.
+            await socket.executeAsGM('requestCleanupApproval', {
+                actorUuid: this.actor.uuid,
+                actorName: this.actor.name,
+                requesterId: game.user.id,
+                requesterName: game.user.name,
+                currency: plan.currency,
+                linkItemIds: plan.linkItemIds,
+                linkUuids: [...plan.linkUuids.entries()],
+                merges: plan.merges
+            });
+            showSquireToast('Sent to the GM', {
+                subtitle: 'Waiting for approval.',
+                icon: 'fa-solid fa-hourglass-half',
+                stackKey: `squire-cleanup-request-${this.actor.id}`
+            });
+            await this.close();
+        } catch (error) {
+            console.error(`${MODULE.ID}: cleanup request failed:`, error);
+            ui.notifications.error('The cleanup request could not be sent. See the console for details.');
+        } finally {
+            this._busy = false;
+        }
+    }
+
+    /** Tell the requester what happened. Never throws into the caller. */
+    async _notifyRequester(approved, summary = '') {
+        if (!this.isApproval || this._answered) return;
+        this._answered = true;
+        try {
+            await game.modules.get(MODULE.ID)?.socket?.executeAsUser(
+                'cleanupRequestResolved',
+                this.request.requesterId,
+                { approved, actorName: this.actor?.name ?? '', summary }
+            );
+        } catch (error) {
+            console.error(`${MODULE.ID}: could not notify the requester:`, error);
+        }
+    }
+
+    /** The GM says no. */
+    async deny() {
+        await this._notifyRequester(false);
+        await this.close();
+    }
+
     async apply() {
         if (this._busy) return;
 
         const plan = this._collectPlan();
         if (!plan.currency && !plan.linkItemIds.length && !plan.merges.length) {
             showSquireToast('Nothing selected.', { icon: 'fa-solid fa-circle-info' });
+            return;
+        }
+
+        if (this.needsApproval) {
+            await this._sendForApproval(plan);
             return;
         }
 
@@ -212,6 +365,16 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
                 removed: applied.removed,
                 failed: applied.failed
             };
+            if (this.isApproval) {
+                const parts = [];
+                if (applied.currency) parts.push('coins consolidated');
+                if (applied.linked) parts.push(`${applied.linked} linked`);
+                if (applied.merged) parts.push(`${applied.merged} merged`);
+                await this._notifyRequester(true, parts.join(', '));
+                await this.close();
+                return;
+            }
+
             // Re-scanned rather than cleared. Writing the source links is what
             // lets duplicates be recognised at all, so the work this pass just
             // unlocked is offered here instead of behind a close and reopen.
@@ -255,12 +418,43 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
     }
 
     _onClose(options) {
+        // Closing an approval without answering is a refusal. The player is
+        // waiting either way, and silence is the one outcome that helps nobody.
+        if (this.isApproval && !this._answered) this._notifyRequester(false);
+
         // Identity-checked: a rebuild may already have replaced this entry.
         if (CleanupWindow.open.get(this.actor?.id) === this) {
             CleanupWindow.open.delete(this.actor.id);
         }
         super._onClose?.(options);
     }
+}
+
+/**
+ * GM side: review a player's request.
+ *
+ * The same window, deliberately. The GM should be looking at exactly what the
+ * player looked at, with the same rows and the same wording, rather than at a
+ * summary that could quietly disagree with it.
+ */
+export async function openCleanupApproval(request) {
+    const actor = await fromUuid(request?.actorUuid);
+    if (!actor) {
+        ui.notifications.warn(`Squire: ${request?.actorName ?? 'that character'} could not be found, so the cleanup request was dropped.`);
+        return null;
+    }
+
+    // The request may have outlived the ownership that justified it — a
+    // character reassigned between the send and the answer.
+    const requester = game.users.get(request.requesterId);
+    if (requester && !actor.testUserPermission(requester, 'OWNER')) {
+        ui.notifications.warn(`Squire: ${request.requesterName} no longer owns ${actor.name}, so the cleanup request was dropped.`);
+        return null;
+    }
+
+    const win = new CleanupWindow(actor, { request });
+    await win.render(true);
+    return win;
 }
 
 /** Open, or focus what is already open for this actor. */

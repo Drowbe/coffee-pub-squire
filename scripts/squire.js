@@ -1329,6 +1329,38 @@ Hooks.once('socketlib.ready', () => {
             }
         });
 
+        // A player asking the GM to tidy their sheet. Players never write to
+        // their own sheet for this — see CleanupWindow.needsApproval. The GM
+        // gets the same preview window the player was looking at, so the two
+        // are judging identical rows rather than a summary and its source.
+        socket.register("requestCleanupApproval", async (data) => {
+            if (!game.user.isGM) return;
+
+            try {
+                const { openCleanupApproval } = await import('./window-cleanup.js');
+                await openCleanupApproval(data);
+            } catch (error) {
+                console.error('Error opening the cleanup approval window:', { data, error });
+            }
+        });
+
+        // The answer, back to whoever asked.
+        socket.register("cleanupRequestResolved", async ({ approved, actorName, summary }) => {
+            const { showSquireToast } = await import('./helpers.js');
+            if (approved) {
+                showSquireToast(`Cleanup approved for ${actorName}`, {
+                    subtitle: summary || 'Your sheet has been tidied.',
+                    icon: 'fa-solid fa-broom'
+                });
+            } else {
+                showSquireToast(`Cleanup declined for ${actorName}`, {
+                    subtitle: 'The GM did not apply the changes.',
+                    icon: 'fa-solid fa-ban',
+                    color: '#e05c3c'
+                });
+            }
+        });
+
         // Compendium add requests from players on the "ask the GM" access rung.
         socket.register("createCompendiumRequestChat", async (data) => {
             if (!game.user.isGM) return;

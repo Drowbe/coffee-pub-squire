@@ -2,7 +2,7 @@
 <span>Character Sheet</span>
 <div class="control-mode-toggles">
     {{#if canCleanup}}
-    <i class="fa-solid fa-broom control-cleanup" title="Clean up this sheet — consolidate coins and link items to their compendium source"></i>
+    <i class="fa-solid fa-broom control-cleanup" title="{{cleanupTooltip}}"></i>
     {{#if canUseCompendiums}}<span class="control-toggle-separator"></span>{{/if}}
     {{/if}}
     {{#if canUseCompendiums}}
