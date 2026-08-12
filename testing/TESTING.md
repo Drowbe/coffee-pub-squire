@@ -205,6 +205,47 @@ and only on a character. Nothing here creates or deletes anything.
       actor first. It appears on the plan, and not on the receipt or on the
       "already tidy" state, where there is nothing left to warn about.
 
+### Merging duplicate stacks (phase 2)
+
+Run phase 1 first — merging identifies duplicates by compendium entry, so items
+linked in the same run only become candidates on the *next* open. The window
+says so; check that it does.
+
+- [ ] Drag the same compendium item onto a sheet three times, reopen cleanup:
+      one merge group, "3 rows → 1", with the quantities summed.
+- [ ] Apply, then check the sheet: one row, correct total quantity.
+- [ ] **Undo.** The window offers "Undo the last merge" with a count and a
+      timestamp. Restore, and all three rows come back with their original
+      quantities.
+- [ ] **Favourites survive a merge.** Favourite one of the three copies in the
+      tray, merge, and the surviving row is still favourited — in the tray *and*
+      on the dnd5e character sheet. Then undo, and the favourite is still right.
+- [ ] Favourite one copy and confirm it is the one that survives (the plan row
+      says "favourited").
+- [ ] Equip one of three copies: it is NOT merged with the other two, and the
+      pair that remains identical still is.
+- [ ] Put one copy in a bag: listed under "Duplicates left alone" with "they are
+      in different containers".
+- [ ] Edit one copy's description: listed as blocked with "their descriptions
+      differ" — this is the case a field-by-field check would have missed.
+- [ ] Two identical **containers** (two backpacks): never offered for merging,
+      whatever else is true.
+- [ ] Three **full torches** (limited uses, autoDestroy): these DO merge. Then
+      use the merged stack until the first one burns out — the quantity should
+      drop by one and the uses refill, so the total is what you started with.
+      This is the case the rule used to block wrongly.
+- [ ] A **partly used** torch alongside full ones: the partly used one is not
+      merged with them ("they have already been partly used"), because merging
+      from anything other than full would invent charges rather than lose them.
+- [ ] An item with uses but **no autoDestroy**: blocked with "their charges are
+      tracked per stack rather than per item".
+- [ ] An item carrying an **active effect**: blocked.
+- [ ] Untick a merge group and Apply: that group is untouched.
+- [ ] Open the plan, then equip one copy in another window, then Apply: the group
+      is re-validated and that copy is not merged.
+- [ ] Items with **no** compendium source are never merge candidates, however
+      identical they look.
+
 ### Tool window presentation (Cleanup and Transfer)
 
 Both windows now draw from the same shared components, so check them together —

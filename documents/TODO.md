@@ -10,7 +10,6 @@
 | Blacksmith (other repo): pin renderer leaks elements — `unplace()` GM path and `delete()` unplaced path never call `PinRenderer.removePin()` | Medium | S | Open |
 | Blacksmith (other repo): `api.inventory` has no `requestGM` escape, so every write fails for a non-owner | Medium | S | Open |
 | Blacksmith (other repo): promote the shared tool-window row/section components out of Squire and Curator | Medium | M | Open |
-| Cleanup phase 2: merge duplicate stacks — needs favourite/container reference remapping | Medium | L | Open |
 | Watch: AC/movement re-render branch went live in 13.3.14 (was dead) — real cost in combat | High | S | Open |
 | `PanelManager`: static-vs-instance state is unresolved; it's what let `element` go unassigned | Medium | M | Open |
 | Code cleanup: remove legacy fix code | Low | M | Open |
@@ -74,32 +73,36 @@
   has no GM-routing escape, so every call fails for a non-owner. Their `api.pins` already solves
   exactly this with `pins.requestGM('create', ...)`, so the pattern exists in their own codebase.
   With `requestGM` on inventory, Squire would not need permission checks at all — only the
-  approval *experience*, which is Squire's by charter. It blocks two things:
+  approval *experience*, which is Squire's by charter. What it blocks:
   - Player-to-player currency transfer. Today `transferCurrency` needs ownership of BOTH actors,
     so it works for a GM, or for a player moving coins between their own characters, and not
     otherwise.
-  - Cleanup phase 2, which deletes and re-creates items on an actor the runner may not own.
+  - CORRECTION (2026-08-11): this was also recorded as blocking cleanup phase 2. It does not.
+    `canCleanup` is `game.user.isGM && actor.type === 'character'` (scripts/panel-control.js:36),
+    so the runner is always a GM and always has write permission. Phase 2 is not gated on this.
 
-- [ ] **PHASE 2 — merge duplicate stacks.** What phase 1 was groundwork for. Design settled in
-  discussion; recorded so it is not re-litigated:
-  - **"Duplicate" is the hard part, not "merge".** Same name is not the same item. Blockers:
-    `system.identified` (merging an unidentified item into an identified stack spoils a mystery,
-    irreversibly), `system.uses` (a wand with 3 charges and one with 7 become what?), attunement,
-    equipped state, `system.container` (two torches in different bags are not one stack),
-    attached ActiveEffects, and a differing `_stats.compendiumSource`. **Containers must never
-    merge** — each has contents, and merging orphans a bagful.
-  - **Merging deletes documents, and every reference to the loser breaks with it.** Favourites
-    are the immediate casualty: `favoritePanel` holds item ids and `system.favorites` holds
-    `.Item.<id>`, so a naive merge silently unfavourites a merged item — undoing the sync we just
-    built. The cleanup must **remap** references to the survivor, not just delete. Same for
-    container children (`system.container` points at the container id) and effect `origin`s.
-  - **"Prefer the compendium version" is a separate, more dangerous feature.** Merging quantities
-    is arithmetic; swapping the survivor for a compendium copy is a re-import that discards every
-    GM customisation on that item. Opt-in, separately, possibly never.
-  - **Snapshot before writing.** Proven on the codex migration: stash the pre-merge item data in
-    a flag and offer one revert.
-  - Phase 1 already backfills `_stats.compendiumSource`, which is what turns identity from a
-    guess by name into an equality check.
+- [x] **PHASE 2 — merge duplicate stacks.** Built 2026-08-11 in
+  `scripts/utility-cleanup-merge.js`. Everything the design called for is in: snapshot-first with a
+  `keepId` restore, reference remapping before deletion (favouritePanel, favoritesSyncState,
+  `system.favorites`, contained-item parents, effect origins), containers excluded, uses and effects
+  refused outright, and blocked groups shown with a reason rather than omitted.
+  - Identity ended up as a **fingerprint** rather than the field list the design sketched: serialise
+    both copies, strip per-instance bookkeeping, require the rest to be byte-identical. The named
+    fields survive only to explain a mismatch in English. This is stricter than planned and that is
+    the intended failure direction — the blocked list tells us which rule to relax based on what is
+    actually on real sheets.
+
+- [ ] **PHASE 2 FOLLOW-UPS**, deliberately not built yet — wait for the blocked list on real sheets:
+  - **Partial groups are not reported.** If three copies split into a mergeable pair and one loner,
+    the pair merges and the loner is silently not mentioned. Correct, but possibly confusing.
+  - **Only one level of undo.** The snapshot flag holds the last merge; a second merge overwrites it.
+    Enough for the "oh no" case, not a history.
+  - **The snapshot is never garbage-collected.** It holds full item data on the actor flag until the
+    next merge replaces it. Worth an expiry, or clearing it once the GM has moved on.
+  - **"Prefer the compendium version" is still a separate, more dangerous feature.** Merging
+    quantities is arithmetic; swapping the survivor for a compendium copy is a re-import that
+    discards every GM customisation. Opt-in, separately, possibly never. Phase 1's source links are
+    what would make it possible.
 
 ### SHARED TOOL-WINDOW COMPONENTS
 

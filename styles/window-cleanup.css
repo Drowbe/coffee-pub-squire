@@ -96,6 +96,14 @@
 
 .squire-cleanup-backup i { color: inherit; }
 
+/* The undo. Given the accent rail a banner gets, because when it is present it
+   is the most important thing in the window — and it sits above everything else
+   for the same reason. */
+.squire-cleanup-undo { border-left: 3px solid var(--blacksmith-color-brand-accent, #c15701); }
+
+.squire-cleanup-undo-actions { justify-content: flex-end; margin-top: 7px; }
+.squire-cleanup-undo-actions > button { min-height: 26px; margin: 0; padding: 2px 10px; font-size: 0.7rem; }
+
 .squire-cleanup-quiet { padding: 0 2px; }
 
 .squire-cleanup-coins-after { margin-top: 2px; }

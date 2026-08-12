@@ -10,6 +10,27 @@
 
 <div class="squire-tool-content squire-cleanup">
 
+{{#if snapshot}}
+    {{!-- Offered on every state, not just the receipt. The moment somebody
+          wants a merge back is rarely the moment they finished it. --}}
+    <section class="squire-tool-section squire-cleanup-undo">
+        <h3>
+            <span><i class="fa-solid fa-rotate-left"></i> Undo the last merge</span>
+            <span class="squire-tool-count">{{snapshot.count}}</span>
+        </h3>
+        <p class="squire-tool-note">
+            {{snapshot.count}} stack{{#unless (eq snapshot.count 1)}}s were{{else}} was{{/unless}} saved
+            before the merge on {{snapshot.atLabel}}. Restoring puts them back with their original ids, so
+            favourites that pointed at them resolve again.
+        </p>
+        <div class="squire-tool-row-actions squire-cleanup-undo-actions">
+            <button type="button" class="blacksmith-window-btn-secondary" data-action="revert" {{#if busy}}disabled{{/if}}>
+                <i class="fa-solid fa-rotate-left"></i> Restore
+            </button>
+        </div>
+    </section>
+{{/if}}
+
 {{#if result}}
     {{!-- ================= RECEIPT ================= --}}
     <div class="squire-tool-banner">
@@ -53,6 +74,20 @@
             {{#if (eq result.linked 1)}}is{{else}}are{{/if}} now linked to
             {{#if (eq result.linked 1)}}its{{else}}their{{/if}} compendium entry, and can be refreshed
             from it if the world changes underneath {{#if (eq result.linked 1)}}it{{else}}them{{/if}}.
+        </p>
+    </section>
+    {{/if}}
+
+    {{#if result.merged}}
+    <section class="squire-tool-section">
+        <h3>
+            <span><i class="fa-solid fa-layer-group"></i> Duplicates merged</span>
+            <span class="squire-tool-count">{{result.merged}}</span>
+        </h3>
+        <p class="squire-tool-note">
+            {{result.merged}} stack{{#unless (eq result.merged 1)}}s were{{else}} was{{/unless}} folded
+            together and {{result.removed}} duplicate row{{#unless (eq result.removed 1)}}s{{/unless}}
+            removed. Favourites pointing at a removed row now point at the one that stayed.
         </p>
     </section>
     {{/if}}
@@ -186,6 +221,71 @@
             </div>
         {{/if}}
     </section>
+    {{/if}}
+
+    {{#if scan.duplicates.groups.length}}
+    <section class="squire-tool-section">
+        <h3>
+            <span><i class="fa-solid fa-layer-group"></i> Merge duplicate stacks</span>
+            <span class="squire-tool-count">{{scan.duplicates.groups.length}}</span>
+        </h3>
+        <p class="squire-tool-note">
+            These are the same item recorded more than once. Two copies only qualify if they came from the
+            same compendium entry <strong>and</strong> everything else about them is identical — so a copy
+            that is equipped, in a different bag, unidentified, or edited is left alone and listed below.
+        </p>
+        <p class="squire-tool-note">
+            <strong>This deletes rows.</strong> The quantities are added together on the row that stays, and
+            the ones removed are saved first so the merge can be undone.
+        </p>
+        <div class="squire-tool-list">
+            {{#each scan.duplicates.groups}}
+            <label class="squire-tool-row squire-tool-row-select">
+                <input type="checkbox" class="squire-tool-check-input" data-cleanup="merge"
+                       data-survivor-id="{{this.survivorId}}" data-loser-ids="{{this.loserIdsCsv}}" checked>
+                <span class="squire-tool-check" aria-hidden="true"></span>
+                <img class="squire-tool-row-img" src="{{this.img}}" alt="">
+                <div class="squire-tool-row-copy">
+                    <strong>{{this.name}}</strong>
+                    <span>{{this.stacks}} rows &rarr; 1{{#if this.favourited}} · favourited{{/if}}</span>
+                </div>
+                <span class="squire-cleanup-aside">qty {{this.totalQuantity}}</span>
+            </label>
+            {{/each}}
+        </div>
+    </section>
+    {{/if}}
+
+    {{#if scan.duplicates.blocked.length}}
+    <section class="squire-tool-section">
+        <h3>
+            <span><i class="fa-solid fa-hand"></i> Duplicates to be left alone</span>
+            <span class="squire-tool-count">{{scan.duplicates.blocked.length}}</span>
+        </h3>
+        <p class="squire-tool-note">
+            Recorded more than once, but not safe to fold together. Nothing is done to these — the reason is
+            shown so you can decide whether to reconcile them by hand.
+        </p>
+        <div class="squire-tool-list">
+            {{#each scan.duplicates.blocked}}
+            <div class="squire-tool-row">
+                <img class="squire-tool-row-img" src="{{this.img}}" alt="">
+                <div class="squire-tool-row-copy">
+                    <strong>{{this.name}}</strong>
+                    <span>{{this.count}} copies &mdash; {{this.reason}}</span>
+                </div>
+                <span class="squire-tool-flag"><i class="fa-solid fa-hand"></i> Skipped</span>
+            </div>
+            {{/each}}
+        </div>
+    </section>
+    {{/if}}
+
+    {{#if scan.mergeNeedsRescan}}
+    <p class="squire-tool-note squire-cleanup-quiet">
+        Merging identifies a duplicate by its compendium entry, so anything linked above only becomes a
+        merge candidate the next time you open this window.
+    </p>
     {{/if}}
 
     {{#if scan.links.unmatched.length}}

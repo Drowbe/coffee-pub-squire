@@ -1,6 +1,7 @@
 import { MODULE } from './const.js';
 import { renderTemplate, showSquireToast } from './helpers.js';
 import { scanActor, applyCleanup } from './utility-cleanup.js';
+import { revertMerge, getSnapshot } from './utility-cleanup-merge.js';
 
 function getBlacksmith() {
     return globalThis.game?.modules?.get?.('coffee-pub-blacksmith')?.api ?? null;
@@ -59,7 +60,8 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
 
     static ACTION_HANDLERS = {
         cancel: (_event, _target, win) => win.close(),
-        apply: (_event, _target, win) => win.apply()
+        apply: (_event, _target, win) => win.apply(),
+        revert: (_event, _target, win) => win.revert()
     };
 
     /**
@@ -105,7 +107,11 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
             scan: this.scan,
             result: this.result,
             hasWork: this._hasWork(),
-            busy: this._busy
+            busy: this._busy,
+            // Read at render time rather than carried on the scan: the receipt
+            // clears the scan, and that is exactly the moment an undo is most
+            // likely to be wanted.
+            snapshot: getSnapshot(this.actor)
         });
 
         // Buttons live in the tool footer, not in bodyContent. That is where the
@@ -134,7 +140,9 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
 
     _hasWork() {
         if (!this.scan) return false;
-        return Boolean(this.scan.currency?.changed) || this.scan.candidateCount > 0;
+        return Boolean(this.scan.currency?.changed)
+            || this.scan.candidateCount > 0
+            || this.scan.duplicates.groups.length > 0;
     }
 
     /** What the GM has left ticked. */
@@ -152,14 +160,22 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
             linkUuids.set(itemId, uuid);
         }
 
-        return { currency, linkItemIds, linkUuids };
+        const merges = [];
+        for (const box of root?.querySelectorAll('[data-cleanup="merge"]') ?? []) {
+            if (!box.checked) continue;
+            const { survivorId, loserIds } = box.dataset;
+            if (!survivorId || !loserIds) continue;
+            merges.push({ survivorId, loserIds: loserIds.split(',').filter(Boolean) });
+        }
+
+        return { currency, linkItemIds, linkUuids, merges };
     }
 
     async apply() {
         if (this._busy) return;
 
         const plan = this._collectPlan();
-        if (!plan.currency && !plan.linkItemIds.length) {
+        if (!plan.currency && !plan.linkItemIds.length && !plan.merges.length) {
             showSquireToast('Nothing selected.', { icon: 'fa-solid fa-circle-info' });
             return;
         }
@@ -184,10 +200,44 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
                 coinCountAfter: currency?.coinCountAfter ?? 0,
                 totalLabel: currency?.totalLabel ?? '',
                 linked: applied.linked,
+                merged: applied.merged,
+                removed: applied.removed,
                 failed: applied.failed
             };
             this.scan = null;
         } finally {
+            this._busy = false;
+            await this.render(false);
+        }
+    }
+
+    /**
+     * Put the last merge back.
+     *
+     * Re-scans afterwards rather than restoring the previous view: the sheet has
+     * changed, and showing the plan that produced the merge would invite running
+     * it again by accident.
+     */
+    async revert() {
+        if (this._busy) return;
+        this._busy = true;
+        await this.render(false);
+
+        try {
+            const { restored, failed } = await revertMerge(this.actor);
+            if (failed) {
+                showSquireToast('The merge could not be undone. See the console for details.', {
+                    icon: 'fa-solid fa-triangle-exclamation',
+                    color: '#e05c3c'
+                });
+            } else {
+                showSquireToast(`Restored ${restored} ${restored === 1 ? 'stack' : 'stacks'}.`, {
+                    icon: 'fa-solid fa-rotate-left'
+                });
+            }
+        } finally {
+            this.result = null;
+            this.scan = null;
             this._busy = false;
             await this.render(false);
         }

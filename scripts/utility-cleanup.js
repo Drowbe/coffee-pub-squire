@@ -1,4 +1,5 @@
 import { MODULE } from './const.js';
+import { scanDuplicates, applyMerges } from './utility-cleanup-merge.js';
 
 /**
  * utility-cleanup.js — tidy a character's sheet data without changing what the
@@ -278,17 +279,23 @@ export async function scanCompendiumLinks(actor) {
     return result;
 }
 
-/** Everything phase 1 would do to this actor. */
+/** Everything cleanup would do to this actor. */
 export async function scanActor(actor) {
     const links = await scanCompendiumLinks(actor);
+    const duplicates = scanDuplicates(actor);
     return {
         actorId: actor?.id ?? null,
         actorName: actor?.name ?? '',
         currency: scanCurrency(actor),
         links,
+        duplicates,
         // Precomputed for the template: Handlebars has no arithmetic, and the
         // counts are needed as denominators in several places.
-        candidateCount: links.ready.length + links.review.length
+        candidateCount: links.ready.length + links.review.length,
+        // Merging identifies stacks by compendium source, so anything linked in
+        // this same run only becomes a candidate on the next one. Said out loud
+        // in the window rather than left to be discovered.
+        mergeNeedsRescan: links.ready.length + links.review.length > 0
     };
 }
 
@@ -300,10 +307,11 @@ export async function scanActor(actor) {
  * @param {boolean} plan.currency        consolidate coins
  * @param {string[]} plan.linkItemIds    item ids to stamp, and the uuid for each
  * @param {Map<string,string>} plan.linkUuids
- * @returns {Promise<{currency: boolean, linked: number, failed: number}>}
+ * @param {Array} plan.merges            duplicate groups to fold together
+ * @returns {Promise<{currency: boolean, linked: number, merged: number, removed: number, failed: number}>}
  */
 export async function applyCleanup(actor, plan) {
-    const applied = { currency: false, linked: 0, failed: 0 };
+    const applied = { currency: false, linked: 0, merged: 0, removed: 0, failed: 0 };
     if (!actor) return applied;
 
     if (plan?.currency) {
@@ -343,6 +351,16 @@ export async function applyCleanup(actor, plan) {
                 applied.failed += updates.length;
             }
         }
+    }
+
+    // Merging last: it deletes documents, so anything that reads the sheet
+    // should have had its turn first, and a link written above is still on the
+    // survivor afterwards.
+    if (plan?.merges?.length) {
+        const result = await applyMerges(actor, plan.merges);
+        applied.merged = result.merged;
+        applied.removed = result.removed;
+        applied.failed += result.failed;
     }
 
     return applied;
