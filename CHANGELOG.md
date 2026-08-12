@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [Unreleased]
+## [13.7.1]
 
 ### Added
 - **Character sheet cleanup** — a broom in the Character Sheet title, beside the mode toggles. GM only, current character only. Phase 1 does the two things that cannot lose anything:
