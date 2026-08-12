@@ -98,15 +98,20 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
     }
 
     async getData() {
-        // Scanned once per open. Re-scanning on every render would fight the
-        // ticks the GM has just set.
-        if (!this.scan && !this.result) this.scan = await scanActor(this.actor);
+        // Scanned once, then held. Re-scanning on every render would fight the
+        // ticks the GM has just set; `apply()` clears it deliberately so the
+        // next render picks up what the writes just made possible.
+        if (!this.scan) this.scan = await scanActor(this.actor);
 
         const bodyContent = await renderTemplate(CLEANUP_TEMPLATE, {
             actorName: this.actor?.name ?? '',
             scan: this.scan,
             result: this.result,
             hasWork: this._hasWork(),
+            // A receipt can carry a fresh plan underneath it — linking items is
+            // what reveals which of them are duplicates — so "nothing to do
+            // here" is its own state rather than the absence of a result.
+            isTidy: !this.result && !this._hasWork(),
             busy: this._busy,
             // Read at render time rather than carried on the scan: the receipt
             // clears the scan, and that is exactly the moment an undo is most
@@ -117,7 +122,10 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
         // Buttons live in the tool footer, not in bodyContent. That is where the
         // base renders them, and Blacksmith's own button classes are theme-aware
         // — the same reason the body consumes tool tokens rather than colours.
-        const done = Boolean(this.result) || !this._hasWork();
+        // Keyed on whether work remains, not on whether something has been
+        // applied: after the first pass there is usually a second one to offer,
+        // and closing the window would be the wrong default.
+        const done = !this._hasWork();
 
         return {
             appId: this.id,
@@ -130,7 +138,7 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
                     </button>`
                 : `
                     <button type="button" class="blacksmith-window-btn-secondary" data-action="cancel">
-                        <i class="fa-solid fa-xmark"></i> Cancel
+                        <i class="fa-solid ${this.result ? 'fa-check' : 'fa-xmark'}"></i> ${this.result ? 'Close' : 'Cancel'}
                     </button>
                     <button type="button" class="blacksmith-window-btn-primary" data-action="apply" ${this._busy ? 'disabled' : ''}>
                         <i class="fa-solid fa-broom"></i> ${this._busy ? 'Working…' : 'Apply'}
@@ -204,7 +212,10 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
                 removed: applied.removed,
                 failed: applied.failed
             };
-            this.scan = null;
+            // Re-scanned rather than cleared. Writing the source links is what
+            // lets duplicates be recognised at all, so the work this pass just
+            // unlocked is offered here instead of behind a close and reopen.
+            this.scan = await scanActor(this.actor);
         } finally {
             this._busy = false;
             await this.render(false);

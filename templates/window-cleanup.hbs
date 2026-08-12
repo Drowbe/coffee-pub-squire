@@ -1,7 +1,10 @@
-{{!-- Character sheet cleanup: the plan, then the receipt.
+{{!-- Character sheet cleanup: the plan, and the receipt.
 
-     Two states in one template. Before applying it shows what WOULD change and
-     lets each row be unticked; after, it shows what did.
+     Three blocks, and the receipt and the plan are SIBLINGS rather than
+     branches of one condition. That is deliberate: writing the source links is
+     what lets duplicates be recognised, so the moment a pass finishes is
+     exactly the moment there is new work to offer. Making that a second visit
+     to the window would be busywork over something we already know.
 
      Everything structural here is a shared `.squire-tool-*` component from
      styles/window-tool-shared.css — the same sections and rows the Transfer
@@ -32,7 +35,7 @@
 {{/if}}
 
 {{#if result}}
-    {{!-- ================= RECEIPT ================= --}}
+    {{!-- ================= RECEIPT: what just happened ================= --}}
     <div class="squire-tool-banner">
         <i class="fa-solid fa-circle-check"></i>
         <div><p>Cleanup applied to <strong>{{actorName}}</strong>.</p></div>
@@ -104,15 +107,26 @@
         </p>
     </section>
     {{/if}}
+{{/if}}
 
 
-{{else if hasWork}}
-    {{!-- ================= PLAN ================= --}}
+{{#if hasWork}}
+    {{!-- ================= PLAN: what could still happen =================
+          Rendered under the receipt when there is one. The banner changes with
+          it, because "here is what I found" and "here is what that just made
+          possible" are different claims and the second one has to be
+          unmistakable — a fresh plan sitting under a receipt would otherwise
+          read as more things that already happened. --}}
     <div class="squire-tool-banner">
-        <i class="fa-solid fa-broom"></i>
+        <i class="fa-solid {{#if result}}fa-wand-magic-sparkles{{else}}fa-broom{{/if}}"></i>
         <div>
-            <p>Nothing is created, removed, or replaced. Coins are re-counted into the same value, and
-               items are linked to the compendium entry they came from.</p>
+            {{#if result}}
+                <p><strong>Nothing below has been done yet.</strong> Linking an item is what lets
+                   Squire tell whether it duplicates another, so that pass turned up more to look at.</p>
+            {{else}}
+                <p>Nothing is created, removed, or replaced. Coins are re-counted into the same value, and
+                   items are linked to the compendium entry they came from.</p>
+            {{/if}}
             <p>Untick anything you would rather leave alone.</p>
             {{!-- Phase 1 cannot lose anything, but it also cannot be undone: the
                   coin split is not recoverable from the total, and a written
@@ -286,8 +300,8 @@
 
     {{#if scan.mergeNeedsRescan}}
     <p class="squire-tool-note squire-cleanup-quiet">
-        Merging identifies a duplicate by its compendium entry, so anything linked above only becomes a
-        merge candidate the next time you open this window.
+        Duplicates are recognised by compendium entry, so the items linked above will be checked for
+        duplicates as soon as this runs — any it finds are offered here rather than on a second visit.
     </p>
     {{/if}}
 
@@ -315,9 +329,10 @@
         entry and are left alone.
     </p>
     {{/if}}
+{{/if}}
 
 
-{{else}}
+{{#if isTidy}}
     {{!-- ================= NOTHING TO DO ================= --}}
     <div class="squire-tool-banner">
         <i class="fa-solid fa-circle-check"></i>

@@ -207,9 +207,17 @@ and only on a character. Nothing here creates or deletes anything.
 
 ### Merging duplicate stacks (phase 2)
 
-Run phase 1 first — merging identifies duplicates by compendium entry, so items
-linked in the same run only become candidates on the *next* open. The window
-says so; check that it does.
+Merging identifies duplicates by compendium entry, so items need their source
+links before they are candidates. The window handles that for you: applying
+re-scans and offers what the linking just unlocked, in the same visit.
+
+- [ ] On a sheet with unlinked duplicates, Apply once. The window stays open,
+      shows the receipt, and **underneath it** shows the merges that linking
+      just revealed — with a banner saying nothing below has been done yet.
+- [ ] The footer still offers **Apply** at that point (not just Close), and the
+      secondary button reads Close rather than Cancel.
+- [ ] Apply again: the merges happen, and once there is nothing left the footer
+      collapses to a single Close.
 
 - [ ] Drag the same compendium item onto a sheet three times, reopen cleanup:
       one merge group, "3 rows → 1", with the quantities summed.
