@@ -4,11 +4,13 @@
             <img src="{{subjectImg}}" alt="">
         </div>
         <div class="squire-transfer-subject-copy">
-            <div class="squire-transfer-kicker">Item</div>
+            <div class="squire-transfer-kicker">{{#if isCurrency}}Currency{{else}}Item{{/if}}</div>
             <div class="squire-transfer-subject-name">{{subjectName}}</div>
             <div class="squire-transfer-description">
                 {{#if isApproval}}
                     {{sourceName}} wants to transfer this item.
+                {{else if isCurrency}}
+                    Hand coins over from {{sourceName}}.
                 {{else}}
                     Transfer from {{sourceName}}.
                 {{/if}}

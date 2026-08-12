@@ -66,6 +66,32 @@
 </div>
 
     <div class="inventory-list">
+        {{!-- Currency first: it is the thing every player checks. Built in the
+              same row shape as the items below, because it is part of the same
+              list — it just does not happen to be an item. --}}
+        {{#if currency}}
+        <div class="category-header" data-category-id="category-inventory-currency">Currency</div>
+        {{#each currency}}
+        <div class="panel-item panel-item-currency" data-denomination="{{this.key}}" data-category-id="category-inventory-currency">
+            <div class="panel-item-row">
+                <div class="panel-item-image-container">
+                    <img draggable="false" class="panel-item-image" src="{{this.img}}" alt="{{this.name}}"/>
+                </div>
+                <div class="panel-item-name">
+                    <span class="panel-item-label">{{this.name}}</span>
+                    <span class="panel-item-context">
+                        <span class="panel-item-badge context-count" title="Coins">x{{this.quantity}}</span>
+                    </span>
+                </div>
+                <div class="tray-buttons">
+                    <i class="fa-solid fa-share currency-send" data-denomination="{{this.key}}" title="Send {{this.name}}"></i>
+                    <i class="fa-solid fa-coins currency-convert" title="Consolidate coins into the fewest pieces"></i>
+                </div>
+            </div>
+        </div>
+        {{/each}}
+        {{/if}}
+
         {{#if items}}
             {{!-- Equipment --}}
             {{#if (lookup itemsByType "equipment")}}

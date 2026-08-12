@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { FavoritesPanel } from './panel-favorites.js';
-import { getNativeElement, renderTemplate, getActivityList, getContainerInfo, activateContainerListener, applyItemTooltips} from './helpers.js';
+import { getNativeElement, renderTemplate, getActivityList, getContainerInfo, activateContainerListener, applyItemTooltips, showSquireToast} from './helpers.js';
 import { TransferUtils } from './transfer-utils.js';
 import { LightUtility } from './utility-lights.js';
 import { QuantityEditor } from './utility-quantity.js';
@@ -108,6 +108,60 @@ export class InventoryPanel {
         };
     }
 
+    /**
+     * Coins, shaped like the item rows they sit above.
+     *
+     * Currency is not an item — it lives on `system.currency`, not in the items
+     * collection — so it is handed to the template separately. Everything else
+     * about it is deliberately identical to an inventory row: the same icon,
+     * name and quantity badge, so the section reads as part of the list rather
+     * than as a widget bolted to the top of it.
+     *
+     * dnd5e ships an image per denomination and a localised name, so both come
+     * from CONFIG rather than being invented here — which also means homebrew
+     * currencies appear correctly and in the system's own order.
+     */
+    _getCurrency() {
+        const currency = this.actor?.system?.currency;
+        if (!currency) return null;
+
+        const entries = Object.entries(CONFIG.DND5E?.currencies ?? {})
+            .filter(([, config]) => config.conversion)
+            // Largest denomination first, which is how a sheet reads.
+            .sort((a, b) => a[1].conversion - b[1].conversion)
+            .map(([key, config]) => ({
+                key,
+                name: game.i18n.localize(config.label ?? key),
+                abbr: game.i18n.localize(config.abbreviation ?? key),
+                img: config.icon ?? 'icons/svg/coins.svg',
+                quantity: Number(currency[key]) || 0
+            }));
+
+        return entries.length ? entries : null;
+    }
+
+    /**
+     * Consolidate coins to the fewest pieces.
+     *
+     * Calls dnd5e's conversion directly rather than opening its Currency
+     * Manager: the dialog's convert tab is a button that runs exactly this, so
+     * showing it would be asking the user to confirm what they already asked
+     * for. The transfer half of that dialog is not used either — Squire has its
+     * own transfer experience.
+     */
+    async _convertCurrency() {
+        const CurrencyManager = game.dnd5e?.applications?.CurrencyManager;
+        if (!CurrencyManager?.convertCurrency || !this.actor) return;
+
+        try {
+            await CurrencyManager.convertCurrency(this.actor);
+            showSquireToast('Coins consolidated.', { icon: 'fa-solid fa-coins' });
+        } catch (error) {
+            console.error('Coffee Pub Squire | Currency conversion failed:', error);
+            ui.notifications.error('The coins could not be consolidated.');
+        }
+    }
+
     async render(html) {
         if (html) {
             // v13: Convert jQuery to native DOM if needed
@@ -125,6 +179,7 @@ export class InventoryPanel {
             items: this.items.all,
             itemsByType: this.items.byType,
             showOnlyEquipped: this.showOnlyEquipped,
+            currency: this._getCurrency(),
             newlyAddedItems: PanelManager.newlyAddedItems,
             flags: this.items.all.reduce((acc, item) => {
                 acc[item.id] = item.flags || {};
@@ -290,6 +345,9 @@ export class InventoryPanel {
         };
         panel.addEventListener('click', categoryFilterHandler);
         this._eventHandlers.push({ element: panel, event: 'click', handler: categoryFilterHandler });
+
+        // Currency rows: consolidate, and send
+        this._activateCurrencyListeners(panel);
 
         // Inline quantity editing on the count badge
         const quantityHandler = QuantityEditor.activateListener(panel, this.actor);
@@ -458,6 +516,116 @@ export class InventoryPanel {
         };
         panel.addEventListener('click', lightIconHandler);
         this._eventHandlers.push({ element: panel, event: 'click', handler: lightIconHandler });
+    }
+
+    /**
+     * Currency row actions.
+     *
+     * Delegated on the panel rather than bound per row, since the panel
+     * re-renders whenever anything in the inventory changes.
+     */
+    _activateCurrencyListeners(panel) {
+        const handler = async (event) => {
+            const convert = event.target.closest('.currency-convert');
+            const send = event.target.closest('.currency-send');
+            if (!convert && !send) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (convert) {
+                await this._convertCurrency();
+                return;
+            }
+
+            await this._sendCurrency(send.dataset.denomination);
+        };
+
+        panel.addEventListener('click', handler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler });
+    }
+
+    /**
+     * Hand coins to another character, through Squire's own transfer tool.
+     *
+     * Deliberately not dnd5e's Currency Manager: its transfer tab is a different
+     * recipient picker with different rules, and the point of the tray is that
+     * moving things works the same way whatever the thing is.
+     *
+     * The move itself is Blacksmith's `api.inventory.transferCurrency`, which
+     * locks both actors, verifies the shortfall against live values before
+     * writing, and rolls back a partial transfer.
+     *
+     * LIMITATION, stated rather than hidden: that API writes to both actors
+     * directly and has no GM-routing escape, so it needs ownership of BOTH —
+     * true for a GM, and for a player moving coins between their own characters.
+     * Player-to-player currency additionally needs the approval pipeline item
+     * transfers use, which is built around an item document (container checks,
+     * item-keyed chat cards, an approval payload naming an item).
+     */
+    async _sendCurrency(denomination) {
+        const config = CONFIG.DND5E?.currencies?.[denomination];
+        if (!config || !this.actor) return;
+
+        const available = Number(this.actor.system?.currency?.[denomination]) || 0;
+        const name = game.i18n.localize(config.label ?? denomination);
+
+        if (available <= 0) {
+            showSquireToast(`No ${name} to send.`, { icon: 'fa-solid fa-coins' });
+            return;
+        }
+
+        if (this._transferDialogOpen) return;
+        this._transferDialogOpen = true;
+
+        try {
+            const { openCurrencyTransferTool } = await import('./window-transfer-tool.js');
+            await openCurrencyTransferTool({
+                sourceActor: this.actor,
+                denomination,
+                denominationName: name,
+                denominationImg: config.icon ?? 'icons/svg/coins.svg',
+                available,
+                onSubmit: async ({ targetActor, quantity }) => {
+                    if (!targetActor) throw new Error('No recipient selected.');
+
+                    const inventory = game.modules.get('coffee-pub-blacksmith')?.api?.inventory;
+                    if (typeof inventory?.transferCurrency !== 'function') {
+                        throw new Error("Blacksmith's inventory API is unavailable, so coins cannot be moved.");
+                    }
+
+                    const amount = Number(quantity) || 0;
+                    if (amount <= 0) throw new Error(`No ${name} to send.`);
+
+                    // Blacksmith owns the move: it locks both actors, checks the
+                    // shortfall against live values before writing anything, and
+                    // rolls back a half-applied transfer. Squire doing its own
+                    // pair of updates would be a worse copy of all three, and
+                    // would race the sheet if coins were spent mid-dialog.
+                    const result = await inventory.transferCurrency({
+                        sourceActorUuid: this.actor.uuid,
+                        targetActorUuid: targetActor.uuid,
+                        currency: { [denomination]: amount }
+                    });
+
+                    if (result?.ok === false || result?.error) {
+                        // INSUFFICIENT_CURRENCY is the expected one: the dialog
+                        // may have been open while the coins were spent.
+                        throw new Error(result.code === 'INSUFFICIENT_CURRENCY'
+                            ? `${this.actor.name} no longer has ${amount} ${name}.`
+                            : `The coins could not be moved (${result.code ?? 'unknown error'}).`);
+                    }
+
+                    showSquireToast(`Sent ${amount} ${name} to ${targetActor.name}.`, {
+                        icon: 'fa-solid fa-coins'
+                    });
+                },
+                onClose: () => { this._transferDialogOpen = false; }
+            });
+        } catch (error) {
+            this._transferDialogOpen = false;
+            throw error;
+        }
     }
 
     async _openCharacterSelection(item) {

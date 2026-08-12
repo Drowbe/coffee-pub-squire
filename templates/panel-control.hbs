@@ -1,11 +1,15 @@
 <div class="tray-title-small">
 <span>Character Sheet</span>
-{{#if canUseCompendiums}}
 <div class="control-mode-toggles">
+    {{#if canCleanup}}
+    <i class="fa-solid fa-broom control-cleanup" title="Clean up this sheet — consolidate coins and link items to their compendium source"></i>
+    {{#if canUseCompendiums}}<span class="control-toggle-separator"></span>{{/if}}
+    {{/if}}
+    {{#if canUseCompendiums}}
     <i class="fa-solid fa-user control-mode-toggle" data-mode="sheet" title="Show This Character's Items"></i>
     <i class="fa-solid fa-magnifying-glass control-mode-toggle" data-mode="search" title="{{compendiumToggleTitle}}"></i>
+    {{/if}}
 </div>
-{{/if}}
 </div>
 <div class="control-search">
 <input type="text" class="global-search" placeholder="Search All Sections...">

@@ -30,7 +30,10 @@ export class ControlPanel {
             compendiumToggleTitle: canAdd
                 ? 'Search Compendiums to Add Items'
                 : 'Search Compendiums',
-            clearOnAdd: game.settings.get(MODULE.ID, 'compendiumClearOnAdd')
+            clearOnAdd: game.settings.get(MODULE.ID, 'compendiumClearOnAdd'),
+            // GM-only for now. Cleanup writes to the sheet, and the same button
+            // grows into merging duplicates in phase 2, which deletes items.
+            canCleanup: game.user.isGM && this.actor?.type === 'character'
         };
 
         const content = await renderTemplate(TEMPLATES.PANEL_CONTROL, templateData);
@@ -382,10 +385,42 @@ export class ControlPanel {
         this._updateVisibility();
     }
 
+    /**
+     * The cleanup launcher. Separate from the mode toggles it sits beside: those
+     * switch what the panel shows, this opens a window that writes to the sheet.
+     */
+    _activateCleanupListener(nativeHtml) {
+        const button = nativeHtml.querySelector('.control-cleanup');
+        if (!button) return;
+
+        button.addEventListener('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!this.actor) return;
+            try {
+                // Dynamic, like every other Squire tool window. window-cleanup.js
+                // resolves BlacksmithToolWindowBaseV2 at module scope, and a static
+                // import evaluates it while Squire's own modules are still loading —
+                // before Blacksmith has published its API. ESM caches the failure, so
+                // that throw kills the module for the whole session rather than
+                // retrying later.
+                const { openCleanupWindow } = await import('./window-cleanup.js');
+                await openCleanupWindow(this.actor);
+            } catch (error) {
+                // An async click handler swallows its own rejection: without this
+                // a failure here is a button that silently does nothing.
+                console.error('Coffee Pub Squire | Failed to open the cleanup window:', error);
+                ui.notifications.error('The cleanup window could not be opened. See the console for details.');
+            }
+        });
+    }
+
     _activateListeners(html) {
         // v13: Use native DOM methods instead of jQuery
         const controlPanel = html.querySelector('[data-panel="control"]');
         if (!controlPanel) return;
+
+        this._activateCleanupListener(controlPanel);
 
         // Control toggle buttons
         const toggleButtons = controlPanel.querySelectorAll('.control-toggle');

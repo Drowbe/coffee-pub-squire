@@ -158,6 +158,11 @@ unchanged and still use **Show Statblock Warnings**.
 - [ ] **Deny**: the player is told, nothing is added.
 - [ ] **Approve**: the ammunition is added, both of you see the confirmation, and
       the request card disappears.
+- [ ] **The player's badge clears immediately** — no tray refresh, no switching
+      characters. Check both the Weapons panel and Favourites if the weapon is
+      favourited.
+- [ ] Restocking an existing empty stack (quantity 0 → 20) clears it too, not just
+      adding a missing one.
 - [ ] Buy the arrows on the sheet *before* approving an outstanding request, then
       approve: it declines gracefully rather than adding a second stack.
 - [ ] Looking at a player's character yourself, the badge says **Click to fix** and
@@ -167,4 +172,25 @@ unchanged and still use **Show Statblock Warnings**.
 - [ ] Turn on **Repair Statblocks Automatically**. Open a player character with no
       arrows: **nothing is added**, the badge stays.
 - [ ] Select an NPC with the same problem: it is repaired automatically, as before.
+
+### Character sheet cleanup (phase 1)
+
+A broom in the **Character Sheet** title bar, left of the mode toggles. GM only,
+and only on a character. Nothing here creates or deletes anything.
+
+- [ ] As a player: no broom. As GM on an NPC: no broom. As GM on a character: broom.
+- [ ] Give a character messy coins (say 1247 cp, 30 sp) and open it: the plan shows
+      the before struck through and the after highlighted, and says the total value
+      is unchanged.
+- [ ] Apply, then check the sheet: same total value, fewest coins. Compare against
+      the sheet's own Convert Currency button — they should agree exactly.
+- [ ] Items list: exact matches pre-ticked, looser matches shown dimmed and
+      unticked with their match type.
+- [ ] Untick everything and Apply: it says nothing is selected and writes nothing.
+- [ ] Untick *some* links and Apply: only the ticked ones gain a source.
+- [ ] Reopen after applying: the window says the character is tidy.
+- [ ] An item that already had a compendium source is counted as "already linked"
+      and is NOT re-written, even if its name would resolve elsewhere.
+- [ ] Homebrew items with no compendium match are listed as unmatched and left alone.
+- [ ] Open cleanup twice in quick succession: one window, not two.
 

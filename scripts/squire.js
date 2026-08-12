@@ -492,6 +492,11 @@ Hooks.once('ready', async () => {
                         }
                     }
                     
+                    // A new consumable can clear an ammunition warning that
+                    // hangs off a weapon, which none of the refreshes below
+                    // would reach.
+                    await StatblockUtility.refreshIfWarningsAffected(item);
+
                     // Only refresh panels if PanelManager instance exists
                     if (panelManager?.instance) {
                         // Only refresh weapons and inventory panels for item transfers
@@ -572,6 +577,10 @@ Hooks.once('ready', async () => {
                     || sys.attunement !== undefined
                     || changes.flags?.[MODULE.ID] !== undefined;
                 if (!hasVisibleChange) return;
+
+                // Same as creation: a quantity change on ammunition clears a
+                // warning on the weapon that needs it, not on the ammunition.
+                await StatblockUtility.refreshIfWarningsAffected(item);
 
                 // Refresh only the panels this item type appears in
                 const affectsInventory = ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type);

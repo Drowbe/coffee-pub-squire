@@ -430,6 +430,36 @@ export class StatblockUtility {
         return handler;
     }
 
+    /**
+     * Refresh the badge-bearing panels when a change to ONE item could clear a
+     * warning on ANOTHER.
+     *
+     * The panel hooks refresh by asking "where does the changed item appear",
+     * which is right for the item's own row and wrong for these warnings: an
+     * ammunition warning hangs off the WEAPON, so restocking arrows changes a
+     * consumable while the stale badge sits on a bow. Neither the weapons panel
+     * (the arrows aren't a weapon) nor favourites (the arrows aren't favourited)
+     * would re-render, and the badge survived until the tray was rebuilt.
+     *
+     * @param {Item} item  the item that changed
+     */
+    static async refreshIfWarningsAffected(item) {
+        const actor = item?.parent;
+        if (!(actor instanceof Actor)) return;
+
+        // Ammunition is the only cross-item warning today. Narrow on purpose:
+        // this runs on every item write, and a blanket refresh would re-render
+        // four panels whenever anything at all changed.
+        if (item.type !== 'consumable') return;
+        if (!this.canWarnFor(actor)) return;
+
+        // Only the actor the tray is showing owns these panels.
+        const { PanelManager } = await import('./manager-panel.js');
+        if (PanelManager.currentActor?.id !== actor.id) return;
+
+        await this.refreshPanels();
+    }
+
     /** Re-render the panels a repair can change. */
     static async refreshPanels() {
         const { PanelManager } = await import('./manager-panel.js');

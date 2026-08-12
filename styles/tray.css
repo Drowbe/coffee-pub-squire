@@ -1491,3 +1491,222 @@
 .panel-item-label {
     display: inline;
 }
+
+/* Cleanup launcher, in the Character Sheet title beside the mode toggles.
+   Same affordance as its neighbours — it belongs to that cluster — but it opens
+   a window rather than switching what the panel shows, hence the separator. */
+.squire-tray [data-panel="control"] .control-cleanup {
+    cursor: pointer;
+    color: rgba(159, 146, 117, 1.0);
+    font-size: 0.85em;
+    padding: 3px 5px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.squire-tray [data-panel="control"] .control-cleanup:hover {
+    color: rgba(255, 255, 255, 1.0);
+    background: rgba(194, 86, 61, 0.9);
+}
+
+.squire-tray [data-panel="control"] .control-toggle-separator {
+    width: 1px;
+    align-self: stretch;
+    margin: 2px 2px;
+    background: rgba(159, 146, 117, 0.35);
+}
+
+/* ==========================================================================
+   CLEANUP WINDOW
+   ========================================================================== */
+
+.squire-cleanup {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.squire-cleanup-intro {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.85em;
+    color: rgba(205, 204, 179, 0.9);
+}
+
+.squire-cleanup-intro i {
+    margin-top: 2px;
+    opacity: 0.8;
+}
+
+.squire-cleanup-section {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    padding: 8px;
+}
+
+.squire-cleanup-section-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.squire-cleanup-section-title {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.squire-cleanup-note {
+    margin: 4px 0 0;
+    font-size: 0.78em;
+    font-style: italic;
+    color: rgba(205, 204, 179, 0.7);
+}
+
+.squire-cleanup-quiet {
+    padding: 0 4px;
+}
+
+.squire-cleanup-coins {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.squire-cleanup-coin {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8em;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+/* Struck through, so "what it was" reads as history rather than as a second
+   set of coins the character also has. */
+.squire-cleanup-coin.was {
+    opacity: 0.6;
+    text-decoration: line-through;
+}
+
+.squire-cleanup-coin.is {
+    color: rgba(186, 162, 92, 1);
+    font-weight: bold;
+}
+
+.squire-cleanup-arrow {
+    opacity: 0.5;
+    font-size: 0.7em;
+    margin: 0 2px;
+}
+
+.squire-cleanup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 6px;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.squire-cleanup-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8em;
+}
+
+.squire-cleanup-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Anything the resolver was not certain about arrives unticked and dimmed, so
+   the eye goes to the rows that need a decision. */
+.squire-cleanup-row-unsure {
+    opacity: 0.75;
+}
+
+.squire-cleanup-row-img {
+    width: 18px;
+    height: 18px;
+    border: 0;
+    border-radius: 2px;
+    flex: 0 0 auto;
+}
+
+.squire-cleanup-row-name {
+    flex: 0 0 auto;
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.squire-cleanup-row-match {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: rgba(205, 204, 179, 0.65);
+}
+
+.squire-cleanup-row-match em {
+    opacity: 0.7;
+    margin-left: 4px;
+}
+
+.squire-cleanup-row-confidence {
+    flex: 0 0 auto;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    padding: 0 4px;
+    border-radius: 2px;
+    background: rgba(0, 0, 0, 0.35);
+    color: rgba(205, 204, 179, 0.7);
+}
+
+.squire-cleanup-row-confidence[data-confidence="high"] {
+    color: rgba(67, 163, 77, 0.95);
+}
+
+.squire-cleanup-failed .squire-cleanup-section-title {
+    color: rgba(255, 74, 47, 0.95);
+}
+
+.squire-cleanup-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.squire-cleanup-button {
+    padding: 4px 12px;
+    background: rgba(92, 84, 66, 0.9);
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.squire-cleanup-button:hover:not(:disabled) {
+    background: rgba(194, 86, 61, 1.0);
+    border-color: rgba(194, 86, 61, 1.0);
+}
+
+.squire-cleanup-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}

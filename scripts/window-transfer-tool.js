@@ -111,6 +111,7 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
         mode = 'item',
         sourceActor = null,
         item = null,
+        currency = null,
         targetActor = null,
         requestedQuantity = 1,
         onSubmit = null,
@@ -129,9 +130,10 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
         );
         super(opts);
 
-        this.mode = mode === 'approval' ? 'approval' : 'item';
+        this.mode = ['approval', 'currency'].includes(mode) ? mode : 'item';
         this.sourceActor = sourceActor;
         this.item = item;
+        this.currency = currency;
         this.targetActor = targetActor;
         this.requestedQuantity = Math.max(1, Number(requestedQuantity) || 1);
         this.onSubmit = onSubmit;
@@ -154,8 +156,10 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
             });
         }
 
-        const maxQuantity = Math.max(1, Number(this.item?.system?.quantity) || 1);
-        if (this.mode === 'item' && maxQuantity > 1) {
+        const maxQuantity = this.mode === 'currency'
+            ? Math.max(1, Number(this.currency?.available) || 1)
+            : Math.max(1, Number(this.item?.system?.quantity) || 1);
+        if ((this.mode === 'item' || this.mode === 'currency') && maxQuantity > 1) {
             this.quantitySplit = blacksmith.quantitySplit.create({
                 max: maxQuantity,
                 value: 1,
@@ -166,6 +170,7 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
 
     get title() {
         if (this.mode === 'approval') return 'Item Transfer Request';
+        if (this.mode === 'currency') return `Send ${this.currency?.name ?? 'Coins'}`;
         return 'Transfer Item';
     }
 
@@ -185,7 +190,9 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
     }
 
     async getData() {
-        const subject = this.item;
+        const subject = this.mode === 'currency'
+            ? { name: this.currency?.name, img: this.currency?.img }
+            : this.item;
         const fixedRecipient = this.targetActor
             ? {
                 name: this.targetActor.name,
@@ -196,6 +203,7 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
         const bodyContent = await renderTemplate(TRANSFER_TOOL_TEMPLATE, {
             mode: this.mode,
             isApproval: this.mode === 'approval',
+            isCurrency: this.mode === 'currency',
             subjectName: subject?.name || 'Unknown',
             subjectImg: subject?.img || subject?.src || DEFAULT_IMAGE,
             sourceName: this.sourceActor?.name || game.user?.name || '',
@@ -219,8 +227,8 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
                 </button>`,
             toolFooterRight: `
                 <button type="button" class="blacksmith-window-btn-primary" data-action="submit" ${this.canSubmit ? '' : 'disabled'}>
-                    <i class="fa-solid ${this.mode === 'approval' ? 'fa-check' : 'fa-right-left'}"></i>
-                    ${this.mode === 'approval' ? 'Accept' : 'Transfer'}
+                    <i class="fa-solid ${this.mode === 'approval' ? 'fa-check' : (this.mode === 'currency' ? 'fa-coins' : 'fa-right-left')}"></i>
+                    ${this.mode === 'approval' ? 'Accept' : (this.mode === 'currency' ? 'Send' : 'Transfer')}
                 </button>`
         };
     }
@@ -281,6 +289,17 @@ export class TransferToolWindow extends BlacksmithToolWindowBaseV2 {
 
 export async function openItemTransferTool(options = {}) {
     const app = new TransferToolWindow({ ...options, mode: 'item' });
+    await app.render(true);
+    return app;
+}
+
+/** Hand coins to another character. Same picker, same quantity split. */
+export async function openCurrencyTransferTool({ denomination, denominationName, denominationImg, available, ...options } = {}) {
+    const app = new TransferToolWindow({
+        ...options,
+        mode: 'currency',
+        currency: { key: denomination, name: denominationName, img: denominationImg, available }
+    });
     await app.render(true);
     return app;
 }

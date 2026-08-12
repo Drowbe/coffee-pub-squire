@@ -1,0 +1,16 @@
+
+/* ==========================================================================
+   CURRENCY
+
+   The rows ARE inventory rows — same .panel-item markup, so they inherit every
+   bit of the list's styling. Only two things differ: a coin is not draggable,
+   and it has no roll overlay, because neither means anything for money.
+   ========================================================================== */
+
+.panel-item-currency {
+    cursor: default;
+}
+
+.panel-item-currency .panel-item-image-container {
+    cursor: default;
+}

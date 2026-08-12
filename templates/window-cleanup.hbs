@@ -1,0 +1,136 @@
+{{!-- Character sheet cleanup: the plan, then the receipt.
+
+     Two states in one template. Before applying it shows what WOULD change and
+     lets each row be unticked; after, it shows what did. --}}
+
+<div class="squire-cleanup">
+
+{{#if result}}
+    {{!-- ================= RECEIPT ================= --}}
+    <div class="squire-cleanup-intro">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>Cleanup applied to <strong>{{actorName}}</strong>.</span>
+    </div>
+
+    {{#if result.currency}}
+    <div class="squire-cleanup-section">
+        <div class="squire-cleanup-section-title">Currency consolidated</div>
+        <div class="squire-cleanup-coins">
+            {{#each result.denominations}}
+                {{#if this.before}}<span class="squire-cleanup-coin was">{{this.before}}{{this.label}}</span>{{/if}}
+            {{/each}}
+            <i class="fa-solid fa-arrow-right squire-cleanup-arrow"></i>
+            {{#each result.denominations}}
+                {{#if this.after}}<span class="squire-cleanup-coin is">{{this.after}}{{this.label}}</span>{{/if}}
+            {{/each}}
+        </div>
+    </div>
+    {{/if}}
+
+    {{#if result.linked}}
+    <div class="squire-cleanup-section">
+        <div class="squire-cleanup-section-title">Source links</div>
+        <p class="squire-cleanup-note">{{result.linked}} item{{#unless (eq result.linked 1)}}s{{/unless}} now record where they came from.</p>
+    </div>
+    {{/if}}
+
+    {{#if result.failed}}
+    <div class="squire-cleanup-section squire-cleanup-failed">
+        <div class="squire-cleanup-section-title">Not applied</div>
+        <p class="squire-cleanup-note">{{result.failed}} change{{#unless (eq result.failed 1)}}s{{/unless}} could not be made. See the console for details.</p>
+    </div>
+    {{/if}}
+
+    <div class="squire-cleanup-actions">
+        <button type="button" data-action="cancel" class="squire-cleanup-button">Close</button>
+    </div>
+
+{{else if hasWork}}
+    {{!-- ================= PLAN ================= --}}
+    <div class="squire-cleanup-intro">
+        <i class="fa-solid fa-broom"></i>
+        <span>Nothing here is created or removed — coins are re-counted and items are told where they came from.</span>
+    </div>
+
+    {{#if scan.currency.changed}}
+    <div class="squire-cleanup-section">
+        <label class="squire-cleanup-section-head">
+            <input type="checkbox" data-cleanup="currency" checked>
+            <span class="squire-cleanup-section-title">Consolidate currency</span>
+        </label>
+        <div class="squire-cleanup-coins">
+            {{#each scan.currency.denominations}}
+                {{#if this.before}}<span class="squire-cleanup-coin was">{{this.before}}{{this.label}}</span>{{/if}}
+            {{/each}}
+            <i class="fa-solid fa-arrow-right squire-cleanup-arrow"></i>
+            {{#each scan.currency.denominations}}
+                {{#if this.after}}<span class="squire-cleanup-coin is">{{this.after}}{{this.label}}</span>{{/if}}
+            {{/each}}
+        </div>
+        <p class="squire-cleanup-note">Same total value, fewer coins.</p>
+    </div>
+    {{/if}}
+
+    {{#if scan.links.candidates.length}}
+    <div class="squire-cleanup-section">
+        <div class="squire-cleanup-section-title">Link items to their compendium source</div>
+        <p class="squire-cleanup-note">
+            Exact matches are ticked. Anything less certain is left for you —
+            check the matched name before accepting it.
+        </p>
+        <div class="squire-cleanup-list">
+            {{#each scan.links.candidates}}
+            <label class="squire-cleanup-row {{#unless this.selected}}squire-cleanup-row-unsure{{/unless}}">
+                <input type="checkbox" data-cleanup="link"
+                       data-item-id="{{this.id}}" data-uuid="{{this.uuid}}"
+                       {{#if this.selected}}checked{{/if}}>
+                <img class="squire-cleanup-row-img" src="{{this.img}}" alt="">
+                <span class="squire-cleanup-row-name">{{this.name}}</span>
+                <span class="squire-cleanup-row-match">
+                    {{#unless (eq this.name this.matchedName)}}&rarr; {{this.matchedName}}{{/unless}}
+                    {{#if this.source}}<em>{{this.source}}</em>{{/if}}
+                </span>
+                <span class="squire-cleanup-row-confidence" data-confidence="{{this.confidence}}">{{this.matchType}}</span>
+            </label>
+            {{/each}}
+        </div>
+    </div>
+    {{/if}}
+
+    {{#if scan.links.unmatched.length}}
+    <div class="squire-cleanup-section">
+        <div class="squire-cleanup-section-title">No compendium match</div>
+        <p class="squire-cleanup-note">
+            {{scan.links.unmatched.length}} item{{#unless (eq scan.links.unmatched.length 1)}}s{{/unless}}
+            could not be found in your configured compendiums. Homebrew and one-off
+            items are expected here; nothing is done to them.
+        </p>
+    </div>
+    {{/if}}
+
+    {{#if scan.links.alreadyLinked}}
+    <p class="squire-cleanup-note squire-cleanup-quiet">
+        {{scan.links.alreadyLinked}} item{{#unless (eq scan.links.alreadyLinked 1)}}s already know{{else}} already knows{{/unless}}
+        where they came from and {{#unless (eq scan.links.alreadyLinked 1)}}are{{else}}is{{/unless}} left alone.
+    </p>
+    {{/if}}
+
+    <div class="squire-cleanup-actions">
+        <button type="button" data-action="cancel" class="squire-cleanup-button">Cancel</button>
+        <button type="button" data-action="apply" class="squire-cleanup-button squire-cleanup-button-primary" {{#if busy}}disabled{{/if}}>
+            {{#if busy}}Working…{{else}}Apply{{/if}}
+        </button>
+    </div>
+
+{{else}}
+    {{!-- ================= NOTHING TO DO ================= --}}
+    <div class="squire-cleanup-intro">
+        <i class="fa-solid fa-circle-check"></i>
+        <span><strong>{{actorName}}</strong> is tidy. Coins are already consolidated and every item that could be matched knows its source.</span>
+    </div>
+    <div class="squire-cleanup-actions">
+        <button type="button" data-action="cancel" class="squire-cleanup-button">Close</button>
+    </div>
+{{/if}}
+
+</div>
