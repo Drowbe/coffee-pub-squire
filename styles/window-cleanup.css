@@ -80,6 +80,22 @@
     color: color-mix(in srgb, var(--blacksmith-status-danger, #8b0000) 58%, var(--blacksmith-tool-text));
 }
 
+/* The one line in the banner that is a caution rather than an explanation, so
+   it is set apart from the copy above it and carries the warning colour —
+   mixed toward the theme text, since --blacksmith-status-warning is a single
+   fixed colour that disappears against the dark theme. */
+.squire-cleanup-backup {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    margin-top: 7px;
+    padding-top: 6px;
+    border-top: 1px solid var(--blacksmith-tool-divider);
+    color: color-mix(in srgb, var(--blacksmith-status-warning, #aa6000) 62%, var(--blacksmith-tool-text));
+}
+
+.squire-cleanup-backup i { color: inherit; }
+
 .squire-cleanup-quiet { padding: 0 2px; }
 
 .squire-cleanup-coins-after { margin-top: 2px; }

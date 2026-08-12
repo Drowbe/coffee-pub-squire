@@ -201,6 +201,9 @@ and only on a character. Nothing here creates or deletes anything.
       and is NOT re-written, even if its name would resolve elsewhere.
 - [ ] Homebrew items with no compendium match are listed as unmatched and left alone.
 - [ ] Open cleanup twice in quick succession: one window, not two.
+- [ ] The banner warns there is no undo and says to duplicate or export the
+      actor first. It appears on the plan, and not on the receipt or on the
+      "already tidy" state, where there is nothing left to warn about.
 
 ### Tool window presentation (Cleanup and Transfer)
 

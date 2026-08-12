@@ -79,6 +79,16 @@
             <p>Nothing is created, removed, or replaced. Coins are re-counted into the same value, and
                items are linked to the compendium entry they came from.</p>
             <p>Untick anything you would rather leave alone.</p>
+            {{!-- Phase 1 cannot lose anything, but it also cannot be undone: the
+                  coin split is not recoverable from the total, and a written
+                  source is not distinguishable afterwards from one that was
+                  always there. Saying "safe" without saying "one-way" is the
+                  half of the truth that gets someone burned. --}}
+            <p class="squire-cleanup-backup">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>There is no undo. If you want a way back, duplicate the actor — or right-click it in
+                      the sidebar and Export Data — before applying.</span>
+            </p>
         </div>
     </div>
 
