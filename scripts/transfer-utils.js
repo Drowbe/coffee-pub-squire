@@ -1,5 +1,8 @@
-import { MODULE, TEMPLATES, SQUIRE } from './const.js';
-import { getTransferBlocker, renderTemplate, showSquireToast, getActorDisplayName } from './helpers.js';
+import { MODULE, SQUIRE } from './const.js';
+import { getTransferBlocker, showSquireToast, getActorDisplayName } from './helpers.js';
+import {
+    transferRequestGMApproval, transferRequestReceiver, transferRequestSender
+} from './manager-cards.js';
 
 export class TransferUtils {
     /**
@@ -104,7 +107,6 @@ export class TransferUtils {
                 const socket = game.modules.get(MODULE.ID)?.socket;
                 if (socket) {
                     await socket.executeAsGM('createTransferRequestChat', {
-                        cardType: "transfer-request",
                         sourceActorId: sourceActor.id,
                         sourceActorName: `${getActorDisplayName(sourceActor)} (${game.user.name})`,
                         targetActorId: targetActor.id,
@@ -121,33 +123,21 @@ export class TransferUtils {
                     });
                 }
             } else {
-                await ChatMessage.create({
-                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                        isPublic: false,
-                        cardType: "transfer-request",
-                        strCardIcon: "fa-solid fa-gavel",
-                        strCardTitle: "GM Approval Required",
-                        sourceActor,
-                        sourceActorName: `${getActorDisplayName(sourceActor)} (${game.user.name})`,
-                        targetActor,
-                        targetActorName: getActorDisplayName(targetActor),
-                        item: item,
-                        itemName: item.name,
-                        quantity: quantity,
-                        hasQuantity: hasQuantity,
-                        isPlural: quantity > 1,
-                        isGMApproval: true,
-                        transferId
-                    }),
+                await transferRequestGMApproval({
+                    sourceActorName: `${getActorDisplayName(sourceActor)} (${game.user.name})`,
+                    targetActorName: getActorDisplayName(targetActor),
+                    itemName: item.name,
+                    quantity: quantity,
+                    hasQuantity: hasQuantity,
+                    isPlural: quantity > 1,
+                    transferId,
                     speaker: { alias: "System Transfer" },
                     whisper: gmUsers.map(u => u.id),
                     flags: {
-                        [MODULE.ID]: {
-                            transferId,
-                            type: 'transferRequest',
-                            isGMApproval: true,
-                            data: transferData
-                        }
+                        transferId,
+                        type: 'transferRequest',
+                        isGMApproval: true,
+                        data: transferData
                     }
                 });
             }
@@ -167,7 +157,6 @@ export class TransferUtils {
                 const socket = game.modules.get(MODULE.ID)?.socket;
                 if (socket) {
                     await socket.executeAsGM('createTransferRequestChat', {
-                        cardType: "transfer-request",
                         sourceActorId: sourceActor.id,
                         sourceActorName: getActorDisplayName(sourceActor),
                         targetActorId: targetActor.id,
@@ -184,36 +173,24 @@ export class TransferUtils {
                     });
                 }
             } else {
-                await ChatMessage.create({
-                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                        isPublic: false,
-                        cardType: "transfer-request",
-                        strCardIcon: "fa-solid fa-people-arrows",
-                        strCardTitle: "Transfer Request",
-                        sourceActor,
-                        sourceActorName: getActorDisplayName(sourceActor),
-                        targetActor,
-                        targetActorName: getActorDisplayName(targetActor),
-                        item: item,
-                        itemName: item.name,
-                        quantity: quantity,
-                        hasQuantity: hasQuantity,
-                        isPlural: quantity > 1,
-                        isTransferReceiver: true,
-                        transferId
-                    }),
+                await transferRequestReceiver({
+                    sourceActorName: getActorDisplayName(sourceActor),
+                    targetActorName: getActorDisplayName(targetActor),
+                    itemName: item.name,
+                    quantity: quantity,
+                    hasQuantity: hasQuantity,
+                    isPlural: quantity > 1,
+                    transferId,
                     speaker: { alias: "System" },
                     whisper: targetUsers.map(u => u.id),
                     flags: {
-                        [MODULE.ID]: {
-                            transferId,
-                            type: 'transferRequest',
-                            isTransferReceiver: true,
-                            isTransferSender: false,
-                            isGMApproval: false,
-                            data: transferData,
-                            targetUsers: targetUsers.map(u => u.id)
-                        }
+                        transferId,
+                        type: 'transferRequest',
+                        isTransferReceiver: true,
+                        isTransferSender: false,
+                        isGMApproval: false,
+                        data: transferData,
+                        targetUsers: targetUsers.map(u => u.id)
                     }
                 });
             }
@@ -225,34 +202,20 @@ export class TransferUtils {
      */
     static async _sendTransferSenderMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData, gmApprovalRequired) {
         // EXACT COPY of working drag-and-drop _sendTransferSenderMessage
-        await ChatMessage.create({
-            content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                isPublic: false,
-                cardType: "transfer-request",
-                strCardIcon: "fa-solid fa-people-arrows",
-                strCardTitle: "Transfer Request",
-                sourceActor,
-                sourceActorName: getActorDisplayName(sourceActor),
-                targetActor,
-                targetActorName: getActorDisplayName(targetActor),
-                item: item,
-                itemName: item.name,
-                quantity: quantity,
-                hasQuantity: hasQuantity,
-                isPlural: quantity > 1,
-                isTransferSender: true,
-                transferId,
-                strCardContent: gmApprovalRequired ? "Waiting for GM approval." : "Waiting for receiver to accept."
-            }),
+        await transferRequestSender({
+            targetActorName: getActorDisplayName(targetActor),
+            itemName: item.name,
+            quantity: quantity,
+            hasQuantity: hasQuantity,
+            isPlural: quantity > 1,
+            waitingOn: gmApprovalRequired ? "Waiting for GM approval." : "Waiting for receiver to accept.",
             speaker: { alias: "System" },
             whisper: [game.users.get(transferData.sourceUserId).id],
             flags: {
-                [MODULE.ID]: {
-                    transferId,
-                    type: 'transferRequest',
-                    isTransferSender: true,
-                    data: transferData
-                }
+                transferId,
+                type: 'transferRequest',
+                isTransferSender: true,
+                data: transferData
             }
         });
     }

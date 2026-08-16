@@ -11,6 +11,10 @@
 | Blacksmith (other repo): `api.inventory` has no `requestGM` escape, so every write fails for a non-owner | Medium | S | Open |
 | Blacksmith (other repo): promote the shared tool-window row/section components out of Squire and Curator | Medium | M | Open |
 | Migrate the four hand-rolled item-transfer copies to Blacksmith `api.inventory` | High | M | Open |
+| Pressure-test the transfer flow end to end after the chat card migration (player → GM approval → receiver accept) | **Critical** | S | Open |
+| `executeItemTransfer` socket takes actor/item ids from any client and moves items as GM without checking the caller is entitled | High | M | Open |
+| Blacksmith (other repo): a throwing card action handler is logged and swallowed, so a card that already retired reads as success | Medium | S | Open |
+| Migrate chat cards to the Blacksmith Chat Cards API | High | L | Done (unreleased) |
 | Blacksmith (other repo): co-sign the dnd5e `updateEncumbrance` upstream report after v14 | Low | S | Open |
 | Let the handle filter which statuses it shows (`showHandleConditions` is all-or-nothing) | Low | M | Open |
 | Watch: AC/movement re-render branch went live in 13.3.14 (was dead) — real cost in combat | High | S | Open |
@@ -43,6 +47,12 @@
 - [x] **Unified Transfer Tool (13.3.19)**: Replaced the temporary Character/User picker windows and transfer quantity/approval dialogs with one ephemeral, multi-instance `BlacksmithToolWindowBaseV2`. Inventory, Weapons, Notes, Party drops, direct tray drops, and incoming approvals share the same details/configuration/recipient/action layout using verified `api.entityList` and `api.quantitySplit`; fixed-recipient flows omit the picker, single items omit quantity, failures remain open, and every close path releases its lock. Removed the two picker classes/templates/styles, the old transfer template/CSS, and the upstreamed local quantity-control copy.
 
 ## HIGH PRIORITY
+
+### CHAT CARDS — MIGRATED, NOT YET PROVEN IN PLAY
+- [x] **Migrate to the Blacksmith Chat Cards API (unreleased).** `templates/chat-cards.hbs` deleted — a 505-line fork of Blacksmith's `cards-common.hbs`, over half of which (the whole public half: planning, timers, round, loot, movement, leader) was already unreachable. All 26 posting sites now call `chatCards.post()`; composition lives in `scripts/manager-cards.js` and Squire writes no card HTML. Buttons are registered actions rather than per-render DOM wiring, and request cards retire in place to an outcome band instead of being deleted.
+- [ ] **Pressure-test transfers end to end.** Nothing here has run in a live world; verification was static only. The path that most needs exercising is player → GM approval → receiver accept, because **the GM-approval leg never worked before this change** (it called `this._sendTransferReceiverMessage`, which lives on `TransferUtils`, so it threw every time). That leg is new behaviour, not a regression risk. Also worth exercising: rejection, denial, expiry, and both the ammunition and compendium request flows.
+- [ ] **`executeItemTransfer` is an unauthenticated socket.** It accepts arbitrary `sourceActorId` / `targetActorId` / `itemId` from any client and moves items with GM authority. It re-validates that the item exists and the quantity is available, but never that the caller was entitled to the transfer. The card button is now guarded against acting on someone else's request; the socket underneath is still reachable by a crafted call. Needs a decision on what authorization should look like rather than a patch — probably checking the caller against the transfer's recorded participants GM-side.
+- [ ] **Blacksmith (other repo): a throwing card action handler is swallowed.** `bindCardActions` logs and continues, which is right for card robustness, but it means a handler that retires the card and *then* throws leaves a card asserting success. That is exactly how the broken GM-approval leg above went silent. Raised with Blacksmith; either surfacing the throw or offering consumers a "this action failed" path would fix it.
 
 ### V14/V15 READINESS (audited July 13, 2026 — world moves to v14 within weeks)
 - [x] **AUDIT** v14 removes the *v12*-deprecated globals (AudioHelper, Sound, grid/dice/canvas-source classes, etc.) — grep confirms **zero uses** in this module. helpers.js already namespaces `renderTemplate`/`TextEditor`/`ContextMenu` (v13 style, v14-safe). (The codex data model, page subtype and sheet, audited here at the time, have since moved to Librarian.) module.json already declares `maximum: 14`.

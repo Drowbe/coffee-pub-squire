@@ -1,5 +1,9 @@
-import { MODULE, TEMPLATES } from './const.js';
-import { showSquireToast, renderTemplate } from './helpers.js';
+import { MODULE } from './const.js';
+import { showSquireToast, getBlacksmith } from './helpers.js';
+import {
+    ammoRequest, ammoApproved, ammoDenied, ammoFailed,
+    retireCard, name, sentence
+} from './manager-cards.js';
 
 /**
  * Statblock usability checks and repairs.
@@ -567,83 +571,69 @@ export class StatblockUtility {
         const gmIds = game.users.filter(user => user.isGM).map(user => user.id);
         if (!gmIds.length) return;
 
-        await ChatMessage.create({
-            content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                isPublic: false,
-                cardType: 'ammo-request',
-                ...data
-            }),
-            speaker: { alias: 'System' },
+        await ammoRequest({
+            ...data,
             whisper: gmIds,
-            flags: { [MODULE.ID]: { type: 'ammoRequest', data } }
+            speaker: { alias: 'System' },
+            flags: { type: 'ammoRequest', data }
         });
     }
 
     /**
-     * Wire Approve/Deny on a request card. Called for every chat render, so it
-     * returns immediately for anything that isn't ours.
+     * Wire Approve/Deny. Registered once per client at startup rather than per
+     * rendered message: Blacksmith resolves the handler from its registry each
+     * time a card paints, so the buttons survive a reload and no listener can
+     * be attached twice.
      */
-    static handleRequestButtons(message, html) {
-        if (message?.flags?.[MODULE.ID]?.type !== 'ammoRequest') return;
-        if (!game.user.isGM) return;
+    static registerCardActions() {
+        const chatCards = getBlacksmith()?.chatCards;
+        if (!chatCards) return;
 
-        let nativeHtml = html;
-        if (html && (html.jquery || typeof html.find === 'function')) {
-            nativeHtml = html[0] || html.get?.(0) || html;
-        }
-        if (!nativeHtml) return;
+        const resolve = (approved) => async ({ message }) => {
+            // Hiding a button is not authorisation — any client can fire an
+            // action whatever its copy of the card looks like.
+            if (!game.user.isGM) return;
+            const data = message?.flags?.[MODULE.ID]?.data ?? {};
+            await this.resolveRequest(data, approved, message);
+        };
 
-        const buttons = nativeHtml.querySelectorAll('.ammo-request-button');
-        if (!buttons.length) return;
-        // Chat re-renders on edit and on scrollback; without this the same
-        // button collects a second handler and one click approves twice.
-        if (buttons[0].dataset.handlersAttached === 'true') return;
-
-        const data = message.flags[MODULE.ID].data ?? {};
-
-        buttons.forEach(button => {
-            button.dataset.handlersAttached = 'true';
-            button.addEventListener('click', async (event) => {
-                event.preventDefault();
-                buttons.forEach(btn => {
-                    btn.disabled = true;
-                    btn.classList.add('disabled');
-                });
-                await this.resolveRequest(data, button.classList.contains('approve'), message);
-            });
-        });
+        chatCards.registerAction(MODULE.ID, 'ammo-approve', resolve(true));
+        chatCards.registerAction(MODULE.ID, 'ammo-deny', resolve(false));
     }
 
-    /** Carry out the GM's decision and tell the player either way. */
+    /**
+     * Carry out the GM's decision and tell the player either way. The request
+     * card retires in place to a band naming the outcome, so the log keeps the
+     * decision rather than the card disappearing once it is answered.
+     */
     static async resolveRequest(data, approved, message) {
         const requester = game.users.get(data.requesterId);
-        const whisperIds = [data.requesterId, ...game.users.filter(u => u.isGM).map(u => u.id)]
+        const whisper = [data.requesterId, ...game.users.filter(u => u.isGM).map(u => u.id)]
             .filter(Boolean);
+        const speaker = { alias: 'System' };
 
-        const outcome = async (cardType, extra = {}) => {
-            await ChatMessage.create({
-                content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                    isPublic: false,
-                    cardType,
-                    ...data,
-                    ...extra
-                }),
-                speaker: { alias: 'System' },
-                whisper: whisperIds
-            });
+        // The band the request card ends up wearing. Reassigned by whichever
+        // branch below actually runs, so the card and the outcome message can
+        // never disagree about what happened.
+        let verdict = { text: 'Approved', tone: 'positive', icon: 'fa-solid fa-circle-check' };
+        const failedBand = { text: 'Failed', tone: 'negative', icon: 'fa-solid fa-triangle-exclamation' };
+
+        const failed = async (reason) => {
+            verdict = failedBand;
+            await ammoFailed({ reason, whisper, speaker });
         };
 
         try {
             if (!approved) {
-                await outcome('ammo-denied');
+                verdict = { text: 'Denied', tone: 'negative', icon: 'fa-solid fa-circle-xmark' };
+                await ammoDenied({ ...data, whisper, speaker });
                 return;
             }
 
             const actor = await fromUuid(data.actorUuid);
             if (!actor) {
-                await outcome('ammo-failed', {
-                    failureReason: `${data.actorName} could not be found, so no ${data.ammoLabel} was added.`
-                });
+                await failed(sentence(name(data.actorName), ' could not be found, so no ',
+                                      name(data.ammoLabel), ' was added.'));
                 return;
             }
 
@@ -652,9 +642,9 @@ export class StatblockUtility {
             // is approving "restock that player's character", not "write to
             // whatever this actor is now".
             if (requester && !actor.testUserPermission(requester, 'OWNER')) {
-                await outcome('ammo-failed', {
-                    failureReason: `${data.requesterName} no longer owns ${data.actorName}, so no ${data.ammoLabel} was added.`
-                });
+                await failed(sentence(name(data.requesterName), ' no longer owns ',
+                                      name(data.actorName), ', so no ', name(data.ammoLabel),
+                                      ' was added.'));
                 return;
             }
 
@@ -663,9 +653,8 @@ export class StatblockUtility {
             const weapon = actor.items.get(data.weaponId);
             const issues = weapon ? this.getWeaponIssues(actor, weapon) : [];
             if (!issues.length) {
-                await outcome('ammo-failed', {
-                    failureReason: `${data.actorName} no longer needs ${data.ammoLabel}.`
-                });
+                await failed(sentence(name(data.actorName), ' no longer needs ',
+                                      name(data.ammoLabel), '.'));
                 return;
             }
 
@@ -675,22 +664,19 @@ export class StatblockUtility {
             }
 
             if (!applied) {
-                await outcome('ammo-failed', {
-                    failureReason: `${data.ammoLabel} could not be added to ${data.actorName}.`
-                });
+                await failed(sentence(name(data.ammoLabel), ' could not be added to ',
+                                      name(data.actorName), '.'));
                 return;
             }
 
-            await outcome('ammo-approved');
+            await ammoApproved({ ...data, whisper, speaker });
             await this.refreshPanels();
         } catch (error) {
             console.error(`${MODULE.ID}: Failed to resolve ammo request:`, error);
-            await outcome('ammo-failed', {
-                failureReason: `Something went wrong adding ${data.ammoLabel} to ${data.actorName}.`
-            });
+            await failed(sentence('Something went wrong adding ', name(data.ammoLabel),
+                                  ' to ', name(data.actorName), '.'));
         } finally {
-            const current = game.messages.get(message?.id);
-            if (current) await current.delete();
+            await retireCard(message, verdict);
         }
     }
 

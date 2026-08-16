@@ -1,6 +1,10 @@
-import { MODULE, TEMPLATES } from './const.js';
-import { renderTemplate, showSquireToast } from './helpers.js';
+import { MODULE } from './const.js';
+import { getBlacksmith, showSquireToast } from './helpers.js';
 import { CompendiumSearchUtility } from './utility-compendium-search.js';
+import {
+    compendiumRequest, compendiumApproved, compendiumDenied, compendiumFailed,
+    retireCard, name, sentence
+} from './manager-cards.js';
 
 /**
  * The ask-the-GM rung of compendium access.
@@ -77,83 +81,70 @@ export class CompendiumRequestUtils {
         const gmIds = game.users.filter(user => user.isGM).map(user => user.id);
         if (!gmIds.length) return;
 
-        await ChatMessage.create({
-            content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                isPublic: false,
-                cardType: 'compendium-request',
-                ...data
-            }),
-            speaker: { alias: 'System' },
+        await compendiumRequest({
+            ...data,
             whisper: gmIds,
-            flags: {
-                [MODULE.ID]: {
-                    type: 'compendiumRequest',
-                    data
-                }
-            }
+            speaker: { alias: 'System' },
+            flags: { type: 'compendiumRequest', data }
         });
     }
 
     /**
-     * Wire the Approve/Deny buttons on a request card. Called for every chat
-     * message render; returns immediately for anything that isn't ours.
+     * Wire the Approve/Deny buttons. Registered once per client at startup, not
+     * per rendered message: the handler is resolved fresh from Blacksmith's
+     * registry every time a card paints, which is why the buttons still work
+     * after a browser reload and why nothing here has to guard against
+     * collecting a second listener on a re-render.
      */
-    static handleRequestButtons(message, html) {
-        if (message?.flags?.[MODULE.ID]?.type !== 'compendiumRequest') return;
-        if (!game.user.isGM) return;
+    static registerCardActions() {
+        const chatCards = getBlacksmith()?.chatCards;
+        if (!chatCards) return;
 
-        // v13: the hook hands over jQuery in some paths and a node in others.
-        let nativeHtml = html;
-        if (html && (html.jquery || typeof html.find === 'function')) {
-            nativeHtml = html[0] || html.get?.(0) || html;
-        }
-        if (!nativeHtml) return;
+        const resolve = (approved) => async ({ message }) => {
+            // Hiding a button is not authorisation — any client can fire an
+            // action whatever its copy of the card looks like.
+            if (!game.user.isGM) return;
+            const data = message?.flags?.[MODULE.ID]?.data ?? {};
+            await this.resolveRequest(data, approved, message);
+        };
 
-        const buttons = nativeHtml.querySelectorAll('.compendium-request-button');
-        if (!buttons.length) return;
-        // Chat re-renders on edit and on scrollback; without this the same
-        // button collects a second handler and one click approves twice.
-        if (buttons[0].dataset.handlersAttached === 'true') return;
-
-        const data = message.flags[MODULE.ID].data ?? {};
-
-        buttons.forEach(button => {
-            button.dataset.handlersAttached = 'true';
-            button.addEventListener('click', async (event) => {
-                event.preventDefault();
-                buttons.forEach(btn => {
-                    btn.disabled = true;
-                    btn.classList.add('disabled');
-                });
-
-                const approved = button.classList.contains('approve');
-                await this.resolveRequest(data, approved, message);
-            });
-        });
+        chatCards.registerAction(MODULE.ID, 'compendium-approve', resolve(true));
+        chatCards.registerAction(MODULE.ID, 'compendium-deny', resolve(false));
     }
 
     /**
      * Carry out the GM's decision: add the item and tell the player, or tell the
-     * player it was declined. Either way the request card goes away, so the
-     * chat log doesn't accumulate decisions already made.
+     * player it was declined. Either way the request card retires in place to a
+     * band saying what was decided, so the log keeps the decision instead of the
+     * card vanishing from under whoever pressed the button.
      */
     static async resolveRequest(data, approved, message) {
         const requester = game.users.get(data.requesterId);
-        const whisperIds = [data.requesterId, ...game.users.filter(u => u.isGM).map(u => u.id)]
+        const whisper = [data.requesterId, ...game.users.filter(u => u.isGM).map(u => u.id)]
             .filter(Boolean);
+        const speaker = { alias: 'System' };
+
+        // The band the request card ends up wearing. Reassigned by whichever
+        // branch below actually runs, so the card and the outcome message can
+        // never disagree about what happened.
+        let verdict = { text: 'Approved', tone: 'positive', icon: 'fa-solid fa-circle-check' };
+        const failed = { text: 'Failed', tone: 'negative', icon: 'fa-solid fa-triangle-exclamation' };
 
         try {
             if (!approved) {
-                await this._sendOutcomeChat('compendium-denied', data, whisperIds);
+                verdict = { text: 'Denied', tone: 'negative', icon: 'fa-solid fa-circle-xmark' };
+                await compendiumDenied({ ...data, whisper, speaker });
                 return;
             }
 
             const actor = await fromUuid(data.actorUuid);
             if (!actor) {
-                await this._sendOutcomeChat('compendium-failed', {
-                    ...data,
-                    failureReason: `${data.actorName} could not be found, so ${data.itemName} was not added.`
-                }, whisperIds);
+                verdict = failed;
+                await compendiumFailed({
+                    reason: sentence(name(data.actorName), ' could not be found, so ',
+                                     name(data.itemName), ' was not added.'),
+                    whisper, speaker
+                });
                 return;
             }
 
@@ -162,46 +153,40 @@ export class CompendiumRequestUtils {
             // is approving "give this to that player's character", not "write to
             // whatever that actor is now".
             if (requester && !actor.testUserPermission(requester, 'OWNER')) {
-                await this._sendOutcomeChat('compendium-failed', {
-                    ...data,
-                    failureReason: `${data.requesterName} no longer owns ${data.actorName}, so ${data.itemName} was not added.`
-                }, whisperIds);
+                verdict = failed;
+                await compendiumFailed({
+                    reason: sentence(name(data.requesterName), ' no longer owns ',
+                                     name(data.actorName), ', so ', name(data.itemName),
+                                     ' was not added.'),
+                    whisper, speaker
+                });
                 return;
             }
 
             const created = await CompendiumSearchUtility.addToActor(actor, data.itemUuid, 1);
             if (!created) {
-                await this._sendOutcomeChat('compendium-failed', {
-                    ...data,
-                    failureReason: `${data.itemName} could not be added to ${data.actorName}. Its compendium may be unavailable.`
-                }, whisperIds);
+                verdict = failed;
+                await compendiumFailed({
+                    reason: sentence(name(data.itemName), ' could not be added to ',
+                                     name(data.actorName), '. Its compendium may be unavailable.'),
+                    whisper, speaker
+                });
                 return;
             }
 
-            await this._sendOutcomeChat('compendium-approved', data, whisperIds);
+            await compendiumApproved({ ...data, whisper, speaker });
         } catch (error) {
-            // The card is deleted either way, so a throw that said nothing would
-            // leave the player watching a request that simply vanished.
+            // The buttons are gone either way, so a throw that said nothing would
+            // leave the player watching a request that had simply stopped.
             console.error(`${MODULE.ID}: Failed to resolve compendium request:`, error);
-            await this._sendOutcomeChat('compendium-failed', {
-                ...data,
-                failureReason: `Something went wrong adding ${data.itemName} to ${data.actorName}.`
-            }, whisperIds);
+            verdict = failed;
+            await compendiumFailed({
+                reason: sentence('Something went wrong adding ', name(data.itemName),
+                                 ' to ', name(data.actorName), '.'),
+                whisper, speaker
+            });
         } finally {
-            const current = game.messages.get(message?.id);
-            if (current) await current.delete();
+            await retireCard(message, verdict);
         }
-    }
-
-    static async _sendOutcomeChat(cardType, data, whisperIds) {
-        await ChatMessage.create({
-            content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                isPublic: false,
-                cardType,
-                ...data
-            }),
-            speaker: { alias: 'System' },
-            whisper: whisperIds
-        });
     }
 }

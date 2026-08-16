@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [Unreleased]
+
+### Changed
+- **Chat cards are now composed from Blacksmith's parts rather than rendered from Squire's own template.** `templates/chat-cards.hbs` is deleted. It was a 505-line fork of Blacksmith's `cards-common.hbs` — same variant names in the same order, the same invalid `visibility: none` on line 1 — that had drifted 231 lines from its original, so every fix to a card in Blacksmith stopped at Squire's border. All 26 posting sites now call `chatCards.post()` and Squire writes no card HTML at all. Composition lives in one place, `scripts/manager-cards.js`, the way the template used to.
+  - **Over half the deleted template was already dead.** The entire public half — planning start/paused/resumed, combat timer, round announcement, loot drop, movement change, leader change — was unreachable: nothing had set `isPlanningStart`, `isTimer`, `isLootDrop`, `isMovementChange` or `isLeaderChange` for a long time. It was carried forward untouched every time the file was edited because nobody had reason to check. Fourteen card types were actually live, all of them whispered.
+  - **World names can no longer reach the enricher.** Item and actor names are renamed by users, so they are untrusted text, and the old template interpolated them straight into card HTML. An item called `Ring of *Power*` italicised the rest of the sentence; one containing `@UUID[...]` or `[[/r 99d6]]` was obeyed. Every name now goes through a literal — escaped, never read as marks or enricher syntax — and still renders bold, because a mark names a treatment rather than supplying markup. The sentences read exactly as they did.
+  - **A card can no longer show anybody an empty body.** The old template gated blocks on `isTransferSender`/`isTransferReceiver` with no `else`, so a reader who was neither got a card with a header and nothing under it. Each of these messages is whispered to exactly one audience, so each now carries one unconditional sentence written for that audience — the failure is gone by construction rather than patched.
+  - Themes are passed as ids rather than hardcoded `theme-green`/`theme-red` classes, so the cards look the same but the world's theme setting governs the ones that never had an opinion.
+- **Request cards retire in place instead of vanishing.** Answering an Accept/Reject, Approve/Deny or ammunition/compendium request used to delete the message, which left whoever pressed the button looking at a gap and the log holding no record of the decision. The buttons are now replaced, on the same message, by a band reading **Accepted**, **Rejected**, **Approved**, **Denied**, **Expired** or **Failed**. The composition and the baked HTML are rewritten together, so chat search and exports agree with the table rather than keeping live buttons forever.
+  - This also fixes the double-click guard. Disabling the buttons was a change to one browser's DOM, so a second client showing the same whisper still had live ones; rewriting the message takes them away everywhere.
+- **Card buttons are registered once per client at startup, not wired onto each rendered message.** The transfer buttons were attached by walking every chat render for `.transfer-request-button` and routing through the party panel instance — so a transfer could only be answered while a tray happened to be open. They are now registered actions, resolved from Blacksmith's registry each time a card paints, which means they also work on cards already in the log and survive a browser reload.
+
+### Fixed
+- **A GM approving a transfer never sent the receiver their card.** The approval called `this._sendTransferReceiverMessage`, which does not exist on the party panel — it lives on `TransferUtils` — so the call threw every time and the transfer stopped dead after the GM said yes. It has been broken for as long as the method has been on the other class.
+- **Anyone could accept a transfer addressed to somebody else.** The Accept/Reject handler trusted the whisper to decide who could press: but a whispered message is still a document on every client, so any player could invoke the action for a request meant for another character. The card already records who it was sent to, and the handler now checks that.
+- **A player rejecting a transfer announced it to the whole table.** The rejection card is meant for the sender alone; the whisper list was chosen by a condition that path does not satisfy, so it came out `undefined` — which posts publicly rather than failing.
+- **The "received via the Squire tray" card named the wrong character.** It reported whichever actor the tray was showing rather than the one the item was dropped on — the same actor only by coincidence.
+- **A GM denying a transfer said so on their own screen but not on the player's.** The reason ("The GM denied this transfer request.") was passed to the socket and then dropped on the way into the card, so the sender saw a bare rejection with no explanation whenever the denial was routed through a GM.
+- **A receiver rejecting a transfer read as third-person when a GM was the one relaying it.** The two paths posted different wording for the same event; both now say "You rejected the transfer of…" to the person who did it.
+
+### Removed
+- **The transfer expiration timer subsystem.** `_scheduleTransferExpiration` had no callers, so no timer was ever created and `_expireTransfer`, `_clearTransferTimer` and `_cleanupTransferTimers` formed a closed loop nothing could enter. Expiry still works — it is the timestamp check made when the button is pressed, which was always the live mechanism.
+- `deleteTransferRequestMessage` (its last caller went with the retire change), both copies of `_getTransferCardData`, and the `TEMPLATES.CHAT_CARD` constant.
+- An unreachable socket branch in the GM deny path, which sat behind a non-GM test inside a GM-only handler.
+
 ## [13.7.1]
 
 ### Added

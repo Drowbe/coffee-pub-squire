@@ -3,6 +3,10 @@ import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
 import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate, resolveDroppedItem, showSquireToast, getActorDisplayName, openHealthWindow } from './helpers.js';
+import {
+    transferByGM, transferComplete, transferRejected, transferRequestSender,
+    retireCard
+} from './manager-cards.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -15,8 +19,7 @@ export class PartyPanel {
         this._onTokenUpdate = this._onTokenUpdate.bind(this);
         this._onActorUpdate = this._onActorUpdate.bind(this);
         this._onControlToken = this._onControlToken.bind(this);
-        this._handleTransferButtons = this._handleTransferButtons.bind(this);
-        
+
         // Note: Hooks are now managed centrally by HookManager
         // No need to register hooks here anymore
     }
@@ -504,10 +507,11 @@ export class PartyPanel {
                             }
                             
                             // Send chat notification
-                            const cardDataWorld = this._getTransferCardData({ cardType: "transfer-gm", targetActor, item });
-                            const chatContent = await renderTemplate(TEMPLATES.CHAT_CARD, cardDataWorld);
-                            await ChatMessage.create({
-                                content: chatContent,
+                            await transferByGM({
+                                icon: this._getDropIcon(item.type),
+                                title: this._getDropTitle(item.type),
+                                itemName: item.name,
+                                targetActorName: targetActor.name,
                                 speaker: ChatMessage.getSpeaker({ actor: targetActor })
                             });
                         }
@@ -524,10 +528,11 @@ export class PartyPanel {
                             }
                             
                             // Send chat notification
-                            const cardDataCompendium = this._getTransferCardData({ cardType: "transfer-gm", targetActor, item: itemData });
-                            const dirItemChatContent = await renderTemplate(TEMPLATES.CHAT_CARD, cardDataCompendium);
-                            await ChatMessage.create({
-                                content: dirItemChatContent,
+                            await transferByGM({
+                                icon: this._getDropIcon(itemData.type),
+                                title: this._getDropTitle(itemData.type),
+                                itemName: itemData.name,
+                                targetActorName: targetActor.name,
                                 speaker: ChatMessage.getSpeaker({ actor: targetActor })
                             });
                         }
@@ -854,14 +859,8 @@ export class PartyPanel {
             } else {
                 // No socket: a player cannot whisper on someone else's behalf,
                 // so this only reaches whoever is looking. Better than silence.
-                await ChatMessage.create({
-                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                        isPublic: false,
-                        cardType: "transfer-complete",
-                        strCardIcon: "fa-solid fa-backpack",
-                        strCardTitle: "Transfer Complete",
-                        ...payload
-                    }),
+                await transferComplete({
+                    ...payload,
                     speaker: ChatMessage.getSpeaker({ actor: sourceActor }),
                     whisper: receiverIds
                 });
@@ -871,341 +870,316 @@ export class PartyPanel {
         }
     }
 
-    _handleTransferButtons(message, html) {
-        if (!message.flags?.[MODULE.ID]?.type) return;
+    /**
+     * Register the transfer card buttons, once per client at startup.
+     *
+     * These used to be wired by walking every rendered message for
+     * `.transfer-request-button` and routing through the party panel instance,
+     * which meant a transfer could only be answered while a tray happened to be
+     * open. Blacksmith resolves an action handler from its own registry each
+     * time a card paints, so these are static, they cover cards already in the
+     * log, and they survive a reload.
+     */
+    static registerCardActions() {
+        const chatCards = getBlacksmith()?.chatCards;
+        if (!chatCards) return;
 
-        // v13: Convert jQuery to native DOM if needed
-        let nativeHtml = html;
-        if (html && (html.jquery || typeof html.find === 'function')) {
-            nativeHtml = html[0] || html.get?.(0) || html;
+        chatCards.registerAction(MODULE.ID, 'transfer-accept',
+            ({ message, value }) => PartyPanel._handleTransferResponse(message, value, true));
+        chatCards.registerAction(MODULE.ID, 'transfer-reject',
+            ({ message, value }) => PartyPanel._handleTransferResponse(message, value, false));
+        chatCards.registerAction(MODULE.ID, 'transfer-approve',
+            ({ message, value }) => PartyPanel._handleGMApproval(message, value, true));
+        chatCards.registerAction(MODULE.ID, 'transfer-deny',
+            ({ message, value }) => PartyPanel._handleGMApproval(message, value, false));
+    }
+
+    /**
+     * The receiver answering a transfer request.
+     *
+     * @param {ChatMessage} message - the request card the button sits on
+     * @param {string} transferId - carried on the button as its value
+     * @param {boolean} isAccept
+     */
+    static async _handleTransferResponse(message, transferId, isAccept) {
+        // Hiding a button is not authorisation, and neither is whispering the
+        // card. A whispered ChatMessage is still a document on every client, and
+        // the action registry is callable from any of them — so without this,
+        // any player could accept a transfer addressed to somebody else. The
+        // card records who it was sent to; check against that rather than
+        // trusting that only the right person can see it.
+        const addressedTo = message.getFlag(MODULE.ID, 'targetUsers');
+        if (Array.isArray(addressedTo) && !addressedTo.includes(game.user.id) && !game.user.isGM) return;
+
+        // Get transfer data from the current message (the one with the buttons)
+        const transferData = message.getFlag(MODULE.ID, 'data');
+        if (!transferData) {
+            ui.notifications.error("Transfer request data not found");
+            return;
         }
-        if (!nativeHtml) return;
-
-        // Only handle transfer request buttons
-        if (message.flags[MODULE.ID].type === 'transferRequest') {
-            // Handle GM approval buttons
-            const gmButtons = nativeHtml.querySelectorAll('.gm-approval-button');
-            if (gmButtons.length > 0) {
-                // Check if handlers already attached
-                if (gmButtons[0].dataset.handlersAttached === 'true') return;
-                
-                gmButtons.forEach(button => {
-                    button.dataset.handlersAttached = 'true';
-                    button.addEventListener('click', async (event) => {
-                        await this._handleGMApprovalClick(event, message, nativeHtml);
+        
+        // Check if transfer has expired
+        const timeoutSeconds = game.settings.get(MODULE.ID, 'transferTimeout');
+        const currentTime = Date.now();
+        const transferAge = currentTime - transferData.timestamp;
+        const transferAgeSeconds = Math.floor(transferAge / 1000);
+        
+        if (transferAgeSeconds > timeoutSeconds) {
+            // Transfer has expired - tell everyone involved, then retire the card
+            const socket = game.modules.get(MODULE.ID)?.socket;
+            if (socket) {
+                // Send expiration message to sender
+                const senderUser = game.users.get(transferData.sourceUserId);
+                if (senderUser && !senderUser.isGM) {
+                    await socket.executeAsGM('createTransferExpiredChat', {
+                        sourceActorId: transferData.sourceActorId,
+                        sourceActorName: transferData.sourceActorName,
+                        targetActorId: transferData.targetActorId,
+                        targetActorName: transferData.targetActorName,
+                        itemId: transferData.sourceItemId,
+                        itemName: transferData.itemName,
+                        quantity: transferData.selectedQuantity,
+                        hasQuantity: transferData.hasQuantity,
+                        isPlural: transferData.selectedQuantity > 1,
+                        isTransferSender: true,
+                        receiverIds: [senderUser.id],
+                        transferId
                     });
-                });
+                }
+                
+                // Send expiration message to receiver
+                const receiverUsers = game.users.filter(user => user.character?.id === transferData.targetActorId && user.active && !user.isGM);
+                if (receiverUsers.length > 0) {
+                    await socket.executeAsGM('createTransferExpiredChat', {
+                        sourceActorId: transferData.sourceActorId,
+                        sourceActorName: transferData.sourceActorName,
+                        targetActorId: transferData.targetActorId,
+                        targetActorName: transferData.targetActorName,
+                        itemId: transferData.sourceItemId,
+                        itemName: transferData.itemName,
+                        quantity: transferData.selectedQuantity,
+                        hasQuantity: transferData.hasQuantity,
+                        isPlural: transferData.selectedQuantity > 1,
+                        isTransferReceiver: true,
+                        receiverIds: receiverUsers.map(u => u.id),
+                        transferId
+                    });
+                }
+                
+                // Send expiration message to GMs
+                const gmUsers = game.users.filter(u => u.isGM);
+                if (gmUsers.length > 0) {
+                    await socket.executeAsGM('createTransferExpiredChat', {
+                        sourceActorId: transferData.sourceActorId,
+                        sourceActorName: transferData.sourceActorName,
+                        targetActorId: transferData.targetActorId,
+                        targetActorName: transferData.targetActorName,
+                        itemId: transferData.sourceItemId,
+                        itemName: transferData.itemName,
+                        quantity: transferData.selectedQuantity,
+                        hasQuantity: transferData.hasQuantity,
+                        isPlural: transferData.selectedQuantity > 1,
+                        isGMNotification: true,
+                        receiverIds: gmUsers.map(u => u.id),
+                        transferId
+                    });
+                }
+            }
+            
+            // Retire the request rather than deleting it: whoever pressed the
+            // button is owed an answer, and "expired" is one.
+            await retireCard(message, {
+                text: 'Expired',
+                tone: 'negative',
+                icon: 'fa-solid fa-clock'
+            });
+
+            return; // Exit early - don't process the expired transfer
+        }
+        const sourceActor = game.actors.get(transferData.sourceActorId);
+        const targetActor = game.actors.get(transferData.targetActorId);
+        const item = sourceActor?.items.get(transferData.itemId);
+        const senderUser = game.users.get(transferData.sourceUserId);
+        const receiverUsers = game.users.filter(user => user.character?.id === targetActor.id && user.active && !user.isGM);
+        const gmUsers = game.users.filter(u => u.isGM);
+        
+        // Filter out GMs from sender/receiver users for message targeting
+        const senderUsers = senderUser && !senderUser.isGM ? [senderUser] : [];
+
+        // Retire the card up front rather than disabling its buttons in this
+        // one browser. The old guard was a local DOM change, so a second client
+        // showing the same whisper still had live buttons; rewriting the message
+        // takes them away everywhere, which is what stops the double-click.
+        //
+        // The band records the ANSWER, not whether the goods arrived — the
+        // transfer below can still fail on a stale quantity, and when it does
+        // the socket handler whispers its own Transfer Failed card saying why.
+        await retireCard(message, isAccept
+            ? { text: 'Accepted', tone: 'positive', icon: 'fa-solid fa-circle-check' }
+            : { text: 'Rejected', tone: 'negative', icon: 'fa-solid fa-circle-xmark' });
+
+        if (isAccept) {
+            // Execute the transfer
+            const socket = game.modules.get(MODULE.ID)?.socket;
+            if (!socket) {
+                ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
                 return;
             }
             
-            // Handle receiver accept/reject buttons
-            const buttons = nativeHtml.querySelectorAll('.transfer-request-button');
-            if (buttons.length > 0 && buttons[0].dataset.handlersAttached === 'true') return;
+            const transferSucceeded = await socket.executeAsGM('executeItemTransfer', {
+                sourceActorId: sourceActor.id,
+                targetActorId: targetActor.id,
+                sourceItemId: item?.id || transferData.itemId,
+                quantity: transferData.quantity,
+                hasQuantity: true,
+                sourceUserId: senderUser.id,
+                targetUserId: game.user.id,
+                itemName: item?.name || transferData.itemName
+            });
             
-            buttons.forEach(button => {
-                button.dataset.handlersAttached = 'true';
-                button.addEventListener('click', async (event) => {
-                const button = event.currentTarget;
-                const transferId = button.dataset.transferId;
-                const isAccept = button.classList.contains('accept');
-                
-                // Get transfer data from the current message (the one with the buttons)
-                const transferData = message.getFlag(MODULE.ID, 'data');
-                if (!transferData) {
-                    ui.notifications.error("Transfer request data not found");
-                    return;
-                }
-                
-                // Check if transfer has expired
-                const timeoutSeconds = game.settings.get(MODULE.ID, 'transferTimeout');
-                const currentTime = Date.now();
-                const transferAge = currentTime - transferData.timestamp;
-                const transferAgeSeconds = Math.floor(transferAge / 1000);
-                
-                if (transferAgeSeconds > timeoutSeconds) {
-                    // Transfer has expired - send expiration message and delete the request
-                    const socket = game.modules.get(MODULE.ID)?.socket;
-                    if (socket) {
-                        // Send expiration message to sender
-                        const senderUser = game.users.get(transferData.sourceUserId);
-                        if (senderUser && !senderUser.isGM) {
-                            await socket.executeAsGM('createTransferExpiredChat', {
-                                sourceActorId: transferData.sourceActorId,
-                                sourceActorName: transferData.sourceActorName,
-                                targetActorId: transferData.targetActorId,
-                                targetActorName: transferData.targetActorName,
-                                itemId: transferData.sourceItemId,
-                                itemName: transferData.itemName,
-                                quantity: transferData.selectedQuantity,
-                                hasQuantity: transferData.hasQuantity,
-                                isPlural: transferData.selectedQuantity > 1,
-                                isTransferSender: true,
-                                receiverIds: [senderUser.id],
-                                transferId
-                            });
-                        }
-                        
-                        // Send expiration message to receiver
-                        const receiverUsers = game.users.filter(user => user.character?.id === transferData.targetActorId && user.active && !user.isGM);
-                        if (receiverUsers.length > 0) {
-                            await socket.executeAsGM('createTransferExpiredChat', {
-                                sourceActorId: transferData.sourceActorId,
-                                sourceActorName: transferData.sourceActorName,
-                                targetActorId: transferData.targetActorId,
-                                targetActorName: transferData.targetActorName,
-                                itemId: transferData.sourceItemId,
-                                itemName: transferData.itemName,
-                                quantity: transferData.selectedQuantity,
-                                hasQuantity: transferData.hasQuantity,
-                                isPlural: transferData.selectedQuantity > 1,
-                                isTransferReceiver: true,
-                                receiverIds: receiverUsers.map(u => u.id),
-                                transferId
-                            });
-                        }
-                        
-                        // Send expiration message to GMs
-                        const gmUsers = game.users.filter(u => u.isGM);
-                        if (gmUsers.length > 0) {
-                            await socket.executeAsGM('createTransferExpiredChat', {
-                                sourceActorId: transferData.sourceActorId,
-                                sourceActorName: transferData.sourceActorName,
-                                targetActorId: transferData.targetActorId,
-                                targetActorName: transferData.targetActorName,
-                                itemId: transferData.sourceItemId,
-                                itemName: transferData.itemName,
-                                quantity: transferData.selectedQuantity,
-                                hasQuantity: transferData.hasQuantity,
-                                isPlural: transferData.selectedQuantity > 1,
-                                isGMNotification: true,
-                                receiverIds: gmUsers.map(u => u.id),
-                                transferId
-                            });
-                        }
-                    }
-                    
-                    // Delete the expired request message
-                    const currentMessage = game.messages.get(message.id);
-                    if (currentMessage) {
-                        if (game.user.isGM) {
-                            await currentMessage.delete();
-                        } else {
-                            const socket = game.modules.get(MODULE.ID)?.socket;
-                            if (socket) {
-                                socket.executeAsGM('deleteTransferRequestMessage', currentMessage.id);
-                            }
-                        }
-                    }
-                    
-                    return; // Exit early - don't process the expired transfer
-                }
-                const sourceActor = game.actors.get(transferData.sourceActorId);
-                const targetActor = game.actors.get(transferData.targetActorId);
-                const item = sourceActor?.items.get(transferData.itemId);
-                const senderUser = game.users.get(transferData.sourceUserId);
-                const receiverUsers = game.users.filter(user => user.character?.id === targetActor.id && user.active && !user.isGM);
-                const gmUsers = game.users.filter(u => u.isGM);
-                
-                // Filter out GMs from sender/receiver users for message targeting
-                const senderUsers = senderUser && !senderUser.isGM ? [senderUser] : [];
-                const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
+            // The receiver's request card was retired above.
 
-                // Disable the buttons immediately to prevent double-clicking
-                // v13: Use nativeHtml (available via closure) instead of html
-                nativeHtml.querySelectorAll('.transfer-request-button').forEach(btn => {
-                    btn.disabled = true;
-                    btn.classList.add('disabled');
-                });
-
-                if (isAccept) {
-                    // Execute the transfer
-                    const socket = game.modules.get(MODULE.ID)?.socket;
-                    if (!socket) {
-                        ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
-                        return;
-                    }
-                    
-                    const transferSucceeded = await socket.executeAsGM('executeItemTransfer', {
+            // Delete sender's "Waiting" message
+            if (game.user.isGM) {
+                const senderWaitingMessage = game.messages.find(msg => 
+                    msg.getFlag(MODULE.ID, 'transferId') === transferId && 
+                    msg.getFlag(MODULE.ID, 'isTransferSender') === true
+                );
+                if (senderWaitingMessage) {
+                    await senderWaitingMessage.delete();
+                }
+            } else {
+                // Non-GM: ask GM to delete the sender's waiting message
+                const socket = game.modules.get(MODULE.ID)?.socket;
+                if (socket) {
+                    socket.executeAsGM('deleteSenderWaitingMessage', transferId);
+                }
+            }
+            
+            // If transfer failed, the socket handler already sent error messages - we're done
+            if (!transferSucceeded) {
+                return;
+            }
+            
+            // Transfer succeeded - create success messages
+            if (socket) {
+                // One card for everyone involved, same as the direct
+                // transfer path: three messages describing one event
+                // meant every GM read the sender's copy, the receiver's
+                // copy and their own.
+                const receiverIds = [...new Set([
+                    ...senderUsers.map(u => u.id),
+                    ...receiverUsers.map(u => u.id),
+                    ...gmUsers.map(u => u.id)
+                ])];
+                if (receiverIds.length > 0) {
+                    await socket.executeAsGM('createTransferCompleteChat', {
                         sourceActorId: sourceActor.id,
+                        sourceActorName: getActorDisplayName(sourceActor),
                         targetActorId: targetActor.id,
-                        sourceItemId: item?.id || transferData.itemId,
+                        targetActorName: getActorDisplayName(targetActor),
+                        itemId: item?.id || transferData.itemId,
+                        itemName: item?.name || transferData.itemName,
                         quantity: transferData.quantity,
                         hasQuantity: true,
-                        sourceUserId: senderUser.id,
-                        targetUserId: game.user.id,
-                        itemName: item?.name || transferData.itemName
+                        isPlural: transferData.quantity > 1,
+                        receiverIds,
+                        transferId
                     });
-                    
-                    // Delete the receiver's request message
-                    const currentMessage = game.messages.get(message.id);
-                    if (currentMessage) {
-                        if (game.user.isGM) {
-                            await currentMessage.delete();
-                        } else {
-                            const socket = game.modules.get(MODULE.ID)?.socket;
-                            if (socket) {
-                                socket.executeAsGM('deleteTransferRequestMessage', currentMessage.id);
-                            }
-                        }
-                    }
-                    
-                    // Delete sender's "Waiting" message
-                    if (game.user.isGM) {
-                        const senderWaitingMessage = game.messages.find(msg => 
-                            msg.getFlag(MODULE.ID, 'transferId') === transferId && 
-                            msg.getFlag(MODULE.ID, 'isTransferSender') === true
-                        );
-                        if (senderWaitingMessage) {
-                            await senderWaitingMessage.delete();
-                        }
-                    } else {
-                        // Non-GM: ask GM to delete the sender's waiting message
-                        const socket = game.modules.get(MODULE.ID)?.socket;
-                        if (socket) {
-                            socket.executeAsGM('deleteSenderWaitingMessage', transferId);
-                        }
-                    }
-                    
-                    // If transfer failed, the socket handler already sent error messages - we're done
-                    if (!transferSucceeded) {
-                        return;
-                    }
-                    
-                    // Transfer succeeded - create success messages
+                }
+            }
+        } else {
+            // Delete sender's "Waiting" message
+            if (game.user.isGM) {
+                const senderWaitingMessage = game.messages.find(msg => 
+                    msg.getFlag(MODULE.ID, 'transferId') === transferId && 
+                    msg.getFlag(MODULE.ID, 'isTransferSender') === true
+                );
+                if (senderWaitingMessage) {
+                    await senderWaitingMessage.delete();
+                }
+            } else {
+                // Non-GM: ask GM to delete the sender's waiting message
+                const socket = game.modules.get(MODULE.ID)?.socket;
+                if (socket) {
+                    socket.executeAsGM('deleteSenderWaitingMessage', transferId);
+                }
+            }
+            
+            // Single rejection message for sender
+            if (!game.user.isGM) {
+                const socket = game.modules.get(MODULE.ID)?.socket;
+                if (socket) {
+                    await socket.executeAsGM('createTransferRejectedChat', {
+                        sourceActorId: sourceActor.id,
+                        sourceActorName: getActorDisplayName(sourceActor),
+                        targetActorId: targetActor.id,
+                        targetActorName: getActorDisplayName(targetActor),
+                    itemId: item?.id || transferData.itemId,
+                    itemName: item?.name || transferData.itemName,
+                        quantity: transferData.quantity,
+                        hasQuantity: true,
+                        isPlural: transferData.quantity > 1,
+                    isTransferSender: false,
+                        receiverId: senderUser.id,
+                        transferId
+                    });
+                }
+            } else {
+                // GM creates and sends the message directly. Neutral
+                // wording, matching the socket branch above: both post
+                // the same card, and only the route differs.
+                await transferRejected({
+                    sourceActorName: getActorDisplayName(sourceActor),
+                    targetActorName: getActorDisplayName(targetActor),
+                    itemName: item?.name || transferData.itemName,
+                    quantity: transferData.quantity,
+                    hasQuantity: true,
+                    isPlural: transferData.quantity > 1,
+                    whisper: [senderUser.id],
+                    // When GM sends it, it's properly from the GM
+                    speaker: ChatMessage.getSpeaker({user: game.user})
+                });
+            }
+
+            // Single rejection message for receiver - ONLY IF the receiver is not the sender
+            if (receiverUsers.length > 0 && !receiverUsers.some(u => u.id === senderUser.id)) {
+                if (!game.user.isGM) {
+                    const socket = game.modules.get(MODULE.ID)?.socket;
                     if (socket) {
-                        // One card for everyone involved, same as the direct
-                        // transfer path: three messages describing one event
-                        // meant every GM read the sender's copy, the receiver's
-                        // copy and their own.
-                        const receiverIds = [...new Set([
-                            ...senderUsers.map(u => u.id),
-                            ...receiverUsers.map(u => u.id),
-                            ...gmUsers.map(u => u.id)
-                        ])];
-                        if (receiverIds.length > 0) {
-                            await socket.executeAsGM('createTransferCompleteChat', {
-                                sourceActorId: sourceActor.id,
-                                sourceActorName: getActorDisplayName(sourceActor),
-                                targetActorId: targetActor.id,
-                                targetActorName: getActorDisplayName(targetActor),
-                                itemId: item?.id || transferData.itemId,
-                                itemName: item?.name || transferData.itemName,
-                                quantity: transferData.quantity,
-                                hasQuantity: true,
-                                isPlural: transferData.quantity > 1,
-                                receiverIds,
-                                transferId
-                            });
-                        }
-                    }
-                } else {
-                    // Delete sender's "Waiting" message
-                    if (game.user.isGM) {
-                        const senderWaitingMessage = game.messages.find(msg => 
-                            msg.getFlag(MODULE.ID, 'transferId') === transferId && 
-                            msg.getFlag(MODULE.ID, 'isTransferSender') === true
-                        );
-                        if (senderWaitingMessage) {
-                            await senderWaitingMessage.delete();
-                        }
-                    } else {
-                        // Non-GM: ask GM to delete the sender's waiting message
-                        const socket = game.modules.get(MODULE.ID)?.socket;
-                        if (socket) {
-                            socket.executeAsGM('deleteSenderWaitingMessage', transferId);
-                        }
-                    }
-                    
-                    // Single rejection message for sender
-                    if (!game.user.isGM) {
-                        const socket = game.modules.get(MODULE.ID)?.socket;
-                        if (socket) {
-                            await socket.executeAsGM('createTransferRejectedChat', {
-                                sourceActorId: sourceActor.id,
-                                sourceActorName: getActorDisplayName(sourceActor),
-                                targetActorId: targetActor.id,
-                                targetActorName: getActorDisplayName(targetActor),
-                            itemId: item?.id || transferData.itemId,
-                            itemName: item?.name || transferData.itemName,
-                                quantity: transferData.quantity,
-                                hasQuantity: true,
-                                isPlural: transferData.quantity > 1,
-                            isTransferSender: false,
-                                receiverId: senderUser.id,
-                                transferId
-                            });
-                        }
-                    } else {
-                        // GM creates and sends the message directly
-                        await ChatMessage.create({
-                            content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                                isPublic: false,
-                                cardType: "transfer-rejected",
-                                strCardIcon: "fa-solid fa-times-circle",
-                                strCardTitle: "Transfer Rejected", 
-                                sourceActor,
-                                sourceActorName: getActorDisplayName(sourceActor),
-                                targetActor,
-                                targetActorName: getActorDisplayName(targetActor),
-                                item: item || { name: transferData.itemName },
-                                itemName: item?.name || transferData.itemName,
-                                quantity: transferData.quantity,
-                                hasQuantity: true,
-                                isPlural: transferData.quantity > 1
-                            }),
-                            whisper: [senderUser.id],
-                            // When GM sends it, it's properly from the GM
-                            speaker: ChatMessage.getSpeaker({user: game.user})
+                        await socket.executeAsGM('createTransferRejectedChat', {
+                            sourceActorId: sourceActor.id,
+                            sourceActorName: getActorDisplayName(sourceActor),
+                            targetActorId: targetActor.id,
+                            targetActorName: getActorDisplayName(targetActor),
+                        itemId: item?.id || transferData.itemId,
+                        itemName: item?.name || transferData.itemName,
+                            quantity: transferData.quantity,
+                            hasQuantity: true,
+                            isPlural: transferData.quantity > 1,
+                            isTransferReceiver: true,
+                            receiverIds: receiverUsers.map(u => u.id),
+                            transferId
                         });
                     }
-
-                    // Single rejection message for receiver - ONLY IF the receiver is not the sender
-                    if (receiverUsers.length > 0 && !receiverUsers.some(u => u.id === senderUser.id)) {
-                        if (!game.user.isGM) {
-                            const socket = game.modules.get(MODULE.ID)?.socket;
-                            if (socket) {
-                                await socket.executeAsGM('createTransferRejectedChat', {
-                                    sourceActorId: sourceActor.id,
-                                    sourceActorName: getActorDisplayName(sourceActor),
-                                    targetActorId: targetActor.id,
-                                    targetActorName: getActorDisplayName(targetActor),
-                                itemId: item?.id || transferData.itemId,
-                                itemName: item?.name || transferData.itemName,
-                                    quantity: transferData.quantity,
-                                    hasQuantity: true,
-                                    isPlural: transferData.quantity > 1,
-                                    isTransferReceiver: true,
-                                    receiverIds: receiverUsers.map(u => u.id),
-                                    transferId
-                                });
-                            }
-                        } else {
-                            // GM creates and sends the message directly
-                            await ChatMessage.create({
-                                content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                                    isPublic: false,
-                                    cardType: "transfer-rejected",
-                                    strCardIcon: "fa-solid fa-times-circle",
-                                    strCardTitle: "Transfer Rejected",
-                                    sourceActor,
-                                    sourceActorName: getActorDisplayName(sourceActor),
-                                    targetActor,
-                                    targetActorName: getActorDisplayName(targetActor),
-                                    item: item || { name: transferData.itemName },
-                                    itemName: item?.name || transferData.itemName,
-                                    quantity: transferData.quantity,
-                                    hasQuantity: true,
-                                    isPlural: transferData.quantity > 1
-                                }),
-                                whisper: receiverUsers.map(u => u.id),
-                                // When GM sends it, it's properly from the GM
-                                speaker: ChatMessage.getSpeaker({user: game.user})
-                            });
-                        }
-                    }
+                } else {
+                    // GM creates and sends the message directly. The
+                    // socket branch above marks this one as the
+                    // receiver's copy, so this does too.
+                    await transferRejected({
+                        perspective: 'receiver',
+                        sourceActorName: getActorDisplayName(sourceActor),
+                        targetActorName: getActorDisplayName(targetActor),
+                        itemName: item?.name || transferData.itemName,
+                        quantity: transferData.quantity,
+                        hasQuantity: true,
+                        isPlural: transferData.quantity > 1,
+                        whisper: receiverUsers.map(u => u.id),
+                        // When GM sends it, it's properly from the GM
+                        speaker: ChatMessage.getSpeaker({user: game.user})
+                    });
                 }
-                });
-            });
+            }
         }
     }
 
@@ -1215,18 +1189,11 @@ export class PartyPanel {
      * @param {ChatMessage} message - The chat message
      * @param {jQuery} html - The message HTML
      */
-    async _handleGMApprovalClick(event, message, html) {
-        // v13: Convert jQuery to native DOM if needed
-        let nativeHtml = html;
-        if (html && (html.jquery || typeof html.find === 'function')) {
-            nativeHtml = html[0] || html.get?.(0) || html;
-        }
-        if (!nativeHtml) return;
-        
-        const button = event.currentTarget;
-        const transferId = button.dataset.transferId;
-        const isApprove = button.classList.contains('approve');
-        
+    static async _handleGMApproval(message, transferId, isApprove) {
+        // Hiding a button is not authorisation — any client can fire an action
+        // whatever its own copy of the card looks like.
+        if (!game.user.isGM) return;
+
         // Get transfer data from the message
         const transferData = message.getFlag(MODULE.ID, 'data');
         if (!transferData) {
@@ -1241,7 +1208,7 @@ export class PartyPanel {
         const transferAgeSeconds = Math.floor(transferAge / 1000);
         
         if (transferAgeSeconds > timeoutSeconds) {
-            // Transfer has expired - send expiration message and delete the request
+            // Transfer has expired - tell everyone involved, then retire the card
             const socket = game.modules.get(MODULE.ID)?.socket;
             if (socket) {
                 // Send expiration message to sender
@@ -1302,131 +1269,83 @@ export class PartyPanel {
                 }
             }
             
-            // Delete the expired request message
-            const currentMessage = game.messages.get(message.id);
-            if (currentMessage && game.user.isGM) {
-                await currentMessage.delete();
-            }
-            
+            await retireCard(message, {
+                text: 'Expired',
+                tone: 'negative',
+                icon: 'fa-solid fa-clock'
+            });
+
             return; // Exit early - don't process the expired transfer
         }
-        
+
         const sourceActor = game.actors.get(transferData.sourceActorId);
         const targetActor = game.actors.get(transferData.targetActorId);
         const item = sourceActor?.items.get(transferData.itemId);
         const senderUser = game.users.get(transferData.sourceUserId);
-        
-        // Disable buttons immediately
-        // v13: Use native DOM methods
-        nativeHtml.querySelectorAll('.gm-approval-button').forEach(btn => {
-            btn.disabled = true;
-            btn.classList.add('disabled');
-        });
-        
-        // Add processing message
-        const buttonsContainer = nativeHtml.querySelector('.transfer-request-buttons');
-        if (buttonsContainer) {
-            const processingMsg = document.createElement('div');
-            processingMsg.className = 'processing-message';
-            processingMsg.style.cssText = 'margin-top: 5px; text-align: center; font-style: italic;';
-            processingMsg.textContent = 'Processing...';
-            buttonsContainer.appendChild(processingMsg);
-        }
-        
-        // Delete the GM approval message
+
+        // Retire the approval card to the decision it now records. This
+        // replaces both the local button-disabling and the "Processing..." line
+        // that used to be appended to this one browser's DOM: rewriting the
+        // message takes the buttons away on every client, which is what
+        // actually prevents a second GM answering the same request.
+        await retireCard(message, isApprove
+            ? { text: 'Approved', tone: 'positive', icon: 'fa-solid fa-circle-check' }
+            : { text: 'Denied', tone: 'negative', icon: 'fa-solid fa-circle-xmark' });
+
+        // The sender's "Waiting for GM approval" card is superseded by the one
+        // posted below, so it still goes.
         try {
-            const currentMessage = game.messages.get(message.id);
-            if (currentMessage && game.user.isGM) {
-                await currentMessage.delete();
-            }
-            
-            // Delete sender's "Waiting for GM approval" message
-            const senderWaitingMessage = game.messages.find(msg => 
-                msg.getFlag(MODULE.ID, 'transferId') === transferId && 
+            const senderWaitingMessage = game.messages.find(msg =>
+                msg.getFlag(MODULE.ID, 'transferId') === transferId &&
                 msg.getFlag(MODULE.ID, 'isTransferSender') === true
             );
-            if (senderWaitingMessage && game.user.isGM) {
-                await senderWaitingMessage.delete();
-            }
+            if (senderWaitingMessage) await senderWaitingMessage.delete();
         } catch (error) {
-            console.error('Error deleting GM approval message:', error);
+            console.error('Error deleting sender waiting message:', error);
         }
-        
-        // Clear the expiration timer since GM is processing the transfer
-        this._clearTransferTimer(transferId);
-        
+
+
         if (isApprove) {
-            // GM approved - now send to receiver for their accept/reject
-            await this._sendTransferReceiverMessage(sourceActor, targetActor, item || { name: transferData.itemName }, transferData.quantity, transferData.hasQuantity, transferId, transferData);
+            // GM approved - now send to receiver for their accept/reject.
+            // This lives on TransferUtils, not here: as `this._send...` it was
+            // always undefined and always threw, and now that the handler is
+            // dispatched by Blacksmith — which logs a throwing handler rather
+            // than surfacing it — the failure would be silent, leaving the card
+            // retired to "Approved" with no receiver card ever posted.
+            await TransferUtils._sendTransferReceiverMessage(sourceActor, targetActor, item || { name: transferData.itemName }, transferData.quantity, transferData.hasQuantity, transferId, transferData);
             
             // Send updated message to sender showing GM approval
             if (senderUser) {
-                await ChatMessage.create({
-                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                        isPublic: false,
-                        cardType: "transfer-request",
-                        strCardIcon: "fa-solid fa-people-arrows",
-                        strCardTitle: "Transfer Request",
-                        sourceActor,
-                        sourceActorName: getActorDisplayName(sourceActor),
-                        targetActor,
-                        targetActorName: getActorDisplayName(targetActor),
-                        item: item || { name: transferData.itemName },
-                        itemName: item?.name || transferData.itemName,
-                        quantity: transferData.quantity,
-                        hasQuantity: transferData.hasQuantity,
-                        isPlural: transferData.quantity > 1,
-                        isTransferSender: true,
-                        strCardContent: "GM approved. Waiting for receiver to accept."
-                    }),
-                    speaker: { alias: "System" },
-                    whisper: [senderUser.id],
-                    flags: {
-                        [MODULE.ID]: {
-                            transferId,
-                            type: 'transferRequest',
-                            isTransferSender: true
-                        }
-                    }
-                });
-            }
-        } else {
-            // GM denied - send rejection message to sender
-            const socket = game.modules.get(MODULE.ID)?.socket;
-            if (socket && !game.user.isGM) {
-                await socket.executeAsGM('createTransferRejectedChat', {
-                    sourceActorId: sourceActor.id,
-                    sourceActorName: getActorDisplayName(sourceActor),
-                    targetActorId: targetActor.id,
+                await transferRequestSender({
                     targetActorName: getActorDisplayName(targetActor),
-                    itemId: item?.id || transferData.itemId,
                     itemName: item?.name || transferData.itemName,
                     quantity: transferData.quantity,
                     hasQuantity: transferData.hasQuantity,
                     isPlural: transferData.quantity > 1,
-                    isTransferSender: true,
-                    receiverId: senderUser.id,
-                    strCardContent: "The GM denied this transfer request.",
-                    transferId
+                    waitingOn: "GM approved. Waiting for receiver to accept.",
+                    speaker: { alias: "System" },
+                    whisper: [senderUser.id],
+                    flags: {
+                        transferId,
+                        type: 'transferRequest',
+                        isTransferSender: true
+                    }
                 });
-            } else if (game.user.isGM) {
-                await ChatMessage.create({
-                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                        isPublic: false,
-                        cardType: "transfer-rejected",
-                        strCardIcon: "fa-solid fa-times-circle",
-                        strCardTitle: "Transfer Denied",
-                        sourceActor,
-                        sourceActorName: getActorDisplayName(sourceActor),
-                        targetActor,
-                        targetActorName: getActorDisplayName(targetActor),
-                        item: item || { name: transferData.itemName },
-                        itemName: item?.name || transferData.itemName,
-                        quantity: transferData.quantity,
-                        hasQuantity: transferData.hasQuantity,
-                        isPlural: transferData.quantity > 1,
-                        strCardContent: "The GM denied this transfer request."
-                    }),
+            }
+        } else {
+            // GM denied - send rejection message to sender. Only the GM reaches
+            // here, so there is no socket hop to make: the non-GM branch this
+            // used to carry was unreachable behind the guard at the top.
+            if (senderUser) {
+                await transferRejected({
+                    title: "Transfer Denied",
+                    sourceActorName: getActorDisplayName(sourceActor),
+                    targetActorName: getActorDisplayName(targetActor),
+                    itemName: item?.name || transferData.itemName,
+                    quantity: transferData.quantity,
+                    hasQuantity: transferData.hasQuantity,
+                    isPlural: transferData.quantity > 1,
+                    reason: "The GM denied this transfer request.",
                     whisper: [senderUser.id],
                     speaker: ChatMessage.getSpeaker({user: game.user})
                 });
@@ -1434,45 +1353,7 @@ export class PartyPanel {
         }
     }
 
-    // Utility to generate unified card data for all transfer/chat card types
-    _getTransferCardData({
-        cardType = "generic", // e.g. "compendium-drop", "actor-transfer", "request", "response", "execution"
-        sourceActor = null,
-        targetActor = null,
-        item = null,
-        quantity = 1,
-        hasQuantity = false,
-        isPlural = false,
-        responderName = null,
-        transferStatus = null,
-        showTransferButtons = false,
-        showExecuteButton = false
-    } = {}) {
-        return {
-            cardType,
-            isPublic: cardType === "compendium-drop" || cardType === "world-drop" || cardType === "actor-transfer",
-            strCardIcon: item ? this._getDropIcon(item.type) : "fa-solid fa-backpack",
-            strCardTitle: this._getDropTitle(item?.type),
-            isTransferFromCharacter: cardType === "actor-transfer" || cardType === "request" || cardType === "response" || cardType === "execution",
-            sourceActorName: sourceActor?.name || (cardType === "compendium-drop" ? "Compendium" : null),
-            targetActorName: targetActor?.name || null,
-            itemName: item?.name || null,
-            hasQuantity,
-            quantity,
-            isPlural,
-            responderName,
-            transferStatus,
-            showTransferButtons,
-            showExecuteButton,
-            // fallback
-            strCardContent: (cardType === "compendium-drop" || cardType === "world-drop") && targetActor && item ? `<p><strong>${getActorDisplayName(targetActor)}</strong> received <strong>${item.name}</strong> via the Squire tray.</p>` : undefined
-        };
-    }
-
     destroy() {
-        // Clean up transfer timers
-        this._cleanupTransferTimers();
-
         // Clean up any pending debounced render
         if (this._renderTimer) {
             clearTrackedTimeout(this._renderTimer);
@@ -1482,143 +1363,4 @@ export class PartyPanel {
         this.element = null;
     }
 
-    /**
-     * Schedule automatic expiration for a transfer request
-     * @param {string} transferId - Transfer identifier
-     * @param {Object} transferData - Transfer data object
-     */
-    _scheduleTransferExpiration(transferId, transferData) {
-        const timeoutSeconds = game.settings.get(MODULE.ID, 'transferTimeout');
-        const timeoutMs = timeoutSeconds * 1000;
-        
-        // Clear any existing timer for this transfer
-        this._clearTransferTimer(transferId);
-        
-        // Set up new timer
-        const timerId = trackModuleTimeout(async () => {
-            await this._expireTransfer(transferId, transferData);
-        }, timeoutMs);
-        
-        // Store timer reference for cleanup
-        if (!this._transferTimers) {
-            this._transferTimers = new Map();
-        }
-        this._transferTimers.set(transferId, timerId);
-    }
-
-    /**
-     * Clear the timer for a specific transfer
-     * @param {string} transferId - Transfer identifier
-     */
-    _clearTransferTimer(transferId) {
-        if (this._transferTimers && this._transferTimers.has(transferId)) {
-            clearTrackedTimeout(this._transferTimers.get(transferId));
-            this._transferTimers.delete(transferId);
-        }
-    }
-
-    /**
-     * Automatically expire a transfer request
-     * @param {string} transferId - Transfer identifier
-     * @param {Object} transferData - Transfer data object
-     */
-    async _expireTransfer(transferId, transferData) {
-        try {
-            // Find and delete all transfer request messages for this transfer
-            const transferMessages = game.messages.filter(msg => 
-                msg.getFlag(MODULE.ID, 'transferId') === transferId
-            );
-            
-            for (const message of transferMessages) {
-                if (game.user.isGM) {
-                    await message.delete();
-                } else {
-                    const socket = game.modules.get(MODULE.ID)?.socket;
-                    if (socket) {
-                        socket.executeAsGM('deleteTransferRequestMessage', message.id);
-                    }
-                }
-            }
-            
-            // Send expiration messages to all relevant parties
-            const socket = game.modules.get(MODULE.ID)?.socket;
-            if (socket) {
-                // Send expiration message to sender
-                const senderUser = game.users.get(transferData.sourceUserId);
-                if (senderUser && !senderUser.isGM) {
-                    await socket.executeAsGM('createTransferExpiredChat', {
-                        sourceActorId: transferData.sourceActorId,
-                        sourceActorName: transferData.sourceActorName,
-                        targetActorId: transferData.targetActorId,
-                        targetActorName: transferData.targetActorName,
-                        itemId: transferData.sourceItemId,
-                        itemName: transferData.itemName,
-                        quantity: transferData.selectedQuantity,
-                        hasQuantity: transferData.hasQuantity,
-                        isPlural: transferData.selectedQuantity > 1,
-                        isTransferSender: true,
-                        receiverIds: [senderUser.id],
-                        transferId
-                    });
-                }
-                
-                // Send expiration message to receiver
-                const receiverUsers = game.users.filter(user => user.character?.id === transferData.targetActorId && user.active && !user.isGM);
-                if (receiverUsers.length > 0) {
-                    await socket.executeAsGM('createTransferExpiredChat', {
-                        sourceActorId: transferData.sourceActorId,
-                        sourceActorName: transferData.sourceActorName,
-                        targetActorId: transferData.targetActorId,
-                        targetActorName: transferData.targetActorName,
-                        itemId: transferData.sourceItemId,
-                        itemName: transferData.itemName,
-                        quantity: transferData.selectedQuantity,
-                        hasQuantity: transferData.hasQuantity,
-                        isPlural: transferData.selectedQuantity > 1,
-                        isTransferReceiver: true,
-                        receiverIds: receiverUsers.map(u => u.id),
-                        transferId
-                    });
-                }
-                
-                // Send expiration message to GMs
-                const gmUsers = game.users.filter(u => u.isGM);
-                if (gmUsers.length > 0) {
-                    await socket.executeAsGM('createTransferExpiredChat', {
-                        sourceActorId: transferData.sourceActorId,
-                        sourceActorName: transferData.sourceActorName,
-                        targetActorId: transferData.targetActorId,
-                        targetActorName: transferData.targetActorName,
-                        itemId: transferData.sourceItemId,
-                        itemName: transferData.itemName,
-                        quantity: transferData.selectedQuantity,
-                        hasQuantity: transferData.hasQuantity,
-                        isPlural: transferData.selectedQuantity > 1,
-                        isGMNotification: true,
-                        receiverIds: gmUsers.map(u => u.id),
-                        transferId
-                    });
-                }
-            }
-            
-            // Clean up timer reference
-            this._clearTransferTimer(transferId);
-            
-        } catch (error) {
-            console.error('Error expiring transfer:', error);
-        }
-    }
-
-    /**
-     * Clean up all transfer timers (called when panel is destroyed)
-     */
-    _cleanupTransferTimers() {
-        if (this._transferTimers) {
-            for (const timerId of this._transferTimers.values()) {
-                clearTrackedTimeout(timerId);
-            }
-            this._transferTimers.clear();
-        }
-    }
-} 
-
+}

@@ -1,8 +1,28 @@
-import { MODULE, TEMPLATES, SQUIRE } from './const.js';
+import { MODULE, SQUIRE } from './const.js';
 import { PanelManager, _updateTrayFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings, migrateCompendiumAccessSetting } from './settings.js';
-import { getTransferBlocker, registerHelpers, renderTemplate, showSquireToast } from './helpers.js';
+import { getTransferBlocker, registerHelpers, showSquireToast } from './helpers.js';
+import {
+    transferRequestGMApproval, transferRequestReceiver, transferComplete,
+    transferRejected, transferFailed, transferExpired,
+    applyRetire, name, sentence
+} from './manager-cards.js';
+
+/**
+ * Which sentence an outcome card should carry.
+ *
+ * Every one of these messages is whispered to a single audience, so the
+ * perspective is a property of the message rather than of whoever reads it —
+ * which is why the cards need no per-reader gating and cannot show anybody an
+ * empty body the way the old template's else-less branches could.
+ */
+function transferPerspective(data) {
+    if (data.isTransferSender) return 'sender';
+    if (data.isTransferReceiver) return 'receiver';
+    if (data.isGMNotification) return 'gm';
+    return 'neutral';
+}
 import { CompendiumRequestUtils } from './compendium-request-utils.js';
 import { StatblockUtility } from './utility-statblock.js';
 
@@ -311,37 +331,18 @@ Hooks.once('ready', async () => {
             }
         });
         
-        const partyRenderChatMessageHookId = getBlacksmithHookManager().registerHook({
-            name: "renderChatMessage",
-            description: "Coffee Pub Squire: Handle chat message rendering for party panel transfer buttons",
-            context: MODULE.ID,
-            priority: 2,
-            callback: (message, html, data) => {
-                // Route to party panel if it exists
-                const panelManager = getPanelManager();
-                if (panelManager?.instance?.partyPanel && panelManager.instance.partyPanel._handleTransferButtons) {
-                    panelManager.instance.partyPanel._handleTransferButtons(message, html, data);
-                }
-            }
-        });
+        // Card buttons are no longer wired by walking the DOM on every chat
+        // render. Blacksmith resolves each button's handler from a registry at
+        // paint time, so these register once per client and cover every card
+        // already in the log as well as every card still to come.
+        //
+        // This also retires the last of the routing-through-PanelManager
+        // fragility: a GM answering a request needed no tray open, but the
+        // transfer buttons only worked when one happened to be.
+        PartyPanel.registerCardActions();
+        CompendiumRequestUtils.registerCardActions();
+        StatblockUtility.registerCardActions();
 
-        // Deliberately its own hook rather than a branch inside the party
-        // panel's: a GM approving a compendium request may have no tray open at
-        // all, and routing through PanelManager.instance would make the buttons
-        // work or not depending on whether a token happened to be selected.
-        const compendiumRequestHookId = getBlacksmithHookManager().registerHook({
-            name: "renderChatMessage",
-            description: "Coffee Pub Squire: Handle compendium add request approval buttons",
-            context: MODULE.ID,
-            priority: 2,
-            callback: (message, html) => {
-                CompendiumRequestUtils.handleRequestButtons(message, html);
-                // Ammunition restock requests ride the same hook: both are a
-                // player asking the GM to approve equipment reaching a sheet.
-                StatblockUtility.handleRequestButtons(message, html);
-            }
-        });
-        
         // The two macros-panel hooks here existed only to re-apply Squire's own
         // hotbar-hiding style, which Blacksmith now owns exclusively.
 
@@ -1015,12 +1016,9 @@ Hooks.once('socketlib.ready', () => {
                     const targetUsers = game.users.filter(user => targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
                     const allUsers = [...new Set([...sourceUsers.map(u => u.id), ...targetUsers.map(u => u.id), data.sourceUserId, data.targetUserId])].filter(id => id);
                     
-                    await ChatMessage.create({
-                        content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                            isPublic: false,
-                            cardType: "transfer-failed",
-                            failureReason: `The item "${data.itemName || 'Unknown Item'}" no longer exists and cannot be transferred.`
-                        }),
+                    await transferFailed({
+                        reason: sentence(name(data.itemName || 'Unknown Item'),
+                                         ' no longer exists and cannot be transferred.'),
                         speaker: { alias: "System" },
                         whisper: allUsers
                     });
@@ -1038,12 +1036,15 @@ Hooks.once('socketlib.ready', () => {
                     const targetUsers = game.users.filter(user => targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
                     const allUsers = [...new Set([...sourceUsers.map(u => u.id), ...targetUsers.map(u => u.id), data.sourceUserId, data.targetUserId])].filter(id => id);
 
-                    await ChatMessage.create({
-                        content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                            isPublic: false,
-                            cardType: "transfer-failed",
-                            failureReason: containerBlocker.message
-                        }),
+                    // Rebuilt from the blocker's parts rather than using its
+                    // ready-made `message`: that string has the item's name
+                    // baked into it, and a name reaching a card has to arrive
+                    // as a literal rather than as prose.
+                    const packedCount = containerBlocker.contentCount;
+                    await transferFailed({
+                        reason: sentence(name(sourceItem.name), ' still holds ',
+                                         `${packedCount} item${packedCount === 1 ? '' : 's'}`,
+                                         '. Unpack it before handing it over.'),
                         speaker: { alias: "System" },
                         whisper: allUsers
                     });
@@ -1065,12 +1066,10 @@ Hooks.once('socketlib.ready', () => {
                     const targetUsers = game.users.filter(user => targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
                     const allUsers = [...new Set([...sourceUsers.map(u => u.id), ...targetUsers.map(u => u.id), data.sourceUserId, data.targetUserId])].filter(id => id);
                     
-                    await ChatMessage.create({
-                        content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                            isPublic: false,
-                            cardType: "transfer-failed",
-                            failureReason: `Insufficient quantity. Only ${available} ${sourceItem.name}${available !== 1 ? 's' : ''} available, but ${data.quantity} requested.`
-                        }),
+                    await transferFailed({
+                        reason: sentence('Insufficient quantity. Only ', `${available} `,
+                                         name(`${sourceItem.name}${available !== 1 ? 's' : ''}`),
+                                         ` available, but ${data.quantity} requested.`),
                         speaker: { alias: "System" },
                         whisper: allUsers
                     });
@@ -1125,38 +1124,28 @@ Hooks.once('socketlib.ready', () => {
                     return;
                 }
 
-                // Create the chat message as GM
-                await ChatMessage.create({
-                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                        isPublic: false,
-                        cardType: "transfer-request",
-                        strCardIcon: data.isGMApproval ? "fa-solid fa-gavel" : "fa-solid fa-people-arrows",
-                        strCardTitle: data.isGMApproval ? "GM Approval Required" : "Transfer Request",
-                        sourceActor,
-                        sourceActorName: data.sourceActorName,
-                        targetActor,
-                        targetActorName: data.targetActorName,
-                        itemName: data.itemName,
-                        quantity: data.quantity,
-                        hasQuantity: data.hasQuantity,
-                        isPlural: data.isPlural,
-                        isTransferReceiver: data.isTransferReceiver || false,
-                        isTransferSender: data.isTransferSender || false,
-                        isGMApproval: data.isGMApproval || false,
-                        transferId: data.transferId
-                    }),
+                // Which card this is decides which buttons it carries, so the
+                // two are chosen together rather than by flags read back out of
+                // a single shared composition.
+                const postRequest = data.isGMApproval ? transferRequestGMApproval : transferRequestReceiver;
+                await postRequest({
+                    sourceActorName: data.sourceActorName,
+                    targetActorName: data.targetActorName,
+                    itemName: data.itemName,
+                    quantity: data.quantity,
+                    hasQuantity: data.hasQuantity,
+                    isPlural: data.isPlural,
+                    transferId: data.transferId,
                     speaker: { alias: "System" },
                     whisper: data.receiverIds,
                     flags: {
-                        [MODULE.ID]: {
-                            transferId: data.transferId,
-                            type: 'transferRequest',
-                            isTransferReceiver: data.isTransferReceiver || false,
-                            isTransferSender: data.isTransferSender || false,
-                            isGMApproval: data.isGMApproval || false,
-                            data: data.transferData,
-                            targetUsers: data.receiverIds
-                        }
+                        transferId: data.transferId,
+                        type: 'transferRequest',
+                        isTransferReceiver: data.isTransferReceiver || false,
+                        isTransferSender: data.isTransferSender || false,
+                        isGMApproval: data.isGMApproval || false,
+                        data: data.transferData,
+                        targetUsers: data.receiverIds
                     }
                 });
             } catch (error) {
@@ -1181,24 +1170,14 @@ Hooks.once('socketlib.ready', () => {
                 }
                 
                 // Create the chat message as GM
-                await ChatMessage.create({
-                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                        isPublic: false,
-                        cardType: "transfer-complete",
-                        strCardIcon: "fa-solid fa-backpack",
-                        strCardTitle: "Transfer Complete",
-                        sourceActor,
-                        sourceActorName: data.sourceActorName,
-                        targetActor,
-                        targetActorName: data.targetActorName,
-                        itemName: data.itemName,
-                        quantity: data.quantity,
-                        hasQuantity: data.hasQuantity,
-                        isPlural: data.isPlural,
-                        isTransferSender: data.isTransferSender || false,
-                        isTransferReceiver: data.isTransferReceiver || false,
-                        isGMNotification: data.isGMNotification || false
-                    }),
+                await transferComplete({
+                    perspective: transferPerspective(data),
+                    sourceActorName: data.sourceActorName,
+                    targetActorName: data.targetActorName,
+                    itemName: data.itemName,
+                    quantity: data.quantity,
+                    hasQuantity: data.hasQuantity,
+                    isPlural: data.isPlural,
                     whisper: data.receiverIds || [data.receiverId] || [],
                     speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
                 });
@@ -1220,23 +1199,27 @@ Hooks.once('socketlib.ready', () => {
                     return;
                 }
                 
+                // Whichever list the caller supplied. The old expression keyed
+                // off `isTransferSender`, so a caller that sent `receiverId`
+                // without that flag produced `undefined` — and an undefined
+                // whisper posts the card to the whole table, which is what a
+                // player rejecting a transfer has been doing.
+                const whisper = data.receiverIds
+                    ?? (data.receiverId ? [data.receiverId] : undefined);
+
                 // Create the chat message as GM
-                await ChatMessage.create({
-                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                        isPublic: false,
-                        cardType: "transfer-rejected",
-                        strCardIcon: "fa-solid fa-times-circle",
-                        strCardTitle: "Transfer Rejected",
-                        sourceActor,
-                        sourceActorName: data.sourceActorName,
-                        targetActor,
-                        targetActorName: data.targetActorName,
-                        itemName: data.itemName,
-                        quantity: data.quantity,
-                        hasQuantity: data.hasQuantity,
-                        isPlural: data.isPlural
-                    }),
-                    whisper: data.isTransferSender ? [data.receiverId] : data.receiverIds,
+                await transferRejected({
+                    perspective: transferPerspective(data),
+                    sourceActorName: data.sourceActorName,
+                    targetActorName: data.targetActorName,
+                    itemName: data.itemName,
+                    quantity: data.quantity,
+                    hasQuantity: data.hasQuantity,
+                    isPlural: data.isPlural,
+                    // Literal, not prose: this arrives in a socket payload, and
+                    // anything a client can put in a payload is untrusted text.
+                    reason: data.reason ? { literal: String(data.reason) } : null,
+                    whisper,
                     speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
                 });
             } catch (error) {
@@ -1258,24 +1241,14 @@ Hooks.once('socketlib.ready', () => {
                 }
                 
                 // Create the chat message as GM
-                await ChatMessage.create({
-                    content: await renderTemplate(TEMPLATES.CHAT_CARD, {
-                        isPublic: false,
-                        cardType: "transfer-expired",
-                        strCardIcon: "fa-solid fa-clock",
-                        strCardTitle: "Transfer Request Expired",
-                        sourceActor,
-                        sourceActorName: data.sourceActorName,
-                        targetActor,
-                        targetActorName: data.targetActorName,
-                        itemName: data.itemName,
-                        quantity: data.quantity,
-                        hasQuantity: data.hasQuantity,
-                        isPlural: data.isPlural,
-                        isTransferSender: data.isTransferSender || false,
-                        isTransferReceiver: data.isTransferReceiver || false,
-                        isGMNotification: data.isGMNotification || false
-                    }),
+                await transferExpired({
+                    perspective: transferPerspective(data),
+                    sourceActorName: data.sourceActorName,
+                    targetActorName: data.targetActorName,
+                    itemName: data.itemName,
+                    quantity: data.quantity,
+                    hasQuantity: data.hasQuantity,
+                    isPlural: data.isPlural,
                     whisper: data.receiverIds || [data.receiverId] || [],
                     speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
                 });
@@ -1285,22 +1258,20 @@ Hooks.once('socketlib.ready', () => {
         });
         
         // Add socket handler for deleting transfer request messages
-        socket.register("deleteTransferRequestMessage", async (messageId) => {
+        // Retiring a card rewrites the message, and a request card is authored
+        // by the GM even when a player is the one answering it. This is the hop
+        // that lets the receiver's Accept land on a message they cannot modify.
+        socket.register("retireCardMessage", async ({ messageId, text, tone, icon }) => {
             if (!game.user.isGM) return;
-            
+
             try {
                 const message = game.messages.get(messageId);
-                if (message) {
-                    await message.delete();
-                } else {
-                    console.error(`Could not find message with ID ${messageId} to delete:`, { messageId });
-                }
+                if (message) await applyRetire(message, { text, tone, icon });
             } catch (error) {
-                console.error('Error deleting transfer request message:', { messageId, error });
+                console.error('Error retiring card message:', { messageId, error });
             }
         });
-        
-        // Add socket handler for deleting sender's waiting messages by transferId
+
         socket.register("deleteSenderWaitingMessage", async (transferId) => {
             if (!game.user.isGM) return;
             
