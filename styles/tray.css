@@ -1111,6 +1111,15 @@
     display: block;
 }
 
+/* A section a filter has emptied stands down entirely rather than lingering as
+   a heading over nothing. Kept separate from `.visible`, which belongs to the
+   item-type chips: two owners writing one class is the race this whole
+   arrangement exists to avoid. Higher specificity so it wins over `.visible`
+   without needing !important. */
+.panel-containers.stacked .panel-container[data-panel].visible.filtered-empty {
+    display: none;
+}
+
 
 
 .squire-tray .search-container {
@@ -1135,23 +1144,6 @@
     color: rgba(231, 91, 1, 1.0);
 }
 
-
-/* No Matches Message */
-
-.tray-title-small.no-matches {
-    display: none !important; /* Hide by default */
-    text-align: center;
-    padding: 2px;
-    margin: 0;
-    color: rgba(255, 255, 255, 0.2);
-    font-style: inherit;
-    font-size: 0.8em;
-    font-weight: 400;
-}
-
-.tray-title-small.no-matches.show {
-    display: block !important; /* Only show when explicitly enabled */
-}
 
 
 

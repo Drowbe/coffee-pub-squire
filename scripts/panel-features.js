@@ -139,7 +139,6 @@ export class FeaturesPanel {
 
         // Update headers visibility using PanelManager
         this.panelManager._updateHeadersVisibility(panel);
-        this.panelManager._updateEmptyMessage(panel);
     }
 
     /**

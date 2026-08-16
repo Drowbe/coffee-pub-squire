@@ -24,9 +24,15 @@
     same is true there. Only some rows can answer "equipped?" or "prepared?", so
     turning off all four of those leaves the rows that answer neither.
 
-    That last case is why the availability group is four chips rather than two
-    toggles: a toggle can only hide one side, which made "what am I carrying but
-    not wearing" impossible to ask.
+    That last case is why availability is four chips rather than two toggles: a
+    toggle can only hide one side, which made "what am I carrying but not
+    wearing" impossible to ask.
+
+    Equipped/unequipped and prepared/unprepared are separated because they are
+    two questions, not one group of four — which is also the scope shift-click
+    solos within. Shift-clicking Equipped means "equipped rather than stowed"
+    and leaves spells alone, so the rule has to be visible in the layout or the
+    gesture will surprise people.
 --}}
 <div class="control-filter-bar">
 <div class="filter-group">
@@ -48,6 +54,9 @@
 <div class="filter-group">
 <i class="fa-solid fa-shield-halved filter-chip" data-filter-kind="state" data-filter-value="equipped" data-tooltip="Equipped gear. Says nothing about spells or features."></i>
 <i class="fa-solid fa-shield-slash filter-chip" data-filter-kind="state" data-filter-value="unequipped" data-tooltip="Gear you are carrying but not wearing or wielding."></i>
+</div>
+<span class="filter-separator"></span>
+<div class="filter-group">
 <i class="fa-solid fa-sun filter-chip" data-filter-kind="state" data-filter-value="prepared" data-tooltip="Prepared spells, plus cantrips and anything always available."></i>
 <i class="fa-solid fa-moon filter-chip" data-filter-kind="state" data-filter-value="unprepared" data-tooltip="Spells you know but have not prepared."></i>
 </div>

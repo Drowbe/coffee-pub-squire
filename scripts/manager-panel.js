@@ -1292,7 +1292,6 @@ export class PanelManager {
         rows.forEach(row => setRowFilter(row, 'category', !shouldBeActive));
 
         this._updateHeadersVisibility(panel);
-        this._updateEmptyMessage(panel);
     }
 
     /**
@@ -1315,31 +1314,6 @@ export class PanelManager {
 
             header.style.display = hasVisibleItems ? '' : 'none';
         });
-    }
-
-    /**
-     * Update visibility of the "no matches" message
-     * @param {HTMLElement} panel - The panel element
-     * @param {boolean} hasVisibleItems - Whether there are any visible items
-     * @private
-     */
-    _updateEmptyMessage(panel, hasVisibleItems = null) {
-        const noMatchesMsg = panel.querySelector('.no-matches');
-        if (!noMatchesMsg) return;
-
-        if (hasVisibleItems === null) {
-            const items = panel.querySelectorAll('.panel-item');
-            hasVisibleItems = Array.from(items).some(isRowVisible);
-        }
-
-        // Empty means two different things and they deserve different answers.
-        // A search or an active chip that matched nothing is worth saying out
-        // loud; a section you turned off, or a character who simply owns no
-        // weapons, is just empty and needs no explanation. Only the first case
-        // gets the message.
-        const show = !hasVisibleItems && (this.controlPanel?.hasActiveFilters() ?? false);
-        noMatchesMsg.classList.toggle('show', show);
-        noMatchesMsg.style.display = show ? 'block' : 'none';
     }
 
     /**

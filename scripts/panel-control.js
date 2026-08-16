@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getPanelItemName, setRowFilter} from './helpers.js';
+import { getNativeElement, renderTemplate, getPanelItemName, setRowFilter, isRowVisible} from './helpers.js';
 import { CompendiumSearchUtility } from './utility-compendium-search.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
@@ -311,6 +311,7 @@ export class ControlPanel {
 
         const term = this._searchTerm.toLowerCase();
         const shownActions = this._shownActions;
+        const filtering = this.hasActiveFilters();
 
         const shownStates = {};
         Object.values(STATE_BUCKETS).flat().forEach(bucket => {
@@ -353,7 +354,23 @@ export class ControlPanel {
             });
 
             PanelManager.instance?._updateHeadersVisibility(panelElement);
-            PanelManager.instance?._updateEmptyMessage(panelElement);
+
+            // A section that a filter has emptied is suppressed outright rather
+            // than left standing over a "no matches" line. Asking for bonus
+            // actions means you want the bonus actions, not a tour of every
+            // section that hasn't got one — and in a tall narrow column, five
+            // headings over five apologies buries the one section that answered.
+            //
+            // Only when a filter is doing it. A character who simply owns no
+            // weapons still gets the "No weapons available" line, because that
+            // is a fact about the sheet rather than about the question asked.
+            //
+            // Category collapse is deliberately excluded from that test: those
+            // chips live inside the panel's own heading, so hiding the panel
+            // would take away the only control that could bring it back.
+            const emptied = filtering
+                && !Array.from(rows).some(isRowVisible);
+            panelElement.classList.toggle('filtered-empty', emptied);
         });
     }
 

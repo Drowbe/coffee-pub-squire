@@ -190,7 +190,6 @@ export class SpellsPanel {
         // Update headers visibility using PanelManager — panel-scoped for the
         // same reason.
         this.panelManager._updateHeadersVisibility(panel);
-        this.panelManager._updateEmptyMessage(panel);
     }
 
     /**
