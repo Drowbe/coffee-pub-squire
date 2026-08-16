@@ -17,7 +17,7 @@
 | Migrate chat cards to the Blacksmith Chat Cards API | High | L | Done (unreleased) |
 | Blacksmith (other repo): co-sign the dnd5e `updateEncumbrance` upstream report after v14 | Low | S | Open |
 | Let the handle filter which statuses it shows (`showHandleConditions` is all-or-nothing) | Low | M | Open |
-| Unified tray filter bar: global type / action / equipped-prepared chips replacing the per-panel filter icons | High | L | In progress (phases 1-3 of 4 done — bar is live; phase 4 is chip-inert states and polish) |
+| Unified tray filter bar: global type / action / equipped-prepared chips replacing the per-panel filter icons | High | L | In progress (bar is live, 14 chips on one bucket rule; remaining: inert-chip states and polish) |
 | Watch: AC/movement re-render branch went live in 13.3.14 (was dead) — real cost in combat | High | S | Open |
 | `PanelManager`: static-vs-instance state is unresolved; it's what let `element` go unassigned | Medium | M | Open |
 | Code cleanup: remove legacy fix code | Low | M | Open |

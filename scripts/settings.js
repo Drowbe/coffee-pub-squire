@@ -693,22 +693,28 @@ export const registerSettings = function() {
         });
     }
 
-    // Availability. Kept as two chips rather than merged into one "ready"
-    // filter: preparing a fixed number of spells and equipping what you can
-    // carry are different questions, whatever they have in common mechanically.
-    game.settings.register(MODULE.ID, 'filterStateEquipped', {
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: false
-    });
-
-    game.settings.register(MODULE.ID, 'filterStatePrepared', {
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: false
-    });
+    // Availability, as four buckets rather than two toggles. A toggle can only
+    // ever hide one side, so "what am I carrying that isn't equipped" and "what
+    // could I prepare that I haven't" were unaskable. Splitting each question
+    // into its two answers makes them chips like every other chip: on shows that
+    // slice, and all four on is everything.
+    //
+    // Equipped and prepared stay separate questions. Preparing a fixed number of
+    // spells and equipping what you can carry have something in common
+    // mechanically, but not in anyone's head, which is the part that matters.
+    //
+    // Named `filterShow*` rather than reusing the old `filterState*` keys: those
+    // were stored with the opposite meaning — true meant "restrict to equipped"
+    // — so a stored `false` would now read as "hide everything equipped" and
+    // empty the panel for anyone who ran the previous build.
+    for (const bucket of ['Equipped', 'Unequipped', 'Prepared', 'Unprepared']) {
+        game.settings.register(MODULE.ID, `filterShow${bucket}`, {
+            scope: 'user',
+            config: false,
+            type: Boolean,
+            default: true
+        });
+    }
 
     // View Mode Setting
     game.settings.register(MODULE.ID, 'viewMode', {

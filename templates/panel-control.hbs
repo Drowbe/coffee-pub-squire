@@ -12,15 +12,21 @@
 </div>
 </div>
 {{!--
-    The filter bar. Every chip here is the same kind of control — a predicate
-    over rows — which is why they can share a row. The equipped and prepared
-    chips used to live inside the weapons, spells and inventory panels, where
-    they answered the same question up to three times and never reached
-    favourites at all.
+    The filter bar. Fourteen chips in three groups, all obeying one rule:
 
-    A chip applies only where it means something: "prepared" says nothing about
-    a rope, so rows that carry no prepare state simply pass it. That is recorded
-    as the absence of a data attribute on the row, not as a special case here.
+        Every chip names a bucket. A row hides when its bucket is off. A row in
+        no bucket in a group is untouched by that group.
+
+    The groups differ only in how completely they cover the rows, and that falls
+    out of the data rather than out of behaviour anyone has to learn. Every row
+    has exactly one item type, so turning off all five empties the tray. Every
+    row has at least one action cost — Passive is what guarantees it — so the
+    same is true there. Only some rows can answer "equipped?" or "prepared?", so
+    turning off all four of those leaves the rows that answer neither.
+
+    That last case is why the availability group is four chips rather than two
+    toggles: a toggle can only hide one side, which made "what am I carrying but
+    not wearing" impossible to ask.
 --}}
 <div class="control-filter-bar">
 <div class="filter-group">
@@ -40,8 +46,10 @@
 </div>
 <span class="filter-separator"></span>
 <div class="filter-group">
-<i class="fa-solid fa-shield-halved filter-chip" data-filter-kind="state" data-filter-value="equipped" data-tooltip="Equipped only. Leaves spells and features alone."></i>
-<i class="fa-solid fa-sun filter-chip" data-filter-kind="state" data-filter-value="prepared" data-tooltip="Prepared only. Cantrips and always-prepared spells stay; leaves everything that isn't a spell alone."></i>
+<i class="fa-solid fa-shield-halved filter-chip" data-filter-kind="state" data-filter-value="equipped" data-tooltip="Equipped gear. Says nothing about spells or features."></i>
+<i class="fa-solid fa-shield-slash filter-chip" data-filter-kind="state" data-filter-value="unequipped" data-tooltip="Gear you are carrying but not wearing or wielding."></i>
+<i class="fa-solid fa-sun filter-chip" data-filter-kind="state" data-filter-value="prepared" data-tooltip="Prepared spells, plus cantrips and anything always available."></i>
+<i class="fa-solid fa-moon filter-chip" data-filter-kind="state" data-filter-value="unprepared" data-tooltip="Spells you know but have not prepared."></i>
 </div>
 </div>
 <div class="control-search">

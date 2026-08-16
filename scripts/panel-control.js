@@ -28,16 +28,29 @@ const CHIP_FOR_ITEM_TYPE = {
     currency: 'inventory'
 };
 
+/** Action-economy buckets, in bar order. Passive is what makes the set complete. */
+const ACTION_BUCKETS = ['action', 'bonus', 'reaction', 'special', 'passive'];
+
+/** Availability buckets, keyed by the row attribute that answers each question. */
+const STATE_BUCKETS = {
+    equipState: ['equipped', 'unequipped'],
+    prepareState: ['prepared', 'unprepared']
+};
+
 const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice(1);
 
 export class ControlPanel {
     constructor(actor) {
         this.actor = actor;
         this._searchTerm = '';
-        // Action-economy chips live here rather than in settings on purpose:
-        // they answer "what can I do right now", which is a question about this
-        // moment, not a preference worth restoring next week. See settings.js.
-        this._actionFilters = new Set();
+        // The action buckets currently shown. All of them to begin with, like
+        // every other group in the bar — a chip that is off hides its slice, so
+        // starting empty would start the tray empty.
+        //
+        // Held here rather than in settings on purpose: this answers "what can I
+        // do right now", which is a question about this moment, not a preference
+        // worth restoring next week. See settings.js.
+        this._shownActions = new Set(ACTION_BUCKETS);
         // When true the stacked panels are hidden and the quick-add results
         // panel takes their place; the same search box drives both.
         this._compendiumMode = false;
@@ -175,12 +188,17 @@ export class ControlPanel {
         this._applyFilters();
     }
 
-    /** True when something other than section visibility is hiding rows. */
+    /**
+     * True when something other than section visibility is hiding rows.
+     *
+     * Every group is now "on by default", so a filter is active when a chip is
+     * switched *off* rather than on.
+     */
     hasActiveFilters() {
-        return this._searchTerm !== ''
-            || this._actionFilters.size > 0
-            || game.settings.get(MODULE.ID, 'filterStateEquipped')
-            || game.settings.get(MODULE.ID, 'filterStatePrepared');
+        if (this._searchTerm !== '') return true;
+        if (this._shownActions.size < ACTION_BUCKETS.length) return true;
+        return Object.values(STATE_BUCKETS).flat()
+            .some(bucket => !game.settings.get(MODULE.ID, `filterShow${capitalize(bucket)}`));
     }
 
     /**
@@ -263,12 +281,12 @@ export class ControlPanel {
         });
 
         controlEl?.querySelectorAll('.filter-chip[data-filter-kind="action"]').forEach(chip => {
-            chip.classList.toggle('active', this._actionFilters.has(chip.dataset.filterValue));
+            chip.classList.toggle('active', this._shownActions.has(chip.dataset.filterValue));
         });
 
         controlEl?.querySelectorAll('.filter-chip[data-filter-kind="state"]').forEach(chip => {
-            chip.classList.toggle('active', game.settings.get(MODULE.ID,
-                chip.dataset.filterValue === 'equipped' ? 'filterStateEquipped' : 'filterStatePrepared'));
+            chip.classList.toggle('active',
+                game.settings.get(MODULE.ID, `filterShow${capitalize(chip.dataset.filterValue)}`));
         });
 
         this._applyFilters();
@@ -292,9 +310,12 @@ export class ControlPanel {
         if (!this.element || this._compendiumMode) return;
 
         const term = this._searchTerm.toLowerCase();
-        const equippedOnly = game.settings.get(MODULE.ID, 'filterStateEquipped');
-        const preparedOnly = game.settings.get(MODULE.ID, 'filterStatePrepared');
-        const actions = this._actionFilters;
+        const shownActions = this._shownActions;
+
+        const shownStates = {};
+        Object.values(STATE_BUCKETS).flat().forEach(bucket => {
+            shownStates[bucket] = game.settings.get(MODULE.ID, `filterShow${capitalize(bucket)}`);
+        });
 
         const typeEnabled = {};
         PANEL_TYPES.forEach(panel => {
@@ -314,17 +335,21 @@ export class ControlPanel {
                 const chip = CHIP_FOR_ITEM_TYPE[row.dataset.itemType];
                 setRowFilter(row, 'type', !!chip && !typeEnabled[chip]);
 
-                // No chip lit is no opinion, which is how a filter bar starts:
-                // showing everything rather than nothing.
+                // An item usable two ways survives while either bucket is on.
+                // A row listing no action types at all can't answer this group
+                // and is left alone — though Passive means that shouldn't happen.
                 const rowActions = (row.dataset.actionTypes || '').split(' ').filter(Boolean);
                 setRowFilter(row, 'action',
-                    actions.size > 0 && rowActions.length > 0 && !rowActions.some(a => actions.has(a)));
+                    rowActions.length > 0 && !rowActions.some(a => shownActions.has(a)));
 
-                // Equipped and Prepared share one reason, so their verdicts are
-                // combined here rather than each overwriting the other.
-                setRowFilter(row, 'state',
-                    (equippedOnly && row.dataset.equipState === 'unequipped')
-                    || (preparedOnly && row.dataset.prepareState === 'unprepared'));
+                // Availability is one reason covering two questions, so both are
+                // decided here rather than each overwriting the other. A row
+                // without the attribute isn't in either bucket and so isn't
+                // judged — which is the whole of "where applicable".
+                setRowFilter(row, 'state', Object.keys(STATE_BUCKETS).some(attribute => {
+                    const bucket = row.dataset[attribute];
+                    return bucket !== undefined && !shownStates[bucket];
+                }));
             });
 
             PanelManager.instance?._updateHeadersVisibility(panelElement);
@@ -374,11 +399,11 @@ export class ControlPanel {
             const key = `filterType${capitalize(value)}`;
             await game.settings.set(MODULE.ID, key, !game.settings.get(MODULE.ID, key));
         } else if (kind === 'state') {
-            const key = value === 'equipped' ? 'filterStateEquipped' : 'filterStatePrepared';
+            const key = `filterShow${capitalize(value)}`;
             await game.settings.set(MODULE.ID, key, !game.settings.get(MODULE.ID, key));
         } else if (kind === 'action') {
-            if (this._actionFilters.has(value)) this._actionFilters.delete(value);
-            else this._actionFilters.add(value);
+            if (this._shownActions.has(value)) this._shownActions.delete(value);
+            else this._shownActions.add(value);
         } else {
             return;
         }
