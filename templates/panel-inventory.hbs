@@ -1,12 +1,5 @@
-{{#*inline "action-badge"}}
-    {{#if (eq actionType "action")}}<span class="panel-item-badge context-action action-action" title="Action">A</span>
-    {{else if (eq actionType "bonus")}}<span class="panel-item-badge context-action action-bonus" title="Bonus Action">B</span>
-    {{else if (eq actionType "reaction")}}<span class="panel-item-badge context-action action-reaction" title="Reaction">R</span>
-    {{else if (eq actionType "special")}}<span class="panel-item-badge context-action action-special" title="Special">S</span>{{/if}}
-{{/inline}}
-
 {{#*inline "inventory-item"}}
-<div draggable="true" class="panel-item {{#if system.equipped}}prepared{{/if}}" data-item-id="{{id}}" data-item-type="{{type}}" data-category-id="{{categoryId}}">
+<div draggable="true" class="panel-item {{#if system.equipped}}prepared{{/if}}" data-item-id="{{id}}" data-item-type="{{type}}" data-category-id="{{categoryId}}" data-action-types="{{actionTypes}}"{{#if equipState}} data-equip-state="{{equipState}}"{{/if}}>
     <div class="panel-item-row">
         <div class="panel-item-image-container">
             <img draggable="false" class="panel-item-image" src="{{img}}" alt="{{name}}"/>
@@ -61,7 +54,6 @@
         {{#if (lookup itemsByType "tool")}}<i class="fa-solid fa-hammer inventory-category-filter active" data-filter-id="category-inventory-tool" title="Toggle Tools"></i>{{/if}}
         {{#if (lookup itemsByType "loot")}}<i class="fa-solid fa-coins inventory-category-filter active" data-filter-id="category-inventory-loot" title="Toggle Loot"></i>{{/if}}
         {{#if (lookup itemsByType "container")}}<i class="fa-solid fa-box inventory-category-filter active" data-filter-id="category-inventory-container" title="Toggle Containers"></i>{{/if}}
-        <i class="fa-solid fa-shield-halved inventory-filter-toggle filter-toggle {{#if showOnlyEquipped}}active{{else}}faded{{/if}}" title="Toggle Equipped Items"></i>
     </div>
 </div>
 
@@ -72,7 +64,7 @@
         {{#if currency}}
         <div class="category-header" data-category-id="category-inventory-currency">Currency</div>
         {{#each currency}}
-        <div class="panel-item panel-item-currency" data-denomination="{{this.key}}" data-category-id="category-inventory-currency">
+        <div class="panel-item panel-item-currency" data-denomination="{{this.key}}" data-item-type="currency" data-category-id="category-inventory-currency" data-action-types="passive">
             <div class="panel-item-row">
                 <div class="panel-item-image-container">
                     <img draggable="false" class="panel-item-image" src="{{this.img}}" alt="{{this.name}}"/>

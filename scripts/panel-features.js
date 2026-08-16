@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getActivityList, applyItemTooltips} from './helpers.js';
+import { getNativeElement, renderTemplate, applyItemTooltips, setRowFilter, getActionType, getActionTypes} from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -31,7 +31,8 @@ export class FeaturesPanel {
             name: feature.name,
             img: feature.img || 'icons/svg/book.svg',
             system: feature.system,
-            actionType: this._getActionType(feature),
+            actionType: getActionType(feature),
+            actionTypes: getActionTypes(feature).join(' '),
             featureType: this._getFeatureType(feature),
             isFavorite: favorites.includes(feature.id),
             categoryId: `category-feature-${this._getFeatureType(feature)}`,
@@ -70,23 +71,6 @@ export class FeaturesPanel {
         return 'feat';
     }
 
-    _getActionType(feature) {
-        // dnd5e 4+ activities — a Map-like collection, normalized by the helper
-        const activity = getActivityList(feature)[0];
-        if (!activity?.activation?.type) return null;
-        
-        // Check the activation type
-        const activationType = activity.activation.type;
-        
-        switch(activationType) {
-            case 'action': return 'action';
-            case 'bonus': return 'bonus';
-            case 'reaction': return 'reaction';
-            case 'special': return 'special';
-            default: return null;
-        }
-    }
-
     async render(html) {
         if (html) {
             // v13: Convert jQuery to native DOM if needed
@@ -123,7 +107,7 @@ export class FeaturesPanel {
         this._activateListeners(this.element);
         this._updateVisibility(this.element);
 
-        PanelManager.instance?.controlPanel?.reapplySearch();
+        PanelManager.instance?.controlPanel?.reapplyFilters();
     }
 
     _updateVisibility(html) {
@@ -150,7 +134,7 @@ export class FeaturesPanel {
             const categoryId = feature.categoryId;
             const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
 
-            item.style.display = !isCategoryHidden ? '' : 'none';
+            setRowFilter(item, 'category', isCategoryHidden);
         });
 
         // Update headers visibility using PanelManager

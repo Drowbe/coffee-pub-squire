@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { FavoritesPanel } from './panel-favorites.js';
-import { getNativeElement, renderTemplate, getActivityList, getContainerInfo, activateContainerListener, applyItemTooltips, showSquireToast} from './helpers.js';
+import { getNativeElement, renderTemplate, getContainerInfo, activateContainerListener, applyItemTooltips, showSquireToast, setRowFilter, getActionType, getActionTypes} from './helpers.js';
 import { TransferUtils } from './transfer-utils.js';
 import { LightUtility } from './utility-lights.js';
 import { QuantityEditor } from './utility-quantity.js';
@@ -10,28 +10,10 @@ export class InventoryPanel {
     constructor(actor) {
         this.actor = actor;
         this.items = { all: [], byType: {} }; // Initialize empty, will be populated in render
-        this.showOnlyEquipped = game.settings.get(MODULE.ID, 'showOnlyEquippedInventory');
         // Don't set panelManager in constructor
         this._transferDialogOpen = false; // Guard to prevent multiple dialogs
         // Store event handler references for cleanup
         this._eventHandlers = [];
-    }
-
-    _getActionType(item) {
-        // dnd5e 4+ activities — a Map-like collection, normalized by the helper
-        const activity = getActivityList(item)[0];
-        if (!activity?.activation?.type) return null;
-        
-        // Check the activation type
-        const activationType = activity.activation.type;
-        
-        switch(activationType) {
-            case 'action': return 'action';
-            case 'bonus': return 'bonus';
-            case 'reaction': return 'reaction';
-            case 'special': return 'special';
-            default: return null;
-        }
     }
 
     async _getItems() {
@@ -69,7 +51,16 @@ export class InventoryPanel {
                 system: item.system,
                 isFavorite: favorites.includes(item.id),
                 categoryId: `category-inventory-${item.type === 'backpack' ? 'container' : item.type}`,
-                actionType: this._getActionType(item),
+                actionType: getActionType(item),
+                actionTypes: getActionTypes(item).join(' '),
+                // Omitted entirely for item types dnd5e has no `equipped` field
+                // for — loot, and anything else that can't be worn or wielded.
+                // A missing attribute is how a row says the Equipped chip
+                // doesn't apply to it, which is what keeps that chip from
+                // emptying the panel of things it has no opinion about.
+                equipState: item.system?.equipped === undefined
+                    ? null
+                    : (item.system.equipped ? 'equipped' : 'unequipped'),
                 flags: item.flags || {},
                 // Both sources: the persisted flag survives a reload, the session
                 // map covers the window before the flag write lands. The template
@@ -178,7 +169,6 @@ export class InventoryPanel {
         const itemData = {
             items: this.items.all,
             itemsByType: this.items.byType,
-            showOnlyEquipped: this.showOnlyEquipped,
             currency: this._getCurrency(),
             newlyAddedItems: PanelManager.newlyAddedItems,
             flags: this.items.all.reduce((acc, item) => {
@@ -206,7 +196,7 @@ export class InventoryPanel {
         this._updateVisibility(this.element);
         this._updateLightIcons(this.element);
 
-        PanelManager.instance?.controlPanel?.reapplySearch();
+        PanelManager.instance?.controlPanel?.reapplyFilters();
     }
 
     _updateVisibility(html) {
@@ -232,9 +222,9 @@ export class InventoryPanel {
 
             const categoryId = inventoryItem.categoryId;
             const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
-            const equippedMatch = !this.showOnlyEquipped || inventoryItem.system.equipped;
-
-            item.style.display = (!isCategoryHidden && equippedMatch) ? '' : 'none';
+            // Category collapse is all this panel decides now; Equipped moved
+            // to the filter bar.
+            setRowFilter(item, 'category', isCategoryHidden);
         });
 
         // Update headers visibility using PanelManager
@@ -360,21 +350,6 @@ export class InventoryPanel {
         if (containerHandler) {
             this._eventHandlers.push({ element: panel, event: 'click', handler: containerHandler });
         }
-
-        // Add filter toggle handler
-        // v13: Use native DOM event delegation
-        const filterToggleHandler = async (event) => {
-            const filterToggle = event.target.closest('.inventory-filter-toggle');
-            if (!filterToggle) return;
-            
-            this.showOnlyEquipped = !this.showOnlyEquipped;
-            await game.settings.set(MODULE.ID, 'showOnlyEquippedInventory', this.showOnlyEquipped);
-            filterToggle.classList.toggle('active', this.showOnlyEquipped);
-            filterToggle.classList.toggle('faded', !this.showOnlyEquipped);
-            this._updateVisibility(nativeHtml);
-        };
-        panel.addEventListener('click', filterToggleHandler);
-        this._eventHandlers.push({ element: panel, event: 'click', handler: filterToggleHandler });
 
         // Item info click (feather icon)
         // v13: Use native DOM event delegation

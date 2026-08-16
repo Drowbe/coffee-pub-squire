@@ -1,10 +1,3 @@
-{{#*inline "action-badge"}}
-    {{#if (eq actionType "action")}}<span class="panel-item-badge context-action action-action" title="Action">A</span>
-    {{else if (eq actionType "bonus")}}<span class="panel-item-badge context-action action-bonus" title="Bonus Action">B</span>
-    {{else if (eq actionType "reaction")}}<span class="panel-item-badge context-action action-reaction" title="Reaction">R</span>
-    {{else if (eq actionType "special")}}<span class="panel-item-badge context-action action-special" title="Special">S</span>{{/if}}
-{{/inline}}
-
 {{#*inline "spell-components"}}
     {{#if properties}}
         {{#each properties}}
@@ -34,7 +27,6 @@
         <i class="fa-solid fa-square-{{this.level}} spell-level-filter active" data-filter-id="category-spell-level-{{this.level}}" title="Toggle Level {{this.level}} Spells"></i>
         {{/if}}
         {{/each}}
-        <i class="fa-solid fa-sun spell-filter-toggle filter-toggle {{#if showOnlyPrepared}}active{{else}}faded{{/if}}" title="Toggle Prepared Spells"></i>
     </div>
 </div>
 
@@ -52,7 +44,7 @@
             </div>
             {{#each spells as |spell|}}
                 {{#if (eq spell.system.method "atwill")}}
-                <div draggable="true" class="panel-item prepared" data-item-id="{{spell.id}}" data-item-type="spell" data-category-id="category-spell-at-will">
+                <div draggable="true" class="panel-item prepared" data-item-id="{{spell.id}}" data-item-type="spell" data-category-id="category-spell-at-will" data-action-types="{{spell.actionTypes}}" data-prepare-state="{{#if spell.isPrepared}}prepared{{else}}unprepared{{/if}}">
                     <div class="panel-item-row">
                         <div class="panel-item-image-container">
                             <img draggable="false" class="panel-item-image" src="{{spell.img}}" alt="{{spell.name}}"/>
@@ -86,7 +78,7 @@
             </div>
             {{#each spells as |spell|}}
                 {{#if (eq spell.system.level 0)}}
-                <div draggable="true" class="panel-item prepared" data-item-id="{{spell.id}}" data-item-type="spell" data-category-id="category-spell-level-0">
+                <div draggable="true" class="panel-item prepared" data-item-id="{{spell.id}}" data-item-type="spell" data-category-id="category-spell-level-0" data-action-types="{{spell.actionTypes}}" data-prepare-state="{{#if spell.isPrepared}}prepared{{else}}unprepared{{/if}}">
                     <div class="panel-item-row">
                         <div class="panel-item-image-container">
                             <img draggable="false" class="panel-item-image" src="{{spell.img}}" alt="{{spell.name}}"/>
@@ -125,7 +117,8 @@
                     <div draggable="true" class="panel-item {{#if spell.system.prepared}}prepared{{/if}}" 
                          data-item-id="{{spell.id}}"
                          data-item-type="spell"
-                         
+                         data-action-types="{{spell.actionTypes}}"
+                         data-prepare-state="{{#if spell.isPrepared}}prepared{{else}}unprepared{{/if}}"
                          data-category-id="category-spell-level-{{slot.level}}">
                         <div class="panel-item-row">
                             <div class="panel-item-image-container">

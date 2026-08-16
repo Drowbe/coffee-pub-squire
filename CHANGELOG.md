@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [Unreleased]
+
+### Fixed
+- **Tray filters compose instead of overwriting each other.** Search, the equipped/prepared filters and category collapse each wrote `item.style.display` outright, so whichever ran last erased the others' verdict. Searching for a weapon and then toggling the equipped filter wiped the search; the reverse ordering was worse, because a panel re-render ran its own filter first and `reapplySearch()` second, so the search un-hid rows the equipped filter had just hidden. Every source now toggles only its own `hidden-by-*` class and a row stays hidden while any one of them holds, which makes the filters mathematically incapable of clobbering one another.
+- **Category headings are derived rather than stamped.** Search and category collapse both used to decide independently which headings survived, with the same last-writer-wins result — and the spells panel needed a second pass of its own because its headings are structured differently. One owner, `_updateHeadersVisibility()`, now works it out from row state for every panel, so the special case is gone.
+
+### Added
+- **A filter bar under the tray title, replacing the panel-toggle row.** Twelve chips in three groups: five item types, five action-economy costs, and Equipped and Prepared. They are the same control as the category filters in a panel heading — a bare glyph that dims when it is off — and are styled from the same rules rather than given a look of their own; the action chips use `fa-square-a` through `fa-square-p`, the same family as the spell-level filters' `fa-square-0` through `fa-square-9`. Every one of them is the same kind of control — a predicate over rows — which is what lets them share a row; the old row mixed section toggles with nothing else and the real filters lived elsewhere.
+  - **A chip only judges rows that can answer it.** Prepared says nothing about a rope and Equipped says nothing about a spell, so those rows pass untouched instead of vanishing. This is recorded as the absence of a data attribute on the row rather than as a rule anyone has to remember to write.
+  - **Item-type chips reach everywhere, favourites included.** Turning off Weapons hides weapons in the favourites list too, and the weapons panel collapses because nothing is left in it. Favourites is the odd one of the five — a flag rather than a type — so its chip hides only its own section.
+  - **Items with no activation are selected by the Passive chip.** Without it, lighting the other four would make every rope and suit of armour unreachable, since nothing would bring them back but clearing the bar.
+  - **Action chips don't persist, deliberately.** "What can I do this turn" is a question about this moment; logging in a week later to a half-empty sheet with one dimmed chip as the only clue is a bad morning. Item-type and Equipped/Prepared chips are remembered per user, as their predecessors were.
+
+### Changed
+- **The search box now sits below the filter bar.** The bar is the primary control surface and search refines what it leaves. In compendium quick-add mode the bar collapses and the search box moves up into the gap — that mode is a different place, not the same panel with things switched off.
+- **"No matches" now means a filter matched nothing, not merely that a panel is empty.** A section you turned off, or a character who owns no weapons, is just empty and gets no message. Two callers used to disagree about this and overwrite each other.
+
+### Removed
+- **The per-panel filter icons.** An equipped toggle inside weapons and another inside inventory answered the same question twice, and neither reached favourites — where, with every item kind in one list, the answer is most useful. Favourites' own four type toggles used the same four glyphs as the tray-wide row 40px above them, meaning something different; they're gone, and the panel honours the bar instead. Its header keeps its clear button.
+- Seven settings that backed those controls (`showOnlyEquippedWeapons`, `showOnlyEquippedInventory`, `showOnlyPreparedSpells`, and the four `show*Favorites`), and the five `show*Panel` settings, replaced by `filterType*` and `filterState*`. No values are migrated — the chips start at their defaults.
+- `FavoritesPanel._handleSearch()` — unreferenced, and written against jQuery on a native element, so it would have thrown if anything had called it.
+
+### Added
+- **Favourites rows show what an item costs to use.** The action badge existed in four panels and not in the one list that mixes spells, weapons, features and gear together — so favourites, where "what can I do as a bonus action" is the most useful question, was the only place you couldn't tell. The badge is now a shared partial rather than a fifth copy of the same markup.
+- Panel rows carry `data-action-types`, `data-equip-state` and `data-prepare-state`, which the filter bar reads. A row omits `data-equip-state` or `data-prepare-state` entirely when the concept doesn't apply to it — that absence is how a row tells a chip to skip it, so filtering by Prepared won't empty the weapons panel.
+
+### Changed
+- **One answer to "what does this cost to use", instead of four that disagreed.** Each panel had grown its own `_getActionType()`: spells called an activity-less item an Action, weapons did too but returned null for an activation type they didn't recognise, and features and inventory returned null. Harmless while the answer only picked a badge; as a filter, those disagreements decide what a chip shows. `getActionTypes()` in `helpers.js` is now the single source.
+  - **Items with no activation are `passive` — a real answer, not a missing one.** A rope, a suit of armour and Darkvision genuinely cost nothing to use, and under the old code they fell into a gap no filter could reach.
+  - **Long casting times no longer read as Actions.** A spell taking a minute or an hour used to show the "A" badge because `default:` swept it up with everything else. It now shows no badge, which is what it always should have done.
+  - **Every activity counts, not just the first.** An item usable as either an action or a bonus action answers to both filters; its badge still shows the first, because a row has room for one.
+
+### Removed
+- `PanelManager.updateSearchVisibility()` — unreferenced since the panels grew their own `_updateVisibility()`, and one of the `display` writers this change exists to retire.
+
 ## [13.8.0]
 
 ### Changed

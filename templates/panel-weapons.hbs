@@ -1,12 +1,5 @@
-{{#*inline "action-badge"}}
-    {{#if (eq actionType "action")}}<span class="panel-item-badge context-action action-action" title="Action">A</span>
-    {{else if (eq actionType "bonus")}}<span class="panel-item-badge context-action action-bonus" title="Bonus Action">B</span>
-    {{else if (eq actionType "reaction")}}<span class="panel-item-badge context-action action-reaction" title="Reaction">R</span>
-    {{else if (eq actionType "special")}}<span class="panel-item-badge context-action action-special" title="Special">S</span>{{/if}}
-{{/inline}}
-
 {{#*inline "weapon-item"}}
-<div draggable="true" class="panel-item {{#if system.equipped}}prepared{{/if}}" data-item-id="{{id}}" data-item-type="weapon" data-category-id="{{categoryId}}">
+<div draggable="true" class="panel-item {{#if system.equipped}}prepared{{/if}}" data-item-id="{{id}}" data-item-type="weapon" data-category-id="{{categoryId}}" data-action-types="{{actionTypes}}" data-equip-state="{{#if system.equipped}}equipped{{else}}unequipped{{/if}}">
     <div class="panel-item-row">
         <div class="panel-item-image-container">
             <img draggable="false" class="panel-item-image" src="{{img}}" alt="{{name}}"/>
@@ -52,7 +45,6 @@
         {{#if (lookup weaponsByType "simple-ranged")}}<i class="fa-solid fa-bow-arrow weapons-category-filter active" data-filter-id="category-weapon-simple-ranged" title="Toggle Simple Ranged"></i>{{/if}}
         {{#if (lookup weaponsByType "martial-ranged")}}<i class="fa-solid fa-crosshairs weapons-category-filter active" data-filter-id="category-weapon-martial-ranged" title="Toggle Martial Ranged"></i>{{/if}}
         {{#if (lookup weaponsByType "natural")}}<i class="fa-solid fa-paw weapons-category-filter active" data-filter-id="category-weapon-natural" title="Toggle Natural Weapons"></i>{{/if}}
-        <i class="fa-solid fa-shield-halved weapon-filter-toggle filter-toggle {{#if showOnlyEquipped}}active{{else}}faded{{/if}}" title="Toggle Equipped Weapons"></i>
     </div>
 </div>
 

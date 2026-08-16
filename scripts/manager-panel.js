@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
-import { getTransferBlocker, renderTemplate, getCampaignContext, resolveDroppedItem, showSquireToast, getActorDisplayName, isGMOrPartyLeader, getPanelItemName} from './helpers.js';
+import { getTransferBlocker, renderTemplate, getCampaignContext, resolveDroppedItem, showSquireToast, getActorDisplayName, isGMOrPartyLeader, setRowFilter, isRowVisible} from './helpers.js';
 import {
     transferRequestSender, transferRequestGMApproval, transferRequestReceiver,
     transferComplete, itemReceived
@@ -266,7 +266,7 @@ export class PanelManager {
                     // Re-render the inventory panel only when a "new" marker actually expired or was cleared
                     if (changed && PanelManager.instance?.inventoryPanel?.element) {
                         PanelManager.instance.inventoryPanel.render(PanelManager.instance.inventoryPanel.element);
-                        PanelManager.instance.controlPanel?.reapplySearch();
+                        PanelManager.instance.controlPanel?.reapplyFilters();
                     }
                 }, 30000); // Check every 30 seconds
                 PanelManager._cleanupInterval = intervalId;
@@ -538,7 +538,7 @@ export class PanelManager {
             this.weaponsPanel?.render(element);
             this.inventoryPanel?.render(element);
             this.featuresPanel?.render(element);
-            this.controlPanel?.reapplySearch();
+            this.controlPanel?.reapplyFilters();
 
             // Dice Tray is window-only and has no tray render path.
             if (game.settings.get(MODULE.ID, 'showCharacterSummaryPanel')) {
@@ -1133,7 +1133,7 @@ export class PanelManager {
                                         if (this.inventoryPanel) await this.inventoryPanel.render(PanelManager.element);
                                         break;
                                 }
-                                this.controlPanel?.reapplySearch();
+                                this.controlPanel?.reapplyFilters();
                             } catch (error) {
                                 console.error('DROPZONE | Error processing world item:', error);
                                 ui.notifications.error("Error processing dropped item. See console for details.");
@@ -1270,7 +1270,7 @@ export class PanelManager {
      */
     toggleCategory(categoryId, panel, active = null) {
         const filter = panel.querySelector(`[data-filter-id="${categoryId}"]`);
-        const items = panel.querySelectorAll(`[data-category-id="${categoryId}"]`);
+        const rows = panel.querySelectorAll(`.panel-item[data-category-id="${categoryId}"]`);
         
         // If active is not provided, toggle based on current state
         const shouldBeActive = active !== null ? active : !filter?.classList.contains('active');
@@ -1286,47 +1286,13 @@ export class PanelManager {
             }
         }
 
-        // Update visibility of items and headers
-        items.forEach(item => {
-            if (shouldBeActive) {
-                item.style.removeProperty('display');
-            } else {
-                item.style.display = 'none';
-            }
-        });
+        // Stamp only the rows. Headers are derived from row state by
+        // _updateHeadersVisibility, so a collapsed category and an active search
+        // can both have their say instead of the later one winning.
+        rows.forEach(row => setRowFilter(row, 'category', !shouldBeActive));
 
-        // Update visibility of empty sections
-        this._updateEmptyMessage(panel);
-    }
-
-    /**
-     * Update visibility of items based on search text
-     * @param {string} searchText - The text to search for
-     * @param {HTMLElement} panel - The panel element containing the items
-     * @param {string} itemSelector - The selector for items (e.g., '.panel-item')
-     */
-    updateSearchVisibility(searchText, panel, itemSelector) {
-        const items = panel.querySelectorAll(itemSelector);
-        const normalizedSearch = searchText.toLowerCase().trim();
-        let hasVisibleItems = false;
-
-        items.forEach(item => {
-            const name = getPanelItemName(item).toLowerCase();
-            const categoryId = item.dataset.categoryId;
-            const matchesSearch = !normalizedSearch || name.includes(normalizedSearch);
-            const categoryVisible = !this.hiddenCategories.has(categoryId);
-
-            if (matchesSearch && categoryVisible) {
-                item.style.removeProperty('display');
-                hasVisibleItems = true;
-            } else {
-                item.style.display = 'none';
-            }
-        });
-
-        // Update headers visibility
         this._updateHeadersVisibility(panel);
-        this._updateEmptyMessage(panel, hasVisibleItems);
+        this._updateEmptyMessage(panel);
     }
 
     /**
@@ -1344,14 +1310,8 @@ export class PanelManager {
                 return;
             }
 
-            const items = panel.querySelectorAll(`[data-category-id="${categoryId}"]:not(.category-header)`);
-            let hasVisibleItems = false;
-
-            items.forEach(item => {
-                if (item.style.display !== 'none') {
-                    hasVisibleItems = true;
-                }
-            });
+            const rows = panel.querySelectorAll(`.panel-item[data-category-id="${categoryId}"]`);
+            const hasVisibleItems = Array.from(rows).some(isRowVisible);
 
             header.style.display = hasVisibleItems ? '' : 'none';
         });
@@ -1368,12 +1328,18 @@ export class PanelManager {
         if (!noMatchesMsg) return;
 
         if (hasVisibleItems === null) {
-            // Calculate if there are visible items
             const items = panel.querySelectorAll('.panel-item');
-            hasVisibleItems = Array.from(items).some(item => item.style.display !== 'none');
+            hasVisibleItems = Array.from(items).some(isRowVisible);
         }
 
-        noMatchesMsg.style.display = hasVisibleItems ? 'none' : 'block';
+        // Empty means two different things and they deserve different answers.
+        // A search or an active chip that matched nothing is worth saying out
+        // loud; a section you turned off, or a character who simply owns no
+        // weapons, is just empty and needs no explanation. Only the first case
+        // gets the message.
+        const show = !hasVisibleItems && (this.controlPanel?.hasActiveFilters() ?? false);
+        noMatchesMsg.classList.toggle('show', show);
+        noMatchesMsg.style.display = show ? 'block' : 'none';
     }
 
     /**

@@ -1,13 +1,43 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getPanelItemName} from './helpers.js';
+import { getNativeElement, renderTemplate, getPanelItemName, setRowFilter} from './helpers.js';
 import { CompendiumSearchUtility } from './utility-compendium-search.js';
 import { trackModuleTimeout } from './timer-utils.js';
+
+/** The stacked panels the filter bar governs, in tray order. */
+const PANEL_TYPES = ['favorites', 'weapons', 'spells', 'features', 'inventory'];
+
+/**
+ * Which item-type chip owns a row, keyed by the row's `data-item-type`.
+ *
+ * 'favorites' is deliberately absent: a favourite is a flag rather than an item
+ * kind, so that chip hides its own section without filtering rows anywhere else.
+ * Every other chip reaches every panel — turning off Weapons hides weapons in
+ * the favourites list too, and the weapons panel collapses because nothing is
+ * left in it rather than because the chip hid it directly.
+ */
+const CHIP_FOR_ITEM_TYPE = {
+    weapon: 'weapons',
+    spell: 'spells',
+    feat: 'features',
+    equipment: 'inventory',
+    consumable: 'inventory',
+    tool: 'inventory',
+    loot: 'inventory',
+    backpack: 'inventory',
+    currency: 'inventory'
+};
+
+const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice(1);
 
 export class ControlPanel {
     constructor(actor) {
         this.actor = actor;
         this._searchTerm = '';
+        // Action-economy chips live here rather than in settings on purpose:
+        // they answer "what can I do right now", which is a question about this
+        // moment, not a preference worth restoring next week. See settings.js.
+        this._actionFilters = new Set();
         // When true the stacked panels are hidden and the quick-add results
         // panel takes their place; the same search box drives both.
         this._compendiumMode = false;
@@ -128,18 +158,29 @@ export class ControlPanel {
     }
 
     /**
-     * Re-apply the current search filter. Call this after stacked panels
-     * (favorites, weapons, spells, features, inventory) re-render to restore
-     * the filtered view, since their DOM replacement clears display styles.
+     * Re-apply every active filter. Call this after a stacked panel re-renders:
+     * the replacement rows arrive unstamped, so the bar has to say its piece
+     * again or a re-render silently clears the view.
+     *
+     * Unlike the search-only version this replaced, it runs even with an empty
+     * search box — the action and availability chips can be filtering on their
+     * own, and returning early left those panels showing everything.
      */
-    reapplySearch() {
-        if (!this._searchTerm) return;
+    reapplyFilters() {
         const controlPanel = this.element?.querySelector('[data-panel="control"]');
         const searchInput = controlPanel?.querySelector('.global-search');
         if (searchInput) {
             searchInput.value = this._searchTerm;
         }
-        this._handleSearch(this._searchTerm);
+        this._applyFilters();
+    }
+
+    /** True when something other than section visibility is hiding rows. */
+    hasActiveFilters() {
+        return this._searchTerm !== ''
+            || this._actionFilters.size > 0
+            || game.settings.get(MODULE.ID, 'filterStateEquipped')
+            || game.settings.get(MODULE.ID, 'filterStatePrepared');
     }
 
     /**
@@ -204,44 +245,94 @@ export class ControlPanel {
             toggle.classList.toggle('faded', !selected);
         });
 
-        // The panel toggles have nothing to toggle in quick-add mode, so the row
-        // collapses rather than sitting there greyed out — it's pure dead space
-        // in a column where vertical room is the scarce thing.
+        // The bar has nothing to act on in quick-add mode, so it collapses
+        // rather than sitting there greyed out — it's pure dead space in a
+        // column where vertical room is the scarce thing.
         controlEl?.classList.toggle('compendium-mode', this._compendiumMode);
 
-        // v13: Use native DOM methods instead of jQuery
-        ['favorites', 'weapons', 'spells', 'features', 'inventory'].forEach(panel => {
-            const isVisible = game.settings.get(MODULE.ID, `show${panel.charAt(0).toUpperCase() + panel.slice(1)}Panel`);
-            
-            // Update icon state
-            const controlPanel = this.element.querySelector('[data-panel="control"]');
-            if (controlPanel) {
-                const toggle = controlPanel.querySelector(`.control-toggle[data-toggle-panel="${panel}"]`);
-                if (toggle) {
-                    if (isVisible) {
-                        toggle.classList.add('active');
-                        toggle.classList.remove('faded');
-                    } else {
-                        toggle.classList.remove('active');
-                        toggle.classList.add('faded');
-                    }
-                }
-            }
-            
-            // Update panel visibility
-            const panelContainer = this.element.querySelector(`.panel-containers.stacked .panel-container[data-panel="${panel}"]`);
-            if (panelContainer) {
-                if (isVisible) {
-                    panelContainer.classList.add('visible');
-                } else {
-                    panelContainer.classList.remove('visible');
-                }
-            }
+        PANEL_TYPES.forEach(panel => {
+            const isVisible = game.settings.get(MODULE.ID, `filterType${capitalize(panel)}`);
+
+            controlEl
+                ?.querySelector(`.filter-chip[data-filter-kind="type"][data-filter-value="${panel}"]`)
+                ?.classList.toggle('active', isVisible);
+
+            this.element
+                .querySelector(`.panel-containers.stacked .panel-container[data-panel="${panel}"]`)
+                ?.classList.toggle('visible', isVisible);
+        });
+
+        controlEl?.querySelectorAll('.filter-chip[data-filter-kind="action"]').forEach(chip => {
+            chip.classList.toggle('active', this._actionFilters.has(chip.dataset.filterValue));
+        });
+
+        controlEl?.querySelectorAll('.filter-chip[data-filter-kind="state"]').forEach(chip => {
+            chip.classList.toggle('active', game.settings.get(MODULE.ID,
+                chip.dataset.filterValue === 'equipped' ? 'filterStateEquipped' : 'filterStatePrepared'));
+        });
+
+        this._applyFilters();
+    }
+
+    /**
+     * The one place row visibility is decided.
+     *
+     * Each predicate stamps its own reason and reads none of the others, so the
+     * four of them intersect: a weapon that matches the search, survives the
+     * type chips, costs a bonus action and is equipped shows; failing any one of
+     * those hides it, and clearing that one filter brings it back without
+     * disturbing the rest.
+     *
+     * A chip only judges rows that can answer it. `data-equip-state` is absent
+     * from a spell and `data-prepare-state` from a rope, and an absent attribute
+     * never matches the failing value — so "where applicable" is the default
+     * behaviour here rather than a case anyone has to remember to write.
+     */
+    _applyFilters() {
+        if (!this.element || this._compendiumMode) return;
+
+        const term = this._searchTerm.toLowerCase();
+        const equippedOnly = game.settings.get(MODULE.ID, 'filterStateEquipped');
+        const preparedOnly = game.settings.get(MODULE.ID, 'filterStatePrepared');
+        const actions = this._actionFilters;
+
+        const typeEnabled = {};
+        PANEL_TYPES.forEach(panel => {
+            typeEnabled[panel] = game.settings.get(MODULE.ID, `filterType${capitalize(panel)}`);
+        });
+
+        PANEL_TYPES.forEach(panelType => {
+            const panelElement = this.element.querySelector(`[data-panel="${panelType}"]`);
+            if (!panelElement) return;
+
+            const rows = panelElement.querySelectorAll('.panel-item');
+
+            rows.forEach(row => {
+                const name = getPanelItemName(row).toLowerCase();
+                setRowFilter(row, 'search', term !== '' && name !== '' && !name.includes(term));
+
+                const chip = CHIP_FOR_ITEM_TYPE[row.dataset.itemType];
+                setRowFilter(row, 'type', !!chip && !typeEnabled[chip]);
+
+                // No chip lit is no opinion, which is how a filter bar starts:
+                // showing everything rather than nothing.
+                const rowActions = (row.dataset.actionTypes || '').split(' ').filter(Boolean);
+                setRowFilter(row, 'action',
+                    actions.size > 0 && rowActions.length > 0 && !rowActions.some(a => actions.has(a)));
+
+                // Equipped and Prepared share one reason, so their verdicts are
+                // combined here rather than each overwriting the other.
+                setRowFilter(row, 'state',
+                    (equippedOnly && row.dataset.equipState === 'unequipped')
+                    || (preparedOnly && row.dataset.prepareState === 'unprepared'));
+            });
+
+            PanelManager.instance?._updateHeadersVisibility(panelElement);
+            PanelManager.instance?._updateEmptyMessage(panelElement);
         });
     }
 
     _handleSearch(searchTerm) {
-        // v13: Use native DOM methods instead of jQuery
         if (!this.element) return;
 
         this._searchTerm = searchTerm;
@@ -253,145 +344,45 @@ export class ControlPanel {
             return;
         }
 
-        // Convert search term to lowercase for case-insensitive comparison
-        const normalizedTerm = searchTerm.toLowerCase();
-
-        // Toggle visibility of individual search boxes based on global search state
-        // v13: Use native DOM querySelectorAll
+        // The per-panel search boxes would be filtering a list the global box
+        // has already filtered, so they step aside while it holds a term.
         const searchContainers = this.element.querySelectorAll('.panel-containers.stacked .panel-container .search-container');
         searchContainers.forEach(container => {
-            container.style.display = normalizedTerm === '' ? '' : 'none';
+            container.style.display = searchTerm === '' ? '' : 'none';
         });
 
-        // Track visible items for each panel
-        const visibleCounts = {
-            favorites: 0,
-            weapons: 0,
-            spells: 0,
-            features: 0,
-            inventory: 0
-        };
-
-        // Process each visible panel separately
-        Object.keys(visibleCounts).forEach(panelType => {
-            // v13: Use native DOM querySelector
-            const panelElement = this.element.querySelector(`[data-panel="${panelType}"]`);
-            if (!panelElement || !panelElement.classList.contains('visible')) return;
-
-            // Find all items in this panel using the shared panel item class
-            const items = panelElement.querySelectorAll('.panel-item');
-
-            let visibleItemsInPanel = 0;  // Initialize counter for this panel
-
-            // Process items
-            // v13: Use native DOM forEach
-            items.forEach(item => {
-                const itemName = getPanelItemName(item).toLowerCase();
-                if (!itemName) return;
-                
-                const shouldShow = normalizedTerm === '' || itemName.includes(normalizedTerm);
-                
-                // Toggle item visibility
-                // v13: Use style.display instead of jQuery toggle
-                item.style.display = shouldShow ? '' : 'none';
-                if (shouldShow) visibleItemsInPanel++;
-            });
-
-            // Handle ALL category headers in this panel
-            if (normalizedTerm !== '') {
-                // First hide all headers
-                // v13: Use native DOM querySelectorAll
-                const categoryHeaders = panelElement.querySelectorAll('.category-header');
-                categoryHeaders.forEach(header => {
-                    header.style.display = 'none';
-                });
-                
-                // Then only show headers that have visible items
-                // v13: Use native DOM querySelectorAll with :not([style*="display: none"])
-                const visibleItems = Array.from(panelElement.querySelectorAll('.panel-item'))
-                    .filter(item => item.style.display !== 'none');
-                const visibleCategories = new Set();
-                
-                visibleItems.forEach(item => {
-                    const categoryId = item.dataset.categoryId;
-                    if (categoryId) visibleCategories.add(categoryId);
-                });
-                
-                visibleCategories.forEach(categoryId => {
-                    // v13: Use safer selector approach for data attributes
-                    const headers = panelElement.querySelectorAll('.category-header[data-category-id]');
-                    const header = Array.from(headers).find(h => h.dataset.categoryId === categoryId);
-                    if (header) {
-                        header.style.display = '';
-                    }
-                });
-            }
-
-            // Update panel counter
-            visibleCounts[panelType] = visibleItemsInPanel;
-
-            // Toggle "No matches" message - only show during search with no results
-            // v13: Use native DOM querySelector
-            const noMatchesElement = panelElement.querySelector('.no-matches');
-            if (noMatchesElement) {
-                if (normalizedTerm === '') {
-                    noMatchesElement.classList.remove('show');
-                    noMatchesElement.style.display = 'none';
-                } else {
-                    const shouldShowNoMatches = visibleItemsInPanel === 0 && panelElement.classList.contains('visible');
-                    if (shouldShowNoMatches) {
-                        noMatchesElement.classList.add('show');
-                        noMatchesElement.style.display = '';
-                    } else {
-                        noMatchesElement.classList.remove('show');
-                        noMatchesElement.style.display = 'none';
-                    }
-                }
-            }
-        });
-
-        // Handle spell level headers separately since they're structured differently
-        // v13: Use native DOM querySelector
-        const spellsPanel = this.element.querySelector('[data-panel="spells"]');
-        if (spellsPanel && spellsPanel.classList.contains('visible')) {
-            const spellHeaders = spellsPanel.querySelectorAll('.category-header');
-            spellHeaders.forEach(header => {
-                const categoryId = header.dataset.categoryId;
-                // v13: Find visible items with this category ID
-                const categoryItems = Array.from(spellsPanel.querySelectorAll(`[data-category-id="${categoryId}"]`))
-                    .filter(item => item.style.display !== 'none' && !item.classList.contains('category-header'));
-                header.style.display = categoryItems.length > 0 ? '' : 'none';
-            });
-        }
-
-        // Clear individual search boxes when global search is cleared
-        if (normalizedTerm === '') {
-            // v13: Use native DOM querySelectorAll
+        if (searchTerm === '') {
             const searchInputs = this.element.querySelectorAll('.panel-containers.stacked .panel-container .search-container input');
             searchInputs.forEach(input => {
                 input.value = '';
             });
-            // Show all headers when search is cleared
-            const allHeaders = this.element.querySelectorAll('.category-header');
-            allHeaders.forEach(header => {
-                header.style.display = '';
-            });
-            // Hide all "No matches" messages
-            const noMatchesElements = this.element.querySelectorAll('.no-matches');
-            noMatchesElements.forEach(element => {
-                element.classList.remove('show');
-                element.style.display = 'none';
-            });
         }
+
+        this._applyFilters();
     }
 
-    async _togglePanel(panelType) {
-        const settingKey = `show${panelType.charAt(0).toUpperCase() + panelType.slice(1)}Panel`;
-        const currentValue = game.settings.get(MODULE.ID, settingKey);
-        await game.settings.set(MODULE.ID, settingKey, !currentValue);
-        this._updateVisibility();
-        
-        // Update panel visibility without recreating the entire tray
+    /**
+     * Flip one chip.
+     *
+     * Type and availability chips are written to settings and survive a reload;
+     * action-economy chips live on this instance and don't. That split is
+     * deliberate — closing a section is a standing preference, "what can I do
+     * this turn" is not.
+     */
+    async _toggleChip(kind, value) {
+        if (kind === 'type') {
+            const key = `filterType${capitalize(value)}`;
+            await game.settings.set(MODULE.ID, key, !game.settings.get(MODULE.ID, key));
+        } else if (kind === 'state') {
+            const key = value === 'equipped' ? 'filterStateEquipped' : 'filterStatePrepared';
+            await game.settings.set(MODULE.ID, key, !game.settings.get(MODULE.ID, key));
+        } else if (kind === 'action') {
+            if (this._actionFilters.has(value)) this._actionFilters.delete(value);
+            else this._actionFilters.add(value);
+        } else {
+            return;
+        }
+
         this._updateVisibility();
     }
 
@@ -447,21 +438,24 @@ export class ControlPanel {
         // every render, the root is not.
         this._activateCleanupListener(html);
 
-        // Control toggle buttons
-        const toggleButtons = controlPanel.querySelectorAll('.control-toggle');
-        toggleButtons.forEach(button => {
-            // Clone to remove existing listeners
-            const newButton = button.cloneNode(true);
-            button.parentNode?.replaceChild(newButton, button);
-            
-            newButton.addEventListener('click', async (event) => {
-                // Toggling a hidden panel would silently change state the user
-                // can't see; the icons are faded to say so.
+        // The filter bar. Delegated on the container rather than bound per chip:
+        // twelve listeners to rewire on every render is twelve chances to leave
+        // one behind, and the bar's contents are still settling.
+        const filterBar = controlPanel.querySelector('.control-filter-bar');
+        if (filterBar) {
+            const newBar = filterBar.cloneNode(true);
+            filterBar.parentNode?.replaceChild(newBar, filterBar);
+
+            newBar.addEventListener('click', async (event) => {
+                // The bar is hidden in quick-add mode, so a click here would be
+                // changing state the user can't see.
                 if (this._compendiumMode) return;
-                const panelType = event.currentTarget.dataset.togglePanel;
-                await this._togglePanel(panelType);
+
+                const chip = event.target.closest('.filter-chip');
+                if (!chip) return;
+                await this._toggleChip(chip.dataset.filterKind, chip.dataset.filterValue);
             });
-        });
+        }
 
         // "Clear search after adding" — remembered per user.
         const clearOnAdd = controlPanel.querySelector('.compendium-clear-on-add');

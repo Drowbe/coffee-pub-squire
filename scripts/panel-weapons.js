@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
-import { getNativeElement, renderTemplate, getActivityList, getContainerInfo, activateContainerListener, applyItemTooltips} from './helpers.js';
+import { getNativeElement, renderTemplate, getContainerInfo, activateContainerListener, applyItemTooltips, setRowFilter, getActionType, getActionTypes} from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { QuantityEditor } from './utility-quantity.js';
@@ -11,7 +11,6 @@ export class WeaponsPanel {
     constructor(actor) {
         this.actor = actor;
         this.weapons = { all: [], byType: {} }; // Initialize empty, will be populated in render
-        this.showOnlyEquipped = game.settings.get(MODULE.ID, 'showOnlyEquippedWeapons');
         // Don't set panelManager in constructor
         this._transferDialogOpen = false; // Guard to prevent multiple dialogs
         // Store event handler references for cleanup
@@ -51,7 +50,8 @@ export class WeaponsPanel {
                 img: weapon.img || 'icons/svg/sword.svg',
                 system: weapon.system,
                 weaponType: weaponType,
-                actionType: this._getActionType(weapon),
+                actionType: getActionType(weapon),
+                actionTypes: getActionTypes(weapon).join(' '),
                 isFavorite: favorites.includes(weapon.id),
                 categoryId: `category-weapon-${weaponType}`,
                 isLightSource: isLightSource,
@@ -98,21 +98,6 @@ export class WeaponsPanel {
         }
     }
 
-    _getActionType(weapon) {
-        // dnd5e 4+ activities — a Map-like collection, normalized by the helper
-        const activity = getActivityList(weapon)[0];
-        const type = activity?.activation?.type;
-        // Default to action for most weapons if no specific type is set
-        if (!type) return 'action';
-        switch (type) {
-            case 'action': return 'action';
-            case 'bonus': return 'bonus';
-            case 'reaction': return 'reaction';
-            case 'special': return 'special';
-            default: return null;
-        }
-    }
-
     async render(html) {
         if (html) {
             // v13: Convert jQuery to native DOM if needed
@@ -129,7 +114,6 @@ export class WeaponsPanel {
         const weaponData = {
             weapons: this.weapons.all,
             weaponsByType: this.weapons.byType,
-            showOnlyEquipped: this.showOnlyEquipped,
             newlyAddedItems: PanelManager.newlyAddedItems
         };
 
@@ -152,7 +136,7 @@ export class WeaponsPanel {
         this._updateVisibility(this.element);
         this._updateLightIcons(this.element);
 
-        PanelManager.instance?.controlPanel?.reapplySearch();
+        PanelManager.instance?.controlPanel?.reapplyFilters();
     }
 
     _updateVisibility(html) {
@@ -178,9 +162,10 @@ export class WeaponsPanel {
 
             const categoryId = weapon.categoryId;
             const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
-            const equippedMatch = !this.showOnlyEquipped || weapon.system.equipped;
-
-            item.style.display = (!isCategoryHidden && equippedMatch) ? '' : 'none';
+            // Category collapse is all this panel decides now. Equipped moved
+             // to the filter bar, where one chip covers weapons, inventory and
+             // favourites instead of three icons covering two panels.
+            setRowFilter(item, 'category', isCategoryHidden);
         });
 
         // Update headers visibility using PanelManager
@@ -309,21 +294,6 @@ export class WeaponsPanel {
         if (containerHandler) {
             this._eventHandlers.push({ element: panel, event: 'click', handler: containerHandler });
         }
-
-        // Add filter toggle handler
-        // v13: Use native DOM event delegation
-        const filterToggleHandler = async (event) => {
-            const filterToggle = event.target.closest('.weapon-filter-toggle');
-            if (!filterToggle) return;
-            
-            this.showOnlyEquipped = !this.showOnlyEquipped;
-            await game.settings.set(MODULE.ID, 'showOnlyEquippedWeapons', this.showOnlyEquipped);
-            filterToggle.classList.toggle('active', this.showOnlyEquipped);
-            filterToggle.classList.toggle('faded', !this.showOnlyEquipped);
-            this._updateVisibility(nativeHtml);
-        };
-        panel.addEventListener('click', filterToggleHandler);
-        this._eventHandlers.push({ element: panel, event: 'click', handler: filterToggleHandler });
 
         // Weapon info click (feather icon)
         // v13: Use native DOM event delegation

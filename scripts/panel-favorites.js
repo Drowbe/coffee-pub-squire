@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, showSquireToast, getHandleFavoriteLimit, getContainerInfo, activateContainerListener, applyItemTooltips, getPanelItemName} from './helpers.js';
+import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, showSquireToast, getHandleFavoriteLimit, getContainerInfo, activateContainerListener, applyItemTooltips, getActionType, getActionTypes} from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { QuantityEditor } from './utility-quantity.js';
@@ -606,10 +606,6 @@ export class FavoritesPanel {
         this.favorites = []; // Initialize empty, will be populated in render
         this._listenerController = null;
         // Initialize filter states
-        this.showSpells = game.settings.get(MODULE.ID, 'showSpellFavorites');
-        this.showWeapons = game.settings.get(MODULE.ID, 'showWeaponFavorites');
-        this.showFeatures = game.settings.get(MODULE.ID, 'showFeaturesFavorites');
-        this.showInventory = game.settings.get(MODULE.ID, 'showInventoryFavorites');
 
         // Set up the context menu options once
         // v13: Callbacks receive native DOM elements (not jQuery) when jQuery: false is passed
@@ -718,6 +714,10 @@ export class FavoritesPanel {
                     isLightActive = itemLightSourceId === effectiveActiveLightSourceId;
                 }
                 
+                const isSpell = item.type === 'spell';
+                const hasActionBadge = getActionType(item) !== 'passive';
+                const canEditThisQuantity = canEditQuantity && item.system?.quantity !== undefined;
+
                 return {
                     id: item.id,
                     name: item.name,
@@ -729,8 +729,24 @@ export class FavoritesPanel {
                     showEquipToggle: ['weapon', 'equipment', 'tool', 'consumable'].includes(item.type),
                     showStarIcon: item.type === 'feat',
                     isPrepared: isSpellPrepared(item),
+                    actionType: getActionType(item),
+                    actionTypes: getActionTypes(item).join(' '),
+                    // Favorites is the one list that mixes every item kind, so
+                    // "where applicable" has to be decided per row rather than
+                    // per panel: a spell carries a prepare state and no equip
+                    // state, a rope carries neither, and each chip simply skips
+                    // the rows that don't answer to it.
+                    equipState: item.system?.equipped === undefined
+                        ? null
+                        : (item.system.equipped ? 'equipped' : 'unequipped'),
+                    prepareState: isSpell
+                        ? ((item.system.level === 0 || isSpellPrepared(item)) ? 'prepared' : 'unprepared')
+                        : null,
+                    // The context span carries 4px of margin, so it only earns
+                    // its place when something is going inside it.
+                    showContext: hasActionBadge || canEditThisQuantity,
                     statblockIssue: StatblockUtility.getBadge(issueMap.get(item.id), this.actor),
-                    canEditQuantity: canEditQuantity && item.system?.quantity !== undefined,
+                    canEditQuantity: canEditThisQuantity,
                     isNew: !!(item.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(item.id)),
                     container: getContainerInfo(item, this.actor),
                     isHandleFavorite: isHandleFavorite,
@@ -755,10 +771,6 @@ export class FavoritesPanel {
         
         const favoritesData = {
             favorites: this.favorites,
-            showSpells: this.showSpells,
-            showWeapons: this.showWeapons,
-            showFeatures: this.showFeatures,
-            showInventory: this.showInventory,
             hasFavorites: this.favorites.length > 0
         };
 
@@ -816,13 +828,10 @@ export class FavoritesPanel {
         // Add new event listeners
         this._activateListeners(html);
         
-        // Update visibility
-        this._updateVisibility(html);
-        
         // Update light icons
         this._updateLightIcons(html);
 
-        PanelManager.instance?.controlPanel?.reapplySearch();
+        PanelManager.instance?.controlPanel?.reapplyFilters();
     }
 
     _removeEventListeners(panel) {
@@ -841,83 +850,6 @@ export class FavoritesPanel {
             // Just nullify the reference - don't try to close it as the DOM is being replaced
             this._contextMenu = null;
         }
-    }
-
-    _updateVisibility(html) {
-        // v13: Detect and convert jQuery to native DOM if needed
-        let nativeHtml = html;
-        if (html && (html.jquery || typeof html.find === 'function')) {
-            nativeHtml = html[0] || html.get?.(0) || html;
-        }
-        
-        // Scope to this panel. Every favorite also renders in its source panel
-        // (spells, weapons, inventory, features) under the same data-item-id, so
-        // a tray-wide query would apply these type filters there too and stomp
-        // whatever filter that panel had applied.
-        const panel = nativeHtml.querySelector('[data-panel="favorites"]');
-        if (!panel) return;
-
-        panel.querySelectorAll('.panel-item').forEach((item) => {
-            const itemId = item.dataset.itemId;
-            const favoriteItem = this.favorites.find(f => f.id === itemId);
-
-            if (!favoriteItem) return;
-
-            let shouldShow = false;
-            if (favoriteItem.type === 'spell' && this.showSpells) shouldShow = true;
-            if (favoriteItem.type === 'weapon' && this.showWeapons) shouldShow = true;
-            if (favoriteItem.type === 'feat' && this.showFeatures) shouldShow = true;
-            if (['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(favoriteItem.type) && 
-                this.showInventory && favoriteItem.type !== 'weapon') shouldShow = true;
-
-            item.style.display = shouldShow ? '' : 'none';
-        });
-    }
-
-    async _toggleFilter(filterType) {
-        switch(filterType) {
-            case 'spells':
-                this.showSpells = !this.showSpells;
-                await game.settings.set(MODULE.ID, 'showSpellFavorites', this.showSpells);
-                break;
-            case 'weapons':
-                this.showWeapons = !this.showWeapons;
-                await game.settings.set(MODULE.ID, 'showWeaponFavorites', this.showWeapons);
-                break;
-            case 'features':
-                this.showFeatures = !this.showFeatures;
-                await game.settings.set(MODULE.ID, 'showFeaturesFavorites', this.showFeatures);
-                break;
-            case 'inventory':
-                this.showInventory = !this.showInventory;
-                await game.settings.set(MODULE.ID, 'showInventoryFavorites', this.showInventory);
-                break;
-        }
-        this._updateVisibility(this.element);
-    }
-
-    _handleSearch(searchTerm) {
-        // Convert search term to lowercase for case-insensitive comparison
-        searchTerm = searchTerm.toLowerCase();
-        
-        // Get all favorite items
-        const favoriteItems = this.element.find('.panel-item');
-        let visibleItems = 0;
-        
-        favoriteItems.each((_, item) => {
-            const $item = $(item);
-            const itemName = getPanelItemName(item).toLowerCase();
-            
-            if (searchTerm === '' || itemName.includes(searchTerm)) {
-                $item.show();
-                visibleItems++;
-            } else {
-                $item.hide();
-            }
-        });
-
-        // Show/hide no matches message
-        this.element.find('.no-matches').toggle(visibleItems === 0 && searchTerm !== '');
     }
 
     _activateListeners(html) {
@@ -957,26 +889,6 @@ export class FavoritesPanel {
             }, { signal: listenerSignal });
         }
         
-        // Filter toggles
-        // v13: Use nativeHtml instead of html, native DOM methods
-        // The icon element is captured before awaiting. `event.currentTarget` is
-        // nulled by the browser once dispatch finishes, so reading it after an
-        // await always throws — which is what every one of these did.
-        const bindFilterToggle = (selector, filterType, isEnabled) => {
-            const toggle = nativeHtml.querySelector(selector);
-            if (!toggle) return;
-            toggle.addEventListener('click', async () => {
-                await this._toggleFilter(filterType);
-                toggle.classList.toggle('active', isEnabled());
-                toggle.classList.toggle('faded', !isEnabled());
-            }, { signal: listenerSignal });
-        };
-
-        bindFilterToggle('.favorites-spell-toggle', 'spells', () => this.showSpells);
-        bindFilterToggle('.favorites-weapon-toggle', 'weapons', () => this.showWeapons);
-        bindFilterToggle('.favorites-features-toggle', 'features', () => this.showFeatures);
-        bindFilterToggle('.favorites-inventory-toggle', 'inventory', () => this.showInventory);
-
         // Roll/Use item — delegated to the panel (one listener regardless of list size)
         panel.addEventListener('click', async (event) => {
             if (!event.target.classList.contains('panel-item-roll-overlay')) return;

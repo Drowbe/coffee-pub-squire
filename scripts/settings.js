@@ -670,99 +670,44 @@ export const registerSettings = function() {
         default: true
     });
 
-    // Panel Visibility Settings
+    // --- Filter Bar ---
+    //
+    // Twelve chips under the tray title, in three groups. They replace the old
+    // per-panel filter icons: an equipped toggle sitting inside the weapons
+    // panel and another inside inventory answered the same question twice, and
+    // neither reached favourites, where the answer is most useful.
+    //
+    // Item-type chips persist because closing a section is a deliberate,
+    // remembered choice. Action-economy chips deliberately do NOT persist and
+    // live on the ControlPanel instance instead: logging in a week later to a
+    // half-empty sheet, with one dimmed chip as the only clue, is a bad morning.
 
-    game.settings.register(MODULE.ID, 'showFavoritesPanel', {
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: true
-    });
+    // Item types. "Favorites" is the odd one of the five — a flag rather than a
+    // type — so it hides its panel without filtering rows anywhere else.
+    for (const type of ['Favorites', 'Weapons', 'Spells', 'Features', 'Inventory']) {
+        game.settings.register(MODULE.ID, `filterType${type}`, {
+            scope: 'user',
+            config: false,
+            type: Boolean,
+            default: true
+        });
+    }
 
-    game.settings.register(MODULE.ID, 'showWeaponsPanel', {
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showSpellsPanel', {
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showInventoryPanel', {
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showFeaturesPanel', {
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: true
-    });
-
-    // --- Filter States ---
-
-    game.settings.register(MODULE.ID, 'showOnlyPreparedSpells', {
-        name: 'Remember Prepared Spells Filter',
-        hint: 'Remember if the prepared spells filter was enabled',
+    // Availability. Kept as two chips rather than merged into one "ready"
+    // filter: preparing a fixed number of spells and equipping what you can
+    // carry are different questions, whatever they have in common mechanically.
+    game.settings.register(MODULE.ID, 'filterStateEquipped', {
         scope: 'user',
         config: false,
         type: Boolean,
         default: false
     });
 
-    game.settings.register(MODULE.ID, 'showOnlyEquippedWeapons', {
-        name: 'Remember Equipped Weapons Filter',
-        hint: 'Remember if the equipped weapons filter was enabled',
+    game.settings.register(MODULE.ID, 'filterStatePrepared', {
         scope: 'user',
         config: false,
         type: Boolean,
         default: false
-    });
-
-    game.settings.register(MODULE.ID, 'showOnlyEquippedInventory', {
-        name: 'Remember Equipped Inventory Filter',
-        hint: 'Remember if the equipped inventory filter was enabled',
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: false
-    });
-
-    // Favorites Filter States
-    game.settings.register(MODULE.ID, 'showSpellFavorites', {
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showFeaturesFavorites', {
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showWeaponFavorites', {
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: true
-    });
-
-    game.settings.register(MODULE.ID, 'showInventoryFavorites', {
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: true
     });
 
     // View Mode Setting

@@ -7,10 +7,6 @@
         {{#if hasFavorites}}
         <i class="fa-solid fa-heart-circle-xmark favorites-clear-all" title="Clear All Favorites"></i>
         {{/if}}
-        <i class="fa-solid fa-sparkles favorites-spell-toggle filter-toggle {{#if showSpells}}active{{else}}faded{{/if}}" title="Toggle Spell Favorites"></i>
-        <i class="fa-solid fa-swords favorites-weapon-toggle filter-toggle {{#if showWeapons}}active{{else}}faded{{/if}}" title="Toggle Weapon Favorites"></i>
-        <i class="fa-solid fa-stars favorites-features-toggle filter-toggle {{#if showFeatures}}active{{else}}faded{{/if}}" title="Toggle Feature Favorites"></i>
-        <i class="fa-solid fa-backpack favorites-inventory-toggle filter-toggle {{#if showInventory}}active{{else}}faded{{/if}}" title="Toggle Inventory Favorites"></i>
     </div>
 </div>
 
@@ -18,7 +14,10 @@
         {{#if favorites}}
         {{#each favorites}}
         <div draggable="true" class="panel-item" 
-             data-item-id="{{this.id}}" data-item-type="{{this.type}}">
+             data-item-id="{{this.id}}" data-item-type="{{this.type}}"
+             data-action-types="{{this.actionTypes}}"{{#if this.equipState}}
+             data-equip-state="{{this.equipState}}"{{/if}}{{#if this.prepareState}}
+             data-prepare-state="{{this.prepareState}}"{{/if}}>
             <div class="panel-item-row">
                 <div class="panel-item-image-container">
                     <img draggable="false" class="panel-item-image" src="{{this.img}}" alt="{{this.name}}"/>
@@ -27,9 +26,12 @@
                 <div class="panel-item-name">
                     <span class="panel-item-label">{{this.name}}</span>
                     {{#if this.isNew}}<span class="new-tag">NEW</span>{{/if}}
-                    {{#if this.canEditQuantity}}
+                    {{#if this.showContext}}
                     <span class="panel-item-context">
+                        {{> action-badge actionType=this.actionType}}
+                        {{#if this.canEditQuantity}}
                         <span class="panel-item-badge context-count editable" data-quantity-edit title="Quantity — click to edit, 0 removes the item">x{{this.system.quantity}}</span>
+                        {{/if}}
                     </span>
                     {{/if}}
                 </div>

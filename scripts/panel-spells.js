@@ -1,14 +1,13 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getActivityList, isSpellPrepared, applyItemTooltips} from './helpers.js';
+import { getNativeElement, renderTemplate, isSpellPrepared, applyItemTooltips, setRowFilter, getActionType, getActionTypes} from './helpers.js';
 import { StatblockUtility } from './utility-statblock.js';
 
 export class SpellsPanel {
     constructor(actor) {
         this.actor = actor;
         this.spells = this._getSpells();
-        this.showOnlyPrepared = game.settings.get(MODULE.ID, 'showOnlyPreparedSpells');
         this._listenerController = null;
         // Don't set panelManager in constructor
     }
@@ -37,7 +36,12 @@ export class SpellsPanel {
                 img: spell.img,
                 system: spell.system,
                 type: spell.type,
-                actionType: this._getActionType(spell),
+                actionType: getActionType(spell),
+                actionTypes: getActionTypes(spell).join(' '),
+                // Cantrips, at-will, innate and pact spells are always castable;
+                // isSpellPrepared already says so, and the level test is kept
+                // because that is exactly what the old filter tested.
+                isPrepared: level === 0 || isSpellPrepared(spell),
                 isFavorite: isFavorite,
                 categoryId: isAtWill ? 'category-spell-at-will' : `category-spell-level-${level}`,
                 statblockIssue: StatblockUtility.getBadge(issueMap.get(spell.id), this.actor),
@@ -49,18 +53,6 @@ export class SpellsPanel {
         mappedSpells.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
         return mappedSpells;
-    }
-
-    _getActionType(spell) {
-        // dnd5e 4+ activities — a Map-like collection, normalized by the helper
-        const activity = getActivityList(spell)[0];
-        switch (activity?.activation?.type) {
-            case 'bonus': return 'bonus';
-            case 'reaction': return 'reaction';
-            case 'special': return 'special';
-            // Default to action for most spells
-            default: return 'action';
-        }
     }
 
     async render(html) {
@@ -108,7 +100,6 @@ export class SpellsPanel {
             spellsByLevel,
             spellsByType,
             spellSlots,
-            showOnlyPrepared: this.showOnlyPrepared
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_SPELLS, spellData);
@@ -132,7 +123,7 @@ export class SpellsPanel {
         this._activateListeners(this.element);
         this._updateVisibility(this.element);
 
-        PanelManager.instance?.controlPanel?.reapplySearch();
+        PanelManager.instance?.controlPanel?.reapplyFilters();
     }
 
     _getSpellSlots() {
@@ -189,15 +180,11 @@ export class SpellsPanel {
 
             const categoryId = spell.categoryId;
             const isCategoryHidden = this.panelManager.hiddenCategories.has(categoryId);
-            // isSpellPrepared covers cantrips, at-will, innate, and pact, and
-            // reads dnd5e 5.x's numeric `prepared` correctly. Testing
-            // `system.prepared` directly hid innate and pact spells, which sit
-            // at 0 yet are always castable.
-            const preparedMatch = !this.showOnlyPrepared
-                || spell.system.level === 0
-                || isSpellPrepared(spell);
-
-            item.style.display = (!isCategoryHidden && preparedMatch) ? '' : 'none';
+            // Category collapse is all this panel decides now. Prepared moved
+            // to the filter bar; each row carries its own answer as
+            // `data-prepare-state`, which is set from isSpellPrepared and so
+            // still keeps cantrips, at-will, innate and pact spells.
+            setRowFilter(item, 'category', isCategoryHidden);
         });
 
         // Update headers visibility using PanelManager — panel-scoped for the
@@ -303,19 +290,6 @@ export class SpellsPanel {
             if (categoryId) {
                 this.panelManager.toggleCategory(categoryId, panel);
             }
-        }, { signal: listenerSignal });
-
-        // Add filter toggle handler
-        // v13: Use native DOM event delegation
-        panel.addEventListener('click', async (event) => {
-            const filterToggle = event.target.closest('.spell-filter-toggle');
-            if (!filterToggle) return;
-            
-            this.showOnlyPrepared = !this.showOnlyPrepared;
-            await game.settings.set(MODULE.ID, 'showOnlyPreparedSpells', this.showOnlyPrepared);
-            filterToggle.classList.toggle('active', this.showOnlyPrepared);
-            filterToggle.classList.toggle('faded', !this.showOnlyPrepared);
-            this._updateVisibility(nativeHtml);
         }, { signal: listenerSignal });
 
         // Spell info click (feather icon)

@@ -21,6 +21,43 @@ export function isGMOrPartyLeader() {
 }
 
 /**
+ * The independent reasons a panel row can be hidden.
+ *
+ * Filtering used to be a race: search, the equipped/prepared filters and
+ * category collapse each wrote `item.style.display` outright, so whichever ran
+ * last erased the others' verdict. Searching and then toggling the equipped
+ * filter wiped the search; re-rendering a panel ran the filter first and the
+ * search second, which un-hid rows the filter had just hidden.
+ *
+ * Instead each source owns one reason and only ever toggles its own class. The
+ * stylesheet hides a row while any reason holds, so the verdicts intersect
+ * rather than overwrite, and no source needs to know the others exist.
+ */
+export const FILTER_REASONS = ['search', 'type', 'action', 'state', 'category'];
+
+/**
+ * Record one filter's verdict on a row, leaving every other reason intact.
+ *
+ * @param {HTMLElement} row  a `.panel-item` element
+ * @param {string} reason    one of {@link FILTER_REASONS}
+ * @param {boolean} hidden   true to hide the row for this reason
+ */
+export function setRowFilter(row, reason, hidden) {
+    row?.classList.toggle(`hidden-by-${reason}`, !!hidden);
+}
+
+/**
+ * True when no filter is currently hiding this row.
+ *
+ * Header and empty-state logic asks this rather than reading `style.display`,
+ * which only ever reported the last writer to touch the row.
+ */
+export function isRowVisible(row) {
+    if (!row) return false;
+    return !FILTER_REASONS.some(reason => row.classList.contains(`hidden-by-${reason}`));
+}
+
+/**
  * The item's own name from a `.panel-item` row, without the trimmings.
  *
  * `.panel-item-name` is a container: besides the name it holds the NEW tag, the
@@ -375,6 +412,54 @@ export function getActivityList(item) {
     if (!activities) return [];
     if (activities instanceof Map) return Array.from(activities.values());
     return Object.values(activities);
+}
+
+/**
+ * Every action-economy cost an item can be used at, as an array drawn from
+ * 'action' | 'bonus' | 'reaction' | 'special' | 'passive'.
+ *
+ * The four panels each grew their own copy of this and they disagreed: spells
+ * called an activity-less item an 'action', weapons did too but returned null
+ * for an activation type they didn't recognise, and features and inventory
+ * returned null. That was harmless while the answer only picked a badge, but as
+ * a filter those disagreements decide what a chip shows, so there is one answer
+ * now.
+ *
+ * 'passive' is a real answer rather than a missing one. A rope, a suit of armour
+ * and Darkvision genuinely cost nothing to use â€” that's what the Passive chip
+ * selects and what every other chip excludes. Returning null instead would make
+ * such items unreachable from the bar.
+ *
+ * Every activity counts, not just the first: an item usable as either an action
+ * or a bonus action answers to both chips. The badge still shows only
+ * {@link getActionType}, because a row has room for one.
+ */
+export function getActionTypes(item) {
+    const types = new Set();
+
+    for (const activity of getActivityList(item)) {
+        switch (activity?.activation?.type) {
+            case 'action': types.add('action'); break;
+            case 'bonus': types.add('bonus'); break;
+            case 'reaction': types.add('reaction'); break;
+            case 'special': types.add('special'); break;
+            // Everything else â€” 'minute', 'hour', 'day', 'legendary', 'lair',
+            // or a blank activation on an activity that still exists â€” costs no
+            // turn action, so it belongs with the passives rather than being
+            // dropped into a gap no chip can reach.
+            default: types.add('passive'); break;
+        }
+    }
+
+    return types.size ? Array.from(types) : ['passive'];
+}
+
+/**
+ * The one action type shown as a row's badge: the first activity's, so a
+ * multi-activity item reads as whatever it mostly is.
+ */
+export function getActionType(item) {
+    return getActionTypes(item)[0];
 }
 
 // Helper function to determine weapon type using activities system

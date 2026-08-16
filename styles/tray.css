@@ -333,7 +333,6 @@
     color: rgba(185, 38, 37, 1.0);
     opacity: 1.0;
 }
-.squire-tray .section-header .filter-toggle.faded,
 .squire-tray .section-header .weapons-category-filter:not(.active),
 .squire-tray .section-header .spell-level-filter:not(.active),
 .squire-tray .section-header .inventory-category-filter:not(.active),
@@ -389,6 +388,19 @@
     border-radius: 3px;
     padding: 0;
     margin-bottom: 2px;
+}
+
+/* Filters compose rather than compete: each source (search, item type, action
+   type, equipped/prepared, category collapse) toggles only its own class, and a
+   row stays hidden while any one of them holds. Nothing writes `display` on a
+   row directly, so no filter can erase another's verdict. See FILTER_REASONS in
+   scripts/helpers.js. */
+.squire-tray .panel-item.hidden-by-search,
+.squire-tray .panel-item.hidden-by-type,
+.squire-tray .panel-item.hidden-by-action,
+.squire-tray .panel-item.hidden-by-state,
+.squire-tray .panel-item.hidden-by-category {
+    display: none;
 }
 
 .squire-tray .panel-item:hover {
@@ -787,59 +799,53 @@
 
 /* BUTTONS */
 
-.squire-tray [data-panel="control"] .control-icons {
+/* FILTER BAR */
+
+/* These are the same control as the category filters in a panel heading — a
+   bare glyph that dims when it is off — so they are styled from the same rules
+   rather than given a look of their own. Twelve of them in a ~343px column
+   could not carry the bordered buttons that used to sit here anyway. */
+.squire-tray [data-panel="control"] .control-filter-bar {
     display: flex;
-    gap: 8px;
-    width: 100%;
-    background: rgba(0, 0, 0, 0.0);
-    border: 0px solid rgba(255, 255, 255, 0.12);
-    border-radius: 0px;
-    padding: 0px;
-}
-
-.squire-tray [data-panel="control"] .control-toggle {
-    flex: 1;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-    color: rgba(235, 233, 225, 1);
-    cursor: pointer;
-    height: 28px;
-    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
-    transition: all 0.2s ease;
+    flex-wrap: wrap;
+    gap: 4px;
+    width: 100%;
+    margin-bottom: 6px;
+}
+
+.squire-tray [data-panel="control"] .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1 1 auto;
+    justify-content: space-evenly;
+}
+
+.squire-tray [data-panel="control"] .filter-separator {
+    width: 1px;
+    align-self: stretch;
+    margin: 2px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.squire-tray [data-panel="control"] .filter-chip {
+    cursor: pointer;
+    transition: color 0.2s ease;
     font-size: 0.85em;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+    color: rgba(159, 146, 117, 0.9);
 }
 
-.squire-tray [data-panel="control"] .control-toggle.active {
-    background: rgba(145, 133, 107, 0.4);
-    border-color: rgba(145, 133, 107, 0.6);
-    color: rgba(255, 255, 255, 0.9);
-    box-shadow: rgba(201, 89, 63, 0.8) 0px 0px 4px 0px;
-    outline: 2px solid rgba(183, 81, 58, 0.2);
+.squire-tray [data-panel="control"] .filter-chip:hover {
+    color: rgba(185, 38, 37, 1.0);
+    opacity: 1.0;
 }
 
-.squire-tray [data-panel="control"] .control-toggle.faded {
-    opacity: 0.4 !important;
+/* Off is dimmed, on is simply not dimmed — the heading filters say it the same
+   way, with no second state to keep in sync. */
+.squire-tray [data-panel="control"] .filter-chip:not(.active) {
+    opacity: 0.3;
 }
-.squire-tray [data-panel="control"] .control-toggle.faded:hover,
-.squire-tray [data-panel="control"] .control-toggle.active:hover,
-.squire-tray [data-panel="control"] .control-toggle:hover {
-    border-color: rgba(255, 100, 0, 0.6);
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(183, 82, 58, 0.9);
-    opacity: 1.0 !important;
-}
-
-
-
-
-
-
 
 /* SEARCH */
 
@@ -927,9 +933,11 @@
     opacity: 1;
 }
 
-/* Panel toggles have nothing to act on while quick-add is showing, so the whole
-   row collapses instead of sitting greyed out and eating vertical space. */
-.squire-tray [data-panel="control"].compendium-mode .control-icons {
+/* The bar has nothing to act on while quick-add is showing, so it collapses
+   instead of sitting greyed out and eating vertical space. The search box moves
+   up into the gap, which is a deliberate part of that mode reading as a
+   different place rather than the same panel with things switched off. */
+.squire-tray [data-panel="control"].compendium-mode .control-filter-bar {
     display: none;
 }
 

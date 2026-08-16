@@ -11,6 +11,39 @@
     {{/if}}
 </div>
 </div>
+{{!--
+    The filter bar. Every chip here is the same kind of control — a predicate
+    over rows — which is why they can share a row. The equipped and prepared
+    chips used to live inside the weapons, spells and inventory panels, where
+    they answered the same question up to three times and never reached
+    favourites at all.
+
+    A chip applies only where it means something: "prepared" says nothing about
+    a rope, so rows that carry no prepare state simply pass it. That is recorded
+    as the absence of a data attribute on the row, not as a special case here.
+--}}
+<div class="control-filter-bar">
+<div class="filter-group">
+<i class="fa-solid fa-heart filter-chip" data-filter-kind="type" data-filter-value="favorites" data-tooltip="Favorites section"></i>
+<i class="fa-solid fa-swords filter-chip" data-filter-kind="type" data-filter-value="weapons" data-tooltip="Weapons — hides them everywhere, favorites included"></i>
+<i class="fa-solid fa-sparkles filter-chip" data-filter-kind="type" data-filter-value="spells" data-tooltip="Spells — hides them everywhere, favorites included"></i>
+<i class="fa-solid fa-stars filter-chip" data-filter-kind="type" data-filter-value="features" data-tooltip="Features — hides them everywhere, favorites included"></i>
+<i class="fa-solid fa-backpack filter-chip" data-filter-kind="type" data-filter-value="inventory" data-tooltip="Inventory — hides it everywhere, favorites included"></i>
+</div>
+<span class="filter-separator"></span>
+<div class="filter-group">
+<i class="fa-solid fa-square-a filter-chip" data-filter-kind="action" data-filter-value="action" data-tooltip="Costs an action"></i>
+<i class="fa-solid fa-square-b filter-chip" data-filter-kind="action" data-filter-value="bonus" data-tooltip="Costs a bonus action"></i>
+<i class="fa-solid fa-square-r filter-chip" data-filter-kind="action" data-filter-value="reaction" data-tooltip="Costs a reaction"></i>
+<i class="fa-solid fa-square-s filter-chip" data-filter-kind="action" data-filter-value="special" data-tooltip="Special activation"></i>
+<i class="fa-solid fa-square-p filter-chip" data-filter-kind="action" data-filter-value="passive" data-tooltip="Costs no turn action — gear, passives, and anything slower than a turn"></i>
+</div>
+<span class="filter-separator"></span>
+<div class="filter-group">
+<i class="fa-solid fa-shield-halved filter-chip" data-filter-kind="state" data-filter-value="equipped" data-tooltip="Equipped only. Leaves spells and features alone."></i>
+<i class="fa-solid fa-sun filter-chip" data-filter-kind="state" data-filter-value="prepared" data-tooltip="Prepared only. Cantrips and always-prepared spells stay; leaves everything that isn't a spell alone."></i>
+</div>
+</div>
 <div class="control-search">
 <input type="text" class="global-search" placeholder="Search All Sections...">
 <i class="fa-solid fa-times search-clear" title="Clear Search"></i>
@@ -21,10 +54,3 @@
 <span>Clear search and keep open on add</span>
 </label>
 {{/if}}
-<div class="control-icons">
-<i class="fa-solid fa-heart control-toggle" data-toggle-panel="favorites" title="Toggle Favorites Panel"></i>
-<i class="fa-solid fa-swords control-toggle" data-toggle-panel="weapons" title="Toggle Weapons Panel"></i>
-<i class="fa-solid fa-sparkles control-toggle" data-toggle-panel="spells" title="Toggle Spells Panel"></i>
-<i class="fa-solid fa-stars control-toggle" data-toggle-panel="features" title="Toggle Features Panel"></i>
-<i class="fa-solid fa-backpack control-toggle" data-toggle-panel="inventory" title="Toggle Inventory Panel"></i>
-</div>

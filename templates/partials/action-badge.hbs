@@ -1,0 +1,14 @@
+{{!--
+    The action-economy badge on a panel row. Four panels each carried an
+    identical inline copy of this and favorites carried none, which is why
+    favorites — the one list that mixes spells, weapons and features — was the
+    only place you couldn't see what an item costs to use.
+
+    Passive rows deliberately render nothing: a badge saying "no cost" is noise
+    on every piece of gear you own. The Passive chip in the filter bar is how
+    they're selected instead.
+--}}
+{{#if (eq actionType "action")}}<span class="panel-item-badge context-action action-action" title="Action">A</span>
+{{else if (eq actionType "bonus")}}<span class="panel-item-badge context-action action-bonus" title="Bonus Action">B</span>
+{{else if (eq actionType "reaction")}}<span class="panel-item-badge context-action action-reaction" title="Reaction">R</span>
+{{else if (eq actionType "special")}}<span class="panel-item-badge context-action action-special" title="Special">S</span>{{/if}}
