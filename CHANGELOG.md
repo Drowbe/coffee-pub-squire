@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [Unreleased]
+## [13.8.0]
 
 ### Changed
 - **Chat cards are now composed from Blacksmith's parts rather than rendered from Squire's own template.** `templates/chat-cards.hbs` is deleted. It was a 505-line fork of Blacksmith's `cards-common.hbs` — same variant names in the same order, the same invalid `visibility: none` on line 1 — that had drifted 231 lines from its original, so every fix to a card in Blacksmith stopped at Squire's border. All 26 posting sites now call `chatCards.post()` and Squire writes no card HTML at all. Composition lives in one place, `scripts/manager-cards.js`, the way the template used to.
