@@ -1,14 +1,9 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, showSquireToast, getHandleFavoriteLimit, getContainerInfo, activateContainerListener, applyItemTooltips, getActionType, getActionTypes} from './helpers.js';
+import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, showSquireToast, getHandleFavoriteLimit, getContainerInfo, activateContainerListener, applyItemTooltips, getBlacksmith, getActionType, getActionTypes} from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { QuantityEditor } from './utility-quantity.js';
-
-// Helper function to safely get Blacksmith API
-function getBlacksmith() {
-  return game.modules.get('coffee-pub-blacksmith')?.api;
-}
 
 // Universal actions every creature can take — the core-rules set plus common
 // table extras. When an actions compendium drops these onto NPC sheets they
@@ -1127,6 +1122,31 @@ export class FavoritesPanel {
         const clearAllButton = nativeHtml.querySelector('.favorites-clear-all');
         if (clearAllButton) {
             clearAllButton.addEventListener('click', async () => {
+                // One click used to empty the whole list with nothing to undo it,
+                // and the icon sits in a header row beside things that only
+                // change what you're looking at. Rebuilding a favourites list is
+                // slow and fiddly, so this asks first — the same shape of confirm
+                // the quantity editor uses before deleting an item.
+                const count = FavoritesPanel.getPanelFavorites(this.actor)?.length ?? 0;
+                if (!count) return;
+
+                const dialog = getBlacksmith()?.dialog;
+                if (!dialog) {
+                    // Without a confirm surface, refuse rather than silently
+                    // throwing the list away.
+                    ui.notifications.warn('Squire: cannot confirm clearing favorites — remove them individually instead.');
+                    return;
+                }
+
+                const confirmed = await dialog.confirm({
+                    title: 'Clear Favorites',
+                    content: `<p>Remove all <strong>${count}</strong> favorite${count === 1 ? '' : 's'} from <strong>${foundry.utils.escapeHTML(this.actor.name)}</strong>?</p><p>This also clears the handle favorites, and cannot be undone.</p>`,
+                    confirmLabel: 'Clear Favorites',
+                    confirmIcon: 'fa-solid fa-heart-circle-xmark',
+                    destructive: true
+                });
+                if (!confirmed) return;
+
                 await FavoritesPanel.clearFavorites(this.actor);
             }, { signal: listenerSignal });
         }

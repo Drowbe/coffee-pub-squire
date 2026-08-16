@@ -387,6 +387,49 @@ export class ControlPanel {
     }
 
     /**
+     * Shift-click: show only this bucket, and nothing else it competes with.
+     *
+     * Every group is on by default, so isolating one bucket otherwise means
+     * switching off its four siblings one at a time — and "only bonus actions"
+     * is a thing you want mid-turn, not after four clicks.
+     *
+     * Shift-clicking an already-soloed chip puts its siblings back. Without that
+     * the gesture is a trap: it can reach a state that takes four ordinary
+     * clicks to leave.
+     *
+     * Availability solos within its question, not across the whole group.
+     * Shift-clicking Equipped means "equipped rather than stowed" and says
+     * nothing about spells — the same thing the old equipped toggle meant, and
+     * the same "where applicable" rule the chips already follow. Soloing across
+     * all four would instead hide every spell, which is not what the tooltip
+     * promises.
+     */
+    async _soloChip(kind, value) {
+        if (kind === 'type') {
+            const soloed = PANEL_TYPES.every(type =>
+                game.settings.get(MODULE.ID, `filterType${capitalize(type)}`) === (type === value));
+            for (const type of PANEL_TYPES) {
+                await game.settings.set(MODULE.ID, `filterType${capitalize(type)}`, soloed || type === value);
+            }
+        } else if (kind === 'action') {
+            const soloed = this._shownActions.size === 1 && this._shownActions.has(value);
+            this._shownActions = new Set(soloed ? ACTION_BUCKETS : [value]);
+        } else if (kind === 'state') {
+            const siblings = Object.values(STATE_BUCKETS).find(group => group.includes(value));
+            if (!siblings) return;
+            const soloed = siblings.every(bucket =>
+                game.settings.get(MODULE.ID, `filterShow${capitalize(bucket)}`) === (bucket === value));
+            for (const bucket of siblings) {
+                await game.settings.set(MODULE.ID, `filterShow${capitalize(bucket)}`, soloed || bucket === value);
+            }
+        } else {
+            return;
+        }
+
+        this._updateVisibility();
+    }
+
+    /**
      * Flip one chip.
      *
      * Type and availability chips are written to settings and survive a reload;
@@ -478,6 +521,11 @@ export class ControlPanel {
 
                 const chip = event.target.closest('.filter-chip');
                 if (!chip) return;
+
+                if (event.shiftKey) {
+                    await this._soloChip(chip.dataset.filterKind, chip.dataset.filterValue);
+                    return;
+                }
                 await this._toggleChip(chip.dataset.filterKind, chip.dataset.filterValue);
             });
         }
