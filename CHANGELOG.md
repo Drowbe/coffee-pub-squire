@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [Unreleased]
+## [13.8.1]
 
 ### Fixed
 - **Tray filters compose instead of overwriting each other.** Search, the equipped/prepared filters and category collapse each wrote `item.style.display` outright, so whichever ran last erased the others' verdict. Searching for a weapon and then toggling the equipped filter wiped the search; the reverse ordering was worse, because a panel re-render ran its own filter first and `reapplySearch()` second, so the search un-hid rows the equipped filter had just hidden. Every source now toggles only its own `hidden-by-*` class and a row stays hidden while any one of them holds, which makes the filters mathematically incapable of clobbering one another.
