@@ -119,24 +119,45 @@
     gap: 4px;
 }
 
-/* The mode toggles and the cleanup launcher are the same affordance in the
-   Character Sheet title bar, and were styled identically in two places. */
-.squire-tray [data-panel="control"] .control-mode-toggle,
+/* The mode toggles and the cleanup launcher are one cluster of header icons,
+   and they take the filter chips' vocabulary exactly: the chips' tan, on is full
+   opacity, off is dimmed, and nothing paints a background. They are the same
+   kind of control as the chips one row down, so looking like a different kind
+   was the defect.
 
-/* Selected side lit, the other dimmed — same active/faded vocabulary as the
-   panel toggles below, at header scale. */
-.squire-tray [data-panel="control"] .control-mode-toggle.active {
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(145, 133, 107, 0.4);
+   THE DEFECT WAS A COMMA. The base selector used to end with one, with a comment
+   between it and the next line — which folded it into the `.active` rule, so
+   BOTH toggles were permanently drawn in the selected style, each sitting in its
+   own filled box, and there was no way to tell which mode you were in. The same
+   comma dropped `.control-cleanup` out of the list entirely: the broom had no
+   rule at all, only a `:hover` two files away.
+
+   This is what a trailing comma before a comment does, and CSS will not tell
+   you: the rule stays valid, so nothing fails — it just applies to the wrong
+   elements, permanently. */
+.squire-tray [data-panel="control"] .control-mode-toggle,
+.squire-tray [data-panel="control"] .control-cleanup {
+    cursor: pointer;
+    /* The chips' own tan — see .filter-chip above. */
+    color: rgba(159, 146, 117, 0.9);
+    background: none;
+    transition: color 0.2s ease, opacity 0.2s ease;
 }
 
+/* Off is dimmed, on is simply not dimmed — exactly what .filter-chip does, with
+   no second lit state to keep in sync.
+
+   Keyed on `.faded` rather than `:not(.active)` because panel-control.js sets
+   both classes explicitly. Before it has run, that leaves the pair reading as
+   enabled rather than as disabled, which is the better of the two wrong
+   answers. */
 .squire-tray [data-panel="control"] .control-mode-toggle.faded {
     opacity: 0.4;
 }
 
-.squire-tray [data-panel="control"] .control-mode-toggle:hover {
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(183, 82, 58, 0.9);
+.squire-tray [data-panel="control"] .control-mode-toggle:hover,
+.squire-tray [data-panel="control"] .control-cleanup:hover {
+    color: var(--squire-color-hover);
     opacity: 1;
 }
 

@@ -193,13 +193,19 @@
 
 /* --------------- SHARED PANEL STYLES --------------- */
 
-/* TOP PANEL SHELLS */
-.squire-tray [data-panel="health"],
-/* The panels that actually exist. `experience`, `abilities` and `stats` were
-   folded into the character summary; `dicetray` and `macros` are Blacksmith's
-   windows now. The full list of live values is the twelve `data-panel`
-   attributes in templates/ plus nothing composed at runtime — panel-control.js
-   builds its selectors from PANEL_TYPES, which is a subset of them. */
+/* TOP PANEL SHELLS
+
+   The panels that actually exist. `health`, `experience`, `abilities` and
+   `stats` are gone — the last three folded into the character summary, and
+   health is a Blacksmith window. The full list of live values is the twelve
+   `data-panel` attributes in templates/ plus nothing composed at runtime:
+   panel-control.js builds its selectors from PANEL_TYPES, which is a subset of
+   them.
+
+   The comment used to sit BETWEEN two selectors in this list, which is legal
+   and reads as though the list starts below it — which is how `health` survived
+   a pass that was specifically looking for dead panel selectors. Comments go
+   above a rule, never inside its selector. */
 .squire-tray [data-panel="gm"],
 .squire-tray [data-panel="character-summary"],
 .squire-tray [data-panel="control"] {

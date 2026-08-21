@@ -129,23 +129,20 @@
 /* ==========================================================================
    THE TWO TRAY CONTROLS
 
-   Pin and caret, adjacent, at the head of the strip. They used to sit at
-   opposite ends — the caret at the foot, mirroring core Foundry's sidebar
-   collapse — which put the two controls that do the same category of thing the
-   full height of the screen apart.
-   ========================================================================== */
+   Pin at the head, caret at the foot — the foot being where core Foundry keeps
+   its own sidebar collapse control.
 
-.squire-tray .tray-handle-controls {
-    display: flex;
-    flex-direction: column;
-    /* Three touching squares read as one block; this keeps them separate. */
-    gap: 2px;
-    align-items: center;
-    flex: none;
-    /* Clears the bottom fade, which is painted at 2. */
-    position: relative;
-    z-index: 3;
-}
+   They were briefly grouped together at the top, on the argument that two
+   controls doing the same category of thing should not sit a screen apart. That
+   argument loses to the stronger one: the caret is a control people already know
+   the position of, because Foundry taught them, and moving it made a known
+   control into one they had to find. Consistency with the application beats
+   internal tidiness.
+
+   Both are placed by DOM order now — the content wrapper between them is the
+   flex item that grows — rather than by `order: 1 / 2 / 3`, so the template
+   reads in the order it renders.
+   ========================================================================== */
 
 /* Core Foundry's control geometry: a 32px square with a 4px radius.
 
@@ -174,6 +171,11 @@
     text-align: center;
     font-size: var(--font-size-16, 16px);
     line-height: 1;
+    /* Both clear the bottom fade, which is painted at 2. It only actually
+       reaches the caret, but a control that can be overpainted by a gradient is
+       not a thing to leave to which end of the strip it happens to sit at. */
+    position: relative;
+    z-index: 3;
 }
 
 .squire-tray .tray-handle-button-pin i,
@@ -307,27 +309,38 @@
     width: 100%;
 }
 
-/* The add/remove button takes one cell like everything else in the grid. It
-   used to span both columns, which spent an entire row on a button.
+/* The button spans the column and is the group's SUMMARY ROW, not a member of
+   the grid: the glyph plus how many conditions this character is actually under.
 
-   The count rides on it as a corner badge rather than sharing the box with the
-   glyph: at 20px there is not room for an icon and a numeral side by side, and
-   a badge that overlaps the art stays legible where a squeezed pair does not. */
+   It went one-cell-with-a-corner-badge for a version, which was wrong in two
+   ways. A 20px cell is under a comfortable click target, and this is the only
+   thing in the group that is genuinely a control — the icons below it are
+   status you read. And the count is not decoration on a button; it is the one
+   number that survives the grid running out of room, since the icons stop
+   answering "how many am I under" the moment the column clips them. A summary
+   line above its own detail earns its row.
+
+   Full width also means the count sits INLINE beside the glyph rather than
+   crammed into a corner at 9px, which is the difference between reading it and
+   squinting at it. */
+.squire-tray .handle-conditions #conditions-button {
+    grid-column: 1 / -1;
+    width: 100%;
+    height: var(--squire-handle-control-size, 32px);
+    gap: 5px;
+}
+
+.squire-tray .handle-conditions #conditions-button i {
+    font-size: 13px;
+}
+
 .squire-tray .handle-conditions-count {
-    position: absolute;
-    right: -2px;
-    bottom: -2px;
-    min-width: 10px;
-    padding: 0 2px;
-    border-radius: 3px;
-    background: rgba(0, 0, 0, 0.9);
     color: var(--color-light-2, #efe6d8);
-    /* Explicit pixels, not em. This is a numeral at the bottom of the legible
-       range and it must not inherit a surprise from a parent font-size. */
-    font-size: 9px;
-    line-height: 11px;
+    /* Explicit pixels, not em: a numeral this size must not inherit a surprise
+       from a parent font-size. */
+    font-size: 12px;
+    line-height: 1;
     font-weight: 700;
-    text-align: center;
     pointer-events: none;
 }
 

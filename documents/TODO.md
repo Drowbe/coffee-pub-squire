@@ -243,7 +243,8 @@ excellent spine and a terrible menu.
   outside `.tray-handle-content-container`, whose `overflow: hidden` would clip it.
 - [x] The 180° rotation and the vertical writing mode are gone; templates are authored in
   visual order and the health bar is an ordinary horizontal chip.
-- [x] Character/party name dropped from the handle; pin and caret grouped at the top.
+- [x] Character/party name dropped from the handle. Pin at the head, collapse caret at the foot,
+  matching core Foundry's sidebar collapse — grouping them at the top was tried and reverted.
 - [x] **No favorites cap.** `HANDLE_FAVORITES_LIMIT`, the `handleFavoritesMax` setting, the
   "handle is full" toast, `normalizeHandleFavorites()` and the auto-favorite truncation are all
   gone; `HandleManager._trimHandleFavorites()` decides from the strip's actual height instead.

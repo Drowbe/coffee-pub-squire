@@ -32,24 +32,10 @@
 
         <div class="tray-handle-content-container">
 
-            {{!-- The two tray controls, together, at the top.
-
-                  They used to sit at opposite ends of the strip — pin at the
-                  head, caret at the foot to mirror Foundry's sidebar collapse —
-                  which put the two controls that do the same category of thing
-                  the full height of the screen apart. Adjacency wins: they are
-                  one block you aim at once.
-
-                  fa-caret-right is still Foundry's own collapse glyph; CSS
-                  flips it when the tray is open. --}}
-            <div class="tray-handle-controls">
-                <button class="squire-handle-control tray-handle-button-pin" title="Pin Tray">
-                    <i class="fa-solid fa-thumbtack"></i>
-                </button>
-                <button class="squire-handle-control tray-handle-button-toggle" title="Toggle Tray">
-                    <i class="fa-solid fa-caret-right"></i>
-                </button>
-            </div>
+            {{!-- The pin at the head, where people look for it. --}}
+            <button class="squire-handle-control tray-handle-button-pin" title="Pin Tray">
+                <i class="fa-solid fa-thumbtack"></i>
+            </button>
 
             <div class="tray-handle-content-wrapper">
                 {{#if (eq viewMode 'player')}}
@@ -60,6 +46,22 @@
                     {{> handle-player}}
                 {{/if}}
             </div>
+
+            {{!-- The collapse caret at the FOOT, which is where core Foundry
+                  keeps its own sidebar collapse control. Matching the
+                  application beats internal tidiness: this is a control people
+                  already know where to find, and moving it to sit next to the
+                  pin made it a control they had to learn.
+
+                  fa-caret-right is Foundry's own collapse glyph; CSS flips it
+                  when the tray is open.
+
+                  Last in the DOM, and that is what puts it here — the content
+                  wrapper above is the flex item that grows. No `order` juggling
+                  any more, so what you read is what you see. --}}
+            <button class="squire-handle-control tray-handle-button-toggle" title="Toggle Tray">
+                <i class="fa-solid fa-caret-right"></i>
+            </button>
         </div>
         <div class="tray-handle-fade-bottom"></div>
     </div>
