@@ -1,3 +1,20 @@
+/* ---------------------------------------------------------------------------
+   SQUIRE TOKENS
+
+   --squire-color-hover is THE hover colour. Every icon, in every panel, in the
+   handle and in the tool windows. It replaced five different oranges and reds
+   that had drifted apart — rgba(231,91,1), rgba(185,38,37), rgba(181,80,57),
+   rgba(194,86,61) and rgba(255,100,0) — so that "the pointer is on this" looked
+   like a different thing depending on which panel you were in. Two of them read
+   as red rather than orange.
+
+   Change it here and it changes everywhere. Point it at Foundry's own
+   --color-border-highlight if the tray should follow the core accent instead.
+   --------------------------------------------------------------------------- */
+:root {
+    --squire-color-hover: rgba(231, 91, 1, 1.0);
+}
+
 /* --- COMMON STYLES --- */
 
 
@@ -301,13 +318,16 @@
 }
 
 /* --- NORMALIZED PANEL TOGGLES --- */
-/* All panel toggle icons with IDs ending in "-toggle" */.squire-tray [data-panel] #gm-toggle {
+/* The GM panel's toggle. Was written as a group of four — #macros-toggle,
+   #dicetray-toggle and #health-toggle went with the windows themselves when
+   Blacksmith adopted them, and none of those ids has existed in a template
+   since. */
+.squire-tray [data-panel] #gm-toggle {
     color: #9f9275;
     transition: transform 0.3s ease;
     cursor: pointer;
-}.squire-tray [data-panel] #gm-toggle:hover,
-.squire-tray [data-panel] #macros-toggle:hover,
-.squire-tray [data-panel] #dicetray-toggle:hover,
-.squire-tray [data-panel] #health-toggle:hover {
-    color: #fff;
+}
+
+.squire-tray [data-panel] #gm-toggle:hover {
+    color: var(--squire-color-hover);
 }

@@ -152,6 +152,19 @@
     </section>
     {{/if}}
 
+    {{#if result.currencyMismatch}}
+    <section class="squire-tool-section squire-cleanup-failed">
+        <h3>
+            <span><i class="fa-solid fa-triangle-exclamation"></i> Coins put back</span>
+        </h3>
+        <p class="squire-tool-note">
+            Consolidating the coins would have changed what they were worth, so the original
+            coins were restored and nothing was kept from that step. The console has both
+            totals. The rest of this cleanup was applied as shown.
+        </p>
+    </section>
+    {{/if}}
+
     {{#if result.failed}}
     <section class="squire-tool-section squire-cleanup-failed">
         <h3>

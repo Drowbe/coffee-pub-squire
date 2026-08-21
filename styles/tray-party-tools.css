@@ -80,9 +80,9 @@
 
 .squire-tray .tray-tools-primary:hover,
 .squire-tray .tray-tools-icon:hover {
-    background: rgba(194, 86, 61, 1.0);
+    background: var(--squire-color-hover);
     color: rgba(255, 255, 255, 1.0);
-    border-color: rgba(194, 86, 61, 1.0);
+    border-color: var(--squire-color-hover);
 }
 
 .squire-tray .tray-tools-primary:focus-visible,

@@ -44,7 +44,7 @@ The Party tab shows all player-owned tokens on the current scene (and, for GMs, 
   - **Controlled**: `controlledTokenIds` from `canvas.tokens.controlled`.  
   - **Party HP**: `partyRemainingHP`, `partyTotalHP`, `partyHealthbarStatus` (same thresholds).  
   - **Current actor**: First controlled token’s actor; `otherPartyMembers` = tokens whose actor is not current.  
-  - Renders `TEMPLATES.PANEL_PARTY` with: `tokens`, `nonPlayerTokens`, `controlledTokenIds`, `isGM`, `actor`, `otherPartyMembers`, party HP fields, `showHandleHealthBar`, `showHandleDiceTray`, `showHandleMacros`.  
+  - Renders `TEMPLATES.PANEL_PARTY` with: `tokens`, `nonPlayerTokens`, `controlledTokenIds`, `isGM`, `actor`, `otherPartyMembers`, party HP fields, `showHandleHealthBar`.  
   - Sets `partyContainer.innerHTML` and calls `activateListeners(partyContainer)`.
 
 ### Template Data (panel-party.hbs)
@@ -121,7 +121,7 @@ Buttons/cards are cloned before attaching listeners to avoid duplicates on re-re
 
 ## Handle Integration
 
-- **Party view handle** (`handle-party.hbs`): When `actor` exists, shows `defaultPartyName` or “Party”, current actor portrait + health (`handle-character-portrait`, `handle-health`), then `otherPartyMembers` (portrait + health, clickable to switch). Then macros, health tray (GM), dice tray. Data (`actor`, `otherPartyMembers`, `showHandleHealthBar`, etc.) is supplied by HandleManager from the same party token list used by the panel.
+- **Party view handle** (`handle-party.hbs`): When `actor` exists, shows `defaultPartyName` or “Party”, current actor portrait + health (`handle-character-portrait`, `handle-health`), then `otherPartyMembers` (portrait + health, clickable to switch), then the health-tray button (GM). Data (`actor`, `otherPartyMembers`, `showHandleHealthBar`, etc.) is supplied by HandleManager from the same party token list used by the panel.
 
 ## Tray Toolbar (Party View)
 

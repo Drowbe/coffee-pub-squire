@@ -49,7 +49,7 @@
 }
 
 .squire-tray [data-panel="control"] .filter-chip:hover {
-    color: rgba(185, 38, 37, 1.0);
+    color: var(--squire-color-hover);
     opacity: 1.0;
 }
 
@@ -101,7 +101,7 @@
 
 .squire-tray [data-panel="control"] .search-clear:hover {
     color: rgba(0, 0, 0, 1.0);
-    background: rgba(181, 80, 57, 1.0);
+    background: var(--squire-color-hover);
 }
 
 .squire-tray [data-panel="control"] .global-search:not(:placeholder-shown) + .search-clear {

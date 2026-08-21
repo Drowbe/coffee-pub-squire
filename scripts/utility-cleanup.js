@@ -96,12 +96,44 @@ function typeLabel(type) {
     return key ? game.i18n.localize(key) : type;
 }
 
+/** The denominations the system can price against each other, cheapest first. */
+function convertibleCurrencies() {
+    return Object.entries(CONFIG.DND5E?.currencies ?? {})
+        .filter(([, config]) => config.conversion)
+        .sort((a, b) => a[1].conversion - b[1].conversion);
+}
+
+/**
+ * What this actor's coins are worth, as a single number in the smallest
+ * denomination.
+ *
+ * Deliberately shared between the preview and the check that runs after the
+ * write, so the two are not two opinions about the same sum. Returns null when
+ * there is nothing to add up — no currency, or no convertible denominations.
+ */
+export function currencyTotal(actor) {
+    const currency = actor?.system?.currency;
+    if (!currency) return null;
+
+    const currencies = convertibleCurrencies();
+    if (!currencies.length) return null;
+
+    const smallest = currencies.at(-1)[1].conversion;
+    return currencies.reduce(
+        (total, [denomination, config]) =>
+            total + ((Number(currency[denomination]) || 0) * (smallest / config.conversion)),
+        0
+    );
+}
+
 /**
  * What consolidating this actor's coins would do.
  *
  * Reports rather than acts, so the window can show the before and after and the
  * GM can decline. The arithmetic is dnd5e's — this mirrors it for the preview
- * only, and the actual write goes through the system.
+ * only, and the actual write goes through the system. Because those are two
+ * implementations of one sum, `applyCleanup` checks the total afterwards rather
+ * than trusting that they agreed.
  *
  * Reports the total as well as the split. "Same value, fewer coins" is a claim,
  * and a claim the GM cannot check at a glance is worth nothing; the total is
@@ -113,17 +145,11 @@ export function scanCurrency(actor) {
     const currency = actor?.system?.currency;
     if (!currency) return null;
 
-    const currencies = Object.entries(CONFIG.DND5E?.currencies ?? {})
-        .filter(([, config]) => config.conversion)
-        .sort((a, b) => a[1].conversion - b[1].conversion);
+    const currencies = convertibleCurrencies();
     if (!currencies.length) return null;
 
     const smallest = currencies.at(-1)[1].conversion;
-    const totalSmallest = currencies.reduce(
-        (total, [denomination, config]) =>
-            total + ((Number(currency[denomination]) || 0) * (smallest / config.conversion)),
-        0
-    );
+    const totalSmallest = currencyTotal(actor);
 
     let amount = totalSmallest;
     const after = {};
@@ -312,13 +338,23 @@ export async function scanActor(actor) {
  * @param {string[]} plan.linkItemIds    item ids to stamp, and the uuid for each
  * @param {Map<string,string>} plan.linkUuids
  * @param {Array} plan.merges            duplicate groups to fold together
- * @returns {Promise<{currency: boolean, linked: number, merged: number, removed: number, failed: number}>}
+ * @returns {Promise<{currency: boolean, linked: number, merged: number, removed: number, failed: number, currencyMismatch: ?object}>}
  */
 export async function applyCleanup(actor, plan) {
-    const applied = { currency: false, linked: 0, merged: 0, removed: 0, failed: 0 };
+    const applied = { currency: false, linked: 0, merged: 0, removed: 0, failed: 0, currencyMismatch: null };
     if (!actor) return applied;
 
     if (plan?.currency) {
+        // The preview said "same value, fewer coins". That is the whole promise
+        // of this row, and it is a promise Squire cannot keep by itself: the
+        // before/after on screen is Squire's mirror of the arithmetic, while the
+        // write is dnd5e's. Two implementations of one sum, and a homebrew
+        // denomination or a system change can put them out of step. So the sum
+        // is checked against the sheet afterwards instead of assumed — a wrong
+        // conversion is a player quietly becoming poorer, which nothing else
+        // downstream would ever notice.
+        const before = foundry.utils.deepClone(actor.system?.currency ?? {});
+        const beforeTotal = currencyTotal(actor);
         try {
             // dnd5e's own conversion, not a reimplementation: it reads the
             // configured rates, so homebrew currencies convert correctly and
@@ -326,7 +362,33 @@ export async function applyCleanup(actor, plan) {
             const CurrencyManager = game.dnd5e?.applications?.CurrencyManager;
             if (CurrencyManager?.convertCurrency) {
                 await CurrencyManager.convertCurrency(actor);
-                applied.currency = true;
+
+                const afterTotal = currencyTotal(actor);
+                // Compared with a tolerance rather than for equality: the ratios
+                // are floating point, and a homebrew rate of 1/3 would fail an
+                // exact check while being perfectly correct. The tolerance is far
+                // below one of the smallest coins, so a real loss cannot hide in
+                // it.
+                const drifted = beforeTotal !== null && afterTotal !== null
+                    && Math.abs(afterTotal - beforeTotal) > 1e-6;
+
+                if (drifted) {
+                    console.error(
+                        `${MODULE.ID}: currency conversion changed the total value for ${actor.name} `
+                        + `(${beforeTotal} -> ${afterTotal}, in the smallest denomination). `
+                        + 'The coins have been put back as they were.',
+                        { before, after: foundry.utils.deepClone(actor.system?.currency ?? {}) }
+                    );
+                    // Put back rather than left standing. Squire started this
+                    // write, so undoing it is not a repair of someone else's
+                    // data — and the alternative is leaving a sheet in a state
+                    // the GM never approved and cannot see is wrong.
+                    await actor.update({ 'system.currency': before });
+                    applied.currencyMismatch = { before: beforeTotal, after: afterTotal };
+                    applied.failed++;
+                } else {
+                    applied.currency = true;
+                }
             }
         } catch (error) {
             console.error(`${MODULE.ID}: currency conversion failed:`, error);

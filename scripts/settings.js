@@ -374,16 +374,6 @@ export const registerSettings = function() {
     // ---     MENUBAR Settings     ---
     // --------------------------------
 
-	// ---------- Menubar Heading ----------
-	game.settings.register(MODULE.ID, "headingH3MenubarConfiguration", {
-		name: 'Menubar Configuration',
-		hint: 'Squire tools that live in the Blacksmith menubar rather than the tray handle. These are global tools — they do not depend on which token is selected.',
-		scope: "user",
-		config: true,
-		default: "",
-		type: String,
-	});
-
 
 
     // --------------------------------
@@ -519,20 +509,6 @@ export const registerSettings = function() {
         },
     });
 
-
-    // --------------------------------
-    // ---      HEALTH Settings      ---
-    // --------------------------------
-
-	// ---------- Health Heading ----------
-	game.settings.register(MODULE.ID, "headingH3HealthConfiguration", {
-		name: 'Health Configuration',
-		hint: 'Settings for the health bars in the tray.',
-		scope: "world",
-		config: true,
-		default: "",
-		type: String,
-	});
 
 
 

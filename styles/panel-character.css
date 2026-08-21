@@ -54,7 +54,7 @@
 }
 
 .squire-tray .character-panel .header-right i:hover {
-    color: rgba(181, 80, 57, 1.0);
+    color: var(--squire-color-hover);
     
 }
 
@@ -126,7 +126,7 @@
 .character-switcher-chip.active {
     opacity: 1;
     cursor: default;
-    border-color: var(--color-border-highlight, #ff6400);
+    border-color: var(--squire-color-hover);
 }
 
 /* Owned actors without a token on the current scene: grouped after the divider,

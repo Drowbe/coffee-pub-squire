@@ -211,7 +211,7 @@
 }
 
 .tray-buttons i:hover {
-    color: rgba(231, 91, 1, 1.0);
+    color: var(--squire-color-hover);
     text-shadow: 0 0 8px var(--color-shadow-primary);
 }
 
@@ -293,7 +293,7 @@
 }
 
 .tray-buttons .fa-heart:hover {
-    color: rgba(231, 91, 1, 1.0);
+    color: var(--squire-color-hover);
 }
 
 .tray-buttons .fa-heart.active {
@@ -309,7 +309,7 @@
 }
 
 .tray-buttons .fa-shield-alt:hover {
-    color: rgba(231, 91, 1, 1.0);
+    color: var(--squire-color-hover);
 }
 
 .tray-buttons .fa-dagger:not(.faded) {
@@ -317,7 +317,7 @@
 }
 
 .tray-buttons .fa-dagger:not(.faded):hover {
-    color: rgba(231, 91, 1, 1.0);
+    color: var(--squire-color-hover);
 }
 
 

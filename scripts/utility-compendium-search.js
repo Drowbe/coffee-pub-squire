@@ -17,7 +17,9 @@ import { showSquireToast } from './helpers.js';
  *   }>
  *
  * `search()` returns the same thing as `.results` alone; we use the detailed
- * form so the truncation notice can state a fact instead of inferring one.
+ * form so the truncation notice can state a fact instead of inferring one, and
+ * so `documentClass` arrives on each result rather than being guessed from the
+ * type token we searched.
  *
  * The type parameter takes an array, and passing all of them in one call is
  * load-bearing rather than a convenience — see the comment in search().
@@ -197,10 +199,12 @@ export class CompendiumSearchUtility {
         let skippedCount = 0;
 
         try {
-            const detailed = typeof api.searchDetailed === 'function';
-            const raw = detailed
-                ? await api.searchDetailed(trimmed, types, options)
-                : { results: await api.search(trimmed, types, options) };
+            // `searchDetailed` unconditionally: it landed in Blacksmith 13.14.2
+            // and module.json requires 13.19.0, so the old fall back to
+            // `api.search` could no longer run. It was also the worse call —
+            // `search()` is `searchDetailed().results`, and dropping the report
+            // is what forced the truncation inference this file no longer makes.
+            const raw = await api.searchDetailed(trimmed, types, options);
 
             if (Array.isArray(raw?.results)) {
                 // Deduped upstream at bucketing time, so a doubled entry can't

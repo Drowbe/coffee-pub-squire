@@ -195,14 +195,14 @@
 
 /* TOP PANEL SHELLS */
 .squire-tray [data-panel="health"],
-.squire-tray [data-panel="experience"],
-.squire-tray [data-panel="abilities"],
-.squire-tray [data-panel="stats"],
+/* The panels that actually exist. `experience`, `abilities` and `stats` were
+   folded into the character summary; `dicetray` and `macros` are Blacksmith's
+   windows now. The full list of live values is the twelve `data-panel`
+   attributes in templates/ plus nothing composed at runtime — panel-control.js
+   builds its selectors from PANEL_TYPES, which is a subset of them. */
 .squire-tray [data-panel="gm"],
 .squire-tray [data-panel="character-summary"],
-.squire-tray [data-panel="control"],
-.squire-tray [data-panel="dicetray"],
-.squire-tray [data-panel="macros"] {
+.squire-tray [data-panel="control"] {
     display: flex;
     flex-direction: column;
     gap: 8px;

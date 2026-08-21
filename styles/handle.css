@@ -151,11 +151,21 @@
     margin-right: 0;
 }
 
-/* Pinned reads as a lit glyph, not a coloured chip. Orange is what the pointer
-   means everywhere in this handle, so a permanently orange pin would be saying
-   "you are hovering me" for as long as the tray is pinned. */
+/* The pin follows the tack idiom: lying at an angle means "not pinned", upright
+   and accented means "pinned". The angle is what carries the state, which is why
+   it can share the accent colour with hover without the two becoming ambiguous —
+   a hovered unpinned tack is orange AND tilted, a pinned one is orange AND
+   upright. */
+.squire-tray .tray-handle-button-pin i {
+    transform: rotate(-45deg);
+}
+
+.squire-tray.pinned .tray-handle-button-pin i {
+    transform: rotate(0deg);
+}
+
 .squire-tray.pinned .tray-handle-button-pin {
-    color: var(--color-light-1, #f7f3e8);
+    color: var(--squire-color-hover);
     opacity: 1;
 }
 
@@ -510,7 +520,7 @@
 }
 
 .squire-tray .squire-handle-control:hover {
-    border-color: var(--color-border-highlight, #ff6400);
+    border-color: var(--squire-color-hover);
 }
 
 /* The box shared by every control that lives in the handle's content wrapper —
@@ -522,8 +532,13 @@
    children of it. The rotation below counteracts the wrapper's own 180deg, which
    is what makes the handle read bottom-to-top — applying it to the two buttons
    outside the wrapper would simply turn them upside down, and the dark ground
-   would replace the transparent one they are drawn on. */
-.squire-tray .tray-handle-content-wrapper .squire-handle-control {
+   would replace the transparent one they are drawn on.
+
+   The health bar is excluded too, and for a plainer reason: it is the one
+   control in the strip that is not a square. It is 32x80, and it orients its
+   own text with writing-mode rather than by counter-rotating. Letting this rule
+   reach it forced it to 32x32 and flipped its HP number upside down. */
+.squire-tray .tray-handle-content-wrapper .squire-handle-control:not(.handle-healthbar) {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -553,12 +568,13 @@
     box-shadow: none !important;
 }
 
-/* The two icon buttons have no art to light up, so the pointer un-dims the
-   glyph as well. Still one border, still no ring. */
+/* The two icon buttons have no art to light up, so the pointer un-dims the glyph
+   and gives it the same accent every other icon in the module uses. Still one
+   border, still no ring. */
 .squire-tray .tray-handle-button-pin:hover,
 .squire-tray .tray-handle-button-toggle:hover {
     opacity: 1;
-    color: var(--color-light-1, #f7f3e8);
+    color: var(--squire-color-hover);
 }
 
 /* The content dims itself at rest; the pointer undoes that. Note these target

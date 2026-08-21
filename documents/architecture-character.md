@@ -7,7 +7,7 @@ The Character tab is the **Player** view of the Squire tray. It shows the curren
 ## Placement in the Tray
 
 - **View**: Player tab (`viewMode === 'player'`).
-- **Order**: First panel when `actor` exists: Character → GM (if GM) → Experience → Abilities → Stats → Control → Favorites/Weapons/Spells/Features/Inventory. Health, Dice Tray, and Macros are standalone tools launched from the handle or menubar rather than tray panels.
+- **Order**: First panel when `actor` exists: Character → Character Summary → GM (if GM) → Control → Favorites/Weapons/Spells/Features/Inventory. Health and Status Effects are Blacksmith windows opened from the handle, not tray panels; Dice Tray and Macros are Blacksmith's menubar tools and Squire does not touch them.
 - **Container**: `templates/tray.hbs` includes `<div class="panel-container" data-panel="character" data-clickable="true"></div>`; `PanelManager` injects the character panel HTML there.
 
 ## Project Files
@@ -86,7 +86,7 @@ Character panel updates are driven by Blacksmith HookManager:
 
 ## Handle Integration
 
-- **Player view handle** (`handle-player.hbs`): Shows actor name, then `handle-character-portrait` (same actor), health bar (if enabled), favorites, conditions, primary/secondary stats, macros, health tray (GM), dice tray.
+- **Player view handle** (`handle-player.hbs`): Shows actor name, then `handle-character-portrait` (same actor), health bar (if enabled), favorites, conditions, and the health-tray button (GM). The primary/secondary stat blocks, the macros icon and the dice-tray icon were removed with their settings — the handle shows what *this* token has.
 - **`handle-character-portrait.hbs`**: Single portrait image; optional `clickable` and `data-actor-id` for opening character sheet (handled by HandleManager).
 
 ## GM Details Flow

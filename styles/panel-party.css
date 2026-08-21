@@ -126,7 +126,7 @@
 }
 
 .party-view .party-card-actions i:hover {
-    color: rgba(231, 91, 1, 1.0);
+    color: var(--squire-color-hover);
 }
 
 
@@ -434,7 +434,7 @@
 
 .party-view .party-reputation-adjust:hover {
     background: rgba(0, 0, 0, 0.9);
-    border-color: rgba(255, 150, 0, 1);
+    border-color: var(--squire-color-hover);
     box-shadow: 0 0 8px rgba(255, 150, 0, 0.3);
     color: rgba(255, 255, 255, 1);
 }

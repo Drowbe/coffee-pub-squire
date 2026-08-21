@@ -446,6 +446,10 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
             const currency = this.scan?.currency ?? null;
             this.result = {
                 currency: applied.currency,
+                // The one thing the receipt cannot take from the plan: whether
+                // the conversion actually held its value. The plan is what was
+                // promised, this is what the sheet said afterwards.
+                currencyMismatch: applied.currencyMismatch,
                 beforeCoins: currency?.beforeCoins ?? [],
                 afterCoins: currency?.afterCoins ?? [],
                 coinCountBefore: currency?.coinCountBefore ?? 0,
@@ -456,9 +460,21 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
                 removed: applied.removed,
                 failed: applied.failed
             };
+            // Loud, and separate from the receipt: the receipt can be scrolled
+            // past, and an approval closes the window entirely.
+            if (applied.currencyMismatch) {
+                showSquireToast('Consolidating the coins changed their total value, so they were put back. See the console.', {
+                    icon: 'fa-solid fa-triangle-exclamation',
+                    color: '#e05c3c'
+                });
+            }
+
             if (this.isApproval) {
                 const parts = [];
                 if (applied.currency) parts.push('coins consolidated');
+                // Said to the player too. An approval closes this window, so the
+                // receipt they never see is the only other place it appears.
+                if (applied.currencyMismatch) parts.push('coins left as they were');
                 if (applied.linked) parts.push(`${applied.linked} linked`);
                 if (applied.merged) parts.push(`${applied.merged} merged`);
                 await this._notifyRequester(true, parts.join(', '));

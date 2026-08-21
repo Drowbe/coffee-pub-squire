@@ -61,7 +61,20 @@
 
   **Follow-ups intentionally remain:**
   - Squire no longer has a JSON import surface — codex took the last one to Librarian. This stays as the standing rule: when Blacksmith publishes `api.importer`, consumers adopt it rather than deep-importing Blacksmith internals.
+    - **CLOSED for Squire (2026-08-21).** `api.importer` now exists, as a kind registry — register a kind, supply `onValidateEntry` and `onImportEntry`, keep document construction yourself. Squire has no importable kind, so there is nothing to adopt; the rule stands for whenever one appears. The Quest-import requirements recorded against this belong to Librarian now, not here.
   - [x] Blacksmith verified `api.entityList`, `api.quantitySplit`, and per-instance action delegation; Squire built the unified ephemeral Transfer Tool and removed its upstreamed quantity-control copy.
+  - [x] **Compendium search gaps closed upstream (2026-08-21).** `documentClass` is on every result
+    and `searchDetailed()` reports `truncated` / `scannedSources` / `skippedSources`. Squire already
+    consumes both — `utility-compendium-search.js` takes `documentClass` as given rather than
+    deriving it from the type token, and reads `truncated` rather than testing
+    `results.length === limit`. Nothing to change.
+  - [ ] **OPEN — the `api.search` fallback in `utility-compendium-search.js` is now dead weight, but
+    only if the version pin says so.** `searchDetailed` shipped in Blacksmith **13.14.2**;
+    `module.json` still requires **13.12.2**, so under the declared minimum the fallback is a real
+    path. Squire almost certainly needs a much higher minimum than 13.12.2 anyway (tool window base,
+    card parts, `resolveMany`). Needs a proper audit of the highest Blacksmith feature Squire calls,
+    then one pin bump and the fallback goes. Note a `module.json` change needs a Foundry Setup
+    round-trip, not an F5.
   - The shared Export window and journal picker are Squire-owned surfaces; they do not expand Blacksmith's scope.
 
   **Resolved Blacksmith proposal:** See `documents/proposal-blacksmith-transfer-dialog-api.md`. The authoritative dialog behavior comes from Blacksmith's local `documentation/api/api-dialog.md`: DialogV2 closes on activation; prompt validation is a bounded reopen loop; `choose` and `wait` callbacks run after close; only a Tool window may promise in-place failure recovery and duplicate-submit protection.
@@ -105,6 +118,13 @@
     fields survive only to explain a mismatch in English. This is stricter than planned and that is
     the intended failure direction — the blocked list tells us which rule to relax based on what is
     actually on real sheets.
+
+- [x] **CURRENCY CONVERSION IS VERIFIED, NOT ASSUMED.** Built 2026-08-21. `scanCurrency` mirrors the
+  arithmetic for the preview while `applyCleanup` writes through dnd5e's `CurrencyManager` — two
+  implementations of one sum. `applyCleanup` re-reads the total afterwards via the shared
+  `currencyTotal()`, restores the original coins if it moved, marks the step failed, and reports it
+  in the receipt and a toast. Decided against a `dryRun` flag in the same pass: the window is the
+  dry run, and a second write path would only drift out of step with the real one.
 
 - [ ] **PHASE 2 FOLLOW-UPS**, deliberately not built yet — wait for the blocked list on real sheets:
   - **`system.identified` and `system.container` still split a group.** Equipped was relaxed on the
@@ -204,6 +224,31 @@
 - [ ] **OPEN — a look decision, not a cleanup.** `--squire-rep-hostile` / `-neutral` / `-friendly`
   (`panel-party.css`) are consumed with fallbacks but never defined, so the fallback always wins.
   Either define them as real theme hooks or inline the colours.
+
+### BLACKSMITH ADOPTION — RESIDUE (closed 2026-08-21)
+
+Blacksmith cleared us to delete the adopted tool copies (Dice Tray, Macros, Health, Status Effects),
+verified live with Squire disabled on 2026-08-09. **The code copies were already gone** — deleted at
+the time of the move, see `documents/plan-module-split.md`. What was still standing was the residue
+nothing compiles or renders, so nothing complained:
+
+- [x] Dead CSS: `#macros-toggle`, `#dicetray-toggle`, `#health-toggle` hover rules, and
+  `[data-panel]` rules for `dicetray`, `macros`, `experience`, `abilities`, `stats`. None of those
+  ids or attributes has existed in a template since the move. Checked against the twelve live
+  `data-panel` values plus `PANEL_TYPES`, which is where the only runtime-composed selectors come
+  from.
+- [x] Two settings headings standing over nothing: `headingH3MenubarConfiguration` (Squire registers
+  no menubar tools at all any more) and `headingH3HealthConfiguration` (its settings went to
+  Blacksmith; `showHandleHealthBar` lives under Handle Configuration). Both rendered an empty
+  subheading in the settings UI.
+- [x] `documents/architecture-squire.md` listed fifteen scripts that do not exist — the adopted
+  windows, and the Librarian-era notes/codex/quest panels alongside them. Panels, Windows,
+  Utilities, the project tree, Menubar Tools and Pins are now checked against the file system.
+  `architecture-character.md` and `architecture-party.md` had the same rot in their handle sections.
+
+- [ ] **OPEN — `resources/pin-icons.json` has no reader in this repo.** Left in place rather than
+  deleted: it is fetched by URL, not imported, so a grep here cannot prove Librarian is not fetching
+  it from Squire's path. Ask before removing.
 
 ### Code Cleanup
 - [ ] **PLANNED** Remove legacy code from our fixes

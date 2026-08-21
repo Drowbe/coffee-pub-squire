@@ -181,7 +181,7 @@
 }
 
 .squire-tray .search-container .search-clear:hover {
-    color: rgba(231, 91, 1, 1.0);
+    color: var(--squire-color-hover);
 }
 
 

@@ -18,31 +18,31 @@ coffee-pub-squire/
 │   ├── manager-handle.js      # HandleManager: handle content per view mode
 │   ├── timer-utils.js         # Tracked timeouts/intervals for cleanup
 │   ├── transfer-utils.js      # Party transfer workflows
-│   ├── manager-pins.js        # Unified Blacksmith Pins gateway (CRUD, events, menus, panel navigation)
+│   ├── manager-cards.js       # Chat cards, composed from Blacksmith card parts
+│   ├── manager-favorites-sync.js # Keeps Squire favorites and the sheet's own in step
 │   ├── manager-notifications.js # Transient menubar notifications for party-visible events
 │   ├── panel-*.js             # Panel classes (see Panels below)
-│   ├── window-*.js            # Window classes (Notes, Quest, Codex, etc.)
-│   ├── utility-*-parser.js    # Parsers (codex, notes, quest, base)
-│   ├── utility-journal.js
-│   ├── utility-lights.js
+│   ├── window-cleanup.js      # Character sheet cleanup: plan, apply, receipt
+│   ├── window-transfer-tool.js # Ephemeral transfer Tool
+│   ├── utility-cleanup.js, utility-cleanup-merge.js
+│   ├── utility-compendium-search.js # Adapter over Blacksmith's Compendiums API
+│   ├── utility-lights.js, utility-quantity.js, utility-statblock.js
 │   └── utility-print-character.js
 ├── styles/
-│   ├── default.css            # Main entry; imports all others
-│   ├── common.css, tray.css, handle.css
+│   ├── default.css            # Main entry; imports all others, in a load-bearing order
+│   ├── common.css, handle.css
+│   ├── tray-*.css             # The tray shell, split by concern (see default.css)
 │   ├── panel-*.css            # Panel-specific styles
-│   ├── window-*.css           # Window/form styles
-│   └── quest-markers.css, window-codex.css, window-quest.css, window-note.css, notes-metadata-box.css
+│   └── window-*.css           # Window/Tool styles
 ├── templates/
 │   ├── tray.hbs               # Main tray layout (handle + content)
-│   ├── handle-*.hbs           # Handle content per view (player, party, notes, codex, quest)
+│   ├── handle-player.hbs, handle-party.hbs
 │   ├── panel-*.hbs            # Panel templates
 │   ├── window-*.hbs           # Window templates
 │   ├── partials/              # Reusable partials
-│   ├── chat-cards.hbs, print-character.hbs
-│   └── tooltip-pin-quests-objective.hbs
+│   └── print-character.hbs
 ├── resources/
-│   ├── light-sources.json
-│   └── pin-icons.json
+│   └── light-sources.json
 └── documents/                 # Architecture and planning docs
 ```
 
@@ -53,22 +53,20 @@ coffee-pub-squire/
 - Registers with Blacksmith via `BlacksmithModuleManager.registerModule()`
 - Hooks: `init`, `ready`, `canvasReady`, `setup`, `getActorDirectoryEntryContext`, etc.
 - Wraps `canvas.selectObjects` for multi-select / selection display
-- Registers menubar tools (dice tray, macros, quick note)
-- Handles note edit locks, Blacksmith pin hooks (`pins.created`, `pins.updated`, `pins.resolveOwnership`)
-- Registers socketlib module for cross-client operations
+- Registers socketlib module for cross-client operations (transfers, cleanup requests)
 
 ### Panel Manager (manager-panel.js)
 
 - `PanelManager` singleton: controls tray visibility, panel switching, state
 - Creates and owns all panels; coordinates `updateTray()` and `render()`
-- Manages view modes: `player`, `party`, `notes`, `codex`, `quest`
+- Manages view modes: `player` and `party`. Notes, Codex and Quest moved to Librarian in 13.7.0
 - Handles multi-select, GM details, selection display
 - Uses `timer-utils` for tracked timeouts/intervals; cleans up on `cleanupModule`
 
 ### Handle Manager (manager-handle.js)
 
 - `HandleManager`: renders tray handle content based on `viewMode`
-- Handle partials: `handle-player`, `handle-party`, `handle-notes`, `handle-codex`, `handle-quest`
+- Handle templates: `handle-player.hbs`, `handle-party.hbs`
 - Handles resize for fade effect; resolves token for actor display
 
 ### Panels
@@ -77,13 +75,9 @@ coffee-pub-squire/
 |-------|--------|-------------|
 | Character | panel-character.js | Portrait, name, class/level, speeds, quick actions |
 | GM | panel-gm.js | GM-only actor details |
-| Control | panel-control.js | Favorites/Weapons/Spells/Features/Inventory tabs |
-| Health | panel-health.js | Standalone health-window controller and token selection |
-| Experience | panel-experience.js | XP progress |
-| Abilities | panel-abilities.js | Ability scores |
-| Stats | panel-stats.js | AC, speed, senses |
-| Dice Tray | panel-dicetray.js | Dice rolling controller for the Blacksmith tool window |
-| Macros | panel-macros.js | Standalone macro-window controller |
+| Character Summary | panel-character-summary.js | Portrait, HP, abilities, AC/speed/senses, XP |
+| Control | panel-control.js | Search, type chips, action and state filters |
+| Compendium Search | panel-compendium-search.js | Quick-add search over Blacksmith's Compendiums API |
 | Favorites | panel-favorites.js | Pinned items |
 | Weapons | panel-weapons.js | Weapon attacks |
 | Spells | panel-spells.js | Spell slots, casting |
@@ -91,40 +85,38 @@ coffee-pub-squire/
 | Inventory | panel-inventory.js | Items |
 | Party | panel-party.js | Party members, transfers |
 | Party Stats | panel-party-stats.js | Party overview |
-| Notes | panel-notes.js | Journal-based notes, Blacksmith pins |
-| Codex | panel-codex.js | World reference items |
-| Quest | panel-quest.js | Quest tracking, quest pins |
 
 ### Windows / Forms
 
 | Window | Script | Description |
 |--------|--------|-------------|
-| Notes | window-note.js | NotesForm – note editor, pin creation |
-| Status Effects | window-status-effects.js | Blacksmith V2 condition toggles, other-effect removal, enriched description pane |
-| Quest | window-quest.js | QuestWindow – Blacksmith V2 quest create/edit |
-| Transfer Tool | window-transfer-tool.js | Ephemeral Blacksmith Tool for item/note recipients, quantity splits, fixed-target drops, and approvals |
-| Health | window-health.js | Blacksmith Application V2 Micro tool with portrait bars, Party/NPC aggregate rows and selection actions, persistent adjustment amount, multi-token controls, registration against every displayed Actor, and shared party/handle/tool health-status colors |
-| Dice Tray | window-dicetray.js | Blacksmith Application V2 Micro tool window with a fixed compact body and history-only scrolling, registered through the Window API |
-| Macros | window-macros.js | Blacksmith Application V2 Micro tool window with a dedicated body template and preserved macro drag/drop behavior, registered through the Window API |
+| Transfer Tool | window-transfer-tool.js | Ephemeral Blacksmith Tool for item recipients, quantity splits, fixed-target drops, and approvals |
+| Cleanup | window-cleanup.js | Character sheet cleanup: the plan, the per-row ticks, and the receipt |
+
+Squire owns two windows. Dice Tray, Macros, Health and Status Effects are **Blacksmith's** — opened
+through `openWindow()` (see `helpers.js`), never re-implemented here. Notes, Codex and Quest are
+Librarian's.
 
 ### Utilities
 
-- **Parsers**: `utility-base-parser`, `utility-codex-parser`, `utility-notes-parser`, `utility-quest-parser`
-- **Journal**: `utility-journal.js`
+- **Cleanup**: `utility-cleanup.js` (currency, compendium links), `utility-cleanup-merge.js` (duplicate stacks, snapshot-first)
+- **Compendium search**: `utility-compendium-search.js` — the only place that touches `api.compendiums`
+- **Statblock**: `utility-statblock.js`
+- **Quantity**: `utility-quantity.js`
 - **Lights**: `utility-lights.js`
 - **Print**: `utility-print-character.js`
 - **Transfer**: `transfer-utils.js`
 - **Timers**: `timer-utils.js` (for cleanup)
-- **Pins**: `manager-pins.js` (single gateway to the Blacksmith Pins API; also exports the shared panel-navigation helpers `focusQuestInPanel` / `focusCodexInPanel`)
-- **Notifications**: `manager-notifications.js` (transient menubar toasts for quest/objective status changes, codex unlocks, applied effects, and party note edits; skips the initiating user)
+- **Cards**: `manager-cards.js` (chat cards composed from Blacksmith card parts)
+- **Notifications**: `manager-notifications.js` (transient menubar toasts for party-visible events; skips the initiating user)
 
 ## Tray Layout
 
 The tray has a collapsible handle (left edge) and main content:
 
-- **Handle**: Pin, toggle, view-cycle buttons; handle content (player portrait, party list, notes icon, etc.)
-- **Content**: View tabs (Player, Party, Notes, Codex, Quest) and stacked panel containers
-- **Player view**: Character, GM (if GM), Experience, Abilities, Stats, Control, Favorites/Weapons/Spells/Features/Inventory. Health, Dice Tray, and Macros launch as standalone tools.
+- **Handle**: Pin, collapse and view-cycle buttons; handle content (portrait, health bar, favorites, conditions, health-tray button)
+- **Content**: View tabs (Character, Party) and stacked panel containers
+- **Player view**: Character Summary, GM (if GM), Control, Favorites/Weapons/Spells/Features/Inventory. Health and Status Effects open as Blacksmith windows.
 
 ## Blacksmith Integration
 
@@ -148,19 +140,19 @@ BlacksmithModuleManager.registerModule(MODULE.ID, {
 
 ### Menubar Tools
 
-- `squire-dice-tray` – Dice tray launcher
-- `squire-macros` – Macros window launcher
-- `squire-quick-note` – Quick note creation
+Squire registers **none**. It had three — dice tray, macros, quick note — and all three went
+upstream: the first two with the windows Blacksmith adopted, the third with Notes to Librarian.
+Squire's own tools are reached from the tray handle, because they are about the selected token.
 
-### Pins
+### Windows Squire Opens But Does Not Own
 
-- **Notes**: Notes stored as JournalEntry pages; pins via Blacksmith Pin API; `blacksmith.pins.resolveOwnership`, `pins.created`, `pins.updated`
-- **Quests**: Quest pins via Blacksmith API; all pin access goes through `manager-pins.js`
+`helpers.js` wraps `blacksmith.openWindow()` for each, so a missing Blacksmith is one warning
+rather than a thrown call: `blacksmith-health`, `blacksmith-status-effects`, `blacksmith-xp`,
+`blacksmith-stats-party`, `blacksmith-stats-player`.
 
 ### Menubar Notifications
 
-- **Persistent trackers** (panel-quest.js): pinned quest and active objective, clickable (Blacksmith 13.9.3+ `addNotification` options) — click navigates via `focusQuestInPanel`, × dismissal suppresses re-notifies for the session, and the GM mirrors both trackers to player user flags (received by an `updateUser` hook).
-- **Transient events** (manager-notifications.js): quest/objective status changes, codex unlocks, effects applied to owned actors, party note edits — 5s toasts on every client except the initiator. See `documents/architecture-quests.md` → Notifications for the full design.
+- **Transient events** (manager-notifications.js): party-visible events, such as effects applied to owned actors — short toasts on every client except the initiator.
 
 ### Utility Usage
 
