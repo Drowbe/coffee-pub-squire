@@ -13,31 +13,14 @@
     --squire-tray-banner-image: url('../images/banner-character-dark.webp');
 }
 
-/* Common Styles */
-.squire-tray {
-    background: rgba(30, 30, 30, 0.90);
-    border: 0px solid #444;
-    display: block;
-    box-shadow: 0 0 20px var(--color-shadow-dark);
-    width: var(--squire-tray-width);
-}
-
 /* Hidden class for view toggling */
 .hidden {
     display: none !important;
 }
 
-/* Tray-specific positioning */
-.squire-tray {
-    position: fixed;
-    z-index: 100;
-}
-
-
-/* Common Tray Styles */
-
-
-/* --- Tray --- */
+/* The tray element itself. Everything about its box lives here and in the
+   positioning rule further down — it used to be spread over three consecutive
+   blocks, two of which this one restated verbatim, property for property. */
 .squire-tray {
     position: fixed;
     z-index: 100;
