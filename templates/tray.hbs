@@ -3,17 +3,53 @@
     <!-- TRAY HANDLE -->
 
     <div class="tray-handle">
+
+        {{!-- HP RAIL
+
+              A thin column down the handle's OUTER edge, filled from the bottom
+              and coloured by severity. The peripheral-vision readout: you
+              register the colour and the level while you are looking at the
+              canvas, and read the number off the chip under the portrait when
+              you actually look at the strip.
+
+              It is also the one piece of status that survives the tray being
+              open, because everything else on the handle is duplicated by a
+              panel a few pixels to the left and HP is not.
+
+              Lives here rather than in the handle partials for a mechanical
+              reason: it is positioned in the handle's right padding, outside
+              .tray-handle-content-container, which is `overflow: hidden` --
+              anywhere inside that container the clip would eat it. HandleManager
+              fills it in `_updateHpRail()` for the same reason it cannot be a
+              Handlebars expression here: this template renders once, and the
+              handle re-renders on every health change.
+
+              Not clickable and not focusable: it lies on top of the handle's own
+              toggle target, and a 4px strip is not a control. --}}
+        <div class="handle-hp-rail" aria-hidden="true">
+            <div class="handle-hp-rail-fill"></div>
+        </div>
+
         <div class="tray-handle-content-container">
 
-            <button class="squire-handle-control tray-handle-button-pin" title="Pin Tray">
-                <i class="fa-solid fa-thumbtack"></i>
-            </button>
-            {{!-- fa-caret-right is the icon core Foundry uses on its own sidebar
-                  collapse control; CSS flips it when the tray is open and orders
-                  it to the foot of the handle, where Foundry keeps its own. --}}
-            <button class="squire-handle-control tray-handle-button-toggle" title="Toggle Tray">
-                <i class="fa-solid fa-caret-right"></i>
-            </button>
+            {{!-- The two tray controls, together, at the top.
+
+                  They used to sit at opposite ends of the strip — pin at the
+                  head, caret at the foot to mirror Foundry's sidebar collapse —
+                  which put the two controls that do the same category of thing
+                  the full height of the screen apart. Adjacency wins: they are
+                  one block you aim at once.
+
+                  fa-caret-right is still Foundry's own collapse glyph; CSS
+                  flips it when the tray is open. --}}
+            <div class="tray-handle-controls">
+                <button class="squire-handle-control tray-handle-button-pin" title="Pin Tray">
+                    <i class="fa-solid fa-thumbtack"></i>
+                </button>
+                <button class="squire-handle-control tray-handle-button-toggle" title="Toggle Tray">
+                    <i class="fa-solid fa-caret-right"></i>
+                </button>
+            </div>
 
             <div class="tray-handle-content-wrapper">
                 {{#if (eq viewMode 'player')}}

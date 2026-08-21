@@ -224,6 +224,62 @@
   (`panel-party.css`) are consumed with fallbacks but never defined, so the fallback always wins.
   Either define them as real theme hooks or inline the colours.
 
+### HANDLE REDESIGN (2026-08-21)
+
+Shipped as one pass. The handle is a **status spine, not a second menu**: status is what
+changes without you touching it, a menu is what you go looking for, and a 42px column was an
+excellent spine and a terrible menu.
+
+- [x] One width (60px) and one layout, in every tray state. A two-layout version — full column
+  when closed, controls only when open — was built and withdrawn the same day: a **pinned tray is
+  open permanently**, so pinning meant the reduced handle forever, and the duplication argument was
+  only ever true of favorites since HP and conditions are nowhere in the tray. The variable width
+  went with it, being paid for entirely by the variable content.
+- [x] One column edge: portrait, HP chip, favorites and the conditions grid are all exactly the
+  column width and flush on both sides. Only the two tray controls keep Foundry's 32px. Conditions
+  pack two to a row *inside* their own full-width group.
+- [x] HP rail on the outer edge, filled by `HandleManager._updateHpRail()`. It lives in
+  `tray.hbs` rather than the handle partials because it sits in the handle's right padding,
+  outside `.tray-handle-content-container`, whose `overflow: hidden` would clip it.
+- [x] The 180° rotation and the vertical writing mode are gone; templates are authored in
+  visual order and the health bar is an ordinary horizontal chip.
+- [x] Character/party name dropped from the handle; pin and caret grouped at the top.
+- [x] **No favorites cap.** `HANDLE_FAVORITES_LIMIT`, the `handleFavoritesMax` setting, the
+  "handle is full" toast, `normalizeHandleFavorites()` and the auto-favorite truncation are all
+  gone; `HandleManager._trimHandleFavorites()` decides from the strip's actual height instead.
+- [x] The conditions button takes one grid cell and carries the active-condition count as a
+  corner badge, rather than spanning both columns.
+
+- [ ] **NEEDS EYES IN A LIVE WORLD.** None of this has been seen rendered. Specifically worth
+  checking:
+  - Conditions at 20px: legible, or too small to recognise? The grid is one variable
+    (`--squire-handle-condition-size`) if it needs to go up — but the column is 44 wide, so 2-up
+    tops out at 20 with the 4px gap. Bigger than that means 1-up, or a wider handle.
+  - **The favorites trim.** `_trimHandleFavorites()` measures after every render and every
+    resize and hides what does not fit. Worth watching that it does not flicker on rapid
+    resizes, and that the cut always lands on a whole icon. It reads every rect before writing
+    any class to avoid layout thrash; if it ever feels slow with a large list, that is the first
+    thing to check has not been undone.
+  - **What the trim does NOT catch**: anything that changes the strip's height without a window
+    resize. Pinning and the Blacksmith menubar offset are the candidates. If favorites go stale
+    after one of those, the fix is another call site, not a different algorithm.
+  - A large party in party view: members are 36px + a 14px chip + 8px gap, so roughly 58px
+    each. Past six or seven the column will overflow and the bottom fade takes over.
+  - `#ui-left` sits 18px further right than it did. If that crowds anything, the handle's
+    closed width is the knob.
+
+- [ ] **OPEN — the handle as a drop target.** The favorites on the handle duplicate the Favorites
+  panel while the tray is open, which is accepted rather than solved. It stops being duplication if
+  you can drag an item ONTO the handle to put it there — the handle becomes a place you put things
+  rather than a second copy of a list, and the duplication argument that nearly cost us the whole
+  column stops applying.
+
+- [ ] **NOT BUILT — favorites fan-out.** The other radical option from the design pass: hovering
+  the handle pushes the favorite icons out horizontally into the canvas instead of stacking them
+  vertically, so they stop paying vertical rent and the cap can rise above five. Deferred
+  deliberately — the two-layout change is the one that had to land first, and this is a new
+  interaction rather than a layout.
+
 ### BLACKSMITH CONTRACT CHANGES (2026-08-21)
 
 - [x] **Base classes come from the bridge module now.**

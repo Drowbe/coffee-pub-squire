@@ -13,7 +13,7 @@
     --squire-tray-width: 400px;
     /* Pre-JS fallbacks. squire.js overwrites both from SQUIRE.TRAY_HANDLE_WIDTH /
        TRAY_HANDLE_ADJUSTMENT in const.js, which is where to change them. */
-    --squire-tray-handle-width: 42px;
+    --squire-tray-handle-width: 60px;
     --squire-tray-handle-adjustment: 0px;
     --squire-tray-transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment)));
     /* Pre-JS fallback only. squire.js overwrites both from SQUIRE.TRAY_TOP_OFFSET /

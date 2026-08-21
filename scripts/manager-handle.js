@@ -33,8 +33,13 @@ export class HandleManager {
             window.removeEventListener('resize', this._resizeHandler);
         }
         
-        // Bind the handler to this instance
-        this._resizeHandler = this._updateHandleFade.bind(this);
+        // Bind the handler to this instance. How many favourites fit is a
+        // function of the window's height, so a resize has to re-decide it
+        // before the fade can mean anything.
+        this._resizeHandler = () => {
+            this._trimHandleFavorites();
+            this._updateHandleFade();
+        };
         
         // Add the resize listener
         window.addEventListener('resize', this._resizeHandler);
@@ -196,6 +201,11 @@ export class HandleManager {
             applyItemTooltips(handleLeft, this.actor || PanelManager.currentActor);
         }
 
+        this._updateHpRail(handleData);
+        // Order matters: trimming decides whether the column still overflows,
+        // and the fade is a claim about exactly that.
+        this._trimHandleFavorites();
+
         // Set up resize listener if not already set up
         if (!this._resizeHandler) {
             this._setupResizeListener();
@@ -271,14 +281,6 @@ export class HandleManager {
             // selection.
             const handleToken = this.actor?.getActiveTokens?.()?.[0] ?? null;
             await openHealthWindow(handleToken ? [handleToken] : null);
-        });
-
-        // Handle health tray icon clicks (GM only) - delegated
-        handleElement.addEventListener('click', async (event) => {
-            if (!event.target.closest('#health-tray-button')) return;
-            event.preventDefault();
-            event.stopPropagation();
-            if (game.user.isGM) await openHealthWindow();
         });
 
         // Handle favorite item clicks
@@ -484,6 +486,87 @@ export class HandleManager {
             this._documentClickHandler = null;
         }
         PanelManager.cancelCollapse();
+    }
+
+    /**
+     * Paint the HP rail down the handle's outer edge.
+     *
+     * Written from JS rather than rendered from the handle template because the
+     * rail lives in tray.hbs — outside `.tray-handle-content-container`, whose
+     * `overflow: hidden` would clip anything sitting in the handle's padding.
+     * The tray template renders once; this runs on every health change, which is
+     * the whole point of the rail.
+     *
+     * Tracks the character the handle is showing, in both views. Party members
+     * carry their own chip under their own portrait — one full-height rail
+     * cannot represent five people.
+     *
+     * @param {object} handleData The same data the handle template was given.
+     * @private
+     */
+    _updateHpRail(handleData) {
+        const rail = PanelManager.element?.querySelector('.handle-hp-rail');
+        if (!rail) return;
+
+        const fill = rail.querySelector('.handle-hp-rail-fill');
+        const actor = handleData?.actor ?? null;
+
+        // Hidden rather than emptied when there is nothing to show: an empty
+        // track reads as "this character is at zero", which is a different and
+        // much louder statement than "there is no character".
+        const show = Boolean(actor) && handleData?.showHandleHealthBar;
+        rail.classList.toggle('hidden-rail', !show);
+        if (!show || !fill) return;
+
+        fill.style.height = `${actor.healthPercentage ?? 0}%`;
+        // className rather than classList.add: the status classes are mutually
+        // exclusive, and adding without removing would leave a corpse healthy.
+        fill.className = `handle-hp-rail-fill ${actor.healthbarStatusClass ?? ''}`.trim();
+    }
+
+    /**
+     * Show as many handle favourites as the strip has room for, and hide the rest.
+     *
+     * There is no cap on how many an actor may have. There used to be — five,
+     * with a setting and a toast that turned the sixth away — and a fixed number
+     * is wrong in both directions at once: it cut a big statblock down to a
+     * fraction of its kit, and on a tall window it left an empty bar under the
+     * last icon. Height is the real constraint, so height is what decides.
+     *
+     * Everything is rendered and then measured. Measuring first would mean
+     * predicting layout — icon size, gaps, what the conditions grid above
+     * happens to be doing this frame — and the browser already knows all of it.
+     *
+     * Read every rect BEFORE hiding anything: hiding is a write, and interleaving
+     * writes with reads makes the browser re-lay-out between each pair.
+     *
+     * Once one icon does not fit, every icon after it is hidden too, whether or
+     * not it would fit on its own. Hiding one pulls the next up into its place,
+     * so "does this one fit" stops being a stable question the moment the first
+     * answer is no — and a column that skips an icon to squeeze in a later one
+     * silently reorders the user's favourites.
+     *
+     * @private
+     */
+    _trimHandleFavorites() {
+        const container = PanelManager.element?.querySelector('.tray-handle-content-container');
+        if (!container) return;
+
+        const icons = [...container.querySelectorAll('.handle-favorite-icon')];
+        if (!icons.length) return;
+
+        // Everything back on first: this runs again on every render and every
+        // resize, and an icon hidden by the last pass may fit now.
+        for (const icon of icons) icon.classList.remove('does-not-fit');
+
+        const limit = container.getBoundingClientRect().bottom;
+        const bottoms = icons.map(icon => icon.getBoundingClientRect().bottom);
+
+        let trimming = false;
+        icons.forEach((icon, index) => {
+            if (bottoms[index] > limit) trimming = true;
+            if (trimming) icon.classList.add('does-not-fit');
+        });
     }
 
     /**

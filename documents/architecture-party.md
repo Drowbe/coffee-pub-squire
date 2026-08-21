@@ -121,7 +121,7 @@ Buttons/cards are cloned before attaching listeners to avoid duplicates on re-re
 
 ## Handle Integration
 
-- **Party view handle** (`handle-party.hbs`): When `actor` exists, shows `defaultPartyName` or “Party”, current actor portrait + health (`handle-character-portrait`, `handle-health`), then `otherPartyMembers` (portrait + health, clickable to switch), then the health-tray button (GM). Data (`actor`, `otherPartyMembers`, `showHandleHealthBar`, etc.) is supplied by HandleManager from the same party token list used by the panel.
+- **Party view handle** (`handle-party.hbs`): The current actor's portrait (44px) and HP chip, then `otherPartyMembers` at a smaller portrait (36px) and shorter chip, clickable to switch — the size difference is what makes “which one am I playing” legible without reading a name. The party name label is gone. The full-height HP rail tracks the *current* actor only; members carry their own chip. Data (`actor`, `otherPartyMembers`, `showHandleHealthBar`, etc.) is supplied by HandleManager from the same party token list used by the panel.
 
 ## Tray Toolbar (Party View)
 

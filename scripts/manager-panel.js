@@ -411,11 +411,6 @@ export class PanelManager {
             // Always create a new instance to ensure clean state
             PanelManager.instance = new PanelManager(actor);
 
-            // Bring pre-cap handle favorites down to the limit. Applies to every
-            // actor type, unlike auto-favoriting, since characters accumulated
-            // these too.
-            if (actor) await FavoritesPanel.normalizeHandleFavorites(actor);
-
             // Reconcile with the character sheet's own favourites. On an actor
             // that has never synced this is the initial merge; afterwards it
             // catches anything that changed while Squire was not watching — a

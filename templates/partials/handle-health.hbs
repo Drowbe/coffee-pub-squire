@@ -1,17 +1,33 @@
-{{!-- HEALTH --}} 
+{{!-- HP CHIP
+
+      A horizontal bar with the number on it, sitting under the portrait it
+      belongs to.
+
+      It was a 32x80 vertical box with the number rotated to read down the
+      strip. That shape only existed because the whole handle was rendered
+      upside down inside a vertical writing mode — with the rotation gone, a bar
+      under a portrait can just be a bar under a portrait, and the number can
+      just be a number.
+
+      Still `.handle-healthbar`, and still carries `.party` and `.clickable`:
+      HandleManager delegates the Health-window click off those. --}}
+
 {{#if (eq id "player")}}
-    <!-- PLAYER -->
-    <div class="squire-handle-control handle-healthbar {{#if actor.isOwner}}clickable{{/if}}" data-actor-id="{{actor.id}}">
+    {{!-- CURRENT CHARACTER --}}
+    <div class="squire-handle-control handle-healthbar {{#if actor.isOwner}}clickable{{/if}}"
+         data-actor-id="{{actor.id}}"
+         data-tooltip="{{actor.system.attributes.hp.value}} / {{actor.system.attributes.hp.max}} HP">
+        <div class="handle-healthbar-fill {{actor.healthbarStatusClass}}" style="width: {{actor.healthPercentage}}%"></div>
         <div class="handle-healthbar-value {{actor.healthStatus}}">{{actor.system.attributes.hp.value}}</div>
         <div class="handle-healthbar-icon {{actor.healthStatus}}"><i class="fa-solid fa-skull"></i></div>
-        <div class="handle-healthbar-fill {{actor.healthbarStatusClass}}" style="height: {{actor.healthPercentage}}%" data-tooltip="{{actor.system.attributes.hp.value}} HP"></div>
     </div>
 {{else}}
-    <!-- PARTY -->
-    <div class="squire-handle-control handle-healthbar party {{#if member.isOwner}}clickable{{/if}}" data-actor-id="{{member.id}}">
+    {{!-- PARTY MEMBER --}}
+    <div class="squire-handle-control handle-healthbar party {{#if member.isOwner}}clickable{{/if}}"
+         data-actor-id="{{member.id}}"
+         data-tooltip="{{member.system.attributes.hp.value}} / {{member.system.attributes.hp.max}} HP">
+        <div class="handle-healthbar-fill {{member.healthbarStatusClass}}" style="width: {{member.healthPercentage}}%"></div>
         <div class="handle-healthbar-value {{member.healthStatus}}">{{member.system.attributes.hp.value}}</div>
         <div class="handle-healthbar-icon {{member.healthStatus}}"><i class="fa-solid fa-skull"></i></div>
-        <div class="handle-healthbar-fill {{member.healthbarStatusClass}}" style="height: {{member.healthPercentage}}%" data-tooltip="{{member.system.attributes.hp.value}} HP"></div>
     </div>
 {{/if}}
-

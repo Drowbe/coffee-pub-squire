@@ -8,6 +8,7 @@ The Character tab is the **Player** view of the Squire tray. It shows the curren
 
 - **View**: Player tab (`viewMode === 'player'`).
 - **Order**: First panel when `actor` exists: Character → Character Summary → GM (if GM) → Control → Favorites/Weapons/Spells/Features/Inventory. Health and Status Effects are Blacksmith windows opened from the handle, not tray panels; Dice Tray and Macros are Blacksmith's menubar tools and Squire does not touch them.
+- **The handle is 60px and shows the same thing in every tray state.** `SQUIRE.TRAY_HANDLE_WIDTH` is that width, because the handle is what stays on screen when the tray collapses and both the collapsed transform and the `#ui-left` margin are measured off it. Everything in the column — portrait, HP chip, each favorite, the conditions grid — is exactly the column's width and lines up flush; conditions pack two to a row inside their own group.
 - **Container**: `templates/tray.hbs` includes `<div class="panel-container" data-panel="character" data-clickable="true"></div>`; `PanelManager` injects the character panel HTML there.
 
 ## Project Files
@@ -86,7 +87,7 @@ Character panel updates are driven by Blacksmith HookManager:
 
 ## Handle Integration
 
-- **Player view handle** (`handle-player.hbs`): Shows actor name, then `handle-character-portrait` (same actor), health bar (if enabled), favorites, conditions, and the health-tray button (GM). The primary/secondary stat blocks, the macros icon and the dice-tray icon were removed with their settings — the handle shows what *this* token has.
+- **Player view handle** (`handle-player.hbs`): Top to bottom — portrait, HP chip, conditions (two to a row, the add/remove button in the first cell carrying the active count), then as many favorites as fit, trimmed to the strip's height by `HandleManager._trimHandleFavorites()`. Written in visual order; the 180° rotation that used to invert DOM order against screen order is gone. The HP rail down the outer edge lives in `tray.hbs`, not here, and is filled by `HandleManager._updateHpRail()`. The character name, the stat blocks, the macros icon and the dice-tray icon were all removed — the handle is a status column for *this* token.
 - **`handle-character-portrait.hbs`**: Single portrait image; optional `clickable` and `data-actor-id` for opening character sheet (handled by HandleManager).
 
 ## GM Details Flow

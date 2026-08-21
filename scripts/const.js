@@ -54,10 +54,14 @@ export const CSS_CLASSES = {
 
 export const SQUIRE = {
     TRAY_OFFSET_WIDTH: '6px',
-    // The handle is a column of core Foundry's 32px controls: 32 + a 4px gutter
-    // either side + the handle's own 1px borders. Keep this in step with
-    // --squire-handle-control-size / --squire-handle-gutter in handle.css.
-    TRAY_HANDLE_WIDTH: '42px',
+    // The handle is the part of the tray that stays on screen when it collapses,
+    // so the collapsed transform and the #ui-left margin are both measured off
+    // this.
+    //
+    // = 2 borders + 5 gutter + 44 content column + 5 gutter + 4 HP rail. Keep in
+    // step with the custom properties at the top of handle.css, which is where
+    // those five numbers live.
+    TRAY_HANDLE_WIDTH: '60px',
     // Extra tray body left showing beside the handle when collapsed. This used to
     // be 8px, propping up a handle whose width declaration named a variable that
     // did not exist, so the strip was however wide its contents forced. Now that
@@ -68,11 +72,7 @@ export const SQUIRE = {
     // settings-page real estate for that; change them here if the tray ever needs
     // to clear something.
     TRAY_TOP_OFFSET: '10px',
-    TRAY_BOTTOM_OFFSET: '10px',
-    // Most favourites the handle will ever show. It is a one-control-wide column
-    // sharing its height with a portrait, a health bar and a vertical name, so
-    // this is a space limit rather than a preference.
-    HANDLE_FAVORITES_LIMIT: 5
+    TRAY_BOTTOM_OFFSET: '10px'
 }; 
 
 // ===== TEMPLATES ==================================================

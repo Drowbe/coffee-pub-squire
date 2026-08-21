@@ -344,20 +344,6 @@ export const registerSettings = function() {
         default: true
     });
 
-    game.settings.register(MODULE.ID, 'handleFavoritesMax', {
-        name: 'Maximum Handle Favorites',
-        hint: 'How many items can sit on the tray handle at once. The handle is a narrow strip, so a small number keeps every icon big enough to hit; adding another once the limit is reached asks you to remove one first.',
-        scope: 'world',
-        config: true,
-        type: Number,
-        default: SQUIRE.HANDLE_FAVORITES_LIMIT,
-        range: {
-            min: 1,
-            max: SQUIRE.HANDLE_FAVORITES_LIMIT,
-            step: 1,
-        },
-    });
-
     game.settings.register(MODULE.ID, 'showHandleHealthBar', {
         name: 'Show Health Bar in Handle',
         hint: 'Display health bar visualization in the handle',

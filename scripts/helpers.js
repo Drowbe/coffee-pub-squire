@@ -1,4 +1,4 @@
-import { MODULE, SQUIRE } from './const.js';
+import { MODULE } from './const.js';
 
 /**
  * True when this user is the GM or the current party leader.
@@ -749,27 +749,6 @@ export function activateContainerListener(panel, actor, signal) {
     return handler;
 }
 
-/**
- * How many favorites the tray handle may show at once.
- *
- * Lives here rather than on FavoritesPanel so the Handlebars helper can read it
- * without helpers.js importing a panel — panels already import helpers, and the
- * cycle would be gratuitous. FavoritesPanel delegates here.
- */
-export function getHandleFavoriteLimit() {
-    try {
-        const limit = Number(game.settings.get(MODULE.ID, 'handleFavoritesMax'));
-        // Clamped, not just defaulted: worlds that set this higher before the
-        // ceiling came down still have the old number stored.
-        if (Number.isFinite(limit) && limit > 0) {
-            return Math.min(Math.floor(limit), SQUIRE.HANDLE_FAVORITES_LIMIT);
-        }
-    } catch (error) {
-        // Settings not registered yet — fall back to the default.
-    }
-    return SQUIRE.HANDLE_FAVORITES_LIMIT;
-}
-
 export const registerHelpers = function() {
     // Helper for repeating n times
     Handlebars.registerHelper('times', function(n, options) {
@@ -905,15 +884,14 @@ export const registerHelpers = function() {
         // Create a map of items by ID for quick lookup
         const itemsById = new Map(actor.items.map(item => [item.id, item]));
         
-        // Sort handle favorites to match the Favorites panel order exactly.
+        // Sort handle favorites to match the Favorites panel order exactly. The
+        // handle is a plain top-to-bottom column now, so DOM order is visual
+        // order and this is an ordinary ascending sort.
         //
-        // The handle's 180° rotation is cancelled in CSS (`flex-direction:
-        // row-reverse` on .handle-favorites), the same way the handle's other
-        // icon rows already
-        // handle it — so DOM order is now visual order and this sort can be a
-        // plain ascending one. It used to sort descending to compensate, which
-        // rendered correctly but left the array backwards, so "keep the top N"
-        // silently kept the bottom N.
+        // The order still matters even though nothing truncates the list here:
+        // the ones that do not fit the strip are dropped off the END by
+        // `HandleManager._trimHandleFavorites()`, so panel order decides who
+        // survives a short viewport.
         const sortedHandleFavorites = [...handleFavorites].sort((a, b) => {
             const aIndex = panelFavorites.indexOf(a);
             const bIndex = panelFavorites.indexOf(b);
@@ -926,11 +904,11 @@ export const registerHelpers = function() {
             return 0;
         });
 
-        // Map handle favorites in the sorted order, capped at the configured
-        // limit. Normalization writes the truncation back to the flag on actor
-        // init; this slice keeps the render correct in between.
+        // Every one of them. There is no cap: a fixed maximum either cut a
+        // character short or left a tall empty bar under the last icon, and
+        // which of those you got depended on the character. The strip's own
+        // height decides instead, in `_trimHandleFavorites()`.
         return sortedHandleFavorites
-            .slice(0, getHandleFavoriteLimit())
             .map(id => itemsById.get(id))
             .filter(item => item) // Remove any undefined items
             .map(item => {

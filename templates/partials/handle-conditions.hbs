@@ -1,9 +1,19 @@
 {{!-- CONDITIONS --}} 
 
 <div class="handle-conditions">
+    {{!-- One cell like any condition, not a full-width header. It used to span
+          the whole grid, which spent a whole row on a button and pushed the
+          conditions themselves down.
+
+          It carries the count because it is the only element that can: the grid
+          shows as many icons as fit, so "how many conditions am I actually
+          under" is a question the icons alone stop answering the moment the
+          column runs out. --}}
     {{#if canManageEffects}}
-        <div class="squire-handle-control handle-group-button" id="conditions-button" data-tooltip="Add or Remove Conditions">
+        <div class="squire-handle-control handle-group-button" id="conditions-button"
+             data-tooltip="Add or Remove Conditions">
             <i class="fa-solid fa-sparkles"></i>
+            {{#if effects.length}}<span class="handle-conditions-count">{{effects.length}}</span>{{/if}}
         </div>
     {{/if}}
     {{!-- Active effects shown on the handle --}}

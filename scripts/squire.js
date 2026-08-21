@@ -1376,7 +1376,6 @@ Hooks.once('init', async function() {
     // Register handle section partials with error handling
     const partials = [
         { name: 'handle-health', path: 'handle-health.hbs' },
-        { name: 'handle-health-tray', path: 'handle-health-tray.hbs' },
         { name: 'handle-favorites', path: 'handle-favorites.hbs' },
         { name: 'handle-conditions', path: 'handle-conditions.hbs' },
         { name: 'action-badge', path: 'action-badge.hbs' }

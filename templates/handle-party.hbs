@@ -1,42 +1,44 @@
+{{!-- PARTY HANDLE
+
+      Same top-to-bottom order as the character handle, and the same reasoning:
+      the current character first, then everyone else.
+
+      The party name is gone. It was a rotated string spending the tallest
+      element on the strip to say something the tray's own header says in full,
+      and in a column this narrow vertical space is the only budget that
+      matters. --}}
+
 {{#if actor}}
 
-    {{!-- PARTY NAME --}} 
-    <div class="handle-info-container">
-      <span class="handle-info-title">{{#if defaultPartyName}}{{defaultPartyName}}{{else}}Party{{/if}}</span>
-    </div>
-
-    <span class="tray-handle-separator spacer"></span>
-
-    {{!-- PLAYER --}} 
-    <div class="handle-partymembers">
-        {{!-- CHARACTER PORTRAIT --}} 
+    {{!-- THE CURRENT CHARACTER --}}
+    <div class="handle-group handle-identity">
         {{> handle-character-portrait actor=actor displayName=(default actorDisplayName actor.handleDisplayName)}}
-        {{!-- PLAYER HEALTH --}} 
-         {{#if showHandleHealthBar}}
+        {{#if showHandleHealthBar}}
             {{> handle-health id="player"}}
         {{/if}}
     </div>
-    <span class="tray-handle-separator line-ridge-thin"></span>
-    
-    {{!-- PARTY --}}     
+
+    {{!-- EVERYONE ELSE. Smaller portrait and a shorter chip than the current
+          character, so which one you are playing is legible without reading a
+          single name. --}}
     {{#if otherPartyMembers}}
-        {{#each otherPartyMembers as |member|}}
-            {{#unless @first}}<span class="tray-handle-separator line-dotted-thin"></span>{{/unless}}
-            <div class="handle-partymembers">
-                <div class="squire-handle-control handle-partymember-icon {{#if member.isOwner}}clickable{{/if}}" {{#if member.isOwner}}data-tooltip="Switch to {{default member.displayName member.name}}"{{/if}} data-actor-id="{{member.id}}">
-                    <img src="{{member.img}}" alt="{{default member.displayName member.name}}"/>
+        <div class="handle-group handle-partymembers">
+            {{#each otherPartyMembers as |member|}}
+                <div class="handle-partymember">
+                    <div class="squire-handle-control handle-partymember-icon {{#if member.isOwner}}clickable{{/if}}" {{#if member.isOwner}}data-tooltip="Switch to {{default member.displayName member.name}}"{{/if}} data-actor-id="{{member.id}}">
+                        <img src="{{member.img}}" alt="{{default member.displayName member.name}}"/>
+                    </div>
+                    {{#if ../showHandleHealthBar}}
+                        {{> handle-health id="party" member=member}}
+                    {{/if}}
                 </div>
-               {{#if ../showHandleHealthBar}}
-                    {{> handle-health id="party" member=member}}
-                {{/if}}
-            </div>
-        {{/each}}
-        <span class="tray-handle-separator line-ridge-thin"></span>
+            {{/each}}
+        </div>
     {{/if}}
+
 {{else}}
-    {{!-- NO PARTY SELECTED --}} 
-    <div class="handle-info-container">
-        <span class="handle-info-title">Select or Create a Character</span>
+    {{!-- NO CHARACTER --}}
+    <div class="handle-group handle-empty" data-tooltip="Select or create a character">
+        <i class="fa-solid fa-user-slash"></i>
     </div>
-    <span class="tray-handle-separator spacer"></span>
 {{/if}}

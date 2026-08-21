@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, showSquireToast, getHandleFavoriteLimit, getContainerInfo, activateContainerListener, applyItemTooltips, getBlacksmith, getActionType, getActionTypes} from './helpers.js';
+import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, getContainerInfo, activateContainerListener, applyItemTooltips, getBlacksmith, getActionType, getActionTypes} from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { QuantityEditor } from './utility-quantity.js';
@@ -96,54 +96,7 @@ export class FavoritesPanel {
     }
 
     /**
-     * How many items may sit on the handle at once. The handle is a narrow
-     * vertical strip; past a handful the icons shrink below a comfortable
-     * click target, so this is a real constraint rather than a preference.
-     */
-    static getHandleFavoriteLimit() {
-        return getHandleFavoriteLimit();
-    }
-
-    /**
-     * Drop handle favorites past the limit, keeping the ones highest in the
-     * Favorites panel order.
-     *
-     * Worlds that predate the cap can hold more than the handle will show. Rather
-     * than leaving the flag permanently disagreeing with the display, this
-     * truncates it on actor init so what's stored is what's rendered.
-     *
-     * @returns {Promise<boolean>} whether anything was removed
-     */
-    static async normalizeHandleFavorites(actor) {
-        if (!actor) return false;
-        const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
-        if (isFromCompendium) return false;
-        if (!actor.isOwner) return false;
-
-        const handle = this.getHandleFavorites(actor).filter(id => id !== null && id !== undefined);
-        const limit = this.getHandleFavoriteLimit();
-        if (handle.length <= limit) return false;
-
-        // Same ordering the handle renders in, so the survivors are the ones the
-        // user was actually looking at.
-        const panel = this.getPanelFavorites(actor);
-        const kept = [...handle]
-            .sort((a, b) => {
-                const aIndex = panel.indexOf(a);
-                const bIndex = panel.indexOf(b);
-                if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
-                if (aIndex !== -1) return -1;
-                if (bIndex !== -1) return 1;
-                return 0;
-            })
-            .slice(0, limit);
-
-        await actor.setFlag(MODULE.ID, 'favoriteHandle', kept);
-        return true;
-    }
-
-    /**
-     * @returns {Promise<boolean>} false if the handle is full and nothing was added
+     * @returns {Promise<boolean>} false only if the actor cannot hold favorites.
      */
     static async addHandleFavorite(actor, itemId) {
         // Check if actor is from a compendium (more robust check)
@@ -155,19 +108,11 @@ export class FavoritesPanel {
         const ids = new Set(this.getHandleFavorites(actor));
         if (ids.has(itemId)) return true;
 
-        // Refuse rather than silently evicting someone else's pick — which one
-        // to drop is the user's call, and a slot vanishing without being asked
-        // is worse than being told to free one.
-        const limit = this.getHandleFavoriteLimit();
-        if (ids.size >= limit) {
-            const item = actor.items.get(itemId);
-            showSquireToast(`The handle is full (${limit} maximum).`, {
-                subtitle: `Remove one before adding ${item?.name ?? 'another item'}.`,
-                icon: 'fa-solid fa-circle-exclamation',
-                color: '#ffb020'
-            });
-            return false;
-        }
+        // Nothing is refused. The handle used to hold five and turn the sixth
+        // away with a toast; it now takes as many as you give it and shows as
+        // many as the strip has room for, so "full" is a property of the
+        // viewport rather than of the actor and is not something to argue with
+        // the user about at the moment they click.
 
         // Handle favorites are a subset of panel favorites — the handle sorts by
         // panel order and the panel is where you manage them, so an orphaned
@@ -538,18 +483,17 @@ export class FavoritesPanel {
                 await actor.setFlag(MODULE.ID, 'favoritePanel', newPanelFavorites);
 
                 // Also add these items to handle favorites for quick access — minus
-                // the generic actions: handle slots are scarce, and Ready/Disengage
-                // belong to every creature, not this one's kit.
+                // the generic actions: Ready/Disengage belong to every creature,
+                // not this one's kit.
                 //
-                // Truncated to the same limit the manual toggle enforces. A big
-                // statblock has far more usable content than the handle can show,
-                // so the first few in statblock order win and the rest stay in
-                // the favorites panel where there's room for them.
+                // Not truncated. It used to be cut to the handle's cap, which
+                // meant a big statblock silently lost most of its kit; the strip
+                // decides how many it can show at render time, and the rest wait
+                // in the flag for a taller window rather than being discarded.
                 const handleToAdd = [...weapons, ...spells, ...statblockFeatures].map(item => item.id);
                 const existingHandle = FavoritesPanel.getHandleFavorites(actor)
                     .filter(id => id !== null && id !== undefined);
-                const newHandleFavorites = [...existingHandle, ...handleToAdd.filter(id => !existingHandle.includes(id))]
-                    .slice(0, FavoritesPanel.getHandleFavoriteLimit());
+                const newHandleFavorites = [...existingHandle, ...handleToAdd.filter(id => !existingHandle.includes(id))];
                 await actor.setFlag(MODULE.ID, 'favoriteHandle', newHandleFavorites);
             }
 
