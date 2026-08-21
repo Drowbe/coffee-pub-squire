@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **The tray handle had no width.** `handle.css` asked for `var(--tray-handle-width)`, and nothing has ever defined that variable — the real one is `--squire-tray-handle-width`. The declaration was therefore invalid and the width fell back to `auto`, so the strip was as wide as whatever content happened to be widest inside it, and `TRAY_HANDLE_ADJUSTMENT` had been quietly propping up the collapsed-tray arithmetic to compensate. The handle is now the width it says it is, and that fudge factor is back to zero.
 - **The chevron closes a pinned tray instead of scolding you.** Clicking it while pinned popped a warning telling you to unpin first, which is a worse version of what you asked for: it now unpins and closes in one click. The pin button still only unpins, leaving the tray open, so nothing you were reading disappears when you press it.
 - **Clicking the handle toggles the tray.** It was supposed to already — but the handler asked for `[data-clickable="true"]`, and the only element carrying that attribute lives in the tray *content*, while the listener was bound to the handle. It could never match, so the whole strip was inert except for the three buttons. Bare handle now toggles, and the portraits, health bars, favourites and condition icons on it keep their own clicks.
 - **The pin, collapse and view-cycle buttons hover alike.** The caret took its colour from `.tray-handle:hover`, so it lit up when you hovered anywhere on the handle — including while you were aiming at one of the other two — and the pinned pin's white overrode the shared hover rule entirely, leaving it the one button that didn't react.
@@ -20,9 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **The collapse control is core Foundry's caret**, the same `fa-caret` glyph the sidebar uses, pointing out of the tray when closed and back into it when open.
+- **The handle is a column of core Foundry controls.** 32px squares with a 4px gutter either side — Foundry's own control geometry — and Foundry's own palette variables rather than a hardcoded orange, so the handle tracks a theme change. Everything else in the strip fills the same column: the portrait, the party portraits, the condition and health-tray buttons, the health bar and the separators all size off one token instead of eight hardcoded numbers. Pinned reads as pressed — filled warm, like the active sidebar tab — and keeps that fill while you hover the button that would unpin it.
+  - **Favourite icons went from 22px to 32px**, which is the smallest size the art actually reads at. Below that you were navigating the list by position rather than recognising anything in it.
+  - **What is deliberately *not* copied is the direction of the hover.** Foundry's controls float on the canvas, so it hovers them by darkening the ground and lifting the rim to a muted purple. Both are near-black-on-dark against our strip, so mirroring the values literally produced a hover you could not see. The ground now lifts toward the light instead of away from it — the same idea, inverted for the background it sits on.
 - **Open, close, pin and unpin are one state machine** on `PanelManager` rather than five call sites each toggling `.expanded` and recomputing the `#ui-left` margin. They had drifted into disagreeing about what "open" meant, which is where the pinned-chevron warning came from.
 
 ### Removed
+- **The Top Offset and Bottom Offset settings.** Two sliders spending settings-page real estate on a gap nobody moved off its default. They are `SQUIRE.TRAY_TOP_OFFSET` and `TRAY_BOTTOM_OFFSET` in `const.js` now, both 10px — one place to change if the tray ever needs to clear something. The stylesheet's own defaults said 70px and 300px, which had been dead numbers ever since the settings started overwriting them at startup; they now agree.
 - The dead click-to-collapse affordance on the character panel — a `data-clickable` attribute and a pointer-cursor hover style advertising a listener that was bound to the wrong element and never fired.
 
 ## [13.8.1]

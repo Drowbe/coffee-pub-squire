@@ -165,7 +165,8 @@ After installation and enabling the module:
 
 ### **Appearance & Layout**
 - **Color Theme**: Dark, Light, or Custom
-- **Tray Width**, **Top Offset**, **Bottom Offset**: Fit the tray to your screen
+- **Tray Width**: Fit the tray to your screen
+- **Collapse Tray When You Click Away**, **Open Tray on Hover**, **Tray Collapse Delay**: How the tray opens and closes
 - **Default Tab**: Which panel the tray opens on
 - **Show Party Tab**, **Show GM Details Panel**, **Show Character Summary Panel**, **Show Party Stats Panel**
 

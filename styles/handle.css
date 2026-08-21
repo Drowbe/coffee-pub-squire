@@ -1,8 +1,21 @@
 /* TRAY HANDLE */
 
 .squire-tray .tray-handle {
+    /* The column is one core-Foundry control wide. Everything that sits in the
+       handle — buttons, portraits, favourites, the health bar — is sized off
+       these two, so the strip has one measurement rather than eight.
+       Total width = 1px border + 4 + 32 + 4 + 1px border = 42px, which is what
+       SQUIRE.TRAY_HANDLE_WIDTH has to say for the collapsed tray to line up. */
+    --squire-handle-control-size: 32px;
+    --squire-handle-gutter: 4px;
+
     height: auto;
-    width: var(--tray-handle-width); 
+    /* Was var(--tray-handle-width) — a variable nothing has ever defined, so the
+       declaration was invalid and the width fell back to auto: the strip was as
+       wide as whatever content happened to be widest inside it. */
+    width: var(--squire-tray-handle-width, 42px);
+    padding-left: var(--squire-handle-gutter);
+    padding-right: var(--squire-handle-gutter);
     flex: none;
     order: 2;
     /* Option 1: Subtle Dots */
@@ -28,6 +41,14 @@
     position: relative;
     /* Bare handle toggles the tray, so the whole strip is clickable. */
     cursor: pointer;
+    transition: background 0.25s, border-color 0.25s;
+}
+
+/* The strip has to say it is live, or clicking it is a secret. Rim only — a
+   background change here sits directly behind the buttons and cancels out their
+   own hover, which is most of why theirs looked broken. */
+.squire-tray .tray-handle:hover {
+    border-color: rgba(255, 255, 255, 0.22);
 }
 
 
@@ -61,7 +82,7 @@
 .squire-tray .tray-handle-separator.line-dotted-thick,
 .squire-tray .tray-handle-separator.line-double-thick,
 .squire-tray .tray-handle-separator.line-ridge-thick {
-    width: 22px;
+    width: var(--squire-handle-control-size, 32px);
     height: 1px;
     display: inline-block;
     vertical-align: middle;
@@ -72,7 +93,7 @@
 .squire-tray .tray-handle-separator.line-dotted-thin,
 .squire-tray .tray-handle-separator.line-double-thin,
 .squire-tray .tray-handle-separator.line-ridge-thin {
-    width: 22px;
+    width: var(--squire-handle-control-size, 32px);
     height: 1px;
     display: inline-block;
     vertical-align: middle;
@@ -108,48 +129,84 @@
 
 /* TRAY HANDLE BUTTONS */
 
+/* Core Foundry's control geometry — a 32px square with a 4px radius — and core
+   Foundry's palette, taken from the variables it declares on <body>.
+
+   What is NOT copied is the direction of the hover. Foundry's controls float on
+   the canvas, so it hovers them by DARKENING the ground to cool-5 and lifting
+   the rim to cool-3. Both of those are near-black-on-dark here, because our
+   controls already sit on a dark strip — the first pass mirrored the values
+   literally and the result was invisible. Same idea, inverted: the ground lifts
+   toward the light instead of away from it. Fallbacks after each var() cover a
+   future palette rename. */
 .squire-tray .tray-handle-button-pin,
 .squire-tray .tray-handle-button-viewcycle,
 .squire-tray .tray-handle-button-toggle {
     order: 1;
-    background: none;
-    border: 0px solid #ffffff;
-    color: rgba(255, 255, 255, 0.4);
+    width: var(--squire-handle-control-size, 32px);
+    height: var(--squire-handle-control-size, 32px);
+    /* Foundry's bare `button` rule sets min-height from --button-size, which is
+       not ours to predict; pin it so the column cannot be stretched from outside. */
+    min-height: var(--squire-handle-control-size, 32px);
+    flex: none;
+    /* Centred the way Foundry centres its controls. The caret used to be placed
+       by padding on the <i> inside it, which only worked while the button had no
+       box of its own to be off-centre in. */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Three touching squares read as one block; this keeps them three. */
+    margin-bottom: 2px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--color-light-2, #efe6d8);
+    /* Dimmed at rest so three controls don't out-shout the portrait below them.
+       Hover takes it to full, which is the light-2 -> light-1 step Foundry makes
+       on a background where a two-shade difference in near-white would show. */
+    opacity: 0.5;
     cursor: pointer;
-    padding: 0px 0px;
-    transition: all 0.2s ease;
-    outline: none;
-    margin: 0px;
+    padding: 0;
     text-align: center;
-    font-size: 0.85em;
-    border-radius: 3px;
+    font-size: var(--font-size-16, 16px);
+    line-height: 1;
+    outline: none;
     box-shadow: none !important;
+    transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
 
 .squire-tray .tray-handle-button-pin i,
 .squire-tray .tray-handle-button-viewcycle i,
 .squire-tray .tray-handle-button-toggle i {
-    transition: transform 0.2s ease, color 0.2s ease;
+    transition: transform 0.2s ease;
     margin-right: 0;
 }
 
+/* Pinned is this button's pressed state, and reads like the active sidebar tab:
+   filled warm, not merely outlined. */
 .squire-tray.pinned .tray-handle-button-pin {
-    color: #fff;
+    background: var(--color-warm-2, #c9593f);
+    border-color: var(--color-warm-1, #ee9b3a);
+    color: var(--color-light-1, #f7f3e8);
+    opacity: 1;
 }
 
-.squire-tray:not(.pinned) .tray-handle-button-pin {
-    color: rgba(255, 255, 255, 0.3);
-}
-
-/* Same mouseover for all three, and last so it beats the pin's state colours. */
+/* One mouseover for all three, written after the pressed state so it wins at
+   equal specificity — every button answers the pointer, including that one. */
 .squire-tray .tray-handle-button-pin:hover,
 .squire-tray .tray-handle-button-viewcycle:hover,
 .squire-tray .tray-handle-button-toggle:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(231, 91, 1, 1.0);
-    border: none !important;      /* ensures no border is drawn */
-    outline: none !important;     /* removes focus ring/outline */
-    box-shadow: none !important;  /* kills subtle UA shadows */
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--color-light-5, #9f8475);
+    color: var(--color-light-1, #f7f3e8);
+    opacity: 1;
+}
+
+/* ...except the pinned pin keeps its warm fill, so the tray still says it is
+   pinned while you hover the very button that would unpin it. */
+.squire-tray.pinned .tray-handle-button-pin:hover {
+    background: var(--color-warm-2, #c9593f);
+    border-color: var(--color-light-1, #f7f3e8);
 }
 
 
@@ -165,9 +222,6 @@
    core Foundry's sidebar control. */
 .squire-tray .tray-handle-button-toggle i.fa-caret-right {
     transform: rotate(0deg);
-    margin-bottom: 2px;
-    margin-top: 0;
-    padding: 4px 8px;
 }
 
 .squire-tray.expanded .tray-handle-button-toggle i.fa-caret-right {
@@ -306,12 +360,16 @@
     background: rgba(0, 0, 0, 0.5);
     cursor: pointer;
     position: relative;
-    width: 22px;
-    height: 22px;
+    /* Fill the column. At the old 22px the favourite art was a colour smear you
+       navigated by position rather than recognised; 32px is the smallest size
+       these actually read at. */
+    width: var(--squire-handle-control-size, 32px);
+    height: var(--squire-handle-control-size, 32px);
+    flex: none;
     filter: brightness(0.9);
     transition: filter 0.2s ease;
     transform: rotate(180deg);
-    min-height: 22px;
+    min-height: var(--squire-handle-control-size, 32px);
 }
 .squire-tray .handle-group-button:hover {
     background: rgba(0, 0, 0, 0.4);
@@ -343,7 +401,7 @@
     writing-mode: vertical-lr;
     flex-direction: row;
     width: 100%;
-    min-height: 21px;
+    min-height: var(--squire-handle-control-size, 32px);
     border: 0;
 }
 
@@ -368,8 +426,12 @@
     border-radius: 4px;
     background: rgba(0, 0, 0, 0.5);
     position: relative;
-    width: 22px;
-    height: 22px;
+    /* Fill the column. At the old 22px the favourite art was a colour smear you
+       navigated by position rather than recognised; 32px is the smallest size
+       these actually read at. */
+    width: var(--squire-handle-control-size, 32px);
+    height: var(--squire-handle-control-size, 32px);
+    flex: none;
     filter: brightness(0.9);
     transition: filter 0.2s ease;
     transform: rotate(180deg);
@@ -492,7 +554,7 @@
 
 .squire-tray .handle-healthbar {
     height: 80px;
-    width: 20px;
+    width: var(--squire-handle-control-size, 32px);
     background: rgba(0, 0, 0, 0.3);
     border: 2px solid rgba(0, 0, 0, 0.2);
     border-radius: 4px;
@@ -507,7 +569,7 @@
 }
 .squire-tray .handle-healthbar.party {
     height: 40px; /* PARTY WIDTH */
-    width: 20px; /* PARTY HEIGHT */
+    width: var(--squire-handle-control-size, 32px); /* PARTY HEIGHT */
 }
 .squire-tray .handle-healthbar:hover {
     background: rgba(0, 0, 0, 0.8);

@@ -31,14 +31,6 @@
                 "name": "Tray Width",
                 "hint": "Width of the tray in pixels"
             },
-            "topOffset": {
-                "name": "Top Offset",
-                "hint": "Distance from the top of the screen in pixels"
-            },
-            "bottomOffset": {
-                "name": "Bottom Offset",
-                "hint": "Distance from the bottom of the screen in pixels"
-            },
             "showHandleConditions": {
                 "name": "Show Conditions in Handle",
                 "hint": "Display condition icons in the tray handle"
@@ -81,14 +73,6 @@
             "TrayWidth": {
                 "Name": "Tray Width",
                 "Hint": "Width of the tray in pixels"
-            },
-            "TopOffset": {
-                "Name": "Top Offset",
-                "Hint": "Distance from the top of the screen in pixels"
-            },
-            "BottomOffset": {
-                "Name": "Bottom Offset",
-                "Hint": "Distance from the bottom of the screen in pixels"
             },
             "ShowHandleConditions": {
                 "Name": "Show Conditions in Handle",

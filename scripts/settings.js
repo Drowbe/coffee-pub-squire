@@ -138,10 +138,8 @@ export const registerSettings = function() {
                     document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${trayWidth - parseInt(SQUIRE.TRAY_HANDLE_WIDTH) - parseInt(SQUIRE.TRAY_HANDLE_ADJUSTMENT)}px)`);
                     
                     // Set offset variables
-                    const topOffset = game.settings.get(MODULE.ID, 'topOffset');
-                    const bottomOffset = game.settings.get(MODULE.ID, 'bottomOffset');
-                    document.documentElement.style.setProperty('--squire-tray-top-offset', `${topOffset}px`);
-                    document.documentElement.style.setProperty('--squire-tray-bottom-offset', `${bottomOffset}px`);
+                    document.documentElement.style.setProperty('--squire-tray-top-offset', SQUIRE.TRAY_TOP_OFFSET);
+                    document.documentElement.style.setProperty('--squire-tray-bottom-offset', SQUIRE.TRAY_BOTTOM_OFFSET);
 
                     if (isPinned) {
                         uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
@@ -224,42 +222,6 @@ export const registerSettings = function() {
         }
     });
 
-    // Top Offset setting
-    game.settings.register(MODULE.ID, 'topOffset', {
-        name: 'Top Offset',
-        hint: 'Distance from the top of the screen (in pixels). Default: 10px',
-        scope: 'client',
-        config: true,
-        type: Number,
-        range: {
-            min: 0,
-            max: 200,
-            step: 5
-        },
-        default: 10,
-        onChange: value => {
-            document.documentElement.style.setProperty('--squire-tray-top-offset', `${value}px`);
-        }
-    });
-
-    // Bottom Offset setting
-    game.settings.register(MODULE.ID, 'bottomOffset', {
-        name: 'Bottom Offset',
-        hint: 'Distance from the bottom of the screen (in pixels). Default: 10px',
-        scope: 'client',
-        config: true,
-        type: Number,
-        range: {
-            min: 0,
-            max: 500,
-            step: 5
-        },
-        default: 10,
-        onChange: value => {
-            document.documentElement.style.setProperty('--squire-tray-bottom-offset', `${value}px`);
-        }
-    });
-
     // Auto-collapse when the user works elsewhere
     game.settings.register(MODULE.ID, 'trayAutoCollapse', {
         name: 'Collapse Tray When You Click Away',
@@ -292,7 +254,7 @@ export const registerSettings = function() {
             max: 5,
             step: 0.25
         },
-        default: 1
+        default: 0.75
     });
 
 	// ---------- Panel Configuration ----------

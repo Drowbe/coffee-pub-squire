@@ -1499,10 +1499,8 @@ Hooks.once('ready', async function() {
     document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${trayWidth - parseInt(SQUIRE.TRAY_HANDLE_WIDTH) - parseInt(SQUIRE.TRAY_HANDLE_ADJUSTMENT)}px)`);
 
     // Set offset variables
-    const topOffset = game.settings.get(MODULE.ID, 'topOffset');
-    const bottomOffset = game.settings.get(MODULE.ID, 'bottomOffset');
-    document.documentElement.style.setProperty('--squire-tray-top-offset', `${topOffset}px`);
-    document.documentElement.style.setProperty('--squire-tray-bottom-offset', `${bottomOffset}px`);
+    document.documentElement.style.setProperty('--squire-tray-top-offset', SQUIRE.TRAY_TOP_OFFSET);
+    document.documentElement.style.setProperty('--squire-tray-bottom-offset', SQUIRE.TRAY_BOTTOM_OFFSET);
 
     // Set UI position
     const isPinned = game.settings.get(MODULE.ID, 'isPinned');

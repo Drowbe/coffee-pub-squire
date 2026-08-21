@@ -1,10 +1,14 @@
 :root {
     --squire-tray-width: 400px;
-    --squire-tray-handle-width: 26px;
-    --squire-tray-handle-adjustment: 8px;
+    /* Pre-JS fallbacks. squire.js overwrites both from SQUIRE.TRAY_HANDLE_WIDTH /
+       TRAY_HANDLE_ADJUSTMENT in const.js, which is where to change them. */
+    --squire-tray-handle-width: 42px;
+    --squire-tray-handle-adjustment: 0px;
     --squire-tray-transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment)));
-    --squire-tray-top-offset: 70px;
-    --squire-tray-bottom-offset: 300px;
+    /* Pre-JS fallback only. squire.js overwrites both from SQUIRE.TRAY_TOP_OFFSET /
+       TRAY_BOTTOM_OFFSET in const.js, which is where to change them. */
+    --squire-tray-top-offset: 10px;
+    --squire-tray-bottom-offset: 10px;
     --squire-tray-pinned-offset: 10px;
     --squire-tray-banner-image: url('../images/banner-character-dark.webp');
 }

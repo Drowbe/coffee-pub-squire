@@ -54,8 +54,21 @@ export const CSS_CLASSES = {
 
 export const SQUIRE = {
     TRAY_OFFSET_WIDTH: '6px',
-    TRAY_HANDLE_WIDTH: '25px',
-    TRAY_HANDLE_ADJUSTMENT: '8px'
+    // The handle is a column of core Foundry's 32px controls: 32 + a 4px gutter
+    // either side + the handle's own 1px borders. Keep this in step with
+    // --squire-handle-control-size / --squire-handle-gutter in handle.css.
+    TRAY_HANDLE_WIDTH: '42px',
+    // Extra tray body left showing beside the handle when collapsed. This used to
+    // be 8px, propping up a handle whose width declaration named a variable that
+    // did not exist, so the strip was however wide its contents forced. Now that
+    // the width is real, the handle is the whole of what shows.
+    TRAY_HANDLE_ADJUSTMENT: '0px',
+    // Gap between the tray and the top/bottom of the viewport. These were user
+    // settings, but nobody moved them off the default and two sliders is a lot of
+    // settings-page real estate for that; change them here if the tray ever needs
+    // to clear something.
+    TRAY_TOP_OFFSET: '10px',
+    TRAY_BOTTOM_OFFSET: '10px'
 }; 
 
 // ===== TEMPLATES ==================================================
