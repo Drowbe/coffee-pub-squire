@@ -68,13 +68,12 @@
     consumes both — `utility-compendium-search.js` takes `documentClass` as given rather than
     deriving it from the type token, and reads `truncated` rather than testing
     `results.length === limit`. Nothing to change.
-  - [ ] **OPEN — the `api.search` fallback in `utility-compendium-search.js` is now dead weight, but
-    only if the version pin says so.** `searchDetailed` shipped in Blacksmith **13.14.2**;
-    `module.json` still requires **13.12.2**, so under the declared minimum the fallback is a real
-    path. Squire almost certainly needs a much higher minimum than 13.12.2 anyway (tool window base,
-    card parts, `resolveMany`). Needs a proper audit of the highest Blacksmith feature Squire calls,
-    then one pin bump and the fallback goes. Note a `module.json` change needs a Foundry Setup
-    round-trip, not an F5.
+  - [x] **Pin bumped and the `api.search` fallback deleted (2026-08-21).** `module.json` required
+    Blacksmith **13.12.2**, which was never true — Squire calls
+    `api.inventory.registerTransientFlag` and depends on the 13.19.0 stack-merge behaviour, so the
+    honest floor is **13.19.0**. With the pin there, `searchDetailed` (13.14.2) is always present and
+    the fallback could not run. Remember a `module.json` change needs a Foundry Setup round-trip,
+    not an F5.
   - The shared Export window and journal picker are Squire-owned surfaces; they do not expand Blacksmith's scope.
 
   **Resolved Blacksmith proposal:** See `documents/proposal-blacksmith-transfer-dialog-api.md`. The authoritative dialog behavior comes from Blacksmith's local `documentation/api/api-dialog.md`: DialogV2 closes on activation; prompt validation is a bounded reopen loop; `choose` and `wait` callbacks run after close; only a Tool window may promise in-place failure recovery and duplicate-submit protection.
@@ -224,6 +223,40 @@
 - [ ] **OPEN — a look decision, not a cleanup.** `--squire-rep-hostile` / `-neutral` / `-friendly`
   (`panel-party.css`) are consumed with fallbacks but never defined, so the fallback always wins.
   Either define them as real theme hooks or inline the colours.
+
+### BLACKSMITH CONTRACT CHANGES (2026-08-21)
+
+- [x] **Base classes come from the bridge module now.**
+  `import { BlacksmithToolWindowBaseV2 } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js'`
+  in `window-cleanup.js` and `window-transfer-tool.js`, replacing the top-level `module.api` read
+  and its throw-if-absent guard. Blacksmith's own documentation had told consumers to read the class
+  off `module.api` at module scope, which cannot work — `extends` evaluates before `game` exists,
+  and ESM caches the failure, so the throw disabled the module for the session. Merchant broke a
+  live world on it on 2026-08-19. Also removed: the `ready`-hook probe in `squire.js` that tested
+  `blacksmith.BlacksmithWindowBaseV2` and `return`ed from the whole tray setup if it was missing —
+  the windows no longer come from that surface, so the probe could only ever produce a false
+  negative that cost the user their tray.
+  - The dynamic `import()` at each call site **stays**, and its comments now say why: lazy loading
+    for a rarely-opened tool, not the timing hazard that is gone.
+
+- [ ] **BLOCKING RELEASE — move the pin off 13.19.0 before Squire ships.** The bridge's base-class
+  re-export is in Blacksmith's **[Unreleased]** section, not in 13.19.0. Squire now requires it, so
+  `module.json` must name Blacksmith's next version number the moment that release is cut. **Squire
+  must not ship before Blacksmith does**; against 13.19.0 the import fails to link and the cleanup
+  and transfer windows die on open.
+
+- [x] **`canCancel` — nothing to migrate, by standing agreement.** Blacksmith made `pre*` hook
+  cancellation opt-in, which removes the veto trap. Squire's position, agreed with Blacksmith on
+  2026-08-08 and recorded in their TODO so nobody files it as cleanup, is unchanged: `pre*` hooks
+  stay on Squire's own `registerNativeHook()` permanently. A hook that can cancel an operation
+  world-wide is the one place where fewer layers between Squire and Foundry beats consistency. The
+  lone native registration in `squire.js` (the `preCreateItem` `isNew` stamp) is deliberate.
+
+- [x] **`api.inventory` merge fix — nothing to remove.** Squire has no local workaround for
+  non-merging stacks, because Squire's transfers still create and delete items themselves rather
+  than going through `api.inventory`. The fix lands for Squire when that migration does; the
+  `registerTransientFlag` call for `isNew` is already in place for it. See the container-guard note
+  in `helpers.js` → `getTransferBlocker`.
 
 ### BLACKSMITH ADOPTION — RESIDUE (closed 2026-08-21)
 

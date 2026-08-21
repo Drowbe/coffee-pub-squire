@@ -5,12 +5,23 @@ function getBlacksmith() {
     return globalThis.game?.modules?.get?.('coffee-pub-blacksmith')?.api ?? null;
 }
 
-const BlacksmithToolWindowBaseV2 = getBlacksmith()?.BlacksmithToolWindowBaseV2
-    || getBlacksmith()?.getToolWindowBaseV2?.();
-
-if (!BlacksmithToolWindowBaseV2) {
-    throw new Error('Coffee Pub Squire | BlacksmithToolWindowBaseV2 is unavailable for TransferToolWindow');
-}
+/**
+ * The base class comes from Blacksmith's bridge module, not from `module.api`.
+ *
+ * `extends` is evaluated when this file is evaluated, and `game` does not exist
+ * then — so a top-level `game.modules.get('coffee-pub-blacksmith')` throws, and
+ * ESM caches a failed evaluation, which means the throw takes this module down
+ * for the whole session instead of being retried. That is what the throw-if-
+ * absent guard this import replaced was working around.
+ *
+ * `api/blacksmith-api.js` is a real ES module, so
+ * the import resolves at evaluation time and the subclass extends the same
+ * class object Blacksmith's own windows do.
+ *
+ * `module.api` stays correct for everything resolved after `init` — which is
+ * everything else this file touches.
+ */
+import { BlacksmithToolWindowBaseV2 } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 
 const TRANSFER_TOOL_TEMPLATE = `modules/${MODULE.ID}/templates/window-transfer-tool.hbs`;
 const DEFAULT_IMAGE = 'icons/svg/mystery-man.svg';

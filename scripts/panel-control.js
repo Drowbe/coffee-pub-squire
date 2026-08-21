@@ -497,12 +497,13 @@ export class ControlPanel {
             if (!this.actor) return;
 
             try {
-                // Dynamic, like every other Squire tool window. window-cleanup.js
-                // resolves BlacksmithToolWindowBaseV2 at module scope, and a static
-                // import evaluates it while Squire's own modules are still loading —
-                // before Blacksmith has published its API. ESM caches the failure, so
-                // that throw kills the module for the whole session rather than
-                // retrying later.
+                // Dynamic for lazy loading, not for timing. It used to be for
+                // timing: window-cleanup.js read its superclass off module.api at
+                // module scope, which a static import would have evaluated before
+                // Blacksmith published anything. It imports the class from
+                // Blacksmith's bridge module now, so evaluation order is no longer
+                // a hazard and this could be static — it stays dynamic because the
+                // cleanup window is a rarely-opened GM tool.
                 const { openCleanupWindow } = await import('./window-cleanup.js');
                 await openCleanupWindow(this.actor);
             } catch (error) {
