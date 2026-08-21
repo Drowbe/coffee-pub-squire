@@ -260,6 +260,41 @@ export const registerSettings = function() {
         }
     });
 
+    // Auto-collapse when the user works elsewhere
+    game.settings.register(MODULE.ID, 'trayAutoCollapse', {
+        name: 'Collapse Tray When You Click Away',
+        hint: 'When the tray is not pinned, collapse it shortly after you click somewhere else. Turn this off to leave the tray open until you close it yourself.',
+        scope: 'user',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+    // Open on hover
+    game.settings.register(MODULE.ID, 'trayOpenOnHover', {
+        name: 'Open Tray on Hover',
+        hint: 'Expand the tray when you move the mouse over the handle, and collapse it again shortly after you move off the tray. Ignored while the tray is pinned.',
+        scope: 'user',
+        config: true,
+        type: Boolean,
+        default: false
+    });
+
+    // How long "shortly after" is for both of the above
+    game.settings.register(MODULE.ID, 'trayCollapseDelay', {
+        name: 'Tray Collapse Delay',
+        hint: 'How long to wait, in seconds, before an unpinned tray collapses after you click away or move off it.',
+        scope: 'user',
+        config: true,
+        type: Number,
+        range: {
+            min: 0,
+            max: 5,
+            step: 0.25
+        },
+        default: 1
+    });
+
 	// ---------- Panel Configuration ----------
 	game.settings.register(MODULE.ID, "headingH3PanelConfiguration", {
 		name: 'Panel Configuration',

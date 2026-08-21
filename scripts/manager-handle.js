@@ -18,6 +18,9 @@ export class HandleManager {
         // Handle element the delegated listeners are bound to (bind once per tray element)
         this._boundHandleElement = null;
 
+        // Document-level click-away listener, kept so destroy() can remove it
+        this._documentClickHandler = null;
+
     }
 
     /**
@@ -227,102 +230,39 @@ export class HandleManager {
         this._boundHandleElement = handle;
         const handleElement = handle;
 
-        // Helper function to toggle tray expansion
-        const toggleTray = () => {
-            // If pinned, don't allow closing
-            if (PanelManager.isPinned) {
-                ui.notifications.warn("You have the tray pinned open. Unpin the tray to close it.");
-                return false;
-            }
-            
-            // PanelManager.element IS the tray element (.squire-tray), so use it directly
-            const tray = nativePanelManagerElement;
-            
-            if (tray) {
-                const wasExpanded = tray.classList.contains('expanded');
-                
-                if (!wasExpanded) {
-                    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                    if (blacksmith) {
-                        const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
-                        blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                    }
-                }
-                
-                tray.classList.toggle('expanded');
-            }
-            return false;
-        };
-        
-        // Toggle button handling - delegated
-        handleElement.addEventListener('click', (event) => {
+        // Everything on the handle that owns its own click. Anything NOT in here is
+        // bare handle, and clicking bare handle toggles the tray. These listeners are
+        // all bound to the same element, so their stopPropagation() cannot hold the
+        // catch-all off — it has to ask.
+        const HANDLE_ACTIONS = [
+            '.tray-handle-button-pin',
+            '.tray-handle-button-toggle',
+            '.tray-handle-button-viewcycle',
+            '.handle-healthbar',
+            '#health-tray-button',
+            '.handle-favorite-icon',
+            '.handle-condition-icon',
+            '#conditions-button',
+            '.handle-partymember-icon',
+            '.handle-character-icon',
+            'a', 'button', 'input', 'select', 'textarea'
+        ].join(', ');
+
+        // Chevron - delegated
+        handleElement.addEventListener('click', async (event) => {
             if (!event.target.closest('.tray-handle-button-toggle')) return;
             event.preventDefault();
             event.stopPropagation();
-            return toggleTray();
+            await PanelManager.toggleTray();
         });
 
-        // Handle click on character panel (for collapsing)
-        handleElement.addEventListener('click', (event) => {
-            // Only allow tray toggle on character panel
-            // v13: Use native DOM methods
-            const isCharacterPanel = event.target.closest('[data-clickable="true"]') !== null;
-            
-            // If not clicking on character panel, don't toggle
-            if (!isCharacterPanel) {
-                return;
-            }
-            
-            event.preventDefault();
-            event.stopPropagation();
-            return toggleTray();
-        });
-
-        // Pin button handling - delegated
+        // Pin button handling - delegated. Unpinning here deliberately leaves the tray
+        // open; it is the chevron, not the pin, that closes things.
         handleElement.addEventListener('click', async (event) => {
             if (!event.target.closest('.tray-handle-button-pin')) return;
-            {
-                event.preventDefault();
-                event.stopPropagation();
-
-                PanelManager.isPinned = !PanelManager.isPinned;
-                await game.settings.set(MODULE.ID, 'isPinned', PanelManager.isPinned);
-                
-                // Play pin/unpin sound
-                const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-                if (blacksmith) {
-                    const sound = game.settings.get(MODULE.ID, PanelManager.isPinned ? 'pinSound' : 'unpinSound');
-                    blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-                }
-                
-                // v13: PanelManager.element IS the tray element, so use it directly
-                const tray = nativePanelManagerElement;
-                
-                if (PanelManager.isPinned) {
-                    // When pinning, ensure tray is expanded
-                    if (tray) {
-                        tray.classList.add('pinned', 'expanded');
-                    }
-                    // Update UI margin when pinned - only need trayWidth + offset since handle is included in width
-                    const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
-                    const uiLeft = document.querySelector('#ui-left');
-                    if (uiLeft) {
-                        uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
-                    }
-                } else {
-                    // When unpinning, maintain expanded state but remove pinned class
-                    if (tray) {
-                        tray.classList.remove('pinned');
-                    }
-                    // Reset UI margin when unpinned - need both handle width and offset
-                    const uiLeft = document.querySelector('#ui-left');
-                    if (uiLeft) {
-                        uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
-                    }
-                }
-
-                return false;
-            }
+            event.preventDefault();
+            event.stopPropagation();
+            await PanelManager.setPinned(!PanelManager.isPinned);
         });
 
         // View mode toggle button - delegated
@@ -521,6 +461,43 @@ export class HandleManager {
             }
         });
 
+        // Bare handle toggles the tray. Registered last so every handler that owns a
+        // specific target has already run; HANDLE_ACTIONS is what stops this from
+        // firing a second time on top of them, since same-element listeners are not
+        // affected by their stopPropagation().
+        handleElement.addEventListener('click', async (event) => {
+            if (event.target.closest(HANDLE_ACTIONS)) return;
+            event.preventDefault();
+            await PanelManager.toggleTray();
+        });
+
+        // Optional hover-to-open. Silent on the way in: sweeping the pointer past the
+        // handle on the way to the canvas should not chirp the open sound every time.
+        handleElement.addEventListener('mouseenter', () => {
+            if (!game.settings.get(MODULE.ID, 'trayOpenOnHover')) return;
+            PanelManager.expandTray({ sound: false });
+        });
+
+        // Leaving the tray arms the collapse; coming back anywhere on it disarms,
+        // which also rescues a tray the click-away timer below has already armed.
+        nativePanelManagerElement.addEventListener('mouseenter', () => PanelManager.cancelCollapse());
+        nativePanelManagerElement.addEventListener('mouseleave', () => {
+            if (!game.settings.get(MODULE.ID, 'trayOpenOnHover')) return;
+            PanelManager.scheduleCollapse();
+        });
+
+        // Click-away collapse. Bound to the document rather than the tray, so unlike
+        // everything above it does not die with the tray element and has to be torn
+        // down by hand in destroy(). Capture phase: a handler that stops propagation
+        // somewhere else in the UI should not keep the tray open.
+        if (!this._documentClickHandler) {
+            this._documentClickHandler = (event) => {
+                if (!game.settings.get(MODULE.ID, 'trayAutoCollapse')) return;
+                if (event.target?.closest?.('.squire-tray')) return;
+                PanelManager.scheduleCollapse();
+            };
+            document.addEventListener('mousedown', this._documentClickHandler, true);
+        }
     }
 
     /**
@@ -534,6 +511,14 @@ export class HandleManager {
         }
         // Delegated handle listeners die with the tray element; just drop the references
         this._boundHandleElement = null;
+
+        // The click-away listener lives on the document, so it outlives the tray
+        // unless it is removed here.
+        if (this._documentClickHandler) {
+            document.removeEventListener('mousedown', this._documentClickHandler, true);
+            this._documentClickHandler = null;
+        }
+        PanelManager.cancelCollapse();
     }
 
     /**

@@ -9,7 +9,9 @@
                 <i class="fa-solid fa-thumbtack"></i>
             </button>
             <button class="tray-handle-button-toggle" title="Toggle Tray">
-                <i class="fa-solid fa-chevron-right"></i>
+                {{!-- fa-caret-right is the icon core Foundry uses on its own sidebar
+                      collapse control; CSS flips it when the tray is open. --}}
+                <i class="fa-solid fa-caret-right"></i>
             </button>
             <button class="tray-handle-button-viewcycle" title="Toggle View Mode">
                 <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else}}fa-user{{/if}}"></i>
@@ -104,7 +106,7 @@
             <div class="tray-view-content player-view {{#unless (eq viewMode 'player')}}hidden{{/unless}}">
                 {{#if actor}}
                     <!-- CHARACTER - ALWAYS SHOW -->  
-                    <div class="panel-container" data-panel="character" data-clickable="true"></div>
+                    <div class="panel-container" data-panel="character"></div>
 
 
                     <!-- GM DETAILS -->

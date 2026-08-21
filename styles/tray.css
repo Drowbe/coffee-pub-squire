@@ -192,16 +192,6 @@
     border-radius: 6px;
 }
 
-/* Clickable Character Panel */
-.squire-tray .panel-container[data-clickable="true"] {
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.squire-tray .panel-container[data-clickable="true"]:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
 /* Panel Placeholder - for docking panels back into tray */
 .squire-tray .panel-placeholder {
     display: block;

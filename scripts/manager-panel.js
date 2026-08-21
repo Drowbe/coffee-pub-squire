@@ -105,6 +105,132 @@ export class PanelManager {
         return PanelManager.element;
     }
 
+    // -------------------------------------------------------------------------
+    // TRAY OPEN / CLOSE
+    //
+    // One state machine for the whole tray. The chevron, the rest of the handle,
+    // the pin, the hover option and the click-away timer all go through these,
+    // because when each of them toggled `.expanded` itself they disagreed about
+    // what "open" meant — most visibly, the chevron used to refuse to close a
+    // pinned tray and just scolded the user instead.
+    //
+    // The rules:
+    //   UNPINNED  chevron/handle toggles; collapses a moment after you click away.
+    //   PINNED    stays open; closing it unpins it, because it cannot be both
+    //             "always open" and closed.
+    //   HOVER     optional: entering the handle opens, leaving the tray closes.
+    // -------------------------------------------------------------------------
+
+    /** Pending auto-collapse, so a re-entry or a deliberate open can cancel it. */
+    static _collapseTimeout = null;
+
+    /** @returns {boolean} Whether the tray is currently open. */
+    static isExpanded() {
+        return !!PanelManager.element?.classList.contains('expanded');
+    }
+
+    /**
+     * Push #ui-left clear of whatever the tray currently occupies.
+     * Pinned reserves the full tray width; unpinned reserves only the handle.
+     */
+    static _updateUiMargin() {
+        const uiLeft = document.querySelector('#ui-left');
+        if (!uiLeft) return;
+        const reserved = PanelManager.isPinned
+            ? game.settings.get(MODULE.ID, 'trayWidth')
+            : parseInt(SQUIRE.TRAY_HANDLE_WIDTH);
+        uiLeft.style.marginLeft = `${reserved + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+    }
+
+    /**
+     * Pin or unpin the tray. Pinning always opens it; unpinning leaves it open,
+     * so the pin button alone never hides anything the user was looking at.
+     * @param {boolean} pinned
+     * @param {object} [options]
+     * @param {boolean} [options.sound=true] Play the pin/unpin sound.
+     */
+    static async setPinned(pinned, { sound = true } = {}) {
+        PanelManager.isPinned = !!pinned;
+        await game.settings.set(MODULE.ID, 'isPinned', PanelManager.isPinned);
+
+        if (sound) {
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            if (blacksmith) {
+                const key = PanelManager.isPinned ? 'pinSound' : 'unpinSound';
+                blacksmith.utils.playSound(game.settings.get(MODULE.ID, key), blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+            }
+        }
+
+        const tray = PanelManager.element;
+        if (tray) {
+            if (PanelManager.isPinned) tray.classList.add('pinned', 'expanded');
+            else tray.classList.remove('pinned');
+        }
+        PanelManager._updateUiMargin();
+    }
+
+    /**
+     * Open the tray.
+     * @param {object} [options]
+     * @param {boolean} [options.sound=true] Play the open sound. Hover-opens pass
+     *   false: sweeping the mouse past the handle should not chirp every time.
+     */
+    static expandTray({ sound = true } = {}) {
+        PanelManager.cancelCollapse();
+        const tray = PanelManager.element;
+        if (!tray || PanelManager.isExpanded()) return;
+
+        if (sound) {
+            const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+            if (blacksmith) {
+                const openSound = game.settings.get(MODULE.ID, 'trayOpenSound');
+                blacksmith.utils.playSound(openSound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
+            }
+        }
+        tray.classList.add('expanded');
+    }
+
+    /** Close the tray, unpinning it first if it was pinned. */
+    static async collapseTray() {
+        PanelManager.cancelCollapse();
+        const tray = PanelManager.element;
+        if (!tray) return;
+        if (PanelManager.isPinned) await PanelManager.setPinned(false);
+        tray.classList.remove('expanded');
+    }
+
+    /** Open a closed tray, close an open one. */
+    static async toggleTray() {
+        if (PanelManager.isExpanded()) await PanelManager.collapseTray();
+        else PanelManager.expandTray();
+    }
+
+    /** Drop any pending auto-collapse. */
+    static cancelCollapse() {
+        if (PanelManager._collapseTimeout === null) return;
+        clearTrackedTimeout(PanelManager._collapseTimeout);
+        PanelManager._collapseTimeout = null;
+    }
+
+    /**
+     * Close the tray after the configured grace period, unless something cancels
+     * first — clicking back into the tray, hovering it, or opening it again. A
+     * no-op while pinned or already closed. Callers decide *whether* to arm this;
+     * it only owns the timing.
+     */
+    static scheduleCollapse() {
+        PanelManager.cancelCollapse();
+        if (PanelManager.isPinned || !PanelManager.isExpanded()) return;
+
+        const delay = Math.max(0, game.settings.get(MODULE.ID, 'trayCollapseDelay') ?? 1) * 1000;
+        PanelManager._collapseTimeout = trackModuleTimeout(() => {
+            PanelManager._collapseTimeout = null;
+            // Re-check: the tray may have been pinned or closed during the wait.
+            if (PanelManager.isPinned || !PanelManager.isExpanded()) return;
+            PanelManager.element?.classList.remove('expanded');
+        }, delay);
+    }
+
     constructor(actor) {
         this.actor = actor;
         this.gmPanel = null;
@@ -1854,17 +1980,7 @@ async function initializeSquireAfterSettings() {
         // keeping it would rebuild the whole tray a second time on every startup.
         await PanelManager.initialize(initialActor);
 
-        // Play tray open sound
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        if (blacksmith) {
-            const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
-            blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-        }
-        
-        if (PanelManager.element) {
-            // v13: Use native classList instead of jQuery
-            PanelManager.element.classList.add('expanded');
-        }
+        PanelManager.expandTray();
     }
 }
 
@@ -1983,17 +2099,10 @@ export async function _updateTrayFromSelection() {
         PanelManager.instance._applyFadeInAnimation();
     }
     
-    // Only play sound and expand tray if it was previously expanded AND not pinned
-    if (wasExpanded && !PanelManager.isPinned && PanelManager.element) {
-        // Play tray open sound
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        if (blacksmith) {
-            const sound = game.settings.get(MODULE.ID, 'trayOpenSound');
-            blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH.SOUNDVOLUMESOFT, false, false);
-        }
-        
-        // Restore expanded state
-        PanelManager.element.classList.add('expanded');
+    // Re-open the tray only if it was open before the selection changed. A pinned
+    // tray never closed, so it has nothing to restore.
+    if (wasExpanded && !PanelManager.isPinned) {
+        PanelManager.expandTray();
     }
 
 

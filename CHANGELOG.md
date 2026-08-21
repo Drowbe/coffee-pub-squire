@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [Unreleased]
+
+### Fixed
+- **The chevron closes a pinned tray instead of scolding you.** Clicking it while pinned popped a warning telling you to unpin first, which is a worse version of what you asked for: it now unpins and closes in one click. The pin button still only unpins, leaving the tray open, so nothing you were reading disappears when you press it.
+- **Clicking the handle toggles the tray.** It was supposed to already — but the handler asked for `[data-clickable="true"]`, and the only element carrying that attribute lives in the tray *content*, while the listener was bound to the handle. It could never match, so the whole strip was inert except for the three buttons. Bare handle now toggles, and the portraits, health bars, favourites and condition icons on it keep their own clicks.
+- **The pin, collapse and view-cycle buttons hover alike.** The caret took its colour from `.tray-handle:hover`, so it lit up when you hovered anywhere on the handle — including while you were aiming at one of the other two — and the pinned pin's white overrode the shared hover rule entirely, leaving it the one button that didn't react.
+
+### Added
+- **The tray collapses shortly after you click somewhere else** (`Collapse Tray When You Click Away`, on by default, unpinned trays only). The delay is `Tray Collapse Delay`, shared with the option below.
+- **Optional hover-to-open** (`Open Tray on Hover`, off by default): moving onto the handle expands the tray, moving off the tray collapses it after the same delay. Hover-opening is silent — sweeping the pointer past the handle on the way to the canvas shouldn't chirp the open sound every time.
+
+### Changed
+- **The collapse control is core Foundry's caret**, the same `fa-caret` glyph the sidebar uses, pointing out of the tray when closed and back into it when open.
+- **Open, close, pin and unpin are one state machine** on `PanelManager` rather than five call sites each toggling `.expanded` and recomputing the `#ui-left` margin. They had drifted into disagreeing about what "open" meant, which is where the pinned-chevron warning came from.
+
+### Removed
+- The dead click-to-collapse affordance on the character panel — a `data-clickable` attribute and a pointer-cursor hover style advertising a listener that was bound to the wrong element and never fired.
+
 ## [13.8.1]
 
 ### Fixed

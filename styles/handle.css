@@ -26,6 +26,8 @@
     font-size: 1.1em;
     font-weight: 900;
     position: relative;
+    /* Bare handle toggles the tray, so the whole strip is clickable. */
+    cursor: pointer;
 }
 
 
@@ -124,6 +126,22 @@
     box-shadow: none !important;
 }
 
+.squire-tray .tray-handle-button-pin i,
+.squire-tray .tray-handle-button-viewcycle i,
+.squire-tray .tray-handle-button-toggle i {
+    transition: transform 0.2s ease, color 0.2s ease;
+    margin-right: 0;
+}
+
+.squire-tray.pinned .tray-handle-button-pin {
+    color: #fff;
+}
+
+.squire-tray:not(.pinned) .tray-handle-button-pin {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Same mouseover for all three, and last so it beats the pin's state colours. */
 .squire-tray .tray-handle-button-pin:hover,
 .squire-tray .tray-handle-button-viewcycle:hover,
 .squire-tray .tray-handle-button-toggle:hover {
@@ -135,54 +153,25 @@
 }
 
 
-.squire-tray .tray-handle-button-pin i,
-.squire-tray .tray-handle-button-viewcycle i,
-.squire-tray .tray-handle-button-toggle i {
-    transition: transform 0.2s ease, color 0.2s ease;
-    margin-right: 0;
-}
-
-.squire-tray .tray-handle-button-pin:hover i {
-    transform: rotate(45deg);
-}
-
-.squire-tray.pinned .tray-handle-button-pin {
-    color: #fff;
-}
-
-.squire-tray:not(.pinned) .tray-handle-button-pin {
-    color: rgba(255, 255, 255, 0.3);
-}
 
 
 
 
 
-
-
-/* CHEVRON BUTTON  */
-.squire-tray .tray-handle i.fa-chevron-right {
-    order: 2;
+/* COLLAPSE / EXPAND CARET
+   Colour and hover come from the shared button rules above, so this button reads
+   the same as the pin and the view cycle. It only owns its own geometry: the
+   caret points out of the tray when closed and back into it when open, matching
+   core Foundry's sidebar control. */
+.squire-tray .tray-handle-button-toggle i.fa-caret-right {
     transform: rotate(0deg);
     margin-bottom: 2px;
     margin-top: 0;
     padding: 4px 8px;
-    transition: transform 0.2s ease, color 0.2s ease;
-    color: #9f9275;
 }
 
-.squire-tray .tray-handle:hover i.fa-chevron-right {
-    color: rgba(231, 91, 1, 1.0);
-    filter: brightness(1.2);
-}
-
-.squire-tray.expanded .tray-handle i.fa-chevron-right {
+.squire-tray.expanded .tray-handle-button-toggle i.fa-caret-right {
     transform: rotate(180deg);
-}
-
-.squire-tray.expanded .tray-handle:hover i.fa-chevron-right {
-    color: rgba(231, 91, 1, 1.0);
-    filter: brightness(1.2);
 }
 
 
