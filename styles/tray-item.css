@@ -1,0 +1,338 @@
+/* ==========================================================================
+   ITEM
+
+   A row in a panel: its art, its name, the badges that describe it, the quantity
+   editor, and the action icons on its right. Ends with the scrollbar of the list
+   these rows sit in.
+
+   Split out of a single 1,376-line tray.css. The @import order in default.css
+   is the original source order and is load-bearing: several rules here rely on
+   being read after ones in an earlier file. Do not reorder the imports.
+   ========================================================================== */
+
+/* ITEMS */
+
+
+.squire-tray .panel-item {
+    background: rgba(0, 0, 0, 0.2);
+    border: none;
+    border-radius: 3px;
+    padding: 0;
+    margin-bottom: 2px;
+}
+
+/* Filters compose rather than compete: each source (search, item type, action
+   type, equipped/prepared, category collapse) toggles only its own class, and a
+   row stays hidden while any one of them holds. Nothing writes `display` on a
+   row directly, so no filter can erase another's verdict. See FILTER_REASONS in
+   scripts/helpers.js.
+
+   These five class names appear NOWHERE in the templates or scripts as literals
+   — helpers.js builds them with classList.toggle('hidden-by-' + reason). A
+   search for "hidden-by-search" finds nothing and a dead-CSS audit will report
+   all five as unused. They are not. Do not delete them. */
+.squire-tray .panel-item.hidden-by-search,
+.squire-tray .panel-item.hidden-by-type,
+.squire-tray .panel-item.hidden-by-action,
+.squire-tray .panel-item.hidden-by-state,
+.squire-tray .panel-item.hidden-by-category {
+    display: none;
+}
+
+.squire-tray .panel-item:hover {
+    background: rgba(185, 84, 61, 0.2);
+}
+
+.squire-tray .panel-item.prepared {
+    background: rgba(74, 144, 226, 0.1);
+}
+
+
+.squire-tray .panel-item-row {
+    gap: 4px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+}
+
+
+.panel-item-image-container {
+    position: relative;
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+
+.panel-item-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+
+.panel-item-name {
+    flex: 1;
+    color: #eee;
+    font-size: .8rem;
+    margin-right: 4px;
+    font-weight: 100;
+}
+
+
+/* Everything but the fit comes from .squire-roll-overlay in common.css. */
+.squire-tray .panel-item-roll-overlay {
+    font-size: 16px;
+}
+.panel-item-image-container:hover .panel-item-roll-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+
+/* ITEM CONTEXT */
+
+.panel-item-context {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 4px;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+/* Shape comes from the badge base in common.css; this is what these do on top. */
+.panel-item-badge {
+    min-width: 12px;
+    padding: 0 3px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.panel-item-badge.context-action {
+    width: 12px;
+    min-width: 12px;
+    border-radius: 50%;
+    padding: 0;
+    background: rgba(120, 100, 82, 0.35);
+    color: rgba(255, 255, 255, 0.8);
+    margin-right: 6px;
+}
+
+.panel-item-badge.action-action { background: rgba(74, 143, 58, 0.6); }
+.panel-item-badge.action-bonus { background: rgba(154, 123, 44, 0.6); }
+.panel-item-badge.action-reaction { background: rgba(47, 109, 168, 0.6); }
+.panel-item-badge.action-special { background: rgba(111, 75, 149, 0.6); }
+
+.panel-item-badge.context-component {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.panel-item-badge.component-v { background: rgba(143, 58, 47, 0.6); }
+.panel-item-badge.component-s { background: rgba(44, 90, 149, 0.6); }
+.panel-item-badge.component-m { background: rgba(107, 90, 42, 0.6); }
+.panel-item-badge.component-c { background: rgba(47, 127, 106, 0.6); }
+.panel-item-badge.component-r { background: rgba(116, 70, 155, 0.6); }
+
+.panel-item-badge.context-count {
+    background: rgba(0, 0, 0, 0.65);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 2px 4px 2px 4px;
+}
+
+/* Click-to-edit quantity. Only hints at being interactive on hover so a list
+   of counts doesn't read as a row of buttons. */
+.panel-item-badge.context-count.editable {
+    cursor: text;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.panel-item-badge.context-count.editable:hover {
+    background: rgba(231, 91, 1, 0.55);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+/* Sized to the badge so the row doesn't reflow when the field appears. */
+.panel-item-badge.context-count .quantity-edit-input {
+    width: 3.5ch;
+    min-width: 3.5ch;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-bottom: 1px solid rgba(231, 91, 1, 0.9);
+    border-radius: 0;
+    background: transparent;
+    color: #fff;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    text-align: center;
+    box-shadow: none;
+}
+
+.panel-item-badge.context-count .quantity-edit-input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* The spinners are too small to hit at this size and steal width. */
+.panel-item-badge.context-count .quantity-edit-input::-webkit-inner-spin-button,
+.panel-item-badge.context-count .quantity-edit-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.panel-item-badge.context-count .quantity-edit-input {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+
+/* Action/Component context uses panel-item-context + panel-item-badge */
+
+
+/* TRAY Section ContentButtons */
+.tray-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-right: 0px;
+}
+
+.tray-buttons i {
+    color: #9f9275;
+    transition: color 0.2s ease, opacity 0.2s ease;
+    cursor: pointer;
+    padding: 0px;
+}
+
+.tray-buttons i:hover {
+    color: rgba(231, 91, 1, 1.0);
+    text-shadow: 0 0 8px var(--color-shadow-primary);
+}
+
+.tray-buttons i.faded {
+    opacity: 0.3;
+}
+
+.tray-buttons i.faded:hover {
+    opacity: 1;
+}
+
+/* Light icon active state */
+.tray-buttons .fa-lightbulb.light-active {
+    color: #ffa500;
+    text-shadow: 0 0 4px #ffa500;
+}
+
+.tray-buttons .fa-lightbulb.light-active:hover {
+    color: #ffd700;
+    text-shadow: 0 0 6px #ffd700;
+}
+
+
+/* "Stored in a container" marker. Dimmer than the action icons by default —
+   it's mostly informational, and a row of full-strength boxes would compete
+   with the controls. Inherits the standard hover. */
+.tray-buttons .item-container-open {
+    opacity: 0.55;
+}
+
+.tray-buttons .item-container-open:hover {
+    opacity: 1;
+}
+
+/* Statblock problem badge — GM-only, click to repair. Pulses so it reads as
+   an actionable defect rather than another state toggle. */
+.tray-buttons .statblock-warning {
+    color: #ffb020;
+    text-shadow: 0 0 6px rgba(255, 176, 32, 0.5);
+    animation: squire-statblock-pulse 2s ease-in-out infinite;
+}
+
+.tray-buttons .statblock-warning:hover {
+    color: #ffd873;
+    text-shadow: 0 0 8px rgba(255, 216, 115, 0.8);
+    animation: none;
+}
+
+/* Detected but not repairable from one field — still worth surfacing, but it
+   must not look clickable. */
+.tray-buttons .statblock-warning.no-fix {
+    color: #9f9275;
+    text-shadow: none;
+    cursor: help;
+    animation: none;
+}
+
+.tray-buttons .statblock-warning.no-fix:hover {
+    color: #c4b896;
+}
+
+@keyframes squire-statblock-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tray-buttons .statblock-warning {
+        animation: none;
+    }
+}
+
+.tray-buttons .fa-heart {
+    color: #ff4444;
+}
+
+.tray-buttons .fa-heart.faded {
+    color: #9f9275;
+}
+
+.tray-buttons .fa-heart:hover {
+    color: rgba(231, 91, 1, 1.0);
+}
+
+.tray-buttons .fa-heart.active {
+    color: #ff4444;
+}
+
+.tray-buttons .fa-sun:not(.faded) {
+    color: #ff9129;
+}
+
+.tray-buttons .fa-shield-alt:not(.faded) {
+    color: #367ccc;
+}
+
+.tray-buttons .fa-shield-alt:hover {
+    color: rgba(231, 91, 1, 1.0);
+}
+
+.tray-buttons .fa-dagger:not(.faded) {
+    color: #ff4444;
+}
+
+.tray-buttons .fa-dagger:not(.faded):hover {
+    color: rgba(231, 91, 1, 1.0);
+}
+
+
+/* Scrollbar Styling */
+.panel-containers::-webkit-scrollbar {
+    width: 8px;
+}
+
+.panel-containers::-webkit-scrollbar-track {
+    background: #2a2a2a;
+}
+
+.panel-containers::-webkit-scrollbar-thumb {
+    background-color: #666;
+    border-radius: 4px;
+    border: 2px solid #2a2a2a;
+}
+

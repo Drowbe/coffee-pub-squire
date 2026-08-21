@@ -87,7 +87,7 @@
                                     title="{{toUpperCase ability.key}}: click for an ability check; right-click for a saving throw"
                                 >
                                     <span class="character-summary-ability-key">{{toUpperCase ability.key}}</span>
-                                    <i class="fa-solid fa-dice-d20 panel-item-roll-overlay"></i>
+                                    <i class="fa-solid fa-dice-d20 squire-roll-overlay panel-item-roll-overlay"></i>
                                 </div>
                                 <span class="panel-item-name">{{ability.label}}</span>
                                 <strong class="character-summary-value">{{numberFormat ability.mod sign=true}}</strong>
@@ -115,7 +115,7 @@
                                     title="{{skill.label}}: click to roll"
                                 >
                                     <span class="character-summary-skill-key">{{skill.shortLabel}}</span>
-                                    <i class="fa-solid fa-dice-d20 panel-item-roll-overlay"></i>
+                                    <i class="fa-solid fa-dice-d20 squire-roll-overlay panel-item-roll-overlay"></i>
                                 </div>
                                 <span class="panel-item-name">{{skill.label}}</span>
                                 {{#if skill.proficient}}

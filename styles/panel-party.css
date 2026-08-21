@@ -1,17 +1,32 @@
 /* Party Panel */
 
-.party-view .party-card {
+/* The three card surfaces in this panel were three near-copies of one another:
+   ten identical declarations between the first two, seven with the third. What
+   they share is stated once; what each actually does differently is the two
+   blocks after it, which is now the whole of the difference. */
+.party-view .party-card,
+.party-view .party-health-card,
+.party-view .party-reputation-card {
     background: rgba(0, 0, 0, 0.4);
     color: #9f9275;
-    padding: 4px;
+    padding: 3px;
     font-size: 1.0em;
     border: 2px solid rgba(68, 68, 68, 0.0);
     margin-bottom: 8px;
+    border-radius: 6px;
+}
+
+/* Reputation is the odd one out: a stacked block rather than a row. */
+.party-view .party-card,
+.party-view .party-health-card {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-radius: 6px;
     transition: all 0.2s ease;
+}
+
+.party-view .party-card {
+    padding: 4px;
 }
 
 
@@ -47,14 +62,10 @@
 }
 
 /* Portrait */
+/* Frame from .squire-portrait in common.css. Unlike the character panel's, this
+   one carries the art as a background rather than an <img>. */
 .party-view .party-card-image {
-    width: 70px;
-    aspect-ratio: 1;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 2px solid rgba(0, 0, 0, 0.6);;
-    flex: none;
-    position: relative;
+    border: 2px solid rgba(0, 0, 0, 0.6);
     background-size: cover;
     background-position: center;
     background-color: rgba(0, 0, 0, 0.4);
@@ -64,28 +75,7 @@
     cursor: zoom-in;
 }
 
-/* Health Overlay */
-.party-view .party-card-image .health-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: rgba(255, 0, 0, 0.3);
-    transition: height 0.3s ease;
-    pointer-events: none;
-}
 
-.party-view .party-card-image .death-skull {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 2em;
-    text-shadow: 0 0 10px #000;
-    pointer-events: none;
-    animation: squire-pulse-skull 2s infinite;
-}
 
 
 /* Info Section */
@@ -147,8 +137,11 @@
     box-shadow: 0 0 5px rgba(72, 160, 0, 0.5);
     background: rgba(72, 160, 0, 0.15);
     transform: scale(1.001);
-    filter: grayscale(50%);
-	filter: hue-rotate(290deg);
+    /* `filter: grayscale(50%)` sat here and was overwritten by the next line, so
+       it has never applied. Left out rather than merged into one filter chain,
+       which would be a visual change nobody has asked for — if both were wanted,
+       it is `filter: grayscale(50%) hue-rotate(290deg)`. */
+    filter: hue-rotate(290deg);
     position: relative;
     z-index: 100;
 }
@@ -212,20 +205,6 @@
 
 /* Party Health Card - Special styling for the overview card */
 
-
-.party-view .party-health-card {
-    background: rgba(0, 0, 0, 0.4);
-    color: #9f9275;
-    padding: 3px;
-    font-size: 1.0em;
-    border: 2px solid rgba(68, 68, 68, 0.0);
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-}
 
 .party-view .party-health-card:hover {
     background: rgba(0, 0, 0, 0.9);
@@ -367,18 +346,6 @@
     border: 2px solid #922610;
 }
 
-/* No Party Message */
-.party-view .no-party-message {
-    text-align: center;
-    padding: 20px;
-    color: #9f9275;
-    font-size: 1.2em;
-    text-transform: uppercase;
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px solid #444;
-    border-radius: 4px;
-    margin: 10px 0;
-}
 
 
 /* ==========================================================================
@@ -393,16 +360,6 @@
    reading rather than as decoration: a number with no "where" invites the
    assumption that it is campaign-wide.
    ========================================================================== */
-
-.party-view .party-reputation-card {
-    background: rgba(0, 0, 0, 0.4);
-    color: #9f9275;
-    padding: 3px;
-    font-size: 1.0em;
-    border: 2px solid rgba(68, 68, 68, 0.0);
-    margin-bottom: 8px;
-    border-radius: 6px;
-}
 
 .party-view .party-reputation-header {
     display: flex;

@@ -1,0 +1,225 @@
+/* ==========================================================================
+   SHELL
+
+   The tray element itself: its custom properties, its box, where it sits, how it
+   opens and closes, and the containers panels are dropped into.
+
+   Split out of a single 1,376-line tray.css. The @import order in default.css
+   is the original source order and is load-bearing: several rules here rely on
+   being read after ones in an earlier file. Do not reorder the imports.
+   ========================================================================== */
+
+:root {
+    --squire-tray-width: 400px;
+    /* Pre-JS fallbacks. squire.js overwrites both from SQUIRE.TRAY_HANDLE_WIDTH /
+       TRAY_HANDLE_ADJUSTMENT in const.js, which is where to change them. */
+    --squire-tray-handle-width: 42px;
+    --squire-tray-handle-adjustment: 0px;
+    --squire-tray-transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment)));
+    /* Pre-JS fallback only. squire.js overwrites both from SQUIRE.TRAY_TOP_OFFSET /
+       TRAY_BOTTOM_OFFSET in const.js, which is where to change them. */
+    --squire-tray-top-offset: 10px;
+    --squire-tray-bottom-offset: 10px;
+    --squire-tray-pinned-offset: 10px;
+    --squire-tray-banner-image: url('../images/banner-character-dark.webp');
+}
+
+/* Hidden class for view toggling */
+/* !important is earned here and must stay. This is a (0,1,0) utility that has to
+   beat `.squire-tray .tray-view-content { display: flex }` at (0,2,0) — the rule
+   it exists to override. Without it, .hidden cannot hide a view. */
+.hidden {
+    display: none !important;
+}
+
+/* The tray element itself. Everything about its box lives here and in the
+   positioning rule further down — it used to be spread over three consecutive
+   blocks, two of which this one restated verbatim, property for property. */
+.squire-tray {
+    position: fixed;
+    z-index: 100;
+    background: rgba(30, 30, 30, 0.90);
+    border: 0px solid #444;
+    display: block;
+    box-shadow: 0 0 20px var(--color-shadow-dark);
+    width: var(--squire-tray-width);
+}
+
+
+/* --- Tray banner image --- */
+.squire-tray::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 300px;
+    background-image: var(--squire-tray-banner-image);
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    opacity: 0.3;
+    pointer-events: none;
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);
+    border-radius: 4px 4px 0 0;
+    z-index: 0;
+}
+
+
+/* Drop Zone Styles */
+/* TRAY Left Position */
+/* `top` and `height` are snapped to whole pixels, and the second declaration of
+   each is what does it.
+
+   Both derive from 100vh and from Blacksmith's menubar offset, and neither is
+   obliged to be a whole number — 100vh is simply the viewport height, fractional
+   whenever the window is. That fraction is not cosmetic: it cascades. The handle
+   stretches to the tray, .tray-handle-content-container is height:100% of the
+   handle, and every control is stacked inside that from a fractional origin —
+   then .tray-handle-content-wrapper rotates the lot 180deg about a fractional
+   centre. A 1px border on a box sitting half a device pixel off rasterises to
+   roughly 1.5px on one edge and 0.5px on the opposite, which reads as a border
+   that is thicker on one side and moves to the other side when you resize the
+   window. Computed styles report CSS pixels, so the panel looks perfect while
+   the render is not.
+
+   round() is CSS Values 4 (Chrome 125+). The plain calc() above each one is the
+   fallback: an engine without round() drops the second declaration and keeps the
+   behaviour we had before. */
+.squire-tray {
+    top: calc(var(--squire-tray-top-offset) + var(--blacksmith-menubar-interface-offset));
+    top: round(calc(var(--squire-tray-top-offset) + var(--blacksmith-menubar-interface-offset)), 1px);
+    left: 0px;
+    height: calc(100vh - var(--squire-tray-top-offset) - var(--squire-tray-bottom-offset) - var(--blacksmith-menubar-interface-offset));
+    height: round(calc(100vh - var(--squire-tray-top-offset) - var(--squire-tray-bottom-offset) - var(--blacksmith-menubar-interface-offset)), 1px);
+    border-radius: 0px 8px 8px 0px;
+    display: flex;
+    padding: 8px 1px 8px 4px;
+    transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment)));
+    transition: transform 0.5s ease-in-out;
+}
+
+/* Pinned state positioning */
+.squire-tray.pinned {
+    /* we need to allow for the blacksmith menubar interface offset */
+    top: calc(var(--squire-tray-pinned-offset) + var(--blacksmith-menubar-interface-offset));
+    top: round(calc(var(--squire-tray-pinned-offset) + var(--blacksmith-menubar-interface-offset)), 1px);
+    height: calc(100vh - calc(var(--squire-tray-pinned-offset) * 2) - var(--blacksmith-menubar-interface-offset));
+    height: round(calc(100vh - calc(var(--squire-tray-pinned-offset) * 2) - var(--blacksmith-menubar-interface-offset)), 1px);
+}
+
+/* Expanded Position */
+.squire-tray.expanded {
+    transform: translateX(0);
+}
+
+/* Closing Position */
+.squire-tray:not(.expanded) {
+    transform: translateX(calc(var(--squire-tray-handle-width) - var(--squire-tray-width) + var(--squire-tray-handle-adjustment)));
+}
+
+
+/* TRAY Content */
+.squire-tray .tray-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    order: 1;
+    height: 100%;
+    overflow: hidden;
+    /* Tbackground: transparent; THOMAS */
+    border: 0px solid #444;
+    margin: 0px;
+    padding: 0px;
+    position: relative;
+}
+
+/* TRAY Panel Wrapper */
+.squire-tray .tray-panel-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+
+/* Ensure content stays on top of background */
+.squire-tray .tray-content > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* TRAY Panel Top Container */
+.squire-tray .panel-container {
+    display: block;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-bottom: 6px;
+    border-radius: 6px;
+}
+
+
+/* Collapse placeholder when empty to remove gap */
+
+
+/* TRAY Panel Bottom Container */
+/* Both !important declarations here were fighting this same block rather than
+   anything outside it: `margin: 0` four lines below `margin-top: 8px !important`
+   would have wiped the gap, and the border-radius competed with nothing at all.
+   `flex: 1` was stated twice, and `overflow: hidden` then `overflow-y: auto`
+   is the long way of saying the two axes differ. Same computed result, none of
+   the argument. */
+.squire-tray .panel-containers {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.2);
+    margin: 8px 0 0 0;
+    padding: 2px;
+    border-radius: 6px;
+}
+
+/* GAP Between Panels */
+
+.squire-tray .stacked {
+    gap: 22px;
+}
+
+
+/* --------------- SHARED PANEL STYLES --------------- */
+
+/* TOP PANEL SHELLS */
+.squire-tray [data-panel="health"],
+.squire-tray [data-panel="experience"],
+.squire-tray [data-panel="abilities"],
+.squire-tray [data-panel="stats"],
+.squire-tray [data-panel="gm"],
+.squire-tray [data-panel="character-summary"],
+.squire-tray [data-panel="control"],
+.squire-tray [data-panel="dicetray"],
+.squire-tray [data-panel="macros"] {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 0px solid rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+}
+
+/* LIST CONTAINERS */
+
+.squire-tray .inventory-list,
+.squire-tray .features-list,
+.squire-tray .spells-list,
+.squire-tray .weapons-list,
+.squire-tray .favorites-list {
+    padding: 0px;
+}
+
+

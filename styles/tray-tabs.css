@@ -1,0 +1,100 @@
+/* ==========================================================================
+   TABS
+
+   The CHARACTER / PARTY tabs and the view each one reveals.
+
+   Split out of a single 1,376-line tray.css. The @import order in default.css
+   is the original source order and is load-bearing: several rules here rely on
+   being read after ones in an earlier file. Do not reorder the imports.
+   ========================================================================== */
+
+/* Tray View Tabs */
+
+.squire-tray .tray-view-tabs {
+    display: flex;
+    background: rgba(0, 0, 0, 0.0);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    margin-bottom: 8px;
+    margin-right: 6px;
+    border-radius: 4px 4px 0px 0px;
+}
+
+.squire-tray .tray-tab-button {
+    flex: 1;
+    padding: 0px 0px;
+    background: rgba(0, 0, 0, 0.3);
+    color: rgba(159, 146, 117, 0.9);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    font-size: 0.75em;
+    font-weight: 900;
+    text-transform: uppercase;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px 4px 0px 0px;
+    box-shadow: none;
+    outline: none;
+}
+
+.squire-tray .tray-tab-button:hover {
+    background: rgba(185, 84, 61, 0.2);
+    border: 1px solid rgba(185, 84, 61, 0.2);
+    border-bottom: 2px solid rgba(185, 84, 61, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.squire-tray .tray-tab-button.active {
+    background: rgba(159, 146, 117, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+    box-shadow:none;
+    border-bottom: 2px solid rgba(159, 146, 117, 0.6);
+}
+
+.squire-tray .tray-tab-button i {
+    margin-right: 0px;
+    font-size: 0.75em;
+}
+
+
+/* Tray Content */
+
+.squire-tray .tray-view-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-right: 6px;
+}
+
+.squire-tray .tray-view-content.party-view {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.1);
+}
+
+/* Custom scrollbar for party view */
+.squire-tray .tray-view-content.party-view::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.squire-tray .tray-view-content.party-view::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+    margin: 4px 0;
+}
+
+.squire-tray .tray-view-content.party-view::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.squire-tray .tray-view-content.party-view::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+

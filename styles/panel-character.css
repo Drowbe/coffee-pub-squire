@@ -30,14 +30,9 @@
 
 /* Portrait */
 
+/* Frame from .squire-portrait in common.css. */
 .character-portrait {
-    width: 70px;
-    aspect-ratio: 1;
-    border-radius: 6px;
-    overflow: hidden;
     border: 0px solid #444;
-    flex: none;
-    position: relative;
 }
 
 .character-portrait img {
@@ -47,27 +42,7 @@
     cursor: zoom-in;
 }
 
-.character-portrait .health-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: rgba(255, 0, 0, 0.3);
-    transition: height 0.3s ease;
-    pointer-events: none;
-}
 
-.character-portrait .death-skull {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 2em;
-    text-shadow: 0 0 10px #000;
-    pointer-events: none;
-    animation: squire-pulse-skull 2s infinite;
-}
 
 /* Icons */
 
@@ -110,18 +85,6 @@
 }
 
 
-/* No character Message */
-.squire-tray  .no-character-message {
-    text-align: center;
-    padding: 20px;
-    color: #9f9275;
-    font-size: 1.2em;
-    text-transform: uppercase;
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px solid #444;
-    border-radius: 4px;
-    margin: 10px 0;
-}
 
 /* Character Switcher (owned-character chips above the identity block) */
 

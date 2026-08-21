@@ -180,6 +180,31 @@
 
 ## Architecture & Code Quality
 
+### CSS
+
+- [x] **DONE.** The stylesheets were audited and cleaned end to end. A live bug came out of it:
+  `@keyframes` names are global, `pulse` was defined three times here and a fourth by core Foundry,
+  and ours won — so Squire was displacing Foundry's own `#pause.paused` indicator for every world
+  that installed it. Everything is `squire-`-prefixed now. Also gone: 28 dead rules, two dead
+  stylesheets, and 26 of 35 `!important`. Shared components (portrait, roll overlay, badges,
+  headers, empty state, handle controls) are defined once rather than per panel.
+- [x] **DONE.** `tray.css` (1,376 lines) split into eight files by concern. The split is a verified
+  pure move — `@import` order in `default.css` reproduces the original source order exactly and
+  **must not be sorted or regrouped**; several rules depend on being read after ones in an earlier
+  file.
+- [ ] **OPEN — needs the running app, not source.** Six `!important` on `.squire-tool-row-img`
+  (`window-tool-shared.css`, base and the `max-width: 430px` variant) look unearned: at (0,1,0) they
+  already beat every rule that can reach them, and dnd5e's `img` sizing is all scoped to
+  `.dnd5e2.sheet.*`, which the tool windows are not. Left in place because they sit inside a Foundry
+  application window where other modules' CSS lands. Remove both sets together — the second exists
+  only to beat the first — and check the Transfer and Cleanup windows at both widths.
+- [ ] **OPEN — cosmetic.** Eight `border: 0px solid <colour>` declarations that draw nothing but read
+  as though they do. Verified harmless: nothing anywhere sets `border-width` alone on those elements,
+  so no stashed colour is ever revealed. Left alone rather than churn a diff for legibility.
+- [ ] **OPEN — a look decision, not a cleanup.** `--squire-rep-hostile` / `-neutral` / `-friendly`
+  (`panel-party.css`) are consumed with fallbacks but never defined, so the fallback always wins.
+  Either define them as real theme hooks or inline the colours.
+
 ### Code Cleanup
 - [ ] **PLANNED** Remove legacy code from our fixes
 - [ ] **PLANNED** Modularize manager-panel.js (too large, not modular enough)

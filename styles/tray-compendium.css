@@ -1,0 +1,201 @@
+/* ==========================================================================
+   COMPENDIUM
+
+   The compendium quick-add panel — its result list, groupings and empty states —
+   and the highlight an item wears just after being added.
+
+   Split out of a single 1,376-line tray.css. The @import order in default.css
+   is the original source order and is load-bearing: several rules here rely on
+   being read after ones in an earlier file. Do not reorder the imports.
+   ========================================================================== */
+
+/* Hidden until quick-add mode is entered.
+   Must carry the same `.squire-tray` scoping as the base
+   .panel-container rule above, which sets `display: block` at (0,3,0). Without
+   it this rule loses on specificity and the panel can never be hidden. */
+.squire-tray .panel-container[data-panel="compendium-search"] {
+    display: none;
+}
+
+.squire-tray .panel-container[data-panel="compendium-search"].visible {
+    display: block;
+}
+
+.compendium-search-panel .compendium-search-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.compendium-search-panel .compendium-search-message {
+    text-align: center;
+    padding: 18px 12px;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 12px;
+}
+
+.compendium-search-panel .compendium-search-message i {
+    font-size: 22px;
+    display: block;
+    margin-bottom: 8px;
+    opacity: 0.5;
+}
+
+.compendium-search-panel .compendium-search-message p {
+    margin: 0 0 4px 0;
+}
+
+.compendium-search-panel .compendium-search-hint {
+    font-size: 11px;
+    opacity: 0.6;
+    font-style: italic;
+}
+
+/* Results are read-only previews until added — no roll overlay on the image. */
+.compendium-search-panel .compendium-search-item .panel-item-image {
+    opacity: 0.9;
+}
+
+/* Momentary "here" after scrolling a freshly added item into view. The NEW badge
+   from the createItem hook is the lasting marker; this just lands the eye. */
+.squire-tray .panel-item.just-added {
+    animation: squire-just-added 2.5s ease-out;
+}
+
+@keyframes squire-just-added {
+    0%, 60% {
+        background: rgba(231, 91, 1, 0.35);
+        box-shadow: 0 0 8px rgba(231, 91, 1, 0.5);
+    }
+    100% {
+        background: transparent;
+        box-shadow: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .squire-tray .panel-item.just-added {
+        animation: none;
+        outline: 2px solid rgba(231, 91, 1, 0.6);
+    }
+}
+
+/* Rows drag onto a sheet or the canvas as well as offering the add button. */
+.compendium-search-panel .compendium-search-item {
+    cursor: grab;
+}
+
+.compendium-search-panel .compendium-search-item:active {
+    cursor: grabbing;
+}
+
+/* Pack name leads; package name is the quiet right-aligned half. Two elements
+   rather than one concatenated string: "Equipment" alone is ambiguous (several
+   packages ship a pack by that name) and "Package: Pack" is a mouthful in a
+   narrow column. */
+.compendium-search-panel .compendium-search-group {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.compendium-search-panel .compendium-search-group-pack {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.compendium-search-panel .compendium-search-group-package {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.68rem;
+    opacity: 0.5;
+    font-weight: normal;
+    text-transform: none;
+}
+
+.compendium-search-panel .compendium-search-truncated {
+    padding: 8px 10px;
+    margin-top: 4px;
+    font-size: 11px;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.55);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.compendium-search-panel .compendium-search-truncated i {
+    margin-right: 4px;
+    opacity: 0.7;
+}
+
+/* Add and view are action icons, so they inherit the standard .tray-buttons
+   treatment (muted gold, orange on hover). No colour override here on purpose:
+   in this tray a coloured glyph means state — equipped, prepared, favorited,
+   lit — and colouring an action makes it read as a status it doesn't have. */
+
+.compendium-search-panel .compendium-search-close {
+    cursor: pointer;
+}
+
+
+/* Panel Visibility */
+.panel-containers.stacked .panel-container[data-panel] {
+    display: none;
+}
+
+.panel-containers.stacked .panel-container[data-panel].visible {
+    display: block;
+}
+
+/* A section a filter has emptied stands down entirely rather than lingering as
+   a heading over nothing. Kept separate from `.visible`, which belongs to the
+   item-type chips: two owners writing one class is the race this whole
+   arrangement exists to avoid. Higher specificity so it wins over `.visible`
+   without needing !important. */
+.panel-containers.stacked .panel-container[data-panel].visible.filtered-empty {
+    display: none;
+}
+
+
+.squire-tray .search-container {
+    position: relative;
+    flex: 1;
+}
+
+
+.squire-tray .search-container .search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9f9275;
+    cursor: pointer;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.squire-tray .search-container .search-clear:hover {
+    color: rgba(231, 91, 1, 1.0);
+}
+
+
+/* there are DUPLICATE/SIMILAR STYLES IN PANEL-SPELLS.CSS */
+.squire-tray .category-header .slot-pips {
+    display: flex;
+    gap: 2px;
+    margin-left: 8px;
+}
+
+.panel-item .tray-buttons .fa-stars {
+    color: #ffd700;
+    text-shadow: 0 0 3px #ffd700;
+}
+
+
+

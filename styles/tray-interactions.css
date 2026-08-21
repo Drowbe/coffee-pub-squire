@@ -1,0 +1,112 @@
+/* ==========================================================================
+   INTERACTIONS
+
+   Things that only exist while the user is doing something: drag-and-drop targets,
+   the print button, and the fade the panel wrapper plays when its content changes.
+
+   Split out of a single 1,376-line tray.css. The @import order in default.css
+   is the original source order and is load-bearing: several rules here rely on
+   being read after ones in an earlier file. Do not reorder the imports.
+   ========================================================================== */
+
+/* Drop Target Styles for Stacked Container */
+.panel-containers.stacked.drop-target {
+    border: 2px solid #48a000;
+    box-shadow: 0 0 5px rgba(72, 160, 0, 0.5);
+    background: rgba(72, 160, 0, 0.15);
+    transform: scale(1.001);
+    position: relative;
+    z-index: 100;
+}
+
+.panel-containers.stacked.drop-target::after {
+    content: "DROP ITEM";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.85);
+    color: rgb(255, 255, 255);
+    padding: 0.5em 1.5em;
+    border-radius: 1em;
+    font-size: 1.5em;
+    font-weight: bold;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 2px 16px #000a;
+    text-shadow: 0 2px 8px #000a;
+    letter-spacing: 0.05em;
+}
+
+/* Remove the old panel-specific drop target styles */
+.panel-containers.stacked .panel-container.drop-target {
+    border: none;
+    box-shadow: none;
+    background: none;
+    transform: none;
+}
+
+.panel-containers.stacked .panel-container.drop-target::after {
+    content: none;
+}
+
+
+.print-character {
+    position: static;
+    background: none;
+    color: inherit;
+    padding: 0;
+    border-radius: 0;
+    font-size: inherit;
+    cursor: pointer;
+    transition: color 0.2s;
+    margin-right: 6px;
+}
+
+.print-character:hover {
+    color: #fff;
+    background: none;
+    transform: none;
+}
+
+/* Content Update Fade Transitions */
+.squire-tray .tray-panel-wrapper.content-updating {
+    animation: squire-fade-out 0.4s ease-out forwards;
+}
+
+.squire-tray .tray-panel-wrapper.content-updated {
+    animation: squire-fade-in 0.2s ease-in forwards;
+}
+
+@keyframes squire-fade-out {
+    from { opacity: 1; }
+    to { opacity: 0.2; }
+}
+
+@keyframes squire-fade-in {
+    from { opacity: 0.2; }
+    to { opacity: 1; }
+}
+
+/* The hover target for an item's rich card. Inline, so it is exactly as wide as
+   the words: its parent .panel-item-name is `flex: 1` and spans the whole row,
+   which would make the card fire from anywhere on it. */
+.panel-item-label {
+    display: inline;
+}
+
+/* Cleanup launcher, in the Character Sheet title beside the mode toggles.
+   Same affordance as its neighbours — it belongs to that cluster — but it opens
+   a window rather than switching what the panel shows, hence the separator. */
+
+.squire-tray [data-panel="control"] .control-cleanup:hover {
+    color: rgba(255, 255, 255, 1.0);
+    background: rgba(194, 86, 61, 0.9);
+}
+
+.squire-tray [data-panel="control"] .control-toggle-separator {
+    width: 1px;
+    align-self: stretch;
+    margin: 2px 2px;
+    background: rgba(159, 146, 117, 0.35);
+}

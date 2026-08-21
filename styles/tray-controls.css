@@ -1,0 +1,177 @@
+/* ==========================================================================
+   CONTROLS
+
+   The Character Sheet control panel: the filter bar, the search field, and the
+   mode toggles that switch the tray between browsing and quick-add.
+
+   Split out of a single 1,376-line tray.css. The @import order in default.css
+   is the original source order and is load-bearing: several rules here rely on
+   being read after ones in an earlier file. Do not reorder the imports.
+   ========================================================================== */
+
+/* BUTTONS */
+
+/* FILTER BAR */
+
+/* These are the same control as the category filters in a panel heading — a
+   bare glyph that dims when it is off — so they are styled from the same rules
+   rather than given a look of their own. Twelve of them in a ~343px column
+   could not carry the bordered buttons that used to sit here anyway. */
+.squire-tray [data-panel="control"] .control-filter-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    width: 100%;
+    margin-bottom: 6px;
+}
+
+.squire-tray [data-panel="control"] .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1 1 auto;
+    justify-content: space-evenly;
+}
+
+.squire-tray [data-panel="control"] .filter-separator {
+    width: 1px;
+    align-self: stretch;
+    margin: 2px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.squire-tray [data-panel="control"] .filter-chip {
+    cursor: pointer;
+    transition: color 0.2s ease;
+    font-size: 0.85em;
+    color: rgba(159, 146, 117, 0.9);
+}
+
+.squire-tray [data-panel="control"] .filter-chip:hover {
+    color: rgba(185, 38, 37, 1.0);
+    opacity: 1.0;
+}
+
+/* Off is dimmed, on is simply not dimmed — the heading filters say it the same
+   way, with no second state to keep in sync. */
+.squire-tray [data-panel="control"] .filter-chip:not(.active) {
+    opacity: 0.3;
+}
+
+/* SEARCH */
+
+
+.squire-tray [data-panel="control"] .control-search {
+    padding: 0px;
+    position: relative;
+}
+
+.squire-tray [data-panel="control"] .global-search {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.9);
+    padding: 4px 8px;
+    padding-right: 24px;
+    font-size: 13px;
+}
+
+.squire-tray [data-panel="control"] .search-clear {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px;
+    border-radius: 50%;
+    font-size: 10px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+.squire-tray [data-panel="control"] .search-clear:hover {
+    color: rgba(0, 0, 0, 1.0);
+    background: rgba(181, 80, 57, 1.0);
+}
+
+.squire-tray [data-panel="control"] .global-search:not(:placeholder-shown) + .search-clear {
+    opacity: 1;
+}
+
+/* ---------- Sheet / compendium-search mode switch ---------- */
+
+/* Lives in the title bar's right zone, the same slot the GM Details and
+   Character Summary chevrons occupy — so a right-edge icon consistently means
+   "this header has an action". */
+.squire-tray [data-panel="control"] .control-mode-toggles {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* The mode toggles and the cleanup launcher are the same affordance in the
+   Character Sheet title bar, and were styled identically in two places. */
+.squire-tray [data-panel="control"] .control-mode-toggle,
+
+/* Selected side lit, the other dimmed — same active/faded vocabulary as the
+   panel toggles below, at header scale. */
+.squire-tray [data-panel="control"] .control-mode-toggle.active {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(145, 133, 107, 0.4);
+}
+
+.squire-tray [data-panel="control"] .control-mode-toggle.faded {
+    opacity: 0.4;
+}
+
+.squire-tray [data-panel="control"] .control-mode-toggle:hover {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(183, 82, 58, 0.9);
+    opacity: 1;
+}
+
+/* The bar has nothing to act on while quick-add is showing, so it collapses
+   instead of sitting greyed out and eating vertical space. The search box moves
+   up into the gap, which is a deliberate part of that mode reading as a
+   different place rather than the same panel with things switched off. */
+.squire-tray [data-panel="control"].compendium-mode .control-filter-bar {
+    display: none;
+}
+
+/* The inverse: this option only means anything while searching compendiums, so
+   it appears with that mode rather than sitting inert on the sheet. */
+.squire-tray [data-panel="control"] .control-search-option {
+    display: none;
+}
+
+.squire-tray [data-panel="control"].compendium-mode .control-search-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    cursor: pointer;
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.55);
+    user-select: none;
+}
+
+.squire-tray [data-panel="control"] .control-search-option:hover {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.squire-tray [data-panel="control"] .control-search-option input {
+    margin: 0;
+    flex: 0 0 auto;
+    cursor: pointer;
+}
+

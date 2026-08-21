@@ -35,9 +35,12 @@
     padding-right: var(--squire-handle-gutter);
     flex: none;
     order: 2;
-    /* Option 1: Subtle Dots */
-    background-image: radial-gradient(#444 1px, transparent 1px);
-    background-size: 2px 2px;
+    /* The `background` shorthand two lines below these used to wipe them, so this
+       dot texture has never once rendered:
+           background-image: radial-gradient(#444 1px, transparent 1px);
+           background-size: 2px 2px;
+       Kept here as a comment rather than deleted outright — it was labelled
+       "Option 1", so someone was choosing, and now the choice is visible. */
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0 8px 8px 0;
@@ -219,19 +222,8 @@
 
 /* GROUP ICONS  */
 
+/* Everything but the size is on .squire-handle-control now. */
 .squire-tray .handle-group-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.5);
-    position: relative;
-    /* Fill the column. At the old 22px the favourite art was a colour smear you
-       navigated by position rather than recognised; 32px is the smallest size
-       these actually read at. */
-    width: var(--squire-handle-control-size, 32px);
-    height: var(--squire-handle-control-size, 32px);
-    flex: none;
-    transform: rotate(180deg);
     min-height: var(--squire-handle-control-size, 32px);
 }
 .squire-tray .handle-group-button i {
@@ -271,23 +263,13 @@
 
 /* Icon Container */
 
+/* The image controls: same box as every other control, plus a clip so the art
+   inside cannot escape the rounded corner. */
 .squire-tray .handle-partymember-icon,
 .squire-tray .handle-character-icon,
 .squire-tray .handle-condition-icon,
 .squire-tray .handle-favorite-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.5);
-    position: relative;
-    /* Fill the column. At the old 22px the favourite art was a colour smear you
-       navigated by position rather than recognised; 32px is the smallest size
-       these actually read at. */
-    width: var(--squire-handle-control-size, 32px);
-    height: var(--squire-handle-control-size, 32px);
-    flex: none;
-    transform: rotate(180deg);
-    overflow: hidden;      /* clip any stray pixels */
+    overflow: hidden;
     min-width: 0;          /* play nice with flexbox */
     min-height: 0;
 }
@@ -337,20 +319,8 @@
 
 /* Roll Mouseover */
 
+/* Everything but the fit comes from .squire-roll-overlay in common.css. */
 .squire-tray .handle-favorite-roll-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    color: rgba(255, 255, 255, 0.8);
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    pointer-events: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     font-size: 1em;
     padding-right: 1px;
     border-radius: inherit;
@@ -541,6 +511,30 @@
 
 .squire-tray .squire-handle-control:hover {
     border-color: var(--color-border-highlight, #ff6400);
+}
+
+/* The box shared by every control that lives in the handle's content wrapper —
+   the group buttons and the four image controls. It was written out twice, with
+   nine identical declarations each.
+
+   Scoped to the wrapper on purpose, NOT put on .squire-handle-control: the pin
+   and the caret wear that class too and are siblings of the wrapper rather than
+   children of it. The rotation below counteracts the wrapper's own 180deg, which
+   is what makes the handle read bottom-to-top — applying it to the two buttons
+   outside the wrapper would simply turn them upside down, and the dark ground
+   would replace the transparent one they are drawn on. */
+.squire-tray .tray-handle-content-wrapper .squire-handle-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: rgba(0, 0, 0, 0.5);
+    /* One column wide. At the old 22px the favourite art was a colour smear you
+       navigated by position rather than recognised. */
+    width: var(--squire-handle-control-size, 32px);
+    height: var(--squire-handle-control-size, 32px);
+    flex: none;
+    transform: rotate(180deg);
 }
 
 /* Hard reset, and the one place !important is earned here.

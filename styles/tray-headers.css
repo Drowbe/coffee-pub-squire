@@ -1,0 +1,112 @@
+/* ==========================================================================
+   HEADERS
+
+   The two heading bars over a list — the panel's own title and the category bars
+   inside it — plus the spell-slot pips that ride in a category heading.
+
+   Split out of a single 1,376-line tray.css. The @import order in default.css
+   is the original source order and is load-bearing: several rules here rely on
+   being read after ones in an earlier file. Do not reorder the imports.
+   ========================================================================== */
+
+/* SECTION HEADERS */
+
+/* The louder one: the panel's own title. */
+.squire-tray .section-header {
+    background: rgba(0, 0, 0, 0.9);
+    padding: 8px;
+    font-size: 1.0em;
+    font-weight: 900;
+    margin: 0px 0px 8px 0px;
+}
+
+.squire-tray .section-header .header-left {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.squire-tray .section-header i {
+    font-size: .85em;
+    margin-right: 4px;
+    padding-top: 3px;
+    color: rgba(159, 146, 117, 0.9);
+}
+.squire-tray .section-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    justify-content: flex-end;
+}
+.squire-tray .section-header .header-right i,
+.squire-tray .section-header .weapons-category-filter,
+.squire-tray .section-header .spell-level-filter,
+.squire-tray .section-header .inventory-category-filter,
+.squire-tray .section-header .features-category-filter {
+    cursor: pointer;
+    transition: color 0.2s ease;
+    font-size: 0.85em;
+}
+.squire-tray .section-header .header-right i:hover,
+.squire-tray .section-header .weapons-category-filter:hover,
+.squire-tray .section-header .spell-level-filter:hover,
+.squire-tray .section-header .inventory-category-filter:hover,
+.squire-tray .section-header .features-category-filter:hover {
+    color: rgba(185, 38, 37, 1.0);
+    opacity: 1.0;
+}
+.squire-tray .section-header .weapons-category-filter:not(.active),
+.squire-tray .section-header .spell-level-filter:not(.active),
+.squire-tray .section-header .inventory-category-filter:not(.active),
+.squire-tray .section-header .features-category-filter:not(.active) {
+    opacity: 0.3;
+}
+
+/* CATEGORY HEADERS */
+
+/* Two levels of heading over a list. They are the same bar — a dark rounded
+   row with the title at one end and its controls at the other — differing only
+   in how loud each is. The shape is stated once. */
+.squire-tray .section-header,
+.squire-tray .category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 6px;
+    text-transform: uppercase;
+    color: #9f9275;
+}
+
+/* The quieter one: inside a panel, naming a group of rows. */
+.squire-tray .category-header {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 4px 8px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    font-weight: 400;
+    font-size: 0.85em;
+}
+
+/* CATEGORY SPELL PIPS */
+
+.squire-tray .slot-pip {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    border: 1px solid #9f9275;
+    background: transparent;
+}
+
+.squire-tray .slot-pip.filled {
+    background: #9f9275;
+    border-color: #9f9275;
+}
+
+.squire-tray .slot-pip:hover {
+    transform: scale(1.3);
+    border-color: rgba(255, 100, 0, 0.6);
+    box-shadow: 0 0 4px rgba(74, 144, 226, 0.5);
+    cursor: pointer;
+}
+

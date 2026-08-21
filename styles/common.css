@@ -30,20 +30,138 @@
    border-radius was 15%, and percentage radii resolve against width for the
    horizontal and height for the vertical — on a box this small that is ~4px by
    ~2px, an ellipse rather than a rounded corner. 3px matches its neighbour. */
-.new-tag {
+/* ---------------------------------------------------------------------------
+   BADGES
+
+   Small uppercase pills sitting in an item row: the action-cost and component
+   markers, the quantity count, and the NEW tag. They are the same object, and
+   the NEW tag being built differently from the badges beside it is what let it
+   drift into painting a whole ascender's worth of background as "padding".
+
+   Shape here; colour and weight with each variant.
+   --------------------------------------------------------------------------- */
+
+.squire-tray .panel-item-badge,
+.squire-tray .new-tag {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     height: 12px;
-    padding: 0 4px;
-    background-color: rgb(194, 23, 0);
-    color: #ffffff;
     border-radius: 3px;
     font-size: 0.65em;
-    font-weight: 900;
     line-height: 1;
-    margin-left: 6px;
     text-transform: uppercase;
+}
+
+.new-tag {
+    padding: 0 4px;
+    margin-left: 6px;
+    background-color: rgb(194, 23, 0);
+    color: #ffffff;
+    font-weight: 900;
     animation: squire-pulse-fade 2s infinite;
+}
+
+/* ---------------------------------------------------------------------------
+   ROLL OVERLAY
+
+   The d20 that fades in over item art to say "clicking this rolls it". The
+   handle and the panel rows had a copy each, agreeing on eleven declarations and
+   disagreeing on four. The eleven live here.
+
+   Colour was the one place they disagreed on substance: the handle's d20 was
+   white on a half-black scrim, the panels' was blue on a much darker one. White
+   at 0.5 wins for both — it dims the art enough to read the die against without
+   hiding what you are pointing at. Only sizing differs per context now.
+   --------------------------------------------------------------------------- */
+
+.squire-tray .squire-roll-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* ---------------------------------------------------------------------------
+   EMPTY STATE
+
+   "Nothing to show you, and here is why." The character panel and the party
+   panel each had their own class for this — .no-character-message and
+   .no-party-message — carrying byte-identical rules. Both keep their own name as
+   a hook for scripts and for anything genuinely specific to them; the look is
+   here, once.
+   --------------------------------------------------------------------------- */
+
+.squire-tray .squire-empty-message {
+    text-align: center;
+    padding: 20px;
+    color: #9f9275;
+    font-size: 1.2em;
+    text-transform: uppercase;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid #444;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+/* ---------------------------------------------------------------------------
+   PORTRAIT
+
+   A square actor image with a rising health tint and, at 0 HP, a skull over it.
+   The character panel and the party card each had their own copy of the frame
+   and both overlays. The frame is here; the two overlays are below.
+   --------------------------------------------------------------------------- */
+
+.squire-tray .character-portrait,
+.squire-tray .party-card-image {
+    width: 70px;
+    aspect-ratio: 1;
+    border-radius: 6px;
+    overflow: hidden;
+    flex: none;
+    position: relative;
+}
+
+/* ---------------------------------------------------------------------------
+   PORTRAIT OVERLAYS
+
+   A portrait is a portrait: the character panel's and the party card's were
+   styled separately, in two files, with byte-identical rules — same class names,
+   differing only in the ancestor each was scoped to. The scoping bought nothing
+   and cost a second place to change.
+   --------------------------------------------------------------------------- */
+
+/* Rising red tint, its height set inline from current HP. */
+.squire-tray .health-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(255, 0, 0, 0.3);
+    transition: height 0.3s ease;
+    pointer-events: none;
+}
+
+/* Shown at 0 HP, over the portrait it belongs to. */
+.squire-tray .death-skull {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 2em;
+    text-shadow: 0 0 10px #000;
+    pointer-events: none;
+    animation: squire-pulse-skull 2s infinite;
 }
 
 /* ---------------------------------------------------------------------------

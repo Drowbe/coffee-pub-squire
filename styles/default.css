@@ -8,7 +8,16 @@
 
 /* --- Structure ------------------- */
 
-@import "tray.css"; 
+/* tray.css was one 1,376-line file. These are its pieces IN SOURCE ORDER —
+   that order is load-bearing, so do not sort or regroup them. */
+@import "tray-shell.css";
+@import "tray-headers.css";
+@import "tray-item.css";
+@import "tray-controls.css";
+@import "tray-compendium.css";
+@import "tray-tabs.css";
+@import "tray-party-tools.css";
+@import "tray-interactions.css";
 
 @import "handle.css";
 
@@ -28,7 +37,6 @@
 
 @import "panel-gm.css";
 
-@import "panel-control.css"; 
 
  
 

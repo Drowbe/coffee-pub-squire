@@ -47,3 +47,50 @@ It checks that:
 
 A clean run is not a substitute for loading a world. It only proves the module can be parsed
 and that nothing points at a file that isn't there.
+
+## `css-check.py` — run after touching any stylesheet
+
+```
+python testing/css-check.py      # from the module root
+```
+
+Looks for CSS that silently does nothing, which is the failure mode this module
+keeps producing. It is the hard one to find by hand because it is invisible both
+in the source and in the browser's computed-styles panel — the rule is simply
+discarded before it ever becomes a computed style.
+
+It checks for: undefined custom properties with no fallback; `inherit` used
+inside a function; a shorthand that resets a longhand declared above it in the
+same block; the same property declared twice; unbalanced braces; stylesheets
+that exist but are never imported; and `@keyframes` names that are not
+`squire-`-prefixed.
+
+That last one is not style policing. Keyframe names are **global**, with no
+scoping of any kind — the last definition of a name wins for the whole document,
+whoever wrote it. `pulse` was once defined three times in this module and a
+fourth time by core Foundry; ours loaded last, so Squire was replacing Foundry's
+own paused-game indicator animation in every world that installed it.
+
+Exit code is non-zero on FAIL. WARN items are worth reading but do not fail.
+
+## `css-cascade-diff.py` — run before and after a CSS refactor
+
+```
+python testing/css-cascade-diff.py          # working tree vs git HEAD
+python testing/css-cascade-diff.py <ref>    # working tree vs any git ref
+```
+
+Flattens the whole `@import` graph into the exact ordered list of
+(selector, declarations) a browser would see, and diffs it against a git ref.
+Comments and whitespace are normalised away; **order is not**, because in CSS
+order is behaviour.
+
+This is what makes a large restyle safe to do in one pass. Moving rules between
+files, splitting a stylesheet or regrouping selectors is only safe if the
+flattened result is unchanged, and eyeballing a 400-rule diff does not establish
+that. When it says IDENTICAL, the refactor cannot have changed how anything
+looks. When it reports differences, every line should be one you meant — that is
+the review, and it is far smaller than the file diff.
+
+`styles/tray.css` was split into eight files this way, verified at 461 rules,
+identical order, identical declarations.
