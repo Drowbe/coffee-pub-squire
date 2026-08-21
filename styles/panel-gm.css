@@ -17,12 +17,6 @@
     padding-top: 4px;
 }
 
-.squire-tray [data-panel="gm"] .details-biography {
-    font-size: inherit;
-    line-height: inherit;
-    text-transform: inherit;
-}
-
 .squire-tray [data-panel="gm"] h1.gm-row-title {
     font-size: 1.0em;
     line-height: inherit;

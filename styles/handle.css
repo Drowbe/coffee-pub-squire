@@ -157,11 +157,6 @@
 }
 
 
-
-
-
-
-
 /* COLLAPSE / EXPAND CARET
 
    Colour and hover come from the rules above and below, so this button reads the
@@ -188,8 +183,6 @@
 }
 
 
-
-
 /* TRAY HANDLE CONTENT WRAPPER */
 
 .squire-tray .tray-handle-content-wrapper {
@@ -201,8 +194,6 @@
     white-space: nowrap;
     order: 2;
 }
-
-
 
 
 .squire-tray .handle-info-container {
@@ -223,42 +214,7 @@
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* HEALTH BARS */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /* GROUP ICONS  */
@@ -481,7 +437,11 @@
 /* Health Bar Fill */
 
 .squire-tray .handle-healthbar-fill {
-    background: inherit;
+    /* No background of its own. It used to say `background: inherit`, which
+       resolved to the track's own dark ground and — at higher specificity than
+       the shared .squire-tray-healthbar-* colour classes — is the only reason
+       those five needed !important to paint at all. The colour comes from the
+       status class and nothing competes with it now. */
     transition: height 0.3s ease;
     /* An ordinary flex child. It was absolutely positioned, which meant its size
        and placement came from percentage resolution and static position against

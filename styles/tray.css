@@ -13,9 +13,8 @@
     --squire-tray-banner-image: url('../images/banner-character-dark.webp');
 }
 
-/* Common Styles for both Tray and Popout */
-.squire-tray,
-.squire-popout {
+/* Common Styles */
+.squire-tray {
     background: rgba(30, 30, 30, 0.90);
     border: 0px solid #444;
     display: block;
@@ -34,13 +33,6 @@
     z-index: 100;
 }
 
-/* Popout-specific styles */
-.squire-popout {
-    width: auto !important;
-    max-width: 90vw;
-    height: auto !important;
-    max-height: 90vh;
-}
 
 /* Common Tray Styles */
 
@@ -55,7 +47,6 @@
     box-shadow: 0 0 20px var(--color-shadow-dark);
     width: var(--squire-tray-width);
 }
-
 
 
 /* --- Tray banner image --- */
@@ -132,51 +123,6 @@
 }
 
 
-
-
-
-/* Tabs */
-.tray-tabs {
-    display: flex;
-    background: #2a2a2a;
-    border-bottom: 1px solid #444;
-    border-radius: 8px 8px 0 0;
-    overflow: hidden;
-}
-
-.tab-item {
-    padding: 0.75rem 1.5rem;
-    color: #aaa;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex: 1;
-    text-align: center;
-    border-right: 1px solid #444;
-}
-
-.tab-item:last-child {
-    border-right: none;
-}
-
-.tab-item:hover {
-    background: #3a3a3a;
-    color: #fff;
-}
-
-.tab-item.tab-active {
-    background: #4a4a4a;
-    color: #fff;
-}
-
-.tab-item i {
-    margin-right: 0.5rem;
-}
-
-
-
-
-
-
 /* TRAY Content */
 .squire-tray .tray-content {
     flex: 1;
@@ -218,28 +164,8 @@
     border-radius: 6px;
 }
 
-/* Panel Placeholder - for docking panels back into tray */
-.squire-tray .panel-placeholder {
-    display: block;
-    background: transparent;
-    border: none;
-    padding: 0;
-    margin-bottom: 0px;
-    border-radius: 0px;
-    min-height: 0px;
-}
 
 /* Collapse placeholder when empty to remove gap */
-.squire-tray .panel-placeholder:empty {
-    min-height: 0 !important;
-    height: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: none !important;
-}
-
-
-
 
 
 /* TRAY Panel Bottom Container */
@@ -262,7 +188,6 @@
 .squire-tray .stacked {
     gap: 22px;
 }
-
 
 
 /* --------------- SHARED PANEL STYLES --------------- */
@@ -410,7 +335,12 @@
    type, equipped/prepared, category collapse) toggles only its own class, and a
    row stays hidden while any one of them holds. Nothing writes `display` on a
    row directly, so no filter can erase another's verdict. See FILTER_REASONS in
-   scripts/helpers.js. */
+   scripts/helpers.js.
+
+   These five class names appear NOWHERE in the templates or scripts as literals
+   — helpers.js builds them with classList.toggle('hidden-by-' + reason). A
+   search for "hidden-by-search" finds nothing and a dead-CSS audit will report
+   all five as unused. They are not. Do not delete them. */
 .squire-tray .panel-item.hidden-by-search,
 .squire-tray .panel-item.hidden-by-type,
 .squire-tray .panel-item.hidden-by-action,
@@ -428,15 +358,12 @@
 }
 
 
-
 .squire-tray .panel-item-row {
     gap: 4px;
     padding: 4px;
     display: flex;
     align-items: center;
 }
-
-
 
 
 .panel-item-image-container {
@@ -448,15 +375,12 @@
 }
 
 
-
-
 .panel-item-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
     border-radius: 4px;
 }
-
 
 
 .panel-item-name {
@@ -466,12 +390,6 @@
     margin-right: 4px;
 	font-weight: 100 !important;
 }
-
-
-
-
-
-
 
 
 .panel-item-roll-overlay {
@@ -494,8 +412,6 @@
     opacity: 1;
     pointer-events: auto;
 }
-
-
 
 
 /* ITEM CONTEXT */
@@ -603,48 +519,6 @@
     -moz-appearance: textfield;
     appearance: textfield;
 }
-
-
-
-
-.squire-tray .inventory-controls,
-.squire-tray .spell-controls,
-.squire-tray .weapon-controls {
-    padding: 8px;
-    background: rgba(0, 0, 0, 0.2);
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-
-.squire-tray .spell-controls i, 
-.squire-tray .weapon-controls i {
-    color: #aaa;
-    transition: color 0.2s ease;
-    
-
-    display: flex;
-    gap: 0.5rem;
-    padding: 0.5rem;
-}
-
-.squire-tray .spell-controls i:hover, 
-.squire-tray .weapon-controls i:hover {
-    color: rgba(231, 91, 1, 1.0);
-}
-
-.squire-tray .weapon-controls i.faded {
-    opacity: 0.3;
-}
-
-.squire-tray .spell-controls i.faded:hover,
-.squire-tray .weapon-controls i.faded:hover {
-    opacity: 1;
-}
-
-
-
 
 
 /* Action/Component context uses panel-item-context + panel-item-badge */
@@ -776,22 +650,6 @@
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* Scrollbar Styling */
 .panel-containers::-webkit-scrollbar {
     width: 8px;
@@ -808,9 +666,6 @@
 }
 
 /* Hide tabs in left position */
-.squire-tray .tray-tabs {
-    display: none;
-}
 
 
 /* BUTTONS */
@@ -1137,7 +992,6 @@
 }
 
 
-
 .squire-tray .search-container {
     position: relative;
     flex: 1;
@@ -1161,26 +1015,6 @@
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* there are DUPLICATE/SIMILAR STYLES IN PANEL-SPELLS.CSS */
 .squire-tray .category-header .slot-pips {
     display: flex;
@@ -1192,52 +1026,6 @@
     color: #ffd700;
     text-shadow: 0 0 3px #ffd700;
 }
-
-.handle-favorite-icon.enabled {
-    color: #ff4444 !important;
-    filter: drop-shadow(0 0 2px #ff4444);
-}
-
-
-
-
-
-
-
-
-
-/* Party View Placeholder */
-.party-view-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: #9f9275;
-    text-align: center;
-    padding: 20px;
-}
-
-.party-view-placeholder i {
-    font-size: 3em;
-    margin-bottom: 10px;
-    opacity: 0.6;
-}
-
-.party-view-placeholder h2 {
-    font-size: 1.5em;
-    margin-bottom: 5px;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-
-.party-view-placeholder p {
-    font-size: 1em;
-    opacity: 0.8;
-}
-
-
-
 
 
 
@@ -1291,10 +1079,6 @@
 }
 
 
-
-
-
-
 /* Tray Content */
 
 .squire-tray .tray-view-content {
@@ -1333,7 +1117,6 @@
 .squire-tray .tray-view-content.party-view::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
 }
-
 
 
 /* Tray Tools Toolbar (for all users)
@@ -1463,7 +1246,6 @@
 }
 
 
-
 .print-character {
     position: static;
     background: none;
@@ -1484,19 +1266,19 @@
 
 /* Content Update Fade Transitions */
 .squire-tray .tray-panel-wrapper.content-updating {
-    animation: fadeOut 0.4s ease-out forwards;
+    animation: squire-fade-out 0.4s ease-out forwards;
 }
 
 .squire-tray .tray-panel-wrapper.content-updated {
-    animation: fadeIn 0.2s ease-in forwards;
+    animation: squire-fade-in 0.2s ease-in forwards;
 }
 
-@keyframes fadeOut {
+@keyframes squire-fade-out {
     from { opacity: 1; }
     to { opacity: 0.2; }
 }
 
-@keyframes fadeIn {
+@keyframes squire-fade-in {
     from { opacity: 0.2; }
     to { opacity: 1; }
 }

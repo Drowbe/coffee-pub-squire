@@ -68,8 +68,6 @@
 .squire-tool-section > h3 i { width: 18px; text-align: center; }
 .squire-tool-section > h3 > span { display: inline-flex; gap: 4px; align-items: center; min-width: 0; }
 
-.squire-tool-head-actions { display: flex; gap: 6px; align-items: center; }
-
 /* A count, not a control: pill-shaped and muted so it cannot be mistaken for
    a button the way a bordered rectangle can. */
 .squire-tool-count {
@@ -299,7 +297,6 @@
 .squire-tool-coin small { color: var(--blacksmith-tool-text-muted); font-size: 0.62rem; text-transform: uppercase; }
 .squire-tool-coin-was { opacity: 0.55; }
 .squire-tool-coin-is { border-color: var(--blacksmith-color-brand-accent, #c15701); }
-.squire-tool-arrow { color: var(--blacksmith-tool-text-muted); font-size: 0.7rem; }
 
 /* The claim "same money, fewer coins" is only checkable if the money is on
    screen, so the total is part of the component rather than an optional extra. */

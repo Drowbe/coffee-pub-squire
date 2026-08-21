@@ -1,14 +1,5 @@
 /* --- COMMON STYLES --- */
 
-/* used for bars */
-.bar-section {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-
-
 
 .tray-title-small {
     color: #9f9275;
@@ -26,23 +17,55 @@
 }
 
 
+/* Built like .panel-item-badge in tray.css, which is the badge sitting directly
+   beside it in the same row.
 
+   It used to be a bare inline span with vertical padding and no line-height. An
+   inline box paints its background across the FONT'S content area — ascent plus
+   descent at that size — not across the glyphs, so with all-caps text the whole
+   ascender gap above the letters was painted as background on top of the 2px.
+   That is the "too much padding on top": most of it was never padding.
+   inline-flex plus line-height: 1 makes the box the size it says it is.
 
-
-
+   border-radius was 15%, and percentage radii resolve against width for the
+   horizontal and height for the vertical — on a box this small that is ~4px by
+   ~2px, an ellipse rather than a rounded corner. 3px matches its neighbour. */
 .new-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 12px;
+    padding: 0 4px;
     background-color: rgb(194, 23, 0);
     color: #ffffff;
-    padding: 2px 4px 2px 4px;
-    border-radius: 15%;
+    border-radius: 3px;
     font-size: 0.65em;
     font-weight: 900;
+    line-height: 1;
     margin-left: 6px;
     text-transform: uppercase;
-    animation: pulse 2s infinite;
+    animation: squire-pulse-fade 2s infinite;
 }
 
-@keyframes pulse {
+/* ---------------------------------------------------------------------------
+   KEYFRAMES
+
+   Every one of these is prefixed, and that is not housekeeping. @keyframes names
+   are GLOBAL, with no scoping of any kind — last definition of a name wins for
+   the whole document, whoever wrote it.
+
+   `pulse` was defined three times in this module (here, panel-character.css and
+   panel-party.css) and a fourth time by core Foundry. Module CSS loads after
+   core and panel-party.css loads last of ours, so panel-party's definition was
+   winning everywhere: .new-tag below asked for this gentle opacity fade and got
+   a translate(-50%, -50%) instead, which threw the badge half its own size up
+   and to the left — and core Foundry's #pause.paused indicator, which wants a
+   subtle scale(1.025), was being run at scale(1.2) with the same displacement.
+   Squire was breaking a core UI element for every world that installed it.
+
+   Anything added here needs a squire- prefix for the same reason.
+   --------------------------------------------------------------------------- */
+
+@keyframes squire-pulse-fade {
     0% {
         opacity: 1.0;
     }
@@ -54,19 +77,6 @@
     }
 }
 
-/* data tooltip */
-.squire-data-tooltip-label{
-    color: rgba(255, 111, 48, 0.95);
-    font-weight: 900;
-    font-size: 1.1em;
-    text-transform : uppercase;
-}
-.squire-data-tooltip-text {
-    font-size: .8em;
-    margin: 6px 0px 0px 0px;
-}
-
-
 
 /* PROGRESS BAR*/
 
@@ -76,25 +86,7 @@
     background: rgba(0, 0, 0, 0.3);
     border-radius: 4px;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    animation: slideDownProgress 0.3s ease-out;
-}
-
-/* Completion state styling */
-.squire-tray .tray-progress-bar-wrapper.scan-complete {
-    background: rgba(54, 112, 56, 0.1);
-    border: 1px solid rgba(54, 112, 56, 0.4);
-    box-shadow: 0 0 0px rgba(54, 112, 56, 0.2);
-}
-
-.squire-tray .tray-progress-bar-wrapper.scan-complete .tray-progress-bar-inner {
-    background: rgba(54, 112, 56, 1);
-    animation: completionPulse 1s ease-in-out infinite;
-}
-
-@keyframes completionPulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.8; }
-    100% { opacity: 1; }
+    animation: squire-slide-down-progress 0.3s ease-out;
 }
 
 .squire-tray .tray-progress-bar-outter {
@@ -110,7 +102,7 @@
     background: rgba(54, 112, 56, 0.9);
     width: 0%;
     transition: width 0.3s ease;
-    animation: progressPulse 2s ease-in-out infinite;
+    animation: squire-progress-pulse 2s ease-in-out infinite;
     padding: 2px;
 }
 
@@ -126,35 +118,39 @@
     margin-left: 8px;
 }
 
-@keyframes slideDownProgress {
+@keyframes squire-slide-down-progress {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes progressPulse {
+@keyframes squire-progress-pulse {
     0% { opacity: 1; }
     50% { opacity: 0.7; }
     100% { opacity: 1; }
 }
 
 
-/* GLOBAL HEALTH PROGRESS BARS */
+/* GLOBAL HEALTH PROGRESS BARS
+
+   Shared by the handle's health bar and the party panel's HP bars. These carried
+   !important purely to out-weigh a `background: inherit` on the handle's own
+   fill; that declaration is gone, so these are ordinary rules again. */
 
 .squire-tray-healthbar-healthy  {
-    background-color: rgba(42, 100, 48, 1.0) !important; /* healthy */
+    background-color: rgba(42, 100, 48, 1.0); /* healthy */
 }
 .squire-tray-healthbar-injured {
-    background-color: rgba(115, 153, 0, 0.9) !important; /* injured*/
+    background-color: rgba(115, 153, 0, 0.9); /* injured*/
 }
 .squire-tray-healthbar-bloodied  {
-    background-color: rgba(157, 116, 35, 0.9) !important; /* bloodied  */
+    background-color: rgba(157, 116, 35, 0.9); /* bloodied  */
 }
 .squire-tray-healthbar-critical {
-    background-color: rgba(117, 5, 7, 0.9) !important; /* critical*/
+    background-color: rgba(117, 5, 7, 0.9); /* critical*/
     animation: squire-tray-healthbar-animation-pulse 1.0s infinite alternate;
 }
 .squire-tray-healthbar-dead {
-    background-color: rgba(117, 5, 7, 0.1) !important; /* dead*/
+    background-color: rgba(117, 5, 7, 0.1); /* dead*/
     width: 100%;
     animation: squire-tray-healthbar-animation-pulse 5.0s infinite alternate;
 }
@@ -163,43 +159,37 @@
     from { opacity: 0.5; } to { opacity: 1.0; }
 }
 
+/* The death skull, shared by the character portrait and the party cards. It was
+   defined identically in both panel stylesheets; it lives here once now. */
+@keyframes squire-pulse-skull {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+    50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+}
 
 
 /* GLOBAL SELECTOR */
 
 /* --- NORMALIZED PANEL CONTENT CONTAINERS --- */
-/* All panel content containers use the .tray-panel-content class */
-.squire-tray [data-panel] .tray-panel-content,
-.squire-popout [data-panel] .tray-panel-content {
+/* All panel content containers use the .tray-panel-content class */.squire-tray [data-panel] .tray-panel-content {
     max-height: 200px;
     overflow-y: auto;
     overflow-x: hidden;
     transition: max-height 0.3s ease-in-out;
     display: block;
-}
-
-.squire-tray [data-panel] .tray-panel-content.collapsed,
-.squire-popout [data-panel] .tray-panel-content.collapsed {
+}.squire-tray [data-panel] .tray-panel-content.collapsed {
     max-height: 0;
     display: none;
 }
 
 /* --- NORMALIZED PANEL TOGGLES --- */
-/* All panel toggle icons with IDs ending in "-toggle" */
-.squire-tray [data-panel] #gm-toggle,
-.squire-popout [data-panel] #gm-toggle {
+/* All panel toggle icons with IDs ending in "-toggle" */.squire-tray [data-panel] #gm-toggle {
     color: #9f9275;
     transition: transform 0.3s ease;
     cursor: pointer;
-}
-
-.squire-tray [data-panel] #gm-toggle:hover,
+}.squire-tray [data-panel] #gm-toggle:hover,
 .squire-tray [data-panel] #macros-toggle:hover,
 .squire-tray [data-panel] #dicetray-toggle:hover,
-.squire-tray [data-panel] #health-toggle:hover,
-.squire-popout [data-panel] #gm-toggle:hover,
-.squire-popout [data-panel] #macros-toggle:hover,
-.squire-popout [data-panel] #dicetray-toggle:hover,
-.squire-popout [data-panel] #health-toggle:hover {
+.squire-tray [data-panel] #health-toggle:hover {
     color: #fff;
 }
