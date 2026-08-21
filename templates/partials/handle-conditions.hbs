@@ -2,13 +2,15 @@
 
 <div class="handle-conditions">
     {{#if canManageEffects}}
-        <div class="handle-group-button" id="conditions-button" data-tooltip="Add or Remove Conditions">
+        <div class="squire-handle-control handle-group-button" id="conditions-button" data-tooltip="Add or Remove Conditions">
             <i class="fa-solid fa-sparkles"></i>
         </div>
     {{/if}}
     {{!-- Active effects shown on the handle --}}
     {{#each effects as |effect|}}
-        <img class="handle-condition-icon" src="{{effect.icon}}" data-effect-id="{{effect.id}}" data-tooltip="{{effect.name}}"/>
+        <div class="squire-handle-control handle-condition-icon" data-effect-id="{{effect.id}}" data-tooltip="{{effect.name}}">
+            <img src="{{effect.icon}}" alt="{{effect.name}}"/>
+        </div>
     {{/each}}
 </div>
 

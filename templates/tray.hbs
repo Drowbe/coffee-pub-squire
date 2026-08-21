@@ -5,16 +5,14 @@
     <div class="tray-handle">
         <div class="tray-handle-content-container">
 
-            <button class="tray-handle-button-pin" title="Pin Tray">
+            <button class="squire-handle-control tray-handle-button-pin" title="Pin Tray">
                 <i class="fa-solid fa-thumbtack"></i>
             </button>
-            <button class="tray-handle-button-toggle" title="Toggle Tray">
-                {{!-- fa-caret-right is the icon core Foundry uses on its own sidebar
-                      collapse control; CSS flips it when the tray is open. --}}
+            {{!-- fa-caret-right is the icon core Foundry uses on its own sidebar
+                  collapse control; CSS flips it when the tray is open and orders
+                  it to the foot of the handle, where Foundry keeps its own. --}}
+            <button class="squire-handle-control tray-handle-button-toggle" title="Toggle Tray">
                 <i class="fa-solid fa-caret-right"></i>
-            </button>
-            <button class="tray-handle-button-viewcycle" title="Toggle View Mode">
-                <i class="fas {{#if (eq viewMode 'party')}}fa-users{{else}}fa-user{{/if}}"></i>
             </button>
 
             <div class="tray-handle-content-wrapper">

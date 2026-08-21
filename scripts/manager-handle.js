@@ -230,23 +230,16 @@ export class HandleManager {
         this._boundHandleElement = handle;
         const handleElement = handle;
 
-        // Everything on the handle that owns its own click. Anything NOT in here is
+        // Everything on the handle that owns its own click. Anything NOT matching is
         // bare handle, and clicking bare handle toggles the tray. These listeners are
         // all bound to the same element, so their stopPropagation() cannot hold the
         // catch-all off — it has to ask.
-        const HANDLE_ACTIONS = [
-            '.tray-handle-button-pin',
-            '.tray-handle-button-toggle',
-            '.tray-handle-button-viewcycle',
-            '.handle-healthbar',
-            '#health-tray-button',
-            '.handle-favorite-icon',
-            '.handle-condition-icon',
-            '#conditions-button',
-            '.handle-partymember-icon',
-            '.handle-character-icon',
-            'a', 'button', 'input', 'select', 'textarea'
-        ].join(', ');
+        //
+        // This was a hand-maintained list of nine selectors that had to be updated
+        // every time the handle grew a control. Every control now wears
+        // .squire-handle-control, which is the same class the stylesheet keys its
+        // edge and hover off, so the list cannot fall behind the markup any more.
+        const HANDLE_ACTIONS = '.squire-handle-control, a, button, input, select, textarea';
 
         // Chevron - delegated
         handleElement.addEventListener('click', async (event) => {
@@ -264,34 +257,6 @@ export class HandleManager {
             event.stopPropagation();
             await PanelManager.setPinned(!PanelManager.isPinned);
         });
-
-        // View mode toggle button - delegated
-        handleElement.addEventListener('click', async (event) => {
-            if (!event.target.closest('.tray-handle-button-viewcycle')) return;
-            {
-                event.preventDefault();
-                const currentMode = PanelManager.viewMode;
-                
-                // Get enabled tabs from settings
-                const enabledTabs = ['player']; // Player is always enabled
-                if (game.settings.get(MODULE.ID, 'showTabParty')) enabledTabs.push('party');
-                
-                // Find current position in enabled tabs
-                const currentIndex = enabledTabs.indexOf(currentMode);
-                if (currentIndex === -1) {
-                    // Current mode not in enabled tabs, default to first enabled tab
-                    await PanelManager.instance.setViewMode(enabledTabs[0]);
-                    return;
-                }
-                
-                // Cycle to next enabled tab
-                const nextIndex = (currentIndex + 1) % enabledTabs.length;
-                const newMode = enabledTabs[nextIndex];
-
-                await PanelManager.instance.setViewMode(newMode);
-            }
-        });
-
 
         // Handle health bar clicks
         // v13: Use handleElement (the cloned handle that's actually in the DOM) for event delegation

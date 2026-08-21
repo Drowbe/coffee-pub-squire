@@ -8,6 +8,23 @@
        SQUIRE.TRAY_HANDLE_WIDTH has to say for the collapsed tray to line up. */
     --squire-handle-control-size: 32px;
     --squire-handle-gutter: 4px;
+    /* The control's edge, defined once. Anything painting inside a control uses
+       the INNER curve, which is the outer radius less the border it sits behind
+       — otherwise the clip and the border are two rasterisations of the same
+       corner and they do not have to agree.
+
+       2px, and NOT a stray value to tidy back down to 1px. At fractional OS
+       display scaling — Windows at 125% or 150% — one CSS pixel is 1.25 or 1.5
+       device pixels, so a 1px rim physically cannot rasterise evenly: it lands
+       as one device pixel on some edges and two on others, and which edges get
+       which changes as the window moves or resizes. It reads as a border that is
+       thicker on one side and swaps sides when you drag the window. 2px divides
+       cleanly enough at those ratios for the variance to stop showing, and it
+       reads better at 32px besides. Computed styles will never show this — they
+       report CSS pixels, and the defect is in device pixels. */
+    --squire-handle-border-width: 2px;
+    --squire-handle-radius: 4px;
+    --squire-handle-radius-inner: calc(var(--squire-handle-radius) - var(--squire-handle-border-width));
 
     height: auto;
     /* Was var(--tray-handle-width) — a variable nothing has ever defined, so the
@@ -52,36 +69,27 @@
 }
 
 
-/* SEPARATORS AND SPACERS */
+/* SEPARATORS AND SPACERS
+
+   Three, because three are used. There were ten: solid, dotted, double and ridge
+   in thick and thin, plus a bullet — seven of which no template has ever asked
+   for, in a 32px column where every one of them renders as "a line". */
 
 .squire-tray .tray-handle-separator {
     font-weight: 900;
     font-size: 0.8em;
 }
+
+/* A gap, for grouping without drawing anything. */
 .squire-tray .tray-handle-separator.spacer {
     width: 0px;
     display: inline-block;
     margin-top: 6px;
     vertical-align: middle;
 }
-.squire-tray .tray-handle-separator.dot::before {
-    content: "•";
-    color: #aaaaaa4d;
-    font-size: 0.8em;
-    display: block; /* or inline-block depending on your needs */
-    line-height: 1;
-    width: 100%;
-    text-align: center;
-    height: 1em;
-    overflow: hidden;
-    padding: 0;
-    margin-top: 4px;
-    margin-bottom: 4px;
-}
-.squire-tray .tray-handle-separator.line-solid-thick,
-.squire-tray .tray-handle-separator.line-dotted-thick,
-.squire-tray .tray-handle-separator.line-double-thick,
-.squire-tray .tray-handle-separator.line-ridge-thick {
+
+.squire-tray .tray-handle-separator.line-ridge-thin,
+.squire-tray .tray-handle-separator.line-dotted-thin {
     width: var(--squire-handle-control-size, 32px);
     height: 1px;
     display: inline-block;
@@ -89,58 +97,25 @@
     margin-top: 8px;
     margin-bottom: 8px;
 }
-.squire-tray .tray-handle-separator.line-solid-thin,
-.squire-tray .tray-handle-separator.line-dotted-thin,
-.squire-tray .tray-handle-separator.line-double-thin,
+
+/* Between groups. */
 .squire-tray .tray-handle-separator.line-ridge-thin {
-    width: var(--squire-handle-control-size, 32px);
-    height: 1px;
-    display: inline-block;
-    vertical-align: middle;
-    margin-top: 8px;
-    margin-bottom: 8px;
+    border-top: 1px ridge rgba(121, 121, 121, 0.3);
 }
-.squire-tray .tray-handle-separator.line-solid-thick {
-    border-top: 2px solid rgba(121, 121, 121, 0.3);
-}
-.squire-tray .tray-handle-separator.line-solid-thin {
-    border-top: 1px solid rgba(121, 121, 121, 0.3);
-}
-.squire-tray .tray-handle-separator.line-dotted-thick {
-    border-top: 2px dotted rgba(121, 121, 121, 0.3);
-}
+
+/* Between peers within a group — party members, in practice. */
 .squire-tray .tray-handle-separator.line-dotted-thin {
     border-top: 1px dotted rgba(121, 121, 121, 0.3);
 }
-.squire-tray .tray-handle-separator.line-double-thick {
-    border-top: 5px double rgba(121, 121, 121, 0.3);
-}
-.squire-tray .tray-handle-separator.line-double-thin {
-    border-top: 3px double rgba(121, 121, 121, 0.3);
-}
-.squire-tray .tray-handle-separator.line-ridge-thick {
-    border-top: 3px ridge rgba(121, 121, 121, 0.3);
-}
-.squire-tray .tray-handle-separator.line-ridge-thin {
-    border-top: 2px ridge rgba(121, 121, 121, 0.3);
-}
-
 
 
 /* TRAY HANDLE BUTTONS */
 
-/* Core Foundry's control geometry — a 32px square with a 4px radius — and core
-   Foundry's palette, taken from the variables it declares on <body>.
+/* Core Foundry's control geometry: a 32px square with a 4px radius.
 
-   What is NOT copied is the direction of the hover. Foundry's controls float on
-   the canvas, so it hovers them by DARKENING the ground to cool-5 and lifting
-   the rim to cool-3. Both of those are near-black-on-dark here, because our
-   controls already sit on a dark strip — the first pass mirrored the values
-   literally and the result was invisible. Same idea, inverted: the ground lifts
-   toward the light instead of away from it. Fallbacks after each var() cover a
-   future palette rename. */
+   Hover is the one signal every control in the handle shares — see HANDLE HOVER
+   at the foot of this file — so nothing here says anything about it. */
 .squire-tray .tray-handle-button-pin,
-.squire-tray .tray-handle-button-viewcycle,
 .squire-tray .tray-handle-button-toggle {
     order: 1;
     width: var(--squire-handle-control-size, 32px);
@@ -158,55 +133,27 @@
     /* Three touching squares read as one block; this keeps them three. */
     margin-bottom: 2px;
     background: transparent;
-    border: 1px solid transparent;
-    border-radius: 4px;
     color: var(--color-light-2, #efe6d8);
-    /* Dimmed at rest so three controls don't out-shout the portrait below them.
-       Hover takes it to full, which is the light-2 -> light-1 step Foundry makes
-       on a background where a two-shade difference in near-white would show. */
+    /* Dimmed at rest so the controls don't out-shout the portrait below them. */
     opacity: 0.5;
-    cursor: pointer;
     padding: 0;
     text-align: center;
     font-size: var(--font-size-16, 16px);
     line-height: 1;
-    outline: none;
-    box-shadow: none !important;
-    transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
 
 .squire-tray .tray-handle-button-pin i,
-.squire-tray .tray-handle-button-viewcycle i,
 .squire-tray .tray-handle-button-toggle i {
     transition: transform 0.2s ease;
     margin-right: 0;
 }
 
-/* Pinned is this button's pressed state, and reads like the active sidebar tab:
-   filled warm, not merely outlined. */
+/* Pinned reads as a lit glyph, not a coloured chip. Orange is what the pointer
+   means everywhere in this handle, so a permanently orange pin would be saying
+   "you are hovering me" for as long as the tray is pinned. */
 .squire-tray.pinned .tray-handle-button-pin {
-    background: var(--color-warm-2, #c9593f);
-    border-color: var(--color-warm-1, #ee9b3a);
     color: var(--color-light-1, #f7f3e8);
     opacity: 1;
-}
-
-/* One mouseover for all three, written after the pressed state so it wins at
-   equal specificity — every button answers the pointer, including that one. */
-.squire-tray .tray-handle-button-pin:hover,
-.squire-tray .tray-handle-button-viewcycle:hover,
-.squire-tray .tray-handle-button-toggle:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: var(--color-light-5, #9f8475);
-    color: var(--color-light-1, #f7f3e8);
-    opacity: 1;
-}
-
-/* ...except the pinned pin keeps its warm fill, so the tray still says it is
-   pinned while you hover the very button that would unpin it. */
-.squire-tray.pinned .tray-handle-button-pin:hover {
-    background: var(--color-warm-2, #c9593f);
-    border-color: var(--color-light-1, #f7f3e8);
 }
 
 
@@ -216,10 +163,22 @@
 
 
 /* COLLAPSE / EXPAND CARET
-   Colour and hover come from the shared button rules above, so this button reads
-   the same as the pin and the view cycle. It only owns its own geometry: the
-   caret points out of the tray when closed and back into it when open, matching
-   core Foundry's sidebar control. */
+
+   Colour and hover come from the rules above and below, so this button reads the
+   same as the pin. All it owns is where it sits and which way it points.
+
+   Ordered after the content wrapper, which is the flex item that grows, so the
+   caret is pushed to the foot of the handle — where core Foundry keeps its own
+   sidebar collapse control. The pin stays at the top, where people look for it.
+   z-index clears the bottom fade, which is painted at 2. */
+.squire-tray .tray-handle-button-toggle {
+    order: 3;
+    position: relative;
+    z-index: 3;
+    margin-bottom: 0;
+    margin-top: 2px;
+}
+
 .squire-tray .tray-handle-button-toggle i.fa-caret-right {
     transform: rotate(0deg);
 }
@@ -246,17 +205,6 @@
 
 
 
-/* GLOBAL */
-
-.squire-tray .tray-handle-label {
-    font-size: 0.6em;
-	padding-top: 4px;
-	padding-bottom: 0px;
-	padding-left: 0px;
-	padding-right: 0px;
-	color: #aaaaaab4;
-}
-
 .squire-tray .handle-info-container {
     font-size: 1.2em;
     color: rgba(255, 255, 255, 0.6);
@@ -275,14 +223,6 @@
 }
 
 
-/* NO CHARACTER */
-
-.squire-tray .handle-no-character {
-    font-size: 1.2em;
-    color: #909090;
-    font-weight: 900;
-    padding-top: 10px;
-}
 
 
 
@@ -294,13 +234,6 @@
 
 
 
-
-
-.squire-tray .tray-handle-content {
-    font-size: 1.1em;
-    color: #ffffff;
-    font-weight: 900;
-}
 
 
 
@@ -327,27 +260,6 @@
 
 
 
-/* Condition Details Dialog */
-.condition-details {
-    padding: 10px;
-}
-
-.condition-details h2 {
-    color: #191813;
-    border-bottom: 2px solid #782e22;
-    margin-bottom: 10px;
-    padding-bottom: 5px;
-    font-size: 1.5em;
-    font-weight: bold;
-}
-
-.condition-details .condition-description {
-    color: #4b4a44;
-    font-size: 14px;
-    line-height: 1.5;
-    margin-top: 10px;
-}
-
 
 /* GROUP ICONS  */
 
@@ -355,10 +267,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(0, 0, 0, 0.5);
-    border-radius: 4px;
     background: rgba(0, 0, 0, 0.5);
-    cursor: pointer;
     position: relative;
     /* Fill the column. At the old 22px the favourite art was a colour smear you
        navigated by position rather than recognised; 32px is the smallest size
@@ -366,24 +275,15 @@
     width: var(--squire-handle-control-size, 32px);
     height: var(--squire-handle-control-size, 32px);
     flex: none;
-    filter: brightness(0.9);
-    transition: filter 0.2s ease;
     transform: rotate(180deg);
     min-height: var(--squire-handle-control-size, 32px);
-}
-.squire-tray .handle-group-button:hover {
-    background: rgba(0, 0, 0, 0.4);
-    filter: brightness(1);
-    border-color: var(--color-border-highlight);
-    box-shadow: 0 0 2px var(--color-shadow-highlight);
 }
 .squire-tray .handle-group-button i {
     color: rgba(255, 255, 255, 0.9);
     font-size: 1em;
     padding-right: 1px;
-}
-.squire-tray .handle-group-button i:hover {
-    transform: scale(1.05, 1.05);
+    opacity: 0.9;
+    transition: opacity 0.2s ease;
 }
 
 
@@ -422,8 +322,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
     background: rgba(0, 0, 0, 0.5);
     position: relative;
     /* Fill the column. At the old 22px the favourite art was a colour smear you
@@ -432,8 +330,6 @@
     width: var(--squire-handle-control-size, 32px);
     height: var(--squire-handle-control-size, 32px);
     flex: none;
-    filter: brightness(0.9);
-    transition: filter 0.2s ease;
     transform: rotate(180deg);
     overflow: hidden;      /* clip any stray pixels */
     min-width: 0;          /* play nice with flexbox */
@@ -442,47 +338,45 @@
 
 /* Icon Overrides */
 
-.squire-tray .handle-condition-icon {
-    padding: 2px;
-}
 .squire-tray .handle-partymember-icon.clickable {
     border-color: rgba(49, 132, 57, 0.9);
 }
 
 /* Unavailable Favorites */
-.squire-tray .handle-favorite-icon.unavailable {
-    border-color: rgba(255, 255, 255, 0.6);
+/* The grey says "you cannot use this"; a bright rim on top of it was saying the
+   same thing twice, in the one place a rim means something else. */
+.squire-tray .handle-favorite-icon.unavailable img {
     filter: grayscale(100%) saturate(100%) brightness(45%);
-}
-
-/* Icon Hovers */
-
-.squire-tray .handle-partymember-icon.clickable:hover,
-.squire-tray .handle-character-icon:hover,
-.squire-tray .handle-condition-icon:hover,
-.squire-tray .handle-favorite-icon:hover {
-    background: rgba(0, 0, 0, 0.4);
-    filter: brightness(1);
-    border-color: var(--color-border-highlight);
-    box-shadow: 0 0 0 1px rgba(229, 71, 51, 0.9);
-    border-radius: 4px;
-    transform: scale(1.1, 1.1) rotate(inherit);
-    cursor: pointer;
 }
 
 /* Icon Image */
 
+/* The art fills its control and nothing else draws an edge.
+   This used to carry its own background, its own inherited border-radius and
+   object-fit: contain — so non-square art letterboxed onto a dark ground with a
+   slightly different curve than the container's, which is the second edge you
+   could see inside the first. It also said `transform: rotate(inherit)`, which
+   is not a legal value inside a transform function: the declaration was invalid
+   and dropped, and the image was riding the parent's rotation the whole time. */
 .squire-tray .handle-partymember-icon img,
 .squire-tray .handle-character-icon img,
 .squire-tray .handle-condition-icon img,
 .squire-tray .handle-favorite-icon img {
-    background: rgba(0, 0, 0, 0.5);
     width: 100%;
-    height: 100%; 
-    object-fit: contain;
-    transform: rotate(inherit);
-    border-radius: inherit;
+    height: 100%;
+    object-fit: cover;
     border: 0;
+    border-radius: 0;
+    background: none;
+    /* The resting dim lives HERE, on the art, not on the control.
+       It used to sit on the container — the element that owns the border, the
+       4px radius and the overflow clip. A filter forces that element into its
+       own compositing layer, so the rounded corners and the 1px rim were being
+       rasterised separately from everything around them, inside a parent that
+       is rotated 180deg. Dimming the picture never needed the frame to come
+       with it. */
+    filter: brightness(0.9);
+    transition: filter 0.2s ease;
 }
 
 /* Roll Mouseover */
@@ -552,50 +446,67 @@
 
 /* Health Bar Container */
 
+/* The track.
+
+   `writing-mode: horizontal-tb` is the important line. The handle's content
+   wrapper is vertical-lr and this element used to just inherit that, which made
+   every box calculation inside it non-obvious: percentage sizing, static
+   position and flex axes all resolve against the block axis, and the block axis
+   was horizontal. Stack that with an overflow clip, a border radius and an
+   ancestor rotated 180deg and the geometry stopped being predictable — which is
+   what made this element resist four separate fixes.
+
+   Writing mode is a text concern, so it now lives on the two elements that hold
+   text (below) rather than on the box that does layout. The numbers read exactly
+   as they did before; the box math is now ordinary. */
 .squire-tray .handle-healthbar {
+    writing-mode: horizontal-tb;
     height: 80px;
     width: var(--squire-handle-control-size, 32px);
     background: rgba(0, 0, 0, 0.3);
-    border: 2px solid rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
     overflow: hidden;
-    margin-top: 0px;
-    margin-bottom: 0px;
-    margin-left: 0px;
-    margin-right: 0px;
-    writing-mode: vertical-lr;
     position: relative;
-    cursor: pointer;
+    /* The fill is a normal flow child now, so this is what puts it at the block
+       start — which the ancestor's 180deg rotation renders as the bottom, so the
+       bar still grows upward. */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 .squire-tray .handle-healthbar.party {
     height: 40px; /* PARTY WIDTH */
     width: var(--squire-handle-control-size, 32px); /* PARTY HEIGHT */
 }
-.squire-tray .handle-healthbar:hover {
-    background: rgba(0, 0, 0, 0.8);
-    border-color: var(--color-border-highlight);
-    box-shadow: 0 0 2px var(--color-shadow-highlight);
-}
 
 /* Health Bar Fill */
 
 .squire-tray .handle-healthbar-fill {
-    width: 100%;
     background: inherit;
     transition: height 0.3s ease;
-    position: absolute;
-    top: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    border-radius: 2px 2px 2px 2px;
+    /* An ordinary flex child. It was absolutely positioned, which meant its size
+       and placement came from percentage resolution and static position against
+       a vertical writing mode — the fragile path. In flow it is just a box: full
+       width, `height` from the inline style, clipped by the track like any other
+       child. The flex/centring declarations that used to be here were left over
+       from when this element held the HP text; it has been empty for a while. */
+    width: 100%;
+    flex: none;
+    /* The inner curve, matched to the border rather than guessed at.
+       This was 2px, which is a third curve agreeing with neither the border nor
+       the clip — that was the doubled edge. Setting it to 0 only traded that for
+       a square corner rounded by the overflow clip at composite time, which is a
+       different rasterisation of the same corner and need not line up either. */
+    border-radius: var(--squire-handle-radius-inner, 3px);
 }
 
 /* Overlays*/
 
+/* The two elements that actually hold text keep the vertical writing mode, so
+   the HP number and the skull read exactly as they did when the track carried
+   it for them. */
 .squire-tray .handle-healthbar-icon,
 .squire-tray .handle-healthbar-value {
+    writing-mode: vertical-lr;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -630,4 +541,85 @@
 }
 .squire-tray .handle-healthbar-icon.dead i {
     display: block;
+}
+
+
+/* ==========================================================================
+   HANDLE CONTROLS
+
+   Everything you can click in the handle wears .squire-handle-control: the pin,
+   the caret, the character portrait, party portraits, favourites, conditions,
+   the conditions and health-tray buttons, and the health bar. Its edge is
+   defined here and nowhere else.
+
+   This is the fix for a problem that predates the recent work. Six rules each
+   drew their own edge and had drifted apart: the image icons drew a border AND
+   a 1px ring in a second, slightly different red; the group buttons drew a soft
+   2px glow instead; the health bar drew a third variant on a 2px rim where
+   everything else used 1px; the two buttons drew nothing at all. They could not
+   be reconciled by editing them, because they were not even the same shape —
+   .handle-condition-icon was a bare <img> with padding while every other image
+   control was a div wrapping an img, so a rule written for one could not apply
+   to the other. The markup is uniform now, so one class can own the edge.
+
+   Hover changes exactly one property. A border plus a ring is two edges
+   pretending to be one, and at 32px there is no room for the second.
+
+   Orange means "the pointer is here" and nothing wears it at rest — which is
+   why the pinned pin brightens instead of colouring, and why an unavailable
+   favourite says so by going grey rather than by growing a rim.
+   ========================================================================== */
+
+.squire-tray .squire-handle-control {
+    border: var(--squire-handle-border-width, 1px) solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--squire-handle-radius, 4px);
+    box-shadow: none;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.squire-tray .squire-handle-control:hover {
+    border-color: var(--color-border-highlight, #ff6400);
+}
+
+/* Hard reset, and the one place !important is earned here.
+   Two of these controls are real <button>s, and core Foundry styles
+   `button:focus` with BOTH an outline and a 4px box-shadow (foundry2.css:3765).
+   Our own rules already out-specify it, but a focus ring is the exact defect
+   this class exists to prevent, and it would arrive on click — long after
+   anyone was looking for it. Foundry does the same thing for #hotbar buttons.
+   The border is the only edge these controls ever draw. */
+.squire-tray .squire-handle-control,
+.squire-tray .squire-handle-control:hover,
+.squire-tray .squire-handle-control:focus,
+.squire-tray .squire-handle-control:focus-visible,
+.squire-tray .squire-handle-control:active {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* The two icon buttons have no art to light up, so the pointer un-dims the
+   glyph as well. Still one border, still no ring. */
+.squire-tray .tray-handle-button-pin:hover,
+.squire-tray .tray-handle-button-toggle:hover {
+    opacity: 1;
+    color: var(--color-light-1, #f7f3e8);
+}
+
+/* The content dims itself at rest; the pointer undoes that. Note these target
+   the img and the i, never the control — the control's job is the border, and
+   nothing that paints a border should also be carrying a filter. */
+.squire-tray .squire-handle-control:hover img {
+    filter: brightness(1);
+}
+
+.squire-tray .handle-group-button:hover i {
+    opacity: 1;
+}
+
+/* An unavailable favourite stays grey under the pointer. Without this the rule
+   above would make it look usable at exactly the moment you reached for it. */
+.squire-tray .handle-favorite-icon.unavailable:hover img {
+    filter: grayscale(100%) saturate(100%) brightness(60%);
 }

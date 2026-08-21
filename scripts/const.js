@@ -68,7 +68,11 @@ export const SQUIRE = {
     // settings-page real estate for that; change them here if the tray ever needs
     // to clear something.
     TRAY_TOP_OFFSET: '10px',
-    TRAY_BOTTOM_OFFSET: '10px'
+    TRAY_BOTTOM_OFFSET: '10px',
+    // Most favourites the handle will ever show. It is a one-control-wide column
+    // sharing its height with a portrait, a health bar and a vertical name, so
+    // this is a space limit rather than a preference.
+    HANDLE_FAVORITES_LIMIT: 5
 }; 
 
 // ===== TEMPLATES ==================================================

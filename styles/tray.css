@@ -81,10 +81,30 @@
 
 /* Drop Zone Styles */
 /* TRAY Left Position */
+/* `top` and `height` are snapped to whole pixels, and the second declaration of
+   each is what does it.
+
+   Both derive from 100vh and from Blacksmith's menubar offset, and neither is
+   obliged to be a whole number — 100vh is simply the viewport height, fractional
+   whenever the window is. That fraction is not cosmetic: it cascades. The handle
+   stretches to the tray, .tray-handle-content-container is height:100% of the
+   handle, and every control is stacked inside that from a fractional origin —
+   then .tray-handle-content-wrapper rotates the lot 180deg about a fractional
+   centre. A 1px border on a box sitting half a device pixel off rasterises to
+   roughly 1.5px on one edge and 0.5px on the opposite, which reads as a border
+   that is thicker on one side and moves to the other side when you resize the
+   window. Computed styles report CSS pixels, so the panel looks perfect while
+   the render is not.
+
+   round() is CSS Values 4 (Chrome 125+). The plain calc() above each one is the
+   fallback: an engine without round() drops the second declaration and keeps the
+   behaviour we had before. */
 .squire-tray {
     top: calc(var(--squire-tray-top-offset) + var(--blacksmith-menubar-interface-offset));
+    top: round(calc(var(--squire-tray-top-offset) + var(--blacksmith-menubar-interface-offset)), 1px);
     left: 0px;
     height: calc(100vh - var(--squire-tray-top-offset) - var(--squire-tray-bottom-offset) - var(--blacksmith-menubar-interface-offset));
+    height: round(calc(100vh - var(--squire-tray-top-offset) - var(--squire-tray-bottom-offset) - var(--blacksmith-menubar-interface-offset)), 1px);
     border-radius: 0px 8px 8px 0px;
     display: flex;
     padding: 8px 1px 8px 4px;
@@ -95,8 +115,10 @@
 /* Pinned state positioning */
 .squire-tray.pinned {
     /* we need to allow for the blacksmith menubar interface offset */
-    top: calc(var(--squire-tray-pinned-offset) + var(--blacksmith-menubar-interface-offset)); 
+    top: calc(var(--squire-tray-pinned-offset) + var(--blacksmith-menubar-interface-offset));
+    top: round(calc(var(--squire-tray-pinned-offset) + var(--blacksmith-menubar-interface-offset)), 1px);
     height: calc(100vh - calc(var(--squire-tray-pinned-offset) * 2) - var(--blacksmith-menubar-interface-offset));
+    height: round(calc(100vh - calc(var(--squire-tray-pinned-offset) * 2) - var(--blacksmith-menubar-interface-offset)), 1px);
 }
 
 /* Expanded Position */

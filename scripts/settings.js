@@ -350,10 +350,10 @@ export const registerSettings = function() {
         scope: 'world',
         config: true,
         type: Number,
-        default: 5,
+        default: SQUIRE.HANDLE_FAVORITES_LIMIT,
         range: {
             min: 1,
-            max: 12,
+            max: SQUIRE.HANDLE_FAVORITES_LIMIT,
             step: 1,
         },
     });

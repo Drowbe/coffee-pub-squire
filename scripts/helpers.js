@@ -1,4 +1,4 @@
-import { MODULE } from './const.js';
+import { MODULE, SQUIRE } from './const.js';
 
 /**
  * True when this user is the GM or the current party leader.
@@ -759,11 +759,15 @@ export function activateContainerListener(panel, actor, signal) {
 export function getHandleFavoriteLimit() {
     try {
         const limit = Number(game.settings.get(MODULE.ID, 'handleFavoritesMax'));
-        if (Number.isFinite(limit) && limit > 0) return Math.floor(limit);
+        // Clamped, not just defaulted: worlds that set this higher before the
+        // ceiling came down still have the old number stored.
+        if (Number.isFinite(limit) && limit > 0) {
+            return Math.min(Math.floor(limit), SQUIRE.HANDLE_FAVORITES_LIMIT);
+        }
     } catch (error) {
         // Settings not registered yet — fall back to the default.
     }
-    return 5;
+    return SQUIRE.HANDLE_FAVORITES_LIMIT;
 }
 
 export const registerHelpers = function() {

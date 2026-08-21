@@ -1351,19 +1351,6 @@ export class PanelManager {
             }
         }
         
-        // Update toggle button icon
-        const icon = tray.querySelector('.tray-handle-button-viewcycle i');
-        if (icon) {
-            icon.classList.remove('fa-user', 'fa-users');
-            switch (mode) {
-                case 'party':
-                    icon.classList.add('fa-users');
-                    break;
-                default:
-                    icon.classList.add('fa-user');
-            }
-        }
-        
         // Update handle content using HandleManager to avoid code duplication
         await this.handleManager.updateHandle();
     }

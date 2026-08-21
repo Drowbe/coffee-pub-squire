@@ -3,7 +3,7 @@
   {{#if portraitActor}}
     {{#with (default displayName (default portraitActor.handleDisplayName portraitActor.name)) as |portraitName|}}
     <div class="handle-characters">
-        <div class="handle-character-icon {{#if portraitActor.isOwner}}clickable{{/if}}" {{#if portraitActor.isOwner}}data-tooltip="Open character sheet for {{portraitName}}"{{/if}} data-actor-id="{{portraitActor.id}}">
+        <div class="squire-handle-control handle-character-icon {{#if portraitActor.isOwner}}clickable{{/if}}" {{#if portraitActor.isOwner}}data-tooltip="Open character sheet for {{portraitName}}"{{/if}} data-actor-id="{{portraitActor.id}}">
             <img src="{{portraitActor.img}}" alt="{{portraitName}}"/>
         </div>
     </div>

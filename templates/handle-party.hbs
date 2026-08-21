@@ -23,7 +23,7 @@
         {{#each otherPartyMembers as |member|}}
             {{#unless @first}}<span class="tray-handle-separator line-dotted-thin"></span>{{/unless}}
             <div class="handle-partymembers">
-                <div class="handle-partymember-icon {{#if member.isOwner}}clickable{{/if}}" {{#if member.isOwner}}data-tooltip="Switch to {{default member.displayName member.name}}"{{/if}} data-actor-id="{{member.id}}">
+                <div class="squire-handle-control handle-partymember-icon {{#if member.isOwner}}clickable{{/if}}" {{#if member.isOwner}}data-tooltip="Switch to {{default member.displayName member.name}}"{{/if}} data-actor-id="{{member.id}}">
                     <img src="{{member.img}}" alt="{{default member.displayName member.name}}"/>
                 </div>
                {{#if ../showHandleHealthBar}}
