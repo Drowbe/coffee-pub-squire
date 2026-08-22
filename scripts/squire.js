@@ -1,4 +1,4 @@
-import { MODULE, SQUIRE } from './const.js';
+import { MODULE, SQUIRE, getHandleWidth } from './const.js';
 import { PanelManager, _updateTrayFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings, migrateCompendiumAccessSetting } from './settings.js';
@@ -1487,10 +1487,11 @@ Hooks.once('ready', async function() {
 
     // Set up tray for non-excluded users
     const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
-    document.documentElement.style.setProperty('--squire-tray-handle-width', SQUIRE.TRAY_HANDLE_WIDTH);
+    const handleWidth = parseInt(getHandleWidth());
+    document.documentElement.style.setProperty('--squire-tray-handle-width', `${handleWidth}px`);
     document.documentElement.style.setProperty('--squire-tray-handle-adjustment', SQUIRE.TRAY_HANDLE_ADJUSTMENT);
     document.documentElement.style.setProperty('--squire-tray-width', `${trayWidth}px`);
-    document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${trayWidth - parseInt(SQUIRE.TRAY_HANDLE_WIDTH) - parseInt(SQUIRE.TRAY_HANDLE_ADJUSTMENT)}px)`);
+    document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${trayWidth - handleWidth - parseInt(SQUIRE.TRAY_HANDLE_ADJUSTMENT)}px)`);
 
     // Set offset variables
     document.documentElement.style.setProperty('--squire-tray-top-offset', SQUIRE.TRAY_TOP_OFFSET);
@@ -1503,7 +1504,7 @@ Hooks.once('ready', async function() {
         if (isPinned) {
             uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
         } else {
-            uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+            uiLeft.style.marginLeft = `${handleWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
         }
     }
     

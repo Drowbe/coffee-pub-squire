@@ -1,21 +1,28 @@
 /* ==========================================================================
    TRAY HANDLE
 
-   The strip on the tray's outer edge: one width, one layout, always showing the
-   same thing.
+   The strip on the tray's outer edge. It has two WIDTHS and one layout — the
+   same zones in the same order, always.
 
-   It briefly had two — a full column when closed, controls only when open, on
-   the argument that an open tray duplicates everything on the handle. Two things
-   killed that. A PINNED tray is open permanently, so anyone who pins gets the
-   reduced handle forever; and the duplication was only ever true of favourites,
-   since HP and conditions appear nowhere in the tray at all. The width delta went
-   with it: it was only ever paid for by the content delta, and 18px of tray
-   content is not worth an animated edge that has to stay in step with the tray's
-   own slide.
+     MINIMAL (46px) — a single column of 32px controls.
+     FULL    (60px) — a 44px column: bigger portrait and favourites, and
+                      conditions packed two to a row.
 
-   The duplicated favourites are accepted rather than solved. They may stop being
-   duplication: the handle is a candidate for a drag-a-favourite-here target,
-   which makes it a place you PUT things rather than a second copy of a list.
+   Which one you get is the user's, toggled from the button above the caret and
+   stored in the `handleMode` setting. With one override: **while the tray is
+   open the handle is always minimal**, because the tray is right there and a
+   wide strip beside it buys nothing while costing the panels 14px.
+
+   An earlier version of this changed the CONTENT on open too — controls only,
+   everything else hidden — which is the idea this replaces. It died on the
+   pinned tray: pinned means open permanently, so pinning meant the reduced
+   handle forever. Changing the width on open survives that, because the width
+   is a cost that only matters while the panels are competing for the space.
+
+   The favourites on the handle duplicate the Favorites panel while it is open.
+   That is accepted rather than solved, and it is less true than it was: you put
+   things on the handle by dragging them there, which makes it a place you PUT
+   things rather than a second copy of a list.
 
    The content is authored top-to-bottom now. It used to be written bottom-up
    and flipped by `transform: rotate(180deg)` on the content wrapper, which
@@ -43,19 +50,18 @@
        that should look like it came with the application. */
     --squire-handle-control-size: 32px;
 
-    /* The content column, exclusive of gutters, borders and the rail. Everything
-       that is not a tray button spans it. */
-    --squire-handle-content-width: 44px;
+    /* MINIMAL is the base, and it is also what the handle becomes whenever the
+       tray is open. The content column, exclusive of gutters, borders and the
+       rail; everything that is not a tray button spans it. */
+    --squire-handle-content-width: 32px;
     --squire-handle-portrait-size: var(--squire-handle-content-width);
     --squire-handle-favorite-size: var(--squire-handle-content-width);
-    /* Two to a row: 20 + 4 gap + 20 = 44. Half the column each, so the group is
-       still flush with everything above and below it. */
-    --squire-handle-condition-size: 20px;
-    /* Party members are deliberately smaller than the current character — in
-       party view that size difference is what tells you which one you are
-       playing, without reading a name. */
-    --squire-handle-member-size: 36px;
-    --squire-handle-gutter: 5px;
+    --squire-handle-condition-size: var(--squire-handle-content-width);
+    --squire-handle-member-size: var(--squire-handle-content-width);
+    --squire-handle-gutter: 4px;
+    /* One condition per row at this width. Two would be 14px each, which is
+       below recognising the art and back to navigating by position. */
+    --squire-handle-condition-columns: 1;
     /* The HP rail runs down the OUTER edge — the canvas-facing side, the one
        that stays on screen when the tray is closed. It is padding, not a flex
        child: it is absolutely positioned and the column is inset to clear it. */
@@ -113,9 +119,27 @@
     position: relative;
     /* Bare handle toggles the tray, so the whole strip is clickable. */
     cursor: pointer;
-    /* Width is NOT in here. It does not change any more, and a transition on a
-       property that never varies is a promise to a future reader that it does. */
-    transition: background 0.25s, border-color 0.25s;
+    /* Width is in here because it genuinely changes: the mode toggle, and every
+       open and close. Same duration and easing as `.squire-tray`'s transform in
+       tray-shell.css — if the two disagree, the handle's edge and the tray's
+       edge separate mid-animation. */
+    transition: width 0.5s ease-in-out, background 0.25s, border-color 0.25s;
+}
+
+/* FULL, and only while the tray is CLOSED. Both halves of that selector are
+   load-bearing: `.handle-full` is the user's stored preference, and
+   `:not(.expanded)` is the override that makes an open tray always minimal. */
+.squire-tray.handle-full:not(.expanded) .tray-handle {
+    --squire-handle-content-width: 44px;
+    --squire-handle-gutter: 5px;
+    /* Two to a row: 20 + 4 gap + 20 = 44. Half the column each, so the group is
+       still flush with everything above and below it. */
+    --squire-handle-condition-size: 20px;
+    --squire-handle-condition-columns: 2;
+    /* Party members are deliberately smaller than the current character — in
+       party view that size difference is what tells you which one you are
+       playing, without reading a name. */
+    --squire-handle-member-size: 36px;
 }
 
 /* The strip has to say it is live, or clicking it is a secret. Rim only — a
@@ -161,6 +185,7 @@
    Hover is the one signal every control in the handle shares — see HANDLE
    CONTROLS at the foot of this file — so nothing here says anything about it. */
 .squire-tray .tray-handle-button-pin,
+.squire-tray .tray-handle-button-mode,
 .squire-tray .tray-handle-button-toggle {
     width: var(--squire-handle-control-size, 32px);
     height: var(--squire-handle-control-size, 32px);
@@ -191,6 +216,7 @@
 }
 
 .squire-tray .tray-handle-button-pin i,
+.squire-tray .tray-handle-button-mode i,
 .squire-tray .tray-handle-button-toggle i {
     transition: transform 0.2s ease;
     margin-right: 0;
@@ -210,6 +236,18 @@
 }
 
 .squire-tray.pinned .tray-handle-button-pin {
+    color: var(--squire-color-hover);
+    opacity: 1;
+}
+
+/* Lit when the wide handle is on, dim when it is not — the pin's idiom, minus
+   the rotation, because width has no equivalent of "lying at an angle".
+
+   Keyed on `.handle-full` alone and NOT on `:not(.expanded)`: the button reports
+   the user's SETTING, which is what clicking it changes. Dimming it while the
+   tray is open would make it look off at the exact moment the user is deciding
+   whether to turn it off. */
+.squire-tray.handle-full .tray-handle-button-mode {
     color: var(--squire-color-hover);
     opacity: 1;
 }
@@ -315,7 +353,7 @@
    second column lines up with the first even when the count is odd. */
 .squire-tray .handle-conditions {
     display: grid;
-    grid-template-columns: repeat(2, var(--squire-handle-condition-size, 20px));
+    grid-template-columns: repeat(var(--squire-handle-condition-columns, 1), var(--squire-handle-condition-size, 32px));
     justify-content: center;
     gap: 4px;
     width: 100%;
@@ -712,6 +750,7 @@
    and gives it the same accent every other icon in the module uses. Still one
    border, still no ring. */
 .squire-tray .tray-handle-button-pin:hover,
+.squire-tray .tray-handle-button-mode:hover,
 .squire-tray .tray-handle-button-toggle:hover {
     opacity: 1;
     color: var(--squire-color-hover);

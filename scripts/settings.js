@@ -1,4 +1,4 @@
-import { MODULE, SQUIRE } from './const.js';
+import { MODULE, SQUIRE, getHandleWidth } from './const.js';
 import { PanelManager } from './manager-panel.js';
 
 /**
@@ -132,10 +132,11 @@ export const registerSettings = function() {
                     const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
                     
                     // Restore CSS variables
-                    document.documentElement.style.setProperty('--squire-tray-handle-width', SQUIRE.TRAY_HANDLE_WIDTH);
+                    const handleWidth = parseInt(getHandleWidth());
+                    document.documentElement.style.setProperty('--squire-tray-handle-width', `${handleWidth}px`);
                     document.documentElement.style.setProperty('--squire-tray-handle-adjustment', SQUIRE.TRAY_HANDLE_ADJUSTMENT);
                     document.documentElement.style.setProperty('--squire-tray-width', `${trayWidth}px`);
-                    document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${trayWidth - parseInt(SQUIRE.TRAY_HANDLE_WIDTH) - parseInt(SQUIRE.TRAY_HANDLE_ADJUSTMENT)}px)`);
+                    document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${trayWidth - handleWidth - parseInt(SQUIRE.TRAY_HANDLE_ADJUSTMENT)}px)`);
                     
                     // Set offset variables
                     document.documentElement.style.setProperty('--squire-tray-top-offset', SQUIRE.TRAY_TOP_OFFSET);
@@ -144,7 +145,7 @@ export const registerSettings = function() {
                     if (isPinned) {
                         uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
                     } else {
-                        uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                        uiLeft.style.marginLeft = `${handleWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
                     }
                     // Register the partial if user is not excluded
                     if (!Handlebars.partials['handle-player']) {
@@ -207,7 +208,7 @@ export const registerSettings = function() {
         onChange: value => {
             // Update CSS variables
             document.documentElement.style.setProperty('--squire-tray-width', `${value}px`);
-            document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${value - parseInt(SQUIRE.TRAY_HANDLE_WIDTH) - parseInt(SQUIRE.TRAY_HANDLE_ADJUSTMENT)}px)`);
+            document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${value - parseInt(getHandleWidth()) - parseInt(SQUIRE.TRAY_HANDLE_ADJUSTMENT)}px)`);
             
             // Update UI margin based on pin state
             const uiLeft = document.querySelector('#ui-left');
@@ -216,7 +217,7 @@ export const registerSettings = function() {
                 if (isPinned) {
                     uiLeft.style.marginLeft = `${value + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
                 } else {
-                    uiLeft.style.marginLeft = `${parseInt(SQUIRE.TRAY_HANDLE_WIDTH) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+                    uiLeft.style.marginLeft = `${parseInt(getHandleWidth()) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
                 }
             }
         }
@@ -342,6 +343,18 @@ export const registerSettings = function() {
         config: true,
         type: Boolean,
         default: true
+    });
+
+    // Not on the settings page: it is toggled from the handle itself, which is
+    // the only place the difference is visible. A settings-page control for it
+    // would be a second way to say something you can already say by looking at
+    // the thing and clicking it.
+    game.settings.register(MODULE.ID, 'handleMode', {
+        scope: 'user',
+        config: false,
+        type: String,
+        choices: { minimal: 'Minimal', full: 'Full' },
+        default: 'minimal'
     });
 
     game.settings.register(MODULE.ID, 'showHandleHealthBar', {

@@ -275,15 +275,23 @@ excellent spine and a terrible menu.
 take it off. The handle and the Favorites panel are unrelated lists now. Decisions taken:
 right-click removal (not a menu); the heart stays panel-only; compendium-search drops rejected.
 
+- [x] **Width toggle (2026-08-22).** Minimal (46px, single column) / Full (60px, 44px column,
+  conditions 2-up), per user, stored in `handleMode`, toggled from the button above the caret. An
+  open tray forces minimal regardless. Same zones in both; only sizes change. Dragging and
+  right-click removal work in both.
+
 - [ ] **PHASE 2 — real slots.** Phase 1 appends to a dense list, which means every add reshuffles
   nothing but every *removal* closes the gap, so position is not stable. Slots make it stable:
   index-addressed, gaps allowed, drop lands where you aimed. The data migrates for free — today's
   `[a, b, c]` already reads as slots 0/1/2 and nulls give you gaps.
-  - [ ] **UNDECIDED, and it blocks the design: where the slot region is anchored.** The content
-    ABOVE the slots varies — the conditions grid grows a row every two conditions — so slot 5
-    slides down when you get poisoned, and muscle memory is broken by exactly the event that makes
-    you reach for the handle. Options: anchor the slot region to the bottom and grow upward, put
-    slots above conditions, or accept the drift. Pick before building, not after.
+  - [x] **DECIDED: slots from the top, index 0 at the top, trim from the bottom** — which is what
+    phase 1 already does, so neither the trim direction nor the mental model changes. Bottom-
+    anchoring gives strictly more positional stability but only works if index 0 sits at the
+    bottom, and inverting reading order in a vertical list to fix a second-order problem is a bad
+    trade. The drift gets fixed at its source instead: cap the conditions grid at two rows and let
+    the count on the button report the rest, which bounds the movement to one step. If it still
+    bites in play, bottom-anchoring is a CSS change plus reversing the trim direction.
+  - [ ] Cap the conditions grid at two rows (the prerequisite for the above).
   - [ ] Placeholders during drag: show the empty slots so capacity is visible at the moment you
     need to know it. Capacity is not a stored number — it is `floor(available height / slot
     height)`, the same measurement `_trimHandleFavorites()` already makes.

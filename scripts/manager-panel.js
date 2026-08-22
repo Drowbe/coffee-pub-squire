@@ -1,4 +1,4 @@
-import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE } from './const.js';
+import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE, getHandleWidth } from './const.js';
 import { getTransferBlocker, renderTemplate, getCampaignContext, resolveDroppedItem, showSquireToast, getActorDisplayName, isGMOrPartyLeader, setRowFilter, isRowVisible} from './helpers.js';
 import {
     transferRequestSender, transferRequestGMApproval, transferRequestReceiver,
@@ -138,8 +138,44 @@ export class PanelManager {
         if (!uiLeft) return;
         const reserved = PanelManager.isPinned
             ? game.settings.get(MODULE.ID, 'trayWidth')
-            : parseInt(SQUIRE.TRAY_HANDLE_WIDTH);
+            : parseInt(getHandleWidth());
         uiLeft.style.marginLeft = `${reserved + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
+    }
+
+    /**
+     * Put the handle into the width the user asked for.
+     *
+     * Three things have to move together and they live in three different
+     * places, which is why this is one function rather than three call sites:
+     * the class the stylesheet keys off, the custom property the COLLAPSED
+     * transform is computed from, and the #ui-left margin. Change the class
+     * alone and the tray slides to the wrong place; change the property alone
+     * and the strip is the wrong width behind a correctly-placed edge.
+     *
+     * Only the closed width is ever in question. Open, the handle is always
+     * minimal — the tray is right there, so the strip has nothing to be wide
+     * for — and the transform is translateX(0) either way.
+     */
+    static applyHandleMode() {
+        const full = (() => {
+            try {
+                return game.settings.get(MODULE.ID, 'handleMode') === 'full';
+            } catch (error) {
+                return false;
+            }
+        })();
+
+        PanelManager.element?.classList?.toggle('handle-full', full);
+
+        const handleWidth = parseInt(getHandleWidth());
+        const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
+        document.documentElement.style.setProperty('--squire-tray-handle-width', `${handleWidth}px`);
+        document.documentElement.style.setProperty(
+            '--squire-tray-transform',
+            `translateX(-${trayWidth - handleWidth - parseInt(SQUIRE.TRAY_HANDLE_ADJUSTMENT)}px)`
+        );
+
+        PanelManager._updateUiMargin();
     }
 
     /**
@@ -517,6 +553,7 @@ export class PanelManager {
         
         document.body.appendChild(trayElement);
         PanelManager.element = trayElement;
+        PanelManager.applyHandleMode();
         
         // Restore pin state
         PanelManager.isPinned = game.settings.get(MODULE.ID, 'isPinned');
@@ -594,6 +631,7 @@ export class PanelManager {
         // v13: Use native DOM replaceWith method
         PanelManager.element.replaceWith(newTrayElement);
         PanelManager.element = newTrayElement;
+        PanelManager.applyHandleMode();
 
         // Re-attach listeners and render panels
         this.activateListeners(PanelManager.element);

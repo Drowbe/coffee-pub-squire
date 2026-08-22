@@ -259,6 +259,32 @@ export class HandleManager {
             await PanelManager.toggleTray();
         });
 
+        // Handle width toggle - delegated
+        handleElement.addEventListener('click', async (event) => {
+            if (!event.target.closest('.tray-handle-button-mode')) return;
+            event.preventDefault();
+            event.stopPropagation();
+
+            const next = game.settings.get(MODULE.ID, 'handleMode') === 'full' ? 'minimal' : 'full';
+            await game.settings.set(MODULE.ID, 'handleMode', next);
+            PanelManager.applyHandleMode();
+        });
+
+        // Re-decide how many favourites fit whenever the strip finishes
+        // changing width — which is the mode toggle above AND every open and
+        // close, since the handle goes minimal while the tray is open.
+        //
+        // Hung off `transitionend` rather than off the three things that can
+        // cause it: the icons are a different height in each mode, so the count
+        // that fits changes with the width, and the width is the one signal all
+        // three share. Filtered by property because the same element also
+        // transitions background and border-color.
+        handleElement.addEventListener('transitionend', (event) => {
+            if (event.propertyName !== 'width') return;
+            this._trimHandleFavorites();
+            this._updateHandleFade();
+        });
+
         // Pin button handling - delegated. Unpinning here deliberately leaves the tray
         // open; it is the chevron, not the pin, that closes things.
         handleElement.addEventListener('click', async (event) => {

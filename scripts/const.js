@@ -54,14 +54,18 @@ export const CSS_CLASSES = {
 
 export const SQUIRE = {
     TRAY_OFFSET_WIDTH: '6px',
-    // The handle is the part of the tray that stays on screen when it collapses,
-    // so the collapsed transform and the #ui-left margin are both measured off
-    // this.
+    // The handle has two widths, and the user picks which one they get while the
+    // tray is CLOSED. Open, it is always minimal — the tray is right there, so
+    // the strip has no reason to take the extra space.
     //
-    // = 2 borders + 5 gutter + 44 content column + 5 gutter + 4 HP rail. Keep in
-    // step with the custom properties at the top of handle.css, which is where
-    // those five numbers live.
-    TRAY_HANDLE_WIDTH: '60px',
+    // Minimal = 2 borders + 4 gutter + 32 column + 4 gutter + 4 HP rail.
+    // Full    = 2 borders + 5 gutter + 44 column + 5 gutter + 4 HP rail.
+    // Keep both in step with the custom properties at the top of handle.css,
+    // which is where those numbers live. Use getHandleWidth() rather than
+    // reading either directly: the collapsed transform and the #ui-left margin
+    // are measured off whichever one is in force.
+    TRAY_HANDLE_WIDTH_MINIMAL: '46px',
+    TRAY_HANDLE_WIDTH_FULL: '60px',
     // Extra tray body left showing beside the handle when collapsed. This used to
     // be 8px, propping up a handle whose width declaration named a variable that
     // did not exist, so the strip was however wide its contents forced. Now that
@@ -73,7 +77,29 @@ export const SQUIRE = {
     // to clear something.
     TRAY_TOP_OFFSET: '10px',
     TRAY_BOTTOM_OFFSET: '10px'
-}; 
+};
+
+/**
+ * How wide the handle is while the tray is CLOSED, which is the only width the
+ * rest of the module needs: it is the part of the tray that stays on screen, so
+ * the collapsed transform and the #ui-left margin are both measured off it.
+ *
+ * Defaults to minimal, including when settings are not registered yet — a
+ * startup path that reads this before `init` gets the narrower answer, and being
+ * 14px too narrow for a moment is a smaller wrong than being 14px too wide and
+ * leaving a gap between the strip and the screen edge.
+ */
+export function getHandleWidth() {
+    try {
+        if (game.settings.get(MODULE.ID, 'handleMode') === 'full') {
+            return SQUIRE.TRAY_HANDLE_WIDTH_FULL;
+        }
+    } catch (error) {
+        // Settings not registered yet.
+    }
+    return SQUIRE.TRAY_HANDLE_WIDTH_MINIMAL;
+}
+ 
 
 // ===== TEMPLATES ==================================================
 // ================================================================== 

@@ -47,6 +47,19 @@
                 {{/if}}
             </div>
 
+            {{!-- Minimal / full width, sitting directly above the caret.
+
+                  It only changes the CLOSED handle. Open, the strip is always
+                  minimal: the tray is right there, so being wide buys nothing
+                  and costs the panels 14px.
+
+                  Above the caret rather than up with the pin because it is a
+                  statement about the handle's shape, and the caret is the other
+                  one — pin is about the tray. --}}
+            <button class="squire-handle-control tray-handle-button-mode" title="Handle Width">
+                <i class="fa-solid fa-arrows-left-right"></i>
+            </button>
+
             {{!-- The collapse caret at the FOOT, which is where core Foundry
                   keeps its own sidebar collapse control. Matching the
                   application beats internal tidiness: this is a control people
