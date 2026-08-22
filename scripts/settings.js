@@ -357,6 +357,16 @@ export const registerSettings = function() {
         default: 'minimal'
     });
 
+    // Not on the settings page: it is a view switch on the panel's own title
+    // bar, and the panel is the only place the difference means anything.
+    game.settings.register(MODULE.ID, 'inventoryViewMode', {
+        scope: 'user',
+        config: false,
+        type: String,
+        choices: { list: 'List', bag: 'Grouped by container' },
+        default: 'list'
+    });
+
     game.settings.register(MODULE.ID, 'showHandleHealthBar', {
         name: 'Show Health Bar in Handle',
         hint: 'Display health bar visualization in the handle',

@@ -6,6 +6,34 @@ import { TransferUtils } from './transfer-utils.js';
 import { LightUtility } from './utility-lights.js';
 import { QuantityEditor } from './utility-quantity.js';
 
+/**
+ * The inventory's categories, in the order they are shown.
+ *
+ * One list, read by both views. The template used to carry this five times over
+ * as copy-pasted blocks, which is why "group these by bag as well" would have
+ * meant a second copy of the whole thing rather than a second loop over one.
+ *
+ * `container` covers dnd5e's `backpack` too — the two are the same idea in
+ * different system versions, and the item mapping normalises to `container`.
+ */
+/**
+ * dnd5e has called the container type two things. `backpack` is the old name and
+ * `container` is the current one; a world can hold items of either, and every
+ * grouping in this panel has to treat them as one category or a bag lands in a
+ * section of its own with a heading nobody expects.
+ */
+function inventoryCategoryType(type) {
+    return type === 'backpack' ? 'container' : type;
+}
+
+const INVENTORY_CATEGORIES = [
+    { type: 'equipment', label: 'Equipment' },
+    { type: 'consumable', label: 'Consumables' },
+    { type: 'tool', label: 'Tools' },
+    { type: 'loot', label: 'Loot' },
+    { type: 'container', label: 'Containers' }
+];
+
 export class InventoryPanel {
     constructor(actor) {
         this.actor = actor;
@@ -22,9 +50,17 @@ export class InventoryPanel {
         // Get current favorites
         const favorites = FavoritesPanel.getPanelFavorites(this.actor);
         
-        // Get inventory items
+        // Get inventory items.
+        //
+        // `container` is here because dnd5e renamed the type and this list did
+        // not follow: it read `backpack` only, so on any world running a current
+        // dnd5e every container was filtered out of the inventory before
+        // anything else could see it. The Containers category has therefore
+        // never rendered on those worlds, and bag view put everything in General
+        // because it could not find a single bag to group by. Both names, since
+        // an old world can still hold the old type.
         const items = this.actor.items.filter(item => 
-            ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type)
+            ['equipment', 'consumable', 'tool', 'loot', 'container', 'backpack'].includes(item.type)
         );
         
         // Get active light source ID for this actor (from actor flag - most reliable)
@@ -50,7 +86,7 @@ export class InventoryPanel {
                 type: item.type,
                 system: item.system,
                 isFavorite: favorites.includes(item.id),
-                categoryId: `category-inventory-${item.type === 'backpack' ? 'container' : item.type}`,
+                categoryId: `category-inventory-${inventoryCategoryType(item.type)}`,
                 actionType: getActionType(item),
                 actionTypes: getActionTypes(item).join(' '),
                 // Omitted entirely for item types dnd5e has no `equipped` field
@@ -75,13 +111,18 @@ export class InventoryPanel {
             };
         }));
 
-        // Group items by type and sort alphabetically within each type
+        // Grouped by the CATEGORY type, not the raw item type: the header's
+        // filter icons look this up by category name, so an old-style `backpack`
+        // bucketed under its own key left the Containers filter icon missing on
+        // exactly the worlds that still had backpacks. `item.type` is untouched
+        // on the item itself — equip checks and drag payloads read the real one.
         const itemsByType = {};
         mappedItems.forEach(item => {
-            if (!itemsByType[item.type]) {
-                itemsByType[item.type] = [];
+            const key = inventoryCategoryType(item.type);
+            if (!itemsByType[key]) {
+                itemsByType[key] = [];
             }
-            itemsByType[item.type].push(item);
+            itemsByType[key].push(item);
         });
 
         // Sort each category alphabetically by name (removing HTML tags for sorting)
@@ -97,6 +138,112 @@ export class InventoryPanel {
             all: mappedItems,
             byType: itemsByType
         };
+    }
+
+    /**
+     * The category blocks for one set of items, in INVENTORY_CATEGORIES order.
+     *
+     * Empty categories are dropped rather than passed through as empty arrays,
+     * so neither view has to ask whether a block is worth rendering.
+     *
+     * Sorts here rather than relying on the pre-sorted `byType` buckets: bag
+     * view slices the same items along a different axis, so the sort has to
+     * happen after the slice or each bag's contents come out in whatever order
+     * the actor's item collection happens to hold them. Names are stripped of
+     * markup first — some come through with tags, and `<` sorts before every
+     * letter.
+     */
+    _categorise(items) {
+        const plain = name => (name ?? '').replace(/<[^>]*>/g, '').toLowerCase();
+        return INVENTORY_CATEGORIES
+            .map(({ type, label }) => ({
+                id: `category-inventory-${type}`,
+                label,
+                items: items
+                    .filter(item => item.categoryId === `category-inventory-${type}`)
+                    .sort((a, b) => plain(a.name).localeCompare(plain(b.name)))
+            }))
+            .filter(category => category.items.length);
+    }
+
+    /**
+     * The inventory as General plus one section per container.
+     *
+     * A container appears ONLY as its own heading, never also as a row inside
+     * General — it is the section, and listing it twice would be the same object
+     * claiming to be in two places. Its row actions are reachable in list view,
+     * which is the view that treats a bag as a thing you carry rather than as a
+     * place things are.
+     *
+     * Deliberately FLAT: a bag inside a bag gets its own top-level section
+     * rather than nesting. Nesting is a tree, and a tree in a 400px column is a
+     * thing you navigate instead of a thing you read. The parent bag still shows
+     * on each row via the sack icon, which is where "where is this actually" is
+     * already answered.
+     *
+     * An item whose `system.container` points at an id the actor does not have
+     * falls into General. That is a broken back-reference — the container was
+     * deleted out from under it — and the one place it must not do is vanish.
+     */
+    _groupByContainer(mappedItems) {
+        const containers = mappedItems.filter(item => item.categoryId === 'category-inventory-container');
+        const containerIds = new Set(containers.map(item => item.id));
+
+        const general = [];
+        const byContainer = new Map(containers.map(item => [item.id, []]));
+
+        for (const item of mappedItems) {
+            if (containerIds.has(item.id)) continue;
+            const parentId = item.system?.container;
+            if (parentId && byContainer.has(parentId)) byContainer.get(parentId).push(item);
+            else general.push(item);
+        }
+
+        const groups = [];
+        const generalCategories = this._categorise(general);
+        if (generalCategories.length) {
+            groups.push({
+                key: 'general',
+                name: 'General',
+                // Says what it is rather than leaving the template to infer it
+                // from the absence of an image. General is not a bag: it has
+                // nothing to open and no artwork, and both of those follow from
+                // the one fact rather than each standing in for it.
+                isBag: false,
+                img: null,
+                count: general.length,
+                categories: generalCategories
+            });
+        }
+
+        // Bags in name order. Empty ones are kept: "this bag is empty" is an
+        // answer, and a section that disappears when you take the last thing out
+        // of it looks like the bag went with it.
+        containers
+            .slice()
+            .sort((a, b) => a.name.replace(/<[^>]*>/g, '').localeCompare(b.name.replace(/<[^>]*>/g, '')))
+            .forEach(container => {
+                const contents = byContainer.get(container.id) ?? [];
+                groups.push({
+                    key: container.id,
+                    name: container.name,
+                    isBag: true,
+                    img: container.img,
+                    count: contents.length,
+                    categories: this._categorise(contents)
+                });
+            });
+
+        return groups;
+    }
+
+    /** Whether the panel is grouping by container. */
+    static isBagView() {
+        try {
+            return game.settings.get(MODULE.ID, 'inventoryViewMode') === 'bag';
+        } catch (error) {
+            return false;
+        }
     }
 
     /**
@@ -169,6 +316,9 @@ export class InventoryPanel {
         const itemData = {
             items: this.items.all,
             itemsByType: this.items.byType,
+            bagView: InventoryPanel.isBagView(),
+            categories: this._categorise(this.items.all),
+            groups: InventoryPanel.isBagView() ? this._groupByContainer(this.items.all) : [],
             currency: this._getCurrency(),
             newlyAddedItems: PanelManager.newlyAddedItems,
             flags: this.items.all.reduce((acc, item) => {
@@ -334,6 +484,21 @@ export class InventoryPanel {
         };
         panel.addEventListener('click', categoryFilterHandler);
         this._eventHandlers.push({ element: panel, event: 'click', handler: categoryFilterHandler });
+
+        // List <-> bag view. A full re-render rather than a reshuffle of the
+        // existing rows: the two views are different groupings of the same data,
+        // and re-deriving them is both simpler and the only way the category
+        // headers end up in the right sections.
+        const viewToggleHandler = async (event) => {
+            if (!event.target.closest('.inventory-view-toggle')) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const next = InventoryPanel.isBagView() ? 'list' : 'bag';
+            await game.settings.set(MODULE.ID, 'inventoryViewMode', next);
+            await this.render(this.element);
+        };
+        panel.addEventListener('click', viewToggleHandler);
+        this._eventHandlers.push({ element: panel, event: 'click', handler: viewToggleHandler });
 
         // Currency rows: consolidate, and send
         this._activateCurrencyListeners(panel);

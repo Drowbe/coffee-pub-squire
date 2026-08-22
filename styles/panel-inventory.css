@@ -14,3 +14,97 @@
 .panel-item-currency .panel-item-image-container {
     cursor: default;
 }
+
+
+/* ==========================================================================
+   BAG VIEW
+
+   The inventory grouped by what it is carried in: General, then one section per
+   container. The rows themselves are untouched — same shape, same buttons, same
+   sack icon saying which bag a thing is in — so the two views are one list read
+   two ways rather than two lists.
+   ========================================================================== */
+
+/* Louder than a category header and quieter than the panel's own title, because
+   that is exactly where it sits in the hierarchy: it owns the category headers
+   beneath it, and the panel owns it. */
+.squire-tray .bag-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    margin-bottom: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(159, 146, 117, 0.18);
+    /* No left rule. It was drawn to make a section look like a container, and
+       it did — but nothing else in the tray marks a heading that way, so the one
+       heading wearing it read as a different kind of object rather than as a
+       louder heading. Weight and background carry the hierarchy on their own. */
+    color: #9f9275;
+    text-transform: uppercase;
+    font-size: 0.85em;
+    font-weight: 700;
+}
+
+/* The first section starts flush with the list. Only the ones after it need
+   air, and they need it above rather than below, so a section reads as attached
+   to the rows under it. */
+.squire-tray .inventory-group:first-child .bag-header {
+    margin-top: 0;
+}
+
+/* The bag's own artwork, so the section is identifiable as the item it is
+   named after and not just as a word. */
+.squire-tray .bag-header-image {
+    width: 18px;
+    height: 18px;
+    object-fit: cover;
+    border-radius: 3px;
+    flex: none;
+}
+
+.squire-tray .bag-header-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* How many things are in here. On the heading rather than counted off the rows
+   below it, because the rows below are subject to the category filters and this
+   is a fact about the bag. */
+.squire-tray .bag-header-count {
+    flex: none;
+    min-width: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.45);
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.85em;
+    font-weight: 700;
+    text-align: center;
+}
+
+/* The last category in a section should not run into the next section's
+   heading. The heading carries its own top margin, so this only has to stop the
+   category header inside a group from adding a second one at the top. */
+.squire-tray .inventory-group .category-header:first-of-type {
+    margin-top: 4px;
+}
+
+
+/* The bag's own sack, on the right edge — the tray's standing idiom for "this
+   heading has an action". It is the reason the per-row sacks are dropped in this
+   view: one affordance per bag instead of one per row. */
+.squire-tray .bag-header .item-container-open {
+    flex: none;
+    cursor: pointer;
+    color: #9f9275;
+    transition: color 0.2s ease;
+}
+
+.squire-tray .bag-header .item-container-open:hover {
+    color: var(--squire-color-hover);
+}

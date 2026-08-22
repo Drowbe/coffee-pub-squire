@@ -192,6 +192,27 @@
 
 ## LOW PRIORITY
 
+- [ ] **CONSIDER an overflow menu ("...") on panel rows.** Every row's `.tray-buttons` cluster has
+  grown: an inventory row can carry a lightbulb, a sack, a shield, a send arrow, a heart and a
+  feather — six targets in a 400px column, most of them rarely used, all of them competing with the
+  row's own name for width. Worth trying a "..." that holds the tail of that list and leaves only
+  the two or three that get used every session inline.
+  - The judgement to make first is **which icons are actually frequent**, not how to build the menu.
+    A "..." that hides the thing people reach for is worse than six icons.
+  - Note the same cluster is styled and delegated from several panels; whatever pattern this takes
+    should land in one place, the way `.squire-handle-control` did for the handle.
+
+- [ ] **Drag-and-drop reorder in the Favorites panel.** The handle got this on 2026-08-21
+  (`HandleManager._insertHandleFavorite`, drop-above semantics, insertion line); the Favorites panel
+  is still in whatever order `favoritePanel` happens to hold. Same interaction, different list.
+  - Reuse the handle's rules rather than reinventing them: drop on a row inserts ABOVE it, drop past
+    the end appends, dropping on itself is a no-op, and the item is removed before re-insertion so
+    one code path serves both a reorder and an add.
+  - Panel rows are already `draggable="true"` and the tray already owns a delegated `dragstart` that
+    emits `item.toDragData()` for them — which is the payload that means "transfer this item", so a
+    reorder must be told apart from it the way the handle does, with its own flag and its own
+    Squire-only payload. Otherwise dragging a favorite onto the canvas duplicates the item.
+
 - [ ] **Manage which statuses the handle shows.** The handle renders every active effect on the actor
   (`manager-handle.js`, the `effects:` map). Add a way to filter which ones appear — conditions only
   vs all effects, hide passive item effects, or a per-condition toggle. `showHandleConditions` is

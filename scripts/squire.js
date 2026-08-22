@@ -584,7 +584,11 @@ Hooks.once('ready', async () => {
                 await StatblockUtility.refreshIfWarningsAffected(item);
 
                 // Refresh only the panels this item type appears in
-                const affectsInventory = ['equipment', 'consumable', 'tool', 'loot', 'backpack'].includes(item.type);
+                // Both container type names — see inventoryCategoryType in
+                // panel-inventory.js. Without `container`, editing a bag on a
+                // current-dnd5e world refreshed nothing, so its row and its bag
+                // section stayed stale until something else rebuilt the panel.
+                const affectsInventory = ['equipment', 'consumable', 'tool', 'loot', 'container', 'backpack'].includes(item.type);
                 const affectsWeapons = item.type === 'weapon';
 
                 if (affectsWeapons && panelManager.instance.weaponsPanel?.element) {
@@ -1721,6 +1725,7 @@ function getIconForItemType(itemType) {
         case 'equipment': return 'fa-shield-alt';
         case 'consumable': return 'fa-flask';
         case 'tool': return 'fa-hammer';
+        case 'container':
         case 'backpack': return 'fa-backpack';
         case 'loot': return 'fa-coins';
         default: return 'fa-box';

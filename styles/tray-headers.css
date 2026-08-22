@@ -88,6 +88,19 @@
     font-size: 0.85em;
 }
 
+/* The hairline that fences one group of header icons off from another. The
+   control panel has had this since it grew filter groups; a section header can
+   want it for the same reason, which is that two adjacent icons that do
+   different KINDS of thing read as one row of peers unless something says
+   otherwise. */
+.squire-tray .section-header .filter-separator {
+    width: 1px;
+    align-self: stretch;
+    margin: 2px 2px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+
 /* CATEGORY SPELL PIPS */
 
 .squire-tray .slot-pip {

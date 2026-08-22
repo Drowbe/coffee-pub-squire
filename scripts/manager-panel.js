@@ -1461,10 +1461,23 @@ export class PanelManager {
                 return;
             }
 
-            const rows = panel.querySelectorAll(`.panel-item[data-category-id="${categoryId}"]`);
+            // Scoped to the header's own group where there is one. The
+            // inventory's bag view repeats every category once per container, so
+            // a panel-wide row query would keep an empty "Tools" heading in one
+            // bag alive because a different bag has tools in it.
+            const scope = header.closest('.inventory-group') ?? panel;
+            const rows = scope.querySelectorAll(`.panel-item[data-category-id="${categoryId}"]`);
             const hasVisibleItems = Array.from(rows).some(isRowVisible);
 
             header.style.display = hasVisibleItems ? '' : 'none';
+        });
+
+        // A bag whose every row is filtered away takes its own heading with it,
+        // rather than leaving a label over nothing.
+        panel.querySelectorAll('.inventory-group').forEach(group => {
+            const rows = group.querySelectorAll('.panel-item');
+            const hasVisibleItems = Array.from(rows).some(isRowVisible);
+            group.style.display = hasVisibleItems ? '' : 'none';
         });
     }
 

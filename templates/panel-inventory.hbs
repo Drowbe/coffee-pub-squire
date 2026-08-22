@@ -1,3 +1,25 @@
+{{#*inline "inventory-category"}}
+{{#if items}}
+<div class="category-header" data-category-id="{{categoryId}}">{{label}}</div>
+{{#each items as |item|}}
+{{> inventory-item
+    id=item.id
+    img=item.img
+    name=item.name
+    actionType=item.actionType
+    system=item.system
+    quantity=item.system.quantity
+    canEditQuantity=item.canEditQuantity
+    isFavorite=item.isFavorite
+    categoryId=../categoryId
+    type=item.type
+    container=item.container
+    isLightSource=item.isLightSource
+    isLightActive=item.isLightActive}}
+{{/each}}
+{{/if}}
+{{/inline}}
+
 {{#*inline "inventory-item"}}
 <div draggable="true" class="panel-item {{#if system.equipped}}prepared{{/if}}" data-item-id="{{id}}" data-item-type="{{type}}" data-category-id="{{categoryId}}" data-action-types="{{actionTypes}}"{{#if equipState}} data-equip-state="{{equipState}}"{{/if}}>
     <div class="panel-item-row">
@@ -21,9 +43,15 @@
             {{#if isLightSource}}
             <i class="fa-solid fa-lightbulb {{#unless isLightActive}}faded{{/unless}} {{#if isLightActive}}light-active{{/if}}" title="Toggle Light"></i>
             {{/if}}
+            {{!-- Only in list view. In bag view the row is already sitting under
+                  the heading of the bag it is in, and that heading carries its own
+                  sack — so the per-row one is answering a question the section
+                  above it just answered, on every single row. --}}
+            {{#unless @root.bagView}}
             {{#if container}}
             <i class="fa-solid fa-sack item-container-open" data-container-id="{{container.id}}" data-tooltip="Stored in <strong>{{container.name}}</strong><br><em>Click to open</em>"></i>
             {{/if}}
+            {{/unless}}
             {{#if (or (eq type "weapon") (eq type "equipment") (eq type "tool") (eq type "consumable"))}}
                 {{#if system.equipped}}
                 <i class="fa-solid fa-shield-alt" title="Toggle Equipped"></i>
@@ -49,6 +77,13 @@
         <i class="fa-solid fa-backpack"></i> Inventory
     </div>
     <div class="header-right">
+        {{!-- The view switch sits ahead of the category filters and is fenced off
+              from them with the same hairline the control panel uses, because it
+              is a different KIND of control: the filters say which rows to show,
+              this says how to arrange them. --}}
+        <i class="fa-solid {{#if bagView}}fa-boxes-stacked{{else}}fa-list-ul{{/if}} inventory-view-toggle"
+           title="{{#if bagView}}Grouped by container — click for a flat list{{else}}Flat list — click to group by container{{/if}}"></i>
+        <span class="filter-separator"></span>
         {{#if (lookup itemsByType "equipment")}}<i class="fa-solid fa-shirt inventory-category-filter active" data-filter-id="category-inventory-equipment" title="Toggle Equipment"></i>{{/if}}
         {{#if (lookup itemsByType "consumable")}}<i class="fa-solid fa-flask inventory-category-filter active" data-filter-id="category-inventory-consumable" title="Toggle Consumables"></i>{{/if}}
         {{#if (lookup itemsByType "tool")}}<i class="fa-solid fa-hammer inventory-category-filter active" data-filter-id="category-inventory-tool" title="Toggle Tools"></i>{{/if}}
@@ -85,100 +120,35 @@
         {{/if}}
 
         {{#if items}}
-            {{!-- Equipment --}}
-            {{#if (lookup itemsByType "equipment")}}
-            <div class="category-header" data-category-id="category-inventory-equipment">Equipment</div>
-            {{#each (lookup itemsByType "equipment") as |item|}}
-            {{> inventory-item 
-                id=item.id 
-                img=item.img 
-                name=item.name 
-                actionType=item.actionType 
-                system=item.system 
-                quantity=item.system.quantity 
-                canEditQuantity=item.canEditQuantity
-                isFavorite=item.isFavorite 
-                categoryId="category-inventory-equipment"
-                type=item.type
-                isLightSource=item.isLightSource
-                isLightActive=item.isLightActive}}
-            {{/each}}
-            {{/if}}
-
-            {{!-- Consumables --}}
-            {{#if (lookup itemsByType "consumable")}}
-            <div class="category-header" data-category-id="category-inventory-consumable">Consumables</div>
-            {{#each (lookup itemsByType "consumable") as |item|}}
-            {{> inventory-item 
-                id=item.id 
-                img=item.img 
-                name=item.name 
-                actionType=item.actionType 
-                system=item.system 
-                quantity=item.system.quantity 
-                canEditQuantity=item.canEditQuantity
-                isFavorite=item.isFavorite 
-                categoryId="category-inventory-consumable"
-                type=item.type
-                isLightSource=item.isLightSource}}
-            {{/each}}
-            {{/if}}
-
-            {{!-- Tools --}}
-            {{#if (lookup itemsByType "tool")}}
-            <div class="category-header" data-category-id="category-inventory-tool">Tools</div>
-            {{#each (lookup itemsByType "tool") as |item|}}
-            {{> inventory-item 
-                id=item.id 
-                img=item.img 
-                name=item.name 
-                actionType=item.actionType 
-                system=item.system 
-                quantity=item.system.quantity 
-                canEditQuantity=item.canEditQuantity
-                isFavorite=item.isFavorite 
-                categoryId="category-inventory-tool"
-                type=item.type
-                isLightSource=item.isLightSource}}
-            {{/each}}
-            {{/if}}
-
-            {{!-- Loot --}}
-            {{#if (lookup itemsByType "loot")}}
-            <div class="category-header" data-category-id="category-inventory-loot">Loot</div>
-            {{#each (lookup itemsByType "loot") as |item|}}
-            {{> inventory-item 
-                id=item.id 
-                img=item.img 
-                name=item.name 
-                actionType=item.actionType 
-                system=item.system 
-                quantity=item.system.quantity 
-                canEditQuantity=item.canEditQuantity
-                isFavorite=item.isFavorite 
-                categoryId="category-inventory-loot"
-                type=item.type
-                isLightSource=item.isLightSource}}
-            {{/each}}
-            {{/if}}
-
-            {{!-- Containers --}}
-            {{#if (lookup itemsByType "container")}}
-            <div class="category-header" data-category-id="category-inventory-container">Containers</div>
-            {{#each (lookup itemsByType "container") as |item|}}
-            {{> inventory-item 
-                id=item.id 
-                img=item.img 
-                name=item.name 
-                actionType=item.actionType 
-                system=item.system 
-                quantity=item.system.quantity 
-                canEditQuantity=item.canEditQuantity
-                isFavorite=item.isFavorite 
-                categoryId="category-inventory-container"
-                type=item.type
-                isLightSource=item.isLightSource}}
-            {{/each}}
+            {{!-- Five near-identical category blocks used to be written out
+                  here, once each. They are one inline partial and a loop now,
+                  which is what made the bag view a data change rather than a
+                  second copy of the whole list. --}}
+            {{#if bagView}}
+                {{#each groups as |group|}}
+                <div class="inventory-group" data-group-id="{{group.key}}">
+                    <div class="bag-header" data-group-id="{{group.key}}">
+                        {{#if group.isBag}}<img class="bag-header-image" src="{{group.img}}" alt="{{group.name}}"/>{{/if}}
+                        <span class="bag-header-label">{{group.name}}</span>
+                        <span class="bag-header-count">{{group.count}}</span>
+                        {{!-- Same class and same data attribute the rows use, so
+                              the delegated container listener picks it up with no
+                              second handler. Absent on General, which is not a
+                              bag and has nothing to open. --}}
+                        {{#if group.isBag}}
+                        <i class="fa-solid fa-sack item-container-open" data-container-id="{{group.key}}"
+                           data-tooltip="Open <strong>{{group.name}}</strong>"></i>
+                        {{/if}}
+                    </div>
+                    {{#each group.categories as |category|}}
+                    {{> inventory-category categoryId=category.id label=category.label items=category.items}}
+                    {{/each}}
+                </div>
+                {{/each}}
+            {{else}}
+                {{#each categories as |category|}}
+                {{> inventory-category categoryId=category.id label=category.label items=category.items}}
+                {{/each}}
             {{/if}}
 
         {{else}}
