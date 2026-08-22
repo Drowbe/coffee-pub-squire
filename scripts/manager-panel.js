@@ -814,6 +814,8 @@ export class PanelManager {
                 // the drop highlight has to be cleared from the one event that
                 // always fires. This handler already owns "the drag is over".
                 nativeTray.querySelector('.tray-handle')?.classList.remove('handle-drop-target');
+                nativeTray.querySelectorAll('.handle-favorite-icon.drop-above')
+                    .forEach(icon => icon.classList.remove('drop-above'));
             });
         }
 

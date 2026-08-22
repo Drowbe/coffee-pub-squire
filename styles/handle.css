@@ -71,12 +71,17 @@
        pixels rather than em throughout: these are at the bottom of the legible
        range and must not inherit a surprise from a parent font-size. */
     --squire-handle-glyph-size: 11px;
-    --squire-handle-chip-height: 11px;
-    --squire-handle-chip-height-party: 9px;
-    --squire-handle-chip-font: 8px;
+    /* The chip is taller than its numeral needs and the numeral is smaller than
+       the chip allows, on purpose: it has a 2px border, so a 14px chip is 10px
+       of usable interior, and a 7px numeral sits in that with air around it
+       instead of touching the rim. Text jammed against an edge reads as broken
+       before it reads as small. */
+    --squire-handle-chip-height: 14px;
+    --squire-handle-chip-height-party: 12px;
+    --squire-handle-chip-font: 7px;
     --squire-handle-chip-font-party: 7px;
-    --squire-handle-badge-size: 10px;
-    --squire-handle-badge-font: 7px;
+    --squire-handle-badge-size: 14px;
+    --squire-handle-badge-font: 9px;
     /* The HP rail runs down the OUTER edge — the canvas-facing side, the one
        that stays on screen when the tray is closed. It is padding, not a flex
        child: it is absolutely positioned and the column is inset to clear it. */
@@ -150,12 +155,15 @@
        what they should look like whenever there is room for it. */
     --squire-handle-control-size: 32px;
     --squire-handle-glyph-size: 16px;
-    --squire-handle-chip-height: 16px;
-    --squire-handle-chip-height-party: 14px;
+    /* Same arithmetic as minimal: 18 less the 2px border either side is 14px of
+       interior for an 11px numeral. At 16px it was 12px of interior and the
+       digits were touching the rim. */
+    --squire-handle-chip-height: 18px;
+    --squire-handle-chip-height-party: 15px;
     --squire-handle-chip-font: 11px;
     --squire-handle-chip-font-party: 9px;
-    --squire-handle-badge-size: 13px;
-    --squire-handle-badge-font: 9px;
+    --squire-handle-badge-size: 16px;
+    --squire-handle-badge-font: 11px;
     /* Two to a row: 20 + 4 gap + 20 = 44. Half the column each, so the group is
        still flush with everything above and below it. */
     --squire-handle-condition-size: 20px;
@@ -411,11 +419,19 @@
    BESIDE anything. Coloured rather than dark so it reads as a count of
    something happening to you at a size where the numeral alone would be a
    smudge; the accent is the module's one attention colour. Dark text on it
-   because at 7px light-on-colour loses its counters. */
+   because at this size light-on-colour loses its counters.
+
+   Centred ON the button rather than hung off its corner, in both layouts. A
+   corner badge has to overhang to clear the glyph, and overhanging a 20px
+   control puts it half outside a 20px column. Centred, it covers the glyph
+   instead of dodging it — which is the right trade, because a number of
+   conditions is worth more than a second reminder of what conditions are, and
+   the glyph is still there on its own the moment the count is zero. */
 .squire-tray .handle-conditions-count {
     position: absolute;
-    top: -3px;
-    right: -3px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     min-width: var(--squire-handle-badge-size, 13px);
     height: var(--squire-handle-badge-size, 13px);
     padding: 0 2px;
@@ -805,6 +821,24 @@
 
 .squire-tray .handle-group-button:hover i {
     opacity: 1;
+}
+
+/* "It lands above this one." Drawn INSIDE the icon's top edge rather than in
+   the gap above it, because the icon is `overflow: hidden` to clip its art and
+   anything outside the box would be clipped with it.
+
+   Not a box-shadow, for a duller reason: the shared control reset a few rules
+   down sets `box-shadow: none !important` to kill Foundry's focus ring, and it
+   would kill this too. */
+.squire-tray .handle-favorite-icon.drop-above::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--squire-color-hover);
+    z-index: 2;
 }
 
 /* Rendered, measured, and found not to fit. `visibility` would hold the space;

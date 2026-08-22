@@ -371,13 +371,53 @@ export class HandleManager {
         //   * The tray body's own transfer drop zone already checks the same
         //     flag in the opposite direction, so the two zones cannot both claim
         //     one drag.
+        // Picking an icon UP off the handle, to put it somewhere else on the
+        // handle. A separate flag from the panels' drag rather than a reuse of
+        // it: the two carry different payloads and want different drop effects,
+        // and dragover cannot read dataTransfer to tell them apart — the data is
+        // protected until drop, so the only thing available at hover time is a
+        // flag set at dragstart.
+        handleElement.addEventListener('dragstart', (event) => {
+            const icon = event.target.closest('.handle-favorite-icon');
+            if (!icon?.dataset.itemId) return;
+
+            PanelManager._handleReorderActive = true;
+            this._reorderItemId = icon.dataset.itemId;
+
+            event.dataTransfer.effectAllowed = 'move';
+            // Deliberately NOT `item.toDragData()`. Some data must be set or the
+            // drag does not start, and a real Foundry payload would let this drop
+            // on the canvas and create a second copy of the item — which is not
+            // a thing "move this icon up two places" should ever be able to do.
+            // Nothing outside the handle can parse this.
+            event.dataTransfer.setData('text/plain', JSON.stringify({
+                type: 'squire-handle-reorder',
+                itemId: icon.dataset.itemId
+            }));
+
+            const img = icon.querySelector('img');
+            if (img) event.dataTransfer.setDragImage(img, 10, 10);
+        });
+
+        handleElement.addEventListener('dragend', () => {
+            PanelManager._handleReorderActive = false;
+            this._reorderItemId = null;
+            handleElement.classList.remove('handle-drop-target');
+            this._clearInsertionPoint();
+        });
+
         handleElement.addEventListener('dragover', (event) => {
-            if (!PanelManager._trayItemDragActive) return;
+            if (!PanelManager._trayItemDragActive && !PanelManager._handleReorderActive) return;
             // preventDefault is what makes an element a drop target at all;
             // without it the browser refuses the drop and shows the "no" cursor.
             event.preventDefault();
-            event.dataTransfer.dropEffect = 'copy';
+            event.dataTransfer.dropEffect = PanelManager._handleReorderActive ? 'move' : 'copy';
             handleElement.classList.add('handle-drop-target');
+
+            // Which icon the pointer is over is the whole answer: the drop lands
+            // ABOVE it. Over nothing means the end of the list.
+            this._clearInsertionPoint();
+            event.target.closest('.handle-favorite-icon')?.classList.add('drop-above');
         });
 
         // dragleave fires for every child boundary crossed inside the handle, so
@@ -385,36 +425,53 @@ export class HandleManager {
         handleElement.addEventListener('dragleave', (event) => {
             if (event.relatedTarget && handleElement.contains(event.relatedTarget)) return;
             handleElement.classList.remove('handle-drop-target');
+            this._clearInsertionPoint();
         });
 
         handleElement.addEventListener('drop', async (event) => {
-            if (!PanelManager._trayItemDragActive) return;
+            const reordering = PanelManager._handleReorderActive;
+            if (!PanelManager._trayItemDragActive && !reordering) return;
             event.preventDefault();
             event.stopPropagation();
             handleElement.classList.remove('handle-drop-target');
 
+            // Read the target BEFORE clearing the indicator, and off the event
+            // rather than off the class: the class is decoration, and decoration
+            // that decides where data lands is a bug waiting for the day the two
+            // disagree.
+            const beforeItemId = event.target.closest('.handle-favorite-icon')?.dataset.itemId ?? null;
+            this._clearInsertionPoint();
+
             const actor = this.actor || PanelManager.currentActor;
             if (!actor?.isOwner) return;
 
-            let data = null;
-            try {
-                data = JSON.parse(event.dataTransfer.getData('text/plain'));
-            } catch (error) {
-                return;
+            let itemId = null;
+
+            if (reordering) {
+                itemId = this._reorderItemId;
+            } else {
+                let data = null;
+                try {
+                    data = JSON.parse(event.dataTransfer.getData('text/plain'));
+                } catch (error) {
+                    return;
+                }
+                if (data?.type !== 'Item' || !data.uuid) return;
+
+                const item = await fromUuid(data.uuid);
+                if (!item) return;
+
+                // The handle belongs to ONE actor. Compared by uuid rather than
+                // by actor id: an unlinked token's synthetic actor shares the
+                // base actor's id, so an id check would accept an item from a
+                // different token of the same prototype and then store a slot
+                // pointing at an item this actor does not have.
+                if (item.parent?.uuid !== actor.uuid) return;
+                itemId = item.id;
             }
-            if (data?.type !== 'Item' || !data.uuid) return;
 
-            const item = await fromUuid(data.uuid);
-            if (!item) return;
-
-            // The handle belongs to ONE actor. Compared by uuid rather than by
-            // actor id: an unlinked token's synthetic actor shares the base
-            // actor's id, so an id check would accept an item from a different
-            // token of the same prototype and then store a slot pointing at an
-            // item this actor does not have.
-            if (item.parent?.uuid !== actor.uuid) return;
-
-            await FavoritesPanel.addHandleFavorite(actor, item.id);
+            if (!itemId) return;
+            await this._insertHandleFavorite(actor, itemId, beforeItemId);
             await this.updateHandle();
         });
 
@@ -634,6 +691,54 @@ export class HandleManager {
         // className rather than classList.add: the status classes are mutually
         // exclusive, and adding without removing would leave a corpse healthy.
         fill.className = `handle-hp-rail-fill ${actor.healthbarStatusClass ?? ''}`.trim();
+    }
+
+    /**
+     * Put an item on the handle at a position.
+     *
+     * One function for both adding and reordering, because they are the same
+     * operation: an id lands before another id, or at the end. Splitting them
+     * would give two places to get the index arithmetic wrong.
+     *
+     * The item is removed from the list before being re-inserted, which is what
+     * makes a reorder a reorder rather than a duplicate — and is a no-op when it
+     * was not there, which is what makes the same call work for an add.
+     *
+     * Nothing is refused and nothing is promoted. There is no cap, so "full" is
+     * a property of the viewport rather than of the actor and is not something
+     * to argue with the user about at the moment they drop. And the handle is
+     * not a subset of the Favorites panel any more, so landing here does not
+     * favourite anything: the heart fills the panel, this fills the strip.
+     *
+     * @param {Actor} actor
+     * @param {string} itemId          what is being placed
+     * @param {?string} beforeItemId   what it lands above; null means the end
+     * @private
+     */
+    async _insertHandleFavorite(actor, itemId, beforeItemId) {
+        // Dropping something on itself is not a reorder, it is a mind changed
+        // mid-drag. Without this the removal below takes it out of the list, the
+        // lookup for its own id then fails, and it silently teleports to the end.
+        if (!itemId || beforeItemId === itemId) return;
+
+        const ids = FavoritesPanel.getHandleFavorites(actor)
+            .filter(id => id !== null && id !== undefined && id !== itemId);
+
+        const index = beforeItemId ? ids.indexOf(beforeItemId) : -1;
+        if (index === -1) ids.push(itemId);
+        else ids.splice(index, 0, itemId);
+
+        await FavoritesPanel.setHandleFavorites(actor, ids);
+    }
+
+    /**
+     * Drop the "it lands here" line from wherever it currently is.
+     * @private
+     */
+    _clearInsertionPoint() {
+        PanelManager.element
+            ?.querySelectorAll('.handle-favorite-icon.drop-above')
+            .forEach(icon => icon.classList.remove('drop-above'));
     }
 
     /**

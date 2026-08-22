@@ -283,6 +283,14 @@ right-click removal (not a menu); the heart stays panel-only; compendium-search 
     narrowing) and both died on the pinned tray: pinned is open permanently, so anything keyed on
     "while the tray is open" is permanent for those users. Do not reintroduce it.
 
+- [x] **Reordering (2026-08-22).** Drag a handle icon to move it; drop on an icon to land above
+  it, drop on empty strip to land at the end. Same rule for new items dragged in from a panel.
+  `HandleManager._insertHandleFavorite()` is the single write path for both.
+  - Known edge: because a drop always lands ABOVE the icon under the pointer, there is no way to
+    aim at "after the last icon" except by dropping on empty strip below it — and when the list
+    exactly fills the column there is no empty strip. Rare, and the alternative (splitting each
+    icon at its midpoint) makes every other drop ambiguous. Revisit only if it bites.
+
 - [ ] **PHASE 2 — real slots.** Phase 1 appends to a dense list, which means every add reshuffles
   nothing but every *removal* closes the gap, so position is not stable. Slots make it stable:
   index-addressed, gaps allowed, drop lands where you aimed. The data migrates for free — today's

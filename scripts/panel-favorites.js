@@ -96,36 +96,6 @@ export class FavoritesPanel {
     }
 
     /**
-     * @returns {Promise<boolean>} false only if the actor cannot hold favorites.
-     */
-    static async addHandleFavorite(actor, itemId) {
-        // Check if actor is from a compendium (more robust check)
-        const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
-        if (isFromCompendium) {
-            return false;
-        }
-
-        const ids = this.getHandleFavorites(actor).filter(id => id !== null && id !== undefined);
-        if (ids.includes(itemId)) return true;
-
-        // Nothing is refused. The handle used to hold five and turn the sixth
-        // away with a toast; it now takes as many as you give it and shows as
-        // many as the strip has room for, so "full" is a property of the
-        // viewport rather than of the actor.
-        //
-        // And nothing is promoted. The handle used to be a strict SUBSET of the
-        // panel favourites — adding here favourited the item first — because the
-        // only way to take something off the handle was the dagger in the
-        // favourites row, so an entry that was not a favourite could never be
-        // removed. The handle owns its own removal now (right-click a slot), so
-        // the subset rule has nothing left to protect and the two lists are
-        // simply unrelated: the heart puts things in the Favourites panel, the
-        // handle holds whatever you dragged onto it, favourite or not.
-        await this.setHandleFavorites(actor, [...ids, itemId]);
-        return true;
-    }
-
-    /**
      * Idempotently add an item to the panel favorites, preserving order.
      * Unlike manageFavorite this never removes — use it for automation paths
      * where a toggle would silently undo itself on a repeat event.
