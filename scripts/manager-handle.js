@@ -270,14 +270,13 @@ export class HandleManager {
             PanelManager.applyHandleMode();
         });
 
-        // Re-decide how many favourites fit whenever the strip finishes
-        // changing width — which is the mode toggle above AND every open and
-        // close, since the handle goes minimal while the tray is open.
-        //
-        // Hung off `transitionend` rather than off the three things that can
-        // cause it: the icons are a different height in each mode, so the count
-        // that fits changes with the width, and the width is the one signal all
-        // three share. Filtered by property because the same element also
+        // Re-decide how many favourites fit whenever the strip finishes changing
+        // width. Only the mode toggle does that now — the handle keeps the
+        // user's width whether the tray is open or closed — but this stays hung
+        // off `transitionend` rather than off the toggle handler, because the
+        // thing that invalidates the count is the width changing, not the click
+        // that caused it. Anything else that ever resizes the strip is covered
+        // for free. Filtered by property because the same element also
         // transitions background and border-color.
         handleElement.addEventListener('transitionend', (event) => {
             if (event.propertyName !== 'width') return;

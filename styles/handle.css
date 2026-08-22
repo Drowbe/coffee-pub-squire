@@ -4,20 +4,29 @@
    The strip on the tray's outer edge. It has two WIDTHS and one layout — the
    same zones in the same order, always.
 
-     MINIMAL (46px) — a single column of 32px controls.
+     MINIMAL (34px) — a single column of 20px tiles. Everything shrinks with it,
+                      the two tray buttons included: a 32px control cannot sit in
+                      a 20px column, and a column that has to widen for its own
+                      buttons is not minimal.
      FULL    (60px) — a 44px column: bigger portrait and favourites, and
                       conditions packed two to a row.
 
    Which one you get is the user's, toggled from the button above the caret and
-   stored in the `handleMode` setting. With one override: **while the tray is
-   open the handle is always minimal**, because the tray is right there and a
-   wide strip beside it buys nothing while costing the panels 14px.
+   stored in the `handleMode` setting. It holds in every tray state — open,
+   closed and pinned. The handle briefly went minimal on its own whenever the
+   tray was open, on the argument that a wide strip next to an open tray costs
+   the panels 26px for nothing; that is true and it is still not ours to decide.
+   A control that silently disagrees with the button you just pressed is worse
+   than a strip that is wider than it strictly needs to be, and the user can see
+   both states and press the button in either.
 
-   An earlier version of this changed the CONTENT on open too — controls only,
-   everything else hidden — which is the idea this replaces. It died on the
-   pinned tray: pinned means open permanently, so pinning meant the reduced
-   handle forever. Changing the width on open survives that, because the width
-   is a cost that only matters while the panels are competing for the space.
+   This is the third and last version of an idea that keeps failing in the same
+   place. It first changed the CONTENT on open — controls only, everything else
+   hidden — which died on the pinned tray, since pinned is open permanently.
+   Then it changed the WIDTH on open, which died on the same rock in a quieter
+   way: pinning meant never seeing your own setting. The lesson is not about
+   width or content. It is that "while the tray is open" is not a temporary
+   state for anybody who pins, so nothing should be conditioned on it.
 
    The favourites on the handle duplicate the Favorites panel while it is open.
    That is accepted rather than solved, and it is less true than it was: you put
@@ -45,23 +54,29 @@
 .squire-tray .tray-handle {
     /* --- The measurements every child is sized from ---------------------- */
 
-    /* Core Foundry's control geometry. The two tray buttons keep it — they are
-       Foundry's controls, not status readouts, and they are the one thing here
-       that should look like it came with the application. */
-    --squire-handle-control-size: 32px;
-
     /* MINIMAL is the base, and it is also what the handle becomes whenever the
        tray is open. The content column, exclusive of gutters, borders and the
-       rail; everything that is not a tray button spans it. */
-    --squire-handle-content-width: 32px;
+       rail; EVERYTHING spans it, tray buttons included. */
+    --squire-handle-content-width: 20px;
+    --squire-handle-control-size: var(--squire-handle-content-width);
     --squire-handle-portrait-size: var(--squire-handle-content-width);
     --squire-handle-favorite-size: var(--squire-handle-content-width);
     --squire-handle-condition-size: var(--squire-handle-content-width);
     --squire-handle-member-size: var(--squire-handle-content-width);
     --squire-handle-gutter: 4px;
-    /* One condition per row at this width. Two would be 14px each, which is
-       below recognising the art and back to navigating by position. */
+    /* One condition per row. Two at this width would be 8px each, which is not
+       an icon, it is a pixel. */
     --squire-handle-condition-columns: 1;
+    /* Glyphs and numerals scale with the column or they overflow it. Explicit
+       pixels rather than em throughout: these are at the bottom of the legible
+       range and must not inherit a surprise from a parent font-size. */
+    --squire-handle-glyph-size: 11px;
+    --squire-handle-chip-height: 11px;
+    --squire-handle-chip-height-party: 9px;
+    --squire-handle-chip-font: 8px;
+    --squire-handle-chip-font-party: 7px;
+    --squire-handle-badge-size: 10px;
+    --squire-handle-badge-font: 7px;
     /* The HP rail runs down the OUTER edge — the canvas-facing side, the one
        that stays on screen when the tray is closed. It is padding, not a flex
        child: it is absolutely positioned and the column is inset to clear it. */
@@ -126,12 +141,21 @@
     transition: width 0.5s ease-in-out, background 0.25s, border-color 0.25s;
 }
 
-/* FULL, and only while the tray is CLOSED. Both halves of that selector are
-   load-bearing: `.handle-full` is the user's stored preference, and
-   `:not(.expanded)` is the override that makes an open tray always minimal. */
-.squire-tray.handle-full:not(.expanded) .tray-handle {
+/* FULL, in every tray state. There is deliberately no `:not(.expanded)` here:
+   the setting is the setting. */
+.squire-tray.handle-full .tray-handle {
     --squire-handle-content-width: 44px;
     --squire-handle-gutter: 5px;
+    /* The tray buttons go back to core Foundry's control geometry here, which is
+       what they should look like whenever there is room for it. */
+    --squire-handle-control-size: 32px;
+    --squire-handle-glyph-size: 16px;
+    --squire-handle-chip-height: 16px;
+    --squire-handle-chip-height-party: 14px;
+    --squire-handle-chip-font: 11px;
+    --squire-handle-chip-font-party: 9px;
+    --squire-handle-badge-size: 13px;
+    --squire-handle-badge-font: 9px;
     /* Two to a row: 20 + 4 gap + 20 = 44. Half the column each, so the group is
        still flush with everything above and below it. */
     --squire-handle-condition-size: 20px;
@@ -206,7 +230,7 @@
     padding: 0;
     margin: 0;
     text-align: center;
-    font-size: var(--font-size-16, 16px);
+    font-size: var(--squire-handle-glyph-size, 16px);
     line-height: 1;
     /* Both clear the bottom fade, which is painted at 2. It only actually
        reaches the caret, but a control that can be overpainted by a gradient is
@@ -241,12 +265,7 @@
 }
 
 /* Lit when the wide handle is on, dim when it is not — the pin's idiom, minus
-   the rotation, because width has no equivalent of "lying at an angle".
-
-   Keyed on `.handle-full` alone and NOT on `:not(.expanded)`: the button reports
-   the user's SETTING, which is what clicking it changes. Dimming it while the
-   tray is open would make it look off at the exact moment the user is deciding
-   whether to turn it off. */
+   the rotation, because width has no equivalent of "lying at an angle". */
 .squire-tray.handle-full .tray-handle-button-mode {
     color: var(--squire-color-hover);
     opacity: 1;
@@ -377,18 +396,39 @@
     grid-column: 1 / -1;
     width: 100%;
     height: var(--squire-handle-control-size, 32px);
-    gap: 5px;
 }
 
 .squire-tray .handle-conditions #conditions-button i {
-    font-size: 13px;
+    font-size: var(--squire-handle-glyph-size, 13px);
 }
 
+/* The count as a badge on the corner of the glyph, rather than sharing the box
+   with it. Sharing only ever worked in the wide layout; at 20px the pair does
+   not fit, and hiding the glyph to make room cost the button the only thing
+   that said what it was.
+
+   Overlapping is what buys the room back — a badge does not have to fit
+   BESIDE anything. Coloured rather than dark so it reads as a count of
+   something happening to you at a size where the numeral alone would be a
+   smudge; the accent is the module's one attention colour. Dark text on it
+   because at 7px light-on-colour loses its counters. */
 .squire-tray .handle-conditions-count {
-    color: var(--color-light-2, #efe6d8);
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    min-width: var(--squire-handle-badge-size, 13px);
+    height: var(--squire-handle-badge-size, 13px);
+    padding: 0 2px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    background: var(--squire-color-hover);
+    color: #1b1b1b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     /* Explicit pixels, not em: a numeral this size must not inherit a surprise
        from a parent font-size. */
-    font-size: 12px;
+    font-size: var(--squire-handle-badge-font, 9px);
     line-height: 1;
     font-weight: 700;
     pointer-events: none;
@@ -470,7 +510,7 @@
     position: relative;
     overflow: hidden;
     width: 100%;
-    height: 16px;
+    height: var(--squire-handle-chip-height, 16px);
     flex: none;
     background: rgba(0, 0, 0, 0.45);
     display: flex;
@@ -489,7 +529,7 @@
 }
 
 .squire-tray .handle-healthbar.party {
-    height: 14px;
+    height: var(--squire-handle-chip-height-party, 14px);
 }
 
 .squire-tray .handle-healthbar-fill {
@@ -525,16 +565,16 @@
 }
 
 .squire-tray .handle-healthbar-value {
-    font-size: 11px;
+    font-size: var(--squire-handle-chip-font, 11px);
     z-index: 2;
 }
 
 .squire-tray .handle-healthbar.party .handle-healthbar-value {
-    font-size: 9px;
+    font-size: var(--squire-handle-chip-font-party, 9px);
 }
 
 .squire-tray .handle-healthbar-icon {
-    font-size: 11px;
+    font-size: var(--squire-handle-chip-font, 11px);
     z-index: 3;
 }
 

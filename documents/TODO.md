@@ -275,10 +275,13 @@ excellent spine and a terrible menu.
 take it off. The handle and the Favorites panel are unrelated lists now. Decisions taken:
 right-click removal (not a menu); the heart stays panel-only; compendium-search drops rejected.
 
-- [x] **Width toggle (2026-08-22).** Minimal (46px, single column) / Full (60px, 44px column,
-  conditions 2-up), per user, stored in `handleMode`, toggled from the button above the caret. An
-  open tray forces minimal regardless. Same zones in both; only sizes change. Dragging and
-  right-click removal work in both.
+- [x] **Width toggle (2026-08-22).** Minimal (34px, 20px column) / Full (60px, 44px column,
+  conditions 2-up), per user, stored in `handleMode`, toggled from the button above the caret. The
+  setting holds in every tray state — open, closed, pinned — and nothing overrides it. Same zones
+  in both; only sizes change. Dragging and right-click removal work in both.
+  - Two earlier versions conditioned the handle on `.expanded` (first hiding content, then
+    narrowing) and both died on the pinned tray: pinned is open permanently, so anything keyed on
+    "while the tray is open" is permanent for those users. Do not reintroduce it.
 
 - [ ] **PHASE 2 — real slots.** Phase 1 appends to a dense list, which means every add reshuffles
   nothing but every *removal* closes the gap, so position is not stable. Slots make it stable:

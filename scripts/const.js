@@ -58,13 +58,13 @@ export const SQUIRE = {
     // tray is CLOSED. Open, it is always minimal — the tray is right there, so
     // the strip has no reason to take the extra space.
     //
-    // Minimal = 2 borders + 4 gutter + 32 column + 4 gutter + 4 HP rail.
+    // Minimal = 2 borders + 4 gutter + 20 column + 4 gutter + 4 HP rail.
     // Full    = 2 borders + 5 gutter + 44 column + 5 gutter + 4 HP rail.
     // Keep both in step with the custom properties at the top of handle.css,
     // which is where those numbers live. Use getHandleWidth() rather than
     // reading either directly: the collapsed transform and the #ui-left margin
     // are measured off whichever one is in force.
-    TRAY_HANDLE_WIDTH_MINIMAL: '46px',
+    TRAY_HANDLE_WIDTH_MINIMAL: '34px',
     TRAY_HANDLE_WIDTH_FULL: '60px',
     // Extra tray body left showing beside the handle when collapsed. This used to
     // be 8px, propping up a handle whose width declaration named a variable that
