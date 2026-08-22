@@ -82,7 +82,7 @@ coffee-pub-squire/
 | Weapons | panel-weapons.js | Weapon attacks |
 | Spells | panel-spells.js | Spell slots, casting |
 | Features | panel-features.js | Class/race features |
-| Inventory | panel-inventory.js | Items |
+| Inventory | panel-inventory.js | Items, in one of two views: a flat list, or grouped by container (General plus one section per bag). Toggled from the panel's title bar, stored per user in `inventoryViewMode`. `INVENTORY_CATEGORIES` is the single ordered category list both views read. |
 | Party | panel-party.js | Party members, transfers |
 | Party Stats | panel-party-stats.js | Party overview |
 

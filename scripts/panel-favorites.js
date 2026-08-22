@@ -123,50 +123,6 @@ export class FavoritesPanel {
         await this.setHandleFavorites(actor, ids);
     }
 
-    /**
-     * Clean up old favorite flags from all actors in the world
-     * This should be called once to migrate to the new system
-     */
-    static async cleanupOldFavoriteFlags() {
-        try {
-            const actors = game.actors.filter(actor => 
-                actor.getFlag(MODULE.ID, 'favorites') || 
-                actor.getFlag(MODULE.ID, 'handleFavorites') ||
-                actor.getFlag(MODULE.ID, 'isHandleFavorite')
-            );
-            
-            if (actors.length === 0) {
-                return;
-            }
-            
-            for (const actor of actors) {
-                // Remove old flags
-                await actor.unsetFlag(MODULE.ID, 'favorites');
-                await actor.unsetFlag(MODULE.ID, 'handleFavorites');
-                
-                // Remove old per-item flags
-                for (const item of actor.items) {
-                    await item.unsetFlag(MODULE.ID, 'isHandleFavorite');
-                }
-            }
-            
-
-            
-            // Refresh the UI if panels are open
-            if (PanelManager.instance) {
-                await PanelManager.instance.updateHandle();
-                if (PanelManager.instance.favoritesPanel?.element) {
-                    await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);
-                }
-            }
-            
-        } catch (error) {
-            console.error(`${MODULE.ID}: Error cleaning up old favorite flags:`, error);
-        }
-    }
-
-
-
     static async clearHandleFavorites(actor) {
         // Check if actor is from a compendium (more robust check)
         const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);

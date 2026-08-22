@@ -166,8 +166,10 @@
   - Four copies of `_completeItemTransfer` collapse into `transferItem` calls — `transfer-utils.js`,
     `panel-party.js`, `manager-panel.js`, and the `squire.js` socket handler. The four drop-create
     sites become `grantItem`.
-  - Pass `ignoreFlags: ['coffee-pub-squire.isNew', 'coffee-pub-squire.isHandleFavorite']`, and
-    `flags` for `isNew`, on every call. The quantity re-checks in the three copies become redundant.
+  - Pass `ignoreFlags: ['coffee-pub-squire.isNew']`, and `flags` for `isNew`, on every call. The
+    quantity re-checks in the three copies become redundant. `isNew` is the only per-ITEM flag
+    Squire writes, so it is the only one that can affect merge identity — handle membership lives
+    in the actor flag `favoriteHandle`, which items know nothing about.
   - The container guard in `getTransferBlocker()` **stays**: it puts the refusal in front of the
     quantity dialog rather than after it, and Blacksmith refuses the same case with
     `CONTAINER_HAS_CONTENTS`.
@@ -189,6 +191,35 @@
   - **The real puzzle**: the newly created pin's scene entry vanishes without its element being removed — i.e. something drops a pin from the scene flag list on a path that doesn't go through `delete()`. Suspect a read-modify-write race on `scene.setFlag(FLAG_KEY, …)` (both `unplace()` and `delete()` read the list, filter, and write it back — a stale read would clobber a concurrently-added pin).
   - Squire 13.3.13 sidesteps the whole area (notes unpin now deletes instead of unplacing), so this is no longer blocking us; it likely still affects any consumer that unplaces.
 - [ ] **BUG (Medium — other repo: coffee-pub-blacksmith)** `ui-journal-encounter.js:378` reads the bare `JournalSheet` global (`Object.values(ui.windows).find(w => w instanceof JournalSheet && ...)`). Deprecated since v13, **removed in v15** — it becomes a hard `ReferenceError` inside a hook that fires on every journal-page write, which Squire triggers constantly (imports, pin flags). Needs `foundry.appv1.sheets.JournalSheet`, and `ui.windows` on the same line is also v13-deprecated in favour of `foundry.applications.instances`.
+
+### INVENTORY BAG VIEW (2026-08-22)
+
+- [x] **Shipped.** A toggle at the head of the Inventory title bar switches between the flat list and
+  a grouping by container: General first, then one section per bag, same categories inside each.
+  Per-user (`inventoryViewMode`). A container appears only as its own heading, never also as a row;
+  bag sections are flat (a bag inside a bag is its own top-level section); empty bags keep their
+  section; a broken `system.container` back-reference falls into General.
+  - The five copy-pasted category blocks in `panel-inventory.hbs` became one inline partial plus a
+    loop over `INVENTORY_CATEGORIES` first, which is what made this a data change rather than a
+    second copy of the whole list. Sorting moved into `_categorise()` with it: bag view slices the
+    same items along a different axis, so it must sort after the slice.
+  - `_updateHeadersVisibility()` scopes its row lookup to `.inventory-group` where there is one.
+    Bag view repeats every category once per container, so a panel-wide query kept empty headings
+    alive in one bag because a different bag had rows of that category.
+
+- [x] **BUG, long-standing: containers were filtered out of the Inventory panel entirely.** The type
+  filter in `_getItems()` read dnd5e's OLD container type name (`backpack`) and never gained the
+  current one (`container`), so on any world running a current dnd5e no bag reached the panel — the
+  Containers category has never rendered there, and bag view had nothing to group by. Both names are
+  accepted now, and `itemsByType` is keyed off the category type rather than the raw item type so the
+  header's filter icons resolve either way.
+  - **Why it stayed invisible for so long, and the lesson:** the per-row sack icon and the click that
+    opens the bag both resolve with `actor.items.get(id)` — straight off the actor, ignoring the
+    panel's list. So everything that reached PAST the filtered list kept working perfectly. A list
+    that is wrong is only visible to the things that read it; audit the filter, not the symptoms.
+  - `squire.js` carried the same stale list twice more: the `updateItem` hook that decides which
+    panels to re-render, and `getIconForItemType()`. Both fixed. If a third container-type list ever
+    appears, it belongs next to `inventoryCategoryType()` in `panel-inventory.js`.
 
 ## LOW PRIORITY
 
@@ -272,7 +303,19 @@ excellent spine and a terrible menu.
 - [x] The conditions button takes one grid cell and carries the active-condition count as a
   corner badge, rather than spanning both columns.
 
-- [ ] **NEEDS EYES IN A LIVE WORLD.** None of this has been seen rendered. Specifically worth
+- [x] **Conditions count as a badge on the button** — centred over the glyph in minimal (a 20px
+  control cannot hold a glyph and a numeral side by side), beside it in full (44px has the room).
+  The count is the one thing that survives the grid running out of space, since the icons stop
+  answering "how many am I under" the moment the column clips them.
+- [x] **BUG: the pin, width toggle and caret stopped responding once the favorites list was long
+  enough.** The trim measured against `.tray-handle-content-container`, which CONTAINS those two
+  bottom buttons, so the column was allowed to run down over them and the overflowing art ate their
+  clicks. Trim and overflow fade both measure `.tray-handle-content-wrapper` now — the flex item
+  that actually stops above the buttons — and the wrapper clips as belt to those braces, since the
+  trim runs after a render and could otherwise spill for a frame.
+
+- [ ] **NEEDS EYES IN A LIVE WORLD.** Most of this has now been seen rendered and iterated on;
+  what remains unverified is listed below. Specifically worth
   checking:
   - Conditions at 20px: legible, or too small to recognise? The grid is one variable
     (`--squire-handle-condition-size`) if it needs to go up — but the column is 44 wide, so 2-up
@@ -352,7 +395,9 @@ right-click removal (not a menu); the heart stays panel-only; compendium-search 
   - The dynamic `import()` at each call site **stays**, and its comments now say why: lazy loading
     for a rarely-opened tool, not the timing hazard that is gone.
 
-- [ ] **BLOCKING RELEASE — move the pin off 13.19.0 before Squire ships.** The bridge's base-class
+- [ ] **BLOCKING RELEASE — set the pin to Blacksmith's release number before Squire ships.**
+  Confirmed 2026-08-22: the two modules go out in the same round, so the only step left is naming
+  the number once Blacksmith's release is cut. The bridge's base-class
   re-export is in Blacksmith's **[Unreleased]** section, not in 13.19.0. Squire now requires it, so
   `module.json` must name Blacksmith's next version number the moment that release is cut. **Squire
   must not ship before Blacksmith does**; against 13.19.0 the import fails to link and the cleanup

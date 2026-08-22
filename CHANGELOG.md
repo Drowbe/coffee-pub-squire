@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [Unreleased]
+## [13.9.0]
 
 ### Fixed
 - **The resting dim was applied to the control, not to the art inside it.** `filter: brightness(0.9)` sat on the element that owns the border, the 4px radius and the `overflow` clip — which forces that element into its own compositing layer, so the rounded corners and the 1px rim were rasterised separately from everything around them, inside a parent rotated 180°. Dimming a picture never needed the frame to come with it. Every filter in the handle now lands on the `img` (or the glyph), and nothing that paints a border also carries one.
@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Optional hover-to-open** (`Open Tray on Hover`, off by default): moving onto the handle expands the tray, moving off the tray collapses it after the same delay. Hover-opening is silent — sweeping the pointer past the handle on the way to the canvas shouldn't chirp the open sound every time.
 
 ### Changed
+- **A year-old one-time migration is gone.** `cleanupOldFavoriteFlags()` scanned every actor in the world on every canvas load, for every GM, unsetting three flag names Squire stopped writing in August 2025 — and walked every item on any actor that still had one. Nothing has read those flags in that time. Deleted along with its call site.
+  - The dead `window.testFavorites` console hook went with it: it resolved the current actor and then did nothing at all, while announcing "Favorites system ready." to the console on every canvas load.
 - **Containers were being filtered out of the Inventory panel entirely, and had been for as long as this world has run a current dnd5e.** The item-type filter in `_getItems()` read `backpack` — dnd5e's *old* name for the type — and never gained `container`, the current one. So no bag ever reached the panel: the Containers category has never rendered, and bag view put everything under General because it couldn't find a single container to group by. Both names are accepted now, since an old world can still hold the old type.
   - `itemsByType` is keyed off the *category* type rather than the raw item type for the same reason. The header's filter icons look themselves up by category name, so an old-style `backpack` bucketed under its own key left the Containers filter icon missing on exactly the worlds that still had backpacks. The item's real `type` is untouched — equip checks and drag payloads read that one.
   - **Why this stayed invisible:** the sack icon on a row, and the click that opens the bag behind it, both resolve the container with `actor.items.get(id)` — straight off the actor, ignoring the panel's list. So a *contained* item passed the filter, sat in the panel, and could open its parent bag perfectly well. The bags were never missing from the actor, only from the panel's own list, and everything that reached past that list kept working.

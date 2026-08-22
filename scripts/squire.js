@@ -1561,25 +1561,6 @@ Hooks.once('ready', async function() {
         // the no-character tray until they select a token
         await reinitializeTrayForCanvas();
         
-        // Clean up old favorite flags from all actors (one-time migration)
-        if (game.user.isGM) {
-            const { FavoritesPanel } = await import('./panel-favorites.js');
-            await FavoritesPanel.cleanupOldFavoriteFlags();
-        }
-        
-        // Add console command for testing favorites system
-        if (game.user.isGM) {
-            window.testFavorites = async () => {
-                const { FavoritesPanel } = await import('./panel-favorites.js');
-                const currentActor = PanelManager.instance?.actor;
-                if (!currentActor) {
-                    getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'No actor selected.', '', false, false);
-                    return;
-                }
-
-            };
-            getBlacksmith()?.utils.postConsoleAndNotification(MODULE.NAME, 'Favorites system ready.', '', false, false);
-        }
     }, 1000); // 1 second delay to ensure settings and canvas are fully ready
 });
 
