@@ -750,6 +750,14 @@ export class HandleManager {
      * fraction of its kit, and on a tall window it left an empty bar under the
      * last icon. Height is the real constraint, so height is what decides.
      *
+     * Measured against the content WRAPPER, not the content container. The
+     * container also holds the pin, the width toggle and the caret; measuring
+     * against it let the column run down over the bottom two, whose clicks the
+     * overflowing art then swallowed. Intermittently — only once you had enough
+     * favourites to reach them — which is the worst kind of bug to be told
+     * about. The wrapper is the flex item that stops above the buttons, so its
+     * bottom edge is the line that actually matters.
+     *
      * Everything is rendered and then measured. Measuring first would mean
      * predicting layout — icon size, gaps, what the conditions grid above
      * happens to be doing this frame — and the browser already knows all of it.
@@ -766,7 +774,7 @@ export class HandleManager {
      * @private
      */
     _trimHandleFavorites() {
-        const container = PanelManager.element?.querySelector('.tray-handle-content-container');
+        const container = PanelManager.element?.querySelector('.tray-handle-content-wrapper');
         if (!container) return;
 
         const icons = [...container.querySelectorAll('.handle-favorite-icon')];
@@ -798,7 +806,12 @@ export class HandleManager {
         const handle = PanelManager.element.querySelector('.tray-handle');
         if (!handle) return;
         
-        const container = handle.querySelector('.tray-handle-content-container');
+        // The WRAPPER, for the same reason the trim measures it: the container
+        // also holds the two bottom buttons, so its scroll height answers a
+        // question about a taller box than the one the column actually gets.
+        // It is also the element that now clips, so it is the only one whose
+        // scrollHeight can exceed its clientHeight at all.
+        const container = handle.querySelector('.tray-handle-content-wrapper');
         const fade = handle.querySelector('.tray-handle-fade-bottom');
         if (!container || !fade) return;
         

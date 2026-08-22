@@ -305,11 +305,19 @@
 }
 
 /* An ordinary top-to-bottom flex column. It was `writing-mode: vertical-lr`
-   plus `transform: rotate(180deg)`; see the file header for what that cost. */
+   plus `transform: rotate(180deg)`; see the file header for what that cost.
+
+   `overflow: hidden` is belt to the trim's braces. The trim hides whatever does
+   not fit, but it runs AFTER a render — so between painting and measuring, and
+   on any frame where a re-render beats it, the column would otherwise spill down
+   over the width toggle and the caret and eat their clicks. Clipping here means
+   the worst case is an icon that vanishes, not two controls that stop
+   working. */
 .squire-tray .tray-handle-content-wrapper {
     flex: 1;
     min-height: 0;
     width: 100%;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -421,12 +429,18 @@
    smudge; the accent is the module's one attention colour. Dark text on it
    because at this size light-on-colour loses its counters.
 
-   Centred ON the button rather than hung off its corner, in both layouts. A
-   corner badge has to overhang to clear the glyph, and overhanging a 20px
-   control puts it half outside a 20px column. Centred, it covers the glyph
-   instead of dodging it — which is the right trade, because a number of
-   conditions is worth more than a second reminder of what conditions are, and
-   the glyph is still there on its own the moment the count is zero. */
+   Positioned differently in the two layouts, because the two layouts have
+   different amounts of room and the same answer is wrong in one of them.
+
+   MINIMAL centres it ON the button, covering the glyph. A 20px control cannot
+   hold a glyph and a numeral side by side, and a corner badge would have to
+   overhang — putting half of it outside a 20px column. Covering is the right
+   trade there: the number of conditions is worth more than a second reminder of
+   what conditions are, and the glyph returns on its own the moment the count is
+   zero.
+
+   FULL sets it beside the glyph, which is 44px wide and has the room. Nothing
+   is hidden, so nothing has to be traded. */
 .squire-tray .handle-conditions-count {
     position: absolute;
     top: 50%;
@@ -448,6 +462,16 @@
     line-height: 1;
     font-weight: 700;
     pointer-events: none;
+}
+
+/* Glyph left, count right — an ordinary flex row, no overlap. */
+.squire-tray.handle-full .handle-conditions-count {
+    position: static;
+    transform: none;
+}
+
+.squire-tray.handle-full .handle-conditions #conditions-button {
+    gap: 6px;
 }
 
 /* FAVOURITES — a single column, full width, and as many as the strip has room
@@ -473,6 +497,14 @@
    column emptying when the tray opens.
    ========================================================================== */
 
+/* The track. It used to be `rgba(0, 0, 0, 0.45)` on a dark strip, which is very
+   nearly the strip — so at full health the rail read as a floating coloured stub
+   with nothing above it, and at a glance that is a broken element rather than a
+   full bar.
+
+   A bar has to show its own extent to mean anything. Lighter than the ground it
+   sits on, with an inset rim, so the empty part reads as a channel the fill has
+   not reached yet. */
 .squire-tray .handle-hp-rail {
     /* Against `.tray-handle`, which is the positioned ancestor and — unlike
        `.tray-handle-content-container` — is not `overflow: hidden`. The rail
@@ -484,7 +516,8 @@
     /* Hard against the inside of the handle's own 1px border. */
     right: 1px;
     width: var(--squire-handle-rail-width, 4px);
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(255, 255, 255, 0.13);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
     border-radius: 2px;
     overflow: hidden;
     /* It sits on top of the handle's toggle target and is not a control. */
