@@ -877,38 +877,25 @@ export const registerHelpers = function() {
             return [];
         }
         
-        // Get our module's handle favorites and panel favorites from flags
+        // The flag IS the order. It used to be re-sorted below to match the
+        // Favorites panel, because the handle was a subset of the panel and the
+        // panel was where you arranged things. Neither is true any more: items
+        // get onto the handle by being dragged there, so the order you dropped
+        // them in is the order you meant.
+        //
+        // Order still decides who survives a short viewport —
+        // `HandleManager._trimHandleFavorites()` drops from the END — so the
+        // first thing you dragged on is the last thing to disappear.
         const handleFavorites = (actor.getFlag(MODULE.ID, 'favoriteHandle') || []).filter(id => id !== null && id !== undefined);
-        const panelFavorites = (actor.getFlag(MODULE.ID, 'favoritePanel') || []).filter(id => id !== null && id !== undefined);
         
         // Create a map of items by ID for quick lookup
         const itemsById = new Map(actor.items.map(item => [item.id, item]));
         
-        // Sort handle favorites to match the Favorites panel order exactly. The
-        // handle is a plain top-to-bottom column now, so DOM order is visual
-        // order and this is an ordinary ascending sort.
-        //
-        // The order still matters even though nothing truncates the list here:
-        // the ones that do not fit the strip are dropped off the END by
-        // `HandleManager._trimHandleFavorites()`, so panel order decides who
-        // survives a short viewport.
-        const sortedHandleFavorites = [...handleFavorites].sort((a, b) => {
-            const aIndex = panelFavorites.indexOf(a);
-            const bIndex = panelFavorites.indexOf(b);
-
-            if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
-
-            // Anything in the panel list outranks an orphan.
-            if (aIndex !== -1) return -1;
-            if (bIndex !== -1) return 1;
-            return 0;
-        });
-
         // Every one of them. There is no cap: a fixed maximum either cut a
         // character short or left a tall empty bar under the last icon, and
         // which of those you got depended on the character. The strip's own
         // height decides instead, in `_trimHandleFavorites()`.
-        return sortedHandleFavorites
+        return handleFavorites
             .map(id => itemsById.get(id))
             .filter(item => item) // Remove any undefined items
             .map(item => {

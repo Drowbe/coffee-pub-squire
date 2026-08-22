@@ -105,21 +105,23 @@ export class FavoritesPanel {
             return false;
         }
 
-        const ids = new Set(this.getHandleFavorites(actor));
-        if (ids.has(itemId)) return true;
+        const ids = this.getHandleFavorites(actor).filter(id => id !== null && id !== undefined);
+        if (ids.includes(itemId)) return true;
 
         // Nothing is refused. The handle used to hold five and turn the sixth
         // away with a toast; it now takes as many as you give it and shows as
         // many as the strip has room for, so "full" is a property of the
-        // viewport rather than of the actor and is not something to argue with
-        // the user about at the moment they click.
-
-        // Handle favorites are a subset of panel favorites — the handle sorts by
-        // panel order and the panel is where you manage them, so an orphaned
-        // handle entry would be unremovable from the UI. Promote it instead.
-        await this.addPanelFavorite(actor, itemId);
-        ids.add(itemId);
-        await this.setHandleFavorites(actor, Array.from(ids));
+        // viewport rather than of the actor.
+        //
+        // And nothing is promoted. The handle used to be a strict SUBSET of the
+        // panel favourites — adding here favourited the item first — because the
+        // only way to take something off the handle was the dagger in the
+        // favourites row, so an entry that was not a favourite could never be
+        // removed. The handle owns its own removal now (right-click a slot), so
+        // the subset rule has nothing left to protect and the two lists are
+        // simply unrelated: the heart puts things in the Favourites panel, the
+        // handle holds whatever you dragged onto it, favourite or not.
+        await this.setHandleFavorites(actor, [...ids, itemId]);
         return true;
     }
 
@@ -146,13 +148,9 @@ export class FavoritesPanel {
         if (isFromCompendium) {
             return;
         }
-        const ids = new Set(this.getHandleFavorites(actor));
-        ids.delete(itemId);
-        await this.setHandleFavorites(actor, Array.from(ids));
-    }
-
-    static isHandleFavorite(actor, itemId) {
-        return this.getHandleFavorites(actor).includes(itemId);
+        const ids = this.getHandleFavorites(actor)
+            .filter(id => id !== null && id !== undefined && id !== itemId);
+        await this.setHandleFavorites(actor, ids);
     }
 
     /**
@@ -335,13 +333,11 @@ export class FavoritesPanel {
             // Update the panel favorites flag
             await actor.setFlag(MODULE.ID, 'favoritePanel', newPanelFavorites);
 
-            // If we're removing a panel favorite, also remove it from handle favorites
-            // (handle favorites must also be panel favorites)
-            if (!newPanelFavorites.includes(itemId)) {
-                await FavoritesPanel.removeHandleFavorite(actor, itemId);
-            }
-
-            // Handle favorites are now completely manual - but must also be panel favorites
+            // Unfavouriting does NOT take the item off the handle. The two lists
+            // are independent: the heart manages the Favourites panel, and the
+            // handle holds what was dragged onto it. Removing something from the
+            // panel used to silently empty its handle slot, which is the coupling
+            // this pass exists to delete.
 
             await FavoritesPanel.refreshFavoritesUI(actor);
 
@@ -644,7 +640,6 @@ export class FavoritesPanel {
             .map(id => itemsById.get(id))
             .filter(item => item) // Remove any undefined items (in case an item was deleted)
             .map(async item => {
-                const isHandleFavorite = FavoritesPanel.isHandleFavorite(this.actor, item.id);
                 const isLightSource = await LightUtility.isLightSource(item);
                 let isLightActive = false;
                 
@@ -688,7 +683,6 @@ export class FavoritesPanel {
                     canEditQuantity: canEditThisQuantity,
                     isNew: !!(item.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(item.id)),
                     container: getContainerInfo(item, this.actor),
-                    isHandleFavorite: isHandleFavorite,
                     isLightSource: isLightSource,
                     isLightActive: isLightActive
                 };
@@ -966,41 +960,6 @@ export class FavoritesPanel {
                 // Handle favorites are now completely manual - no auto-syncing
                 await PanelManager.instance.updateHandle();
             }
-        }, { signal: listenerSignal });
-
-        // Toggle handle favorite
-        // v13: Use native DOM event delegation
-        panel.addEventListener('click', async (event) => {
-            const daggerButton = event.target.closest('.tray-buttons .fa-dagger');
-            if (!daggerButton) return;
-            
-            event.preventDefault();
-            event.stopPropagation();
-            const favoriteItem = daggerButton.closest('.panel-item');
-            if (!favoriteItem) return;
-            const itemId = favoriteItem.dataset.itemId;
-            if (!itemId) return;
-            const item = this.actor.items.get(itemId);
-            if (!item) return;
-            const current = FavoritesPanel.isHandleFavorite(this.actor, itemId);
-            if (current) {
-                await FavoritesPanel.removeHandleFavorite(this.actor, itemId);
-            } else {
-                // May refuse when the handle is full; it reports that itself.
-                await FavoritesPanel.addHandleFavorite(this.actor, itemId);
-            }
-            // Update the handle to reflect the change
-            if (PanelManager.instance) {
-                await PanelManager.instance.updateHandle();
-            }
-
-            // Refresh the favorites data to update isHandleFavorite properties
-            this.favorites = await this._getFavorites();
-
-            // Read the state back rather than assuming the toggle took, so a
-            // refused add leaves the icon faded instead of lying about it.
-            const newState = FavoritesPanel.isHandleFavorite(this.actor, itemId);
-            daggerButton.classList.toggle('faded', !newState);
         }, { signal: listenerSignal });
 
         // Light source click (light icon)

@@ -331,6 +331,93 @@ export class HandleManager {
             });
         });
 
+        // ---------- Drag an item from a panel onto the handle ----------
+        //
+        // Gated entirely on `PanelManager._trayItemDragActive`, which the tray's
+        // own dragstart sets for `.panel-item[data-item-id]` rows and nothing
+        // else. That single flag buys three things at once:
+        //
+        //   * Compendium search results are rejected. Their rows carry
+        //     `data-uuid` and no `data-item-id`, so the tray's dragstart never
+        //     fires for them and the flag stays false. Nothing here has to know
+        //     that compendium drags exist.
+        //   * A drag from the canvas, a sheet, or another module is rejected for
+        //     the same reason.
+        //   * The tray body's own transfer drop zone already checks the same
+        //     flag in the opposite direction, so the two zones cannot both claim
+        //     one drag.
+        handleElement.addEventListener('dragover', (event) => {
+            if (!PanelManager._trayItemDragActive) return;
+            // preventDefault is what makes an element a drop target at all;
+            // without it the browser refuses the drop and shows the "no" cursor.
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+            handleElement.classList.add('handle-drop-target');
+        });
+
+        // dragleave fires for every child boundary crossed inside the handle, so
+        // it has to ask whether the pointer actually left the strip.
+        handleElement.addEventListener('dragleave', (event) => {
+            if (event.relatedTarget && handleElement.contains(event.relatedTarget)) return;
+            handleElement.classList.remove('handle-drop-target');
+        });
+
+        handleElement.addEventListener('drop', async (event) => {
+            if (!PanelManager._trayItemDragActive) return;
+            event.preventDefault();
+            event.stopPropagation();
+            handleElement.classList.remove('handle-drop-target');
+
+            const actor = this.actor || PanelManager.currentActor;
+            if (!actor?.isOwner) return;
+
+            let data = null;
+            try {
+                data = JSON.parse(event.dataTransfer.getData('text/plain'));
+            } catch (error) {
+                return;
+            }
+            if (data?.type !== 'Item' || !data.uuid) return;
+
+            const item = await fromUuid(data.uuid);
+            if (!item) return;
+
+            // The handle belongs to ONE actor. Compared by uuid rather than by
+            // actor id: an unlinked token's synthetic actor shares the base
+            // actor's id, so an id check would accept an item from a different
+            // token of the same prototype and then store a slot pointing at an
+            // item this actor does not have.
+            if (item.parent?.uuid !== actor.uuid) return;
+
+            await FavoritesPanel.addHandleFavorite(actor, item.id);
+            await this.updateHandle();
+        });
+
+        // Right-click a handle entry to take it off. This is the ONLY way off
+        // the handle now — the dagger in the favourites row is gone, and with it
+        // the two-step "favourite it, then handle it" that made the strip a
+        // second opinion about the Favorites panel. The tooltip on each icon says
+        // so, because a right-click affordance that nothing announces is a
+        // secret.
+        handleElement.addEventListener('contextmenu', async (event) => {
+            const favoriteIcon = event.target.closest('.handle-favorite-icon');
+            if (!favoriteIcon) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            const actor = this.actor || PanelManager.currentActor;
+            if (!actor?.isOwner) return;
+
+            const itemId = favoriteIcon.dataset.itemId;
+            if (!itemId) return;
+
+            // Removes it from the handle and from nowhere else. The item keeps
+            // existing, and keeps its heart if it had one.
+            await FavoritesPanel.removeHandleFavorite(actor, itemId);
+            await this.updateHandle();
+        });
+
         // Handle condition icon right-click (contextmenu) - separate handler
         // v13: Use handleElement (the cloned handle that's actually in the DOM)
         handleElement.addEventListener('contextmenu', async (event) => {

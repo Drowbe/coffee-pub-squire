@@ -269,11 +269,27 @@ excellent spine and a terrible menu.
   - `#ui-left` sits 18px further right than it did. If that crowds anything, the handle's
     closed width is the knob.
 
-- [ ] **OPEN — the handle as a drop target.** The favorites on the handle duplicate the Favorites
-  panel while the tray is open, which is accepted rather than solved. It stops being duplication if
-  you can drag an item ONTO the handle to put it there — the handle becomes a place you put things
-  rather than a second copy of a list, and the duplication argument that nearly cost us the whole
-  column stops applying.
+### HANDLE AS A DROP TARGET
+
+**Phase 1 shipped 2026-08-21.** Drag any panel row onto the handle; right-click a handle icon to
+take it off. The handle and the Favorites panel are unrelated lists now. Decisions taken:
+right-click removal (not a menu); the heart stays panel-only; compendium-search drops rejected.
+
+- [ ] **PHASE 2 — real slots.** Phase 1 appends to a dense list, which means every add reshuffles
+  nothing but every *removal* closes the gap, so position is not stable. Slots make it stable:
+  index-addressed, gaps allowed, drop lands where you aimed. The data migrates for free — today's
+  `[a, b, c]` already reads as slots 0/1/2 and nulls give you gaps.
+  - [ ] **UNDECIDED, and it blocks the design: where the slot region is anchored.** The content
+    ABOVE the slots varies — the conditions grid grows a row every two conditions — so slot 5
+    slides down when you get poisoned, and muscle memory is broken by exactly the event that makes
+    you reach for the handle. Options: anchor the slot region to the bottom and grow upward, put
+    slots above conditions, or accept the drift. Pick before building, not after.
+  - [ ] Placeholders during drag: show the empty slots so capacity is visible at the moment you
+    need to know it. Capacity is not a stored number — it is `floor(available height / slot
+    height)`, the same measurement `_trimHandleFavorites()` already makes.
+
+- [ ] **Not in scope, decided:** dropping compendium-search results onto the handle. Rejected for
+  free by the `_trayItemDragActive` gate; if it is ever wanted it means add-to-actor-then-slot.
 
 - [ ] **NOT BUILT — favorites fan-out.** The other radical option from the design pass: hovering
   the handle pushes the favorite icons out horizontally into the canvas instead of stacking them

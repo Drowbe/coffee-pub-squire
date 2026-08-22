@@ -630,13 +630,16 @@ Hooks.once('ready', async () => {
                 // Remove item from favorites if it's favorited
                 const panelFavorites = FavoritesPanel.getPanelFavorites(actor);
                 if (panelFavorites.includes(itemId)) {
-                    // Remove from panel favorites
                     const newPanelFavorites = panelFavorites.filter(id => id !== itemId);
                     await actor.setFlag(MODULE.ID, 'favoritePanel', newPanelFavorites);
-                    
-                    // Also remove from handle favorites if present
-                    await FavoritesPanel.removeHandleFavorite(actor, itemId);
                 }
+
+                // Unconditionally, and deliberately NOT nested in the branch
+                // above. The handle is not a subset of the panel favourites any
+                // more, so an item can sit on the handle having never been
+                // favourited — and that is exactly the entry that would have been
+                // left pointing at a deleted id.
+                await FavoritesPanel.removeHandleFavorite(actor, itemId);
                 
                 // Refresh all panels for item deletions
                 if (panelManager?.instance) {

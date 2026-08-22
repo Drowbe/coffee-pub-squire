@@ -772,6 +772,10 @@ export class PanelManager {
             // drop landed, was cancelled, or went nowhere.
             nativeTray.addEventListener('dragend', () => {
                 PanelManager._trayItemDragActive = false;
+                // Cancelling with Escape over the handle fires no dragleave, so
+                // the drop highlight has to be cleared from the one event that
+                // always fires. This handler already owns "the drag is over".
+                nativeTray.querySelector('.tray-handle')?.classList.remove('handle-drop-target');
             });
         }
 

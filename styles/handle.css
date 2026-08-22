@@ -125,6 +125,18 @@
     border-color: rgba(255, 255, 255, 0.22);
 }
 
+/* Dragging an item over the strip. Loud on purpose — this is the only moment the
+   handle is a target rather than a display, and the pointer is carrying
+   something, so the usual "did I mean to click this" restraint does not apply.
+
+   The accent is the module's one hover colour: the pointer is here AND it is
+   about to do something, which is the same statement every other control makes,
+   turned up. */
+.squire-tray .tray-handle.handle-drop-target {
+    border-color: var(--squire-color-hover);
+    background: rgba(231, 91, 1, 0.12);
+}
+
 
 /* ==========================================================================
    THE TWO TRAY CONTROLS

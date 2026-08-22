@@ -52,7 +52,6 @@
                     {{else if (or (eq this.type 'weapon') (eq this.type 'equipment') (eq this.type 'consumable') (eq this.type 'tool') (eq this.type 'loot'))}}
                     <i class="fa-solid fa-shield-alt {{#unless this.system.equipped}}faded{{/unless}}" title="Equipped"></i>
                     {{/if}}
-                    <i class="fa-solid fa-dagger handle-favorite-toggle {{#unless this.isHandleFavorite}}faded{{/unless}}" title="Toggle Handle Favorite"></i>
                     <i class="fa-solid fa-heart" title="Remove from Favorites"></i>
                     <i class="fa-solid fa-feather"></i>
                 </div>
