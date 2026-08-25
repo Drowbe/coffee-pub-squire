@@ -529,8 +529,12 @@ Hooks.once('ready', async () => {
                 }
 
                 const panelManager = getPanelManager();
-                // Only process if this item belongs to the actor currently being managed by Squire
-                if (panelManager?.currentActor?.id !== item.parent?.id) {
+                // Only process if this item belongs to the actor currently being
+                // managed by Squire. `item.parent` first, for the same reason as
+                // in deleteItem below: with no current actor and an unowned item,
+                // both sides are undefined and the gate lets it through.
+                if (!item.parent) return;
+                if (panelManager?.currentActor?.id !== item.parent.id) {
                     return;
                 }
                 
@@ -623,8 +627,14 @@ Hooks.once('ready', async () => {
                 }
 
                 const panelManager = getPanelManager();
-                // Only process if this item belongs to the actor currently being managed by Squire
-                if (panelManager?.currentActor?.id !== item.parent?.id) {
+                // Only process if this item belongs to the actor currently being managed by Squire.
+                //
+                // The `item.parent` test is separate and comes first: with no
+                // current actor AND an unowned item, both sides of the comparison
+                // are undefined, `undefined !== undefined` is false, and the gate
+                // waves through a delete with no actor behind it.
+                if (!item.parent) return;
+                if (panelManager?.currentActor?.id !== item.parent.id) {
                     return;
                 }
                 

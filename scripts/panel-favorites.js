@@ -81,14 +81,32 @@ export class FavoritesPanel {
     }
 
     // Handle favorites methods using array-based approach
+    /**
+     * Whether this actor cannot hold favorites at all.
+     *
+     * True for a null actor as well as for a compendium one, because the answer
+     * to "can I store a flag on this" is no in both cases and every caller wants
+     * to stop either way.
+     *
+     * It exists because the compendium test used to be inlined in nine methods,
+     * each reading `actor.pack` as its very first statement — so any of them
+     * handed a null actor threw before reaching a guard. That stayed hidden
+     * while every path happened to be filtered by an earlier call that did
+     * guard; the moment one of them became unconditional, it surfaced as a
+     * TypeError from a hook.
+     */
+    static cannotHoldFavorites(actor) {
+        if (!actor) return true;
+        return Boolean(actor.pack || (actor.collection && actor.collection.locked));
+    }
+
     static getHandleFavorites(actor) {
         if (!actor) return [];
         return actor.getFlag(MODULE.ID, 'favoriteHandle') || [];
     }
 
     static async setHandleFavorites(actor, ids) {
-        // Check if actor is from a compendium (more robust check)
-        const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
+        const isFromCompendium = FavoritesPanel.cannotHoldFavorites(actor);
         if (isFromCompendium) {
             return;
         }
@@ -103,7 +121,7 @@ export class FavoritesPanel {
      */
     static async addPanelFavorite(actor, itemId) {
         if (!actor || !itemId) return false;
-        const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
+        const isFromCompendium = FavoritesPanel.cannotHoldFavorites(actor);
         if (isFromCompendium) return false;
 
         const current = this.getPanelFavorites(actor).filter(id => id !== null && id !== undefined);
@@ -113,8 +131,7 @@ export class FavoritesPanel {
     }
 
     static async removeHandleFavorite(actor, itemId) {
-        // Check if actor is from a compendium (more robust check)
-        const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
+        const isFromCompendium = FavoritesPanel.cannotHoldFavorites(actor);
         if (isFromCompendium) {
             return;
         }
@@ -124,8 +141,7 @@ export class FavoritesPanel {
     }
 
     static async clearHandleFavorites(actor) {
-        // Check if actor is from a compendium (more robust check)
-        const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
+        const isFromCompendium = FavoritesPanel.cannotHoldFavorites(actor);
         if (isFromCompendium) {
             return [];
         }
@@ -138,8 +154,7 @@ export class FavoritesPanel {
     }
 
     static async clearFavorites(actor) {
-        // Check if actor is from a compendium (more robust check)
-        const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
+        const isFromCompendium = FavoritesPanel.cannotHoldFavorites(actor);
         if (isFromCompendium) {
             // Cannot clear favorites for actor from compendium
             return [];
@@ -240,8 +255,7 @@ export class FavoritesPanel {
                 return false;
             }
 
-            // Check if actor is from a compendium (more robust check)
-            const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
+            const isFromCompendium = FavoritesPanel.cannotHoldFavorites(actor);
             if (isFromCompendium) {
                 // Cannot modify favorites for actor from compendium
                 return false;
@@ -286,7 +300,7 @@ export class FavoritesPanel {
 
     static async markItemsAutoFavoriteSeen(actor, itemIds) {
         if (!actor) return;
-        const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
+        const isFromCompendium = FavoritesPanel.cannotHoldFavorites(actor);
         if (isFromCompendium) return;
         const seen = new Set(this.getAutoFavoriteSeen(actor));
         for (const id of itemIds) seen.add(id);
@@ -320,8 +334,7 @@ export class FavoritesPanel {
         }
 
         try {
-            // Check if actor is from a compendium (more robust check)
-            const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
+            const isFromCompendium = FavoritesPanel.cannotHoldFavorites(actor);
             if (isFromCompendium) {
                 return false;
             }
@@ -999,7 +1012,7 @@ export class FavoritesPanel {
         }
 
         // Check if actor is from a compendium
-        const isFromCompendium = actor.pack || (actor.collection && actor.collection.locked);
+        const isFromCompendium = FavoritesPanel.cannotHoldFavorites(actor);
         if (isFromCompendium) {
             return;
         }
