@@ -5,13 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
-
-## [13.9.0]
+## [13.9.1]
 
 ### Fixed
 - **Deleting an item could throw `Cannot read properties of null (reading 'pack')`.** Nine methods on `FavoritesPanel` opened with `actor.pack` as their very first statement, with no null check — so any of them handed a null actor threw before reaching a guard. It stayed hidden because every path to them happened to be filtered by an earlier call that *did* guard; the moment one became unconditional, it surfaced from the `deleteItem` hook. They share one `cannotHoldFavorites()` now, which answers "can this actor store a flag" for a null actor and a compendium actor alike — so the next one cannot be written without the guard.
   - The hook gate underneath it had the same shape of hole: `panelManager?.currentActor?.id !== item.parent?.id` compares `undefined !== undefined` when there is no current actor *and* the item is unowned, which is false, so the gate waved the delete through with no actor behind it. `item.parent` is now tested on its own line first. `updateItem` was written the same way and got the same fix.
+
+## [13.9.0]
+
+### Fixed
 - **The resting dim was applied to the control, not to the art inside it.** `filter: brightness(0.9)` sat on the element that owns the border, the 4px radius and the `overflow` clip — which forces that element into its own compositing layer, so the rounded corners and the 1px rim were rasterised separately from everything around them, inside a parent rotated 180°. Dimming a picture never needed the frame to come with it. Every filter in the handle now lands on the `img` (or the glyph), and nothing that paints a border also carries one.
 - **Handle control borders rendered thicker on one side and swapped sides when the window was resized.** A device-pixel problem, not a CSS one. At fractional OS display scaling — Windows at 125% or 150% — one CSS pixel is 1.25 or 1.5 device pixels, so a 1px rim physically cannot rasterise evenly: one device pixel on some edges, two on others, and which edges get which shifts as the window moves. The control border is 2px now, which divides cleanly enough at those ratios for the variance to stop showing, and reads better at 32px besides.
   - This is why several source-level fixes did not touch it, and why the computed-styles panel looked correct throughout — computed styles report CSS pixels, and the defect was in device pixels. The diagnosis came from resizing the window and watching the heavy edge move, which no amount of reading the stylesheet would have produced.
