@@ -31,6 +31,7 @@
 | Maintain the pasteable GM integration harness (`testing/test-harness-macro.js`) as workflows evolve | Medium | S | Implemented (13.3.19) |
 | Monitor init timing / event efficiency during load | Medium | M | Open |
 | Add disposition to the character card | Medium | S | Open |
+| Pinned tray on load no longer shifts the Foundry UI | **Critical** | S | Open |
 
 **Priority:** urgency scale from **Critical** down to **Low** (matches section intent below).
 
@@ -40,6 +41,10 @@
 ---
 
 ## CURRENT ISSUES (Fix First)
+
+### PLAY SESSION (2026-08-27)
+
+- [ ] **CRITICAL: A pinned tray must shift the Foundry UI on load.** It used to. It no longer does: the tray comes back pinned, but the interface stays unshifted until you unpin and pin again. Load should restore the same layout pin currently produces. Unpin-then-repin is the control that still works.
 
 ### LEGACY V1 WINDOW MIGRATION → BLACKSMITH WINDOW FRAMEWORK
 - [x] **Dice Tray undocking and V2 migration (13.3.18)**: Removed the tray slot, legacy tray wrappers, and docking lifecycle, then migrated the standalone tool to `BlacksmithToolWindowBaseV2` with the Micro title bar, Window API registration, and Blacksmith-owned position persistence. The fixed compact body keeps its controls stationary and makes only the recent-roll list scroll.
