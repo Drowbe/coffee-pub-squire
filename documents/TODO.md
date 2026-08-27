@@ -30,6 +30,7 @@
 | Integration tests with other Coffee Pub modules | Medium | M | Open |
 | Maintain the pasteable GM integration harness (`testing/test-harness-macro.js`) as workflows evolve | Medium | S | Implemented (13.3.19) |
 | Monitor init timing / event efficiency during load | Medium | M | Open |
+| Add disposition to the character card | Medium | S | Open |
 
 **Priority:** urgency scale from **Critical** down to **Low** (matches section intent below).
 
@@ -48,6 +49,10 @@
 - [x] **Unified Transfer Tool (13.3.19)**: Replaced the temporary Character/User picker windows and transfer quantity/approval dialogs with one ephemeral, multi-instance `BlacksmithToolWindowBaseV2`. Inventory, Weapons, Notes, Party drops, direct tray drops, and incoming approvals share the same details/configuration/recipient/action layout using verified `api.entityList` and `api.quantitySplit`; fixed-recipient flows omit the picker, single items omit quantity, failures remain open, and every close path releases its lock. Removed the two picker classes/templates/styles, the old transfer template/CSS, and the upstreamed local quantity-control copy.
 
 ## HIGH PRIORITY
+
+### PLAY SESSION (2026-08-27)
+
+- [ ] **Add disposition to the character card.** Show the token/actor disposition (friendly / neutral / hostile) on the party character card.
 
 ### CHAT CARDS — MIGRATED, NOT YET PROVEN IN PLAY
 - [x] **Migrate to the Blacksmith Chat Cards API (unreleased).** `templates/chat-cards.hbs` deleted — a 505-line fork of Blacksmith's `cards-common.hbs`, over half of which (the whole public half: planning, timers, round, loot, movement, leader) was already unreachable. All 26 posting sites now call `chatCards.post()`; composition lives in `scripts/manager-cards.js` and Squire writes no card HTML. Buttons are registered actions rather than per-render DOM wiring, and request cards retire in place to an outcome band instead of being deleted.
