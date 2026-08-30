@@ -44,7 +44,10 @@ The Character tab is the **Player** view of the Squire tray. It shows the curren
 ### Template Data (panel-character.hbs)
 
 - **Portrait**: `actor.img`, health overlay height via Handlebars helper `healthOverlayHeight(actor.system.attributes.hp)`, death skull when `hp.value === 0`.
-- **Info**: `displayName`; primary line: class + level (from `actor.items` type `class`) or CR; alignment; secondary line: speeds with units and optional “(hover)”.
+- **Info**: `displayName`; primary line: class + level (from `actor.items` type `class`) or CR; alignment; **disposition badge**; secondary line: speeds with units and optional “(hover)”.
+  - Disposition is **not** alignment: alignment is what the character believes, disposition is how this token behaves toward the party. An NPC can be Lawful Good and hostile.
+  - Resolved by `getTokenDisposition()` (`helpers.js`) from the **token document** the panel already resolved for display name and speeds — disposition is per-token, so two tokens of one actor can disagree. `null`, and the badge omitted, when the actor has no token on the scene.
+  - Drawn for any non-`character` actor, and for a player character only when the disposition is not friendly. Shares `.squire-disposition` in `common.css` with the party card; colours come from Blacksmith's `--blacksmith-disposition-*` (Foundry's `CONFIG.Canvas.dispositionColors`).
 - **Actions**: Print character (`.print-character`), Open character sheet (`.character-sheet-toggle`).
 
 ### Handlebars Helper

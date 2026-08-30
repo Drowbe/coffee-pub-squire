@@ -40,7 +40,7 @@ The Party tab shows all player-owned tokens on the current scene (and, for GMs, 
   - Resolves native DOM; finds `[data-panel="party"]`; exits if missing.  
   - **Tokens**: `tokens = canvas.tokens.placeables.filter(t => t.actor?.hasPlayerOwner)`.  
   - **Non-player (GM only)**: `nonPlayerTokens = canvas.tokens.placeables.filter(t => t.actor && !t.actor.hasPlayerOwner)`.  
-  - **Health status**: For each token, `token.healthbarStatus = _calculateHealthbarStatus(hp)` using settings `healthThresholdCritical`, `healthThresholdBloodied`, `healthThresholdInjured`.  
+  - **Decoration**: Both lists go through one `_decorateToken(token)`, which stamps `healthbarStatus` (`_calculateHealthbarStatus(hp)`, using settings `healthThresholdCritical`, `healthThresholdBloodied`, `healthThresholdInjured`), `speedDisplay`, and `disposition` (`getTokenDisposition()`, read from the token document).  
   - **Controlled**: `controlledTokenIds` from `canvas.tokens.controlled`.  
   - **Party HP**: `partyRemainingHP`, `partyTotalHP`, `partyHealthbarStatus` (same thresholds).  
   - **Current actor**: First controlled token’s actor; `otherPartyMembers` = tokens whose actor is not current.  
@@ -50,7 +50,8 @@ The Party tab shows all player-owned tokens on the current scene (and, for GMs, 
 ### Template Data (panel-party.hbs)
 
 - **Party health card**: Clickable; shows `partyRemainingHP` / `partyTotalHP` and bar with `partyHealthbarStatus`.
-- **Party cards**: One per `tokens` entry – portrait (health overlay, death skull), name, class/level or CR, alignment, resistances/immunities (non-character), HP bar, open-sheet button (if owner). Cards are clickable for owners; selected state from `controlledTokenIds`.
+- **Party cards**: One per `tokens` entry – portrait (health overlay, death skull), name, class/level or CR, alignment, **disposition badge**, resistances/immunities (non-character), HP bar, open-sheet button (if owner). Cards are clickable for owners; selected state from `controlledTokenIds`.
+  - The badge is drawn on every NPC card, and on a player card only when the disposition is not friendly — labelling every ally FRIENDLY labels the default. `.squire-disposition` in `common.css` is shared with the character panel.
 - **GM section**: “MONSTERS & NPCs” with `nonPlayerTokens` in same card layout.
 
 ### Listeners (`activateListeners(html)`)

@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [13.9.2]
+
+### Fixed
+- **Squire required Coffee Pub Blacksmith 13.19.0, which does not contain the base-class bridge export Squire imports.** It first appears in **13.19.1**. A world on exactly 13.19.0 satisfied the dependency check and then hit a link error on `import { BlacksmithToolWindowBaseV2 } from '.../api/blacksmith-api.js'` — and because ESM caches a failed module evaluation, the Cleanup and Transfer windows would have stayed dead for the whole session rather than failing once. The minimum is 13.19.1.
+  - The pin was set while that export was still unreleased, so it named the then-current version rather than the one that would ship it. Verified against the released trees rather than the changelog: `git show BUILD-13.19.0:api/blacksmith-api.js` has no such export and `13.19.1` does.
 
 ### Added
 - **Disposition on the party card and the character panel's header.** A coloured dot and label — FRIENDLY / NEUTRAL / HOSTILE / SECRET — on the card's details row, using the same treatment as Blacksmith's combat hover card, because it is the same fact about the same token and should not have to be learned twice. The colours are Blacksmith's `--blacksmith-disposition-*` properties, which are Foundry's own `CONFIG.Canvas.dispositionColors` verbatim, so a hostile token is the same red in the tray, the combat bar and on the canvas.
