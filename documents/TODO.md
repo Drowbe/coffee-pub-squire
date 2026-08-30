@@ -68,7 +68,21 @@
 
 ### PLAY SESSION (2026-08-27)
 
-- [ ] **Add disposition to the character card.** Show the token/actor disposition (friendly / neutral / hostile) on the party character card.
+- [x] **Add disposition to the character card (2026-08-30).** A dot-and-label badge on the party
+  card's primary details row, matching the treatment Blacksmith's combat hover card uses — same
+  fact about the same token, so it should not have to be learned twice.
+  - **Not a Blacksmith API.** Blacksmith has the same four-line mapping inside `CombatBarManager`,
+    but it is a static on an internal manager keyed off a COMBATANT, not part of `api.*`. Squire
+    has its own `getTokenDisposition()` in `helpers.js`; a mapping this thin is not worth an API
+    request. What IS shared are Blacksmith's `--blacksmith-disposition-*` custom properties, which
+    are Foundry's `CONFIG.Canvas.dispositionColors` verbatim — that is what keeps a hostile token
+    the same red in the tray, the combat bar and on the canvas.
+  - **Drawn on every NPC card, but on a player card only when it is not friendly.** A panel that
+    labels every ally FRIENDLY is labelling the default: noise on the common case, and it makes
+    the rare one harder to spot rather than easier. One `{{#if (ne ...)}}` to change if that turns
+    out to be wrong in play.
+  - Disposition is read from the token DOCUMENT, never the actor — two tokens of one actor can
+    disagree, which is the entire point of the field.
 
 ### CHAT CARDS — MIGRATED, NOT YET PROVEN IN PLAY
 - [x] **Migrate to the Blacksmith Chat Cards API (unreleased).** `templates/chat-cards.hbs` deleted — a 505-line fork of Blacksmith's `cards-common.hbs`, over half of which (the whole public half: planning, timers, round, loot, movement, leader) was already unreachable. All 26 posting sites now call `chatCards.post()`; composition lives in `scripts/manager-cards.js` and Squire writes no card HTML. Buttons are registered actions rather than per-render DOM wiring, and request cards retire in place to an outcome band instead of being deleted.

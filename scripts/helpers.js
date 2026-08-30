@@ -599,6 +599,35 @@ export function getCampaignContext() {
  * both — and every list that named only one has been a bug. The inventory panel
  * dropped every container on modern worlds for exactly this reason.
  */
+/**
+ * A token's disposition, as a key and a label.
+ *
+ * Squire's own, not Blacksmith's. Blacksmith has the same four lines inside
+ * `CombatBarManager`, but it is a static on an internal manager keyed off a
+ * COMBATANT, not part of `api.*` — so there is nothing to consume, and a
+ * mapping this thin is not worth an API request. What IS shared, and what this
+ * pairs with, are Blacksmith's `--blacksmith-disposition-*` custom properties:
+ * those are Foundry's own `CONFIG.Canvas.dispositionColors` verbatim, so a
+ * hostile token is the same red in the tray, the combat bar and the canvas.
+ *
+ * Takes a Token placeable or a TokenDocument. Disposition lives on the DOCUMENT
+ * and is per-token, not per-actor — two tokens of one actor can disagree, which
+ * is the entire point of it and the reason this never reads `actor`.
+ *
+ * @param {Token|TokenDocument} token
+ * @returns {{key: string, label: string}}
+ */
+export function getTokenDisposition(token) {
+    const D = CONST.TOKEN_DISPOSITIONS;
+    const raw = token?.document?.disposition ?? token?.disposition;
+    const value = Number.isFinite(Number(raw)) ? Number(raw) : D.NEUTRAL;
+    const key = value === D.FRIENDLY ? 'friendly'
+        : value === D.HOSTILE ? 'hostile'
+        : value === D.SECRET ? 'secret'
+        : 'neutral';
+    return { key, label: game.i18n.localize(`TOKEN.DISPOSITION.${key.toUpperCase()}`) };
+}
+
 export const CONTAINER_ITEM_TYPES = ['container', 'backpack'];
 
 /** Whether this item is a container, under either of dnd5e's names for it. */

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Disposition on the party card.** A coloured dot and label — FRIENDLY / NEUTRAL / HOSTILE / SECRET — on the card's details row, using the same treatment as Blacksmith's combat hover card, because it is the same fact about the same token and should not have to be learned twice. The colours are Blacksmith's `--blacksmith-disposition-*` properties, which are Foundry's own `CONFIG.Canvas.dispositionColors` verbatim, so a hostile token is the same red in the tray, the combat bar and on the canvas.
+  - Shown on every NPC card, and on a player card only when the disposition is *not* friendly. Labelling every ally FRIENDLY is labelling the default — noise on the common case, and it makes the rare one harder to spot rather than easier.
+  - Read from the token **document**, never the actor: two tokens of one actor can disagree about disposition, which is the entire point of the field.
+  - The party panel decorated its player and non-player token lists with two identical `forEach` blocks. They are one `_decorateToken()` now — which is how a field added to one of them ends up missing from the other half of the panel.
+
 ### Fixed
 - **A pinned tray shifts the Foundry UI on load again.** The tray came back pinned over an unshifted interface, and unpin-then-repin was the only way to correct it. `createTray()` restored `PanelManager.isPinned` from the setting *two lines after* calling `applyHandleMode()`, which ends in the margin calculation — so every load computed the margin against the class default of `false` and reserved a handle's width for a tray that was about to be pinned open. `setPinned()` was the one path that updated the margin with `isPinned` already true, which is exactly why the repin worked.
   - Introduced on 2026-08-22 with the handle width toggle, which is what added a margin update to that spot.

@@ -2,7 +2,7 @@ import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { TransferUtils } from './transfer-utils.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
-import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate, resolveDroppedItem, showSquireToast, getActorDisplayName, openHealthWindow } from './helpers.js';
+import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate, resolveDroppedItem, showSquireToast, getActorDisplayName, openHealthWindow, getTokenDisposition } from './helpers.js';
 import {
     transferByGM, transferComplete, transferRejected, transferRequestSender,
     retireCard
@@ -41,23 +41,10 @@ export class PartyPanel {
             canvas.tokens.placeables.filter(token => token.actor && !token.actor.hasPlayerOwner) : 
             [];
 
-        // Add health status to tokens without breaking the structure
-        tokens.forEach(token => {
-            if (token.actor?.system?.attributes?.hp) {
-                const hp = token.actor.system.attributes.hp;
-                token.healthbarStatus = this._calculateHealthbarStatus(hp);
-            }
-            token.speedDisplay = this._getSpeedDisplay(token.actor);
-        });
-
-        // Add health status to non-player tokens as well
-        nonPlayerTokens.forEach(token => {
-            if (token.actor?.system?.attributes?.hp) {
-                const hp = token.actor.system.attributes.hp;
-                token.healthbarStatus = this._calculateHealthbarStatus(hp);
-            }
-            token.speedDisplay = this._getSpeedDisplay(token.actor);
-        });
+        // Both lists get the same decoration. It used to be written out twice,
+        // identically, which is how a field added to one of them ends up missing
+        // from the other half of the panel.
+        [...tokens, ...nonPlayerTokens].forEach(token => this._decorateToken(token));
         
         // Get currently controlled tokens' token IDs (UUIDs)
         const controlledTokenIds = canvas.tokens.controlled
@@ -713,6 +700,24 @@ export class PartyPanel {
      * @param {Object} hp - HP object with value and max properties
      * @returns {string} - CSS class name for healthbar status
      */
+    /**
+     * Everything the party card needs that is not already on the token.
+     *
+     * `disposition` is stamped for every token, including player characters:
+     * disposition is a property of the TOKEN, so a PC placed hostile is a real
+     * and worth-seeing state. Whether the badge is actually drawn is the
+     * template's call — see the note there about not labelling the default.
+     *
+     * @private
+     */
+    _decorateToken(token) {
+        if (token.actor?.system?.attributes?.hp) {
+            token.healthbarStatus = this._calculateHealthbarStatus(token.actor.system.attributes.hp);
+        }
+        token.speedDisplay = this._getSpeedDisplay(token.actor);
+        token.disposition = getTokenDisposition(token);
+    }
+
     _calculateHealthbarStatus(hp) {
         return getHealthbarStatusClass(hp);
     }
