@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, getContainerInfo, activateContainerListener, applyItemTooltips, getBlacksmith, getActionType, getActionTypes} from './helpers.js';
+import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, getContainerInfo, activateContainerListener, applyItemTooltips, getBlacksmith, getActionType, getActionTypes, useOrOpenItem} from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { QuantityEditor } from './utility-quantity.js';
@@ -770,10 +770,7 @@ export class FavoritesPanel {
             const favoriteItem = event.target.closest('.panel-item');
             if (!favoriteItem) return;
             const itemId = favoriteItem.dataset.itemId;
-            const item = this.actor.items.get(itemId);
-            if (item) {
-                await item.use({}, { event });
-            }
+            await useOrOpenItem(this.actor.items.get(itemId), event);
         }, { signal: listenerSignal });
 
         // View item details — delegated

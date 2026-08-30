@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Rolling a container opens it instead of posting it to chat.** The dice overlay on a bag called `item.use()`, which for an item with no activity degrades to announcing its description in chat — dnd5e answering a question nobody asked. The useful verb for a bag is open, the tray already has that verb on the feather, and the dice now agree with it rather than offering a second, worse thing to do with the same row.
+  - Shared as `useOrOpenItem()` in `helpers.js` and used by all three places a container can be rolled from: the Inventory panel, the Favorites panel, and the handle — a container can be favorited and dragged onto the strip like anything else. Three copies would have been three chances to fix it in only two.
+  - The container type's two dnd5e names are now a single exported `CONTAINER_ITEM_TYPES` rather than a literal pair repeated per file. That pair being written out by hand is what dropped every container from the Inventory panel in 13.9.0; it is named once now, and the four lists that need it spread it.
+
 ## [13.9.1]
 
 ### Fixed

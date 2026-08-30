@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
-import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getCampaignContext, openHealthWindow, getHealthPercent, openStatusEffectsWindow, applyItemTooltips } from './helpers.js';
+import { getBlacksmith, getHealthbarStatusClass, getTokenDisplayName, getNativeElement, renderTemplate, getCampaignContext, openHealthWindow, getHealthPercent, openStatusEffectsWindow, applyItemTooltips, useOrOpenItem } from './helpers.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
 // FoundryVTT function imports
@@ -317,10 +317,7 @@ export class HandleManager {
             // If clicking on roll overlay, use the item
             if (event.target.classList.contains('handle-favorite-roll-overlay')) {
                 const itemId = favoriteIcon.dataset.itemId;
-                const item = this.actor.items.get(itemId);
-                if (item) {
-                    await item.use({}, { event });
-                }
+                await useOrOpenItem(this.actor.items.get(itemId), event);
                 return;
             }
             

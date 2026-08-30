@@ -1,10 +1,22 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { FavoritesPanel } from './panel-favorites.js';
-import { getNativeElement, renderTemplate, getContainerInfo, activateContainerListener, applyItemTooltips, showSquireToast, setRowFilter, getActionType, getActionTypes} from './helpers.js';
+import { getNativeElement, renderTemplate, getContainerInfo, activateContainerListener, applyItemTooltips, showSquireToast, setRowFilter, getActionType, getActionTypes, useOrOpenItem, CONTAINER_ITEM_TYPES} from './helpers.js';
 import { TransferUtils } from './transfer-utils.js';
 import { LightUtility } from './utility-lights.js';
 import { QuantityEditor } from './utility-quantity.js';
+
+/**
+ * Normalise an item type to the category it belongs to.
+ *
+ * Only containers need it, and only because dnd5e has called that type two
+ * things — see CONTAINER_ITEM_TYPES in helpers.js, which is where the pair is
+ * named. Without this a `backpack` lands in a section of its own with a heading
+ * nobody expects.
+ */
+function inventoryCategoryType(type) {
+    return CONTAINER_ITEM_TYPES.includes(type) ? 'container' : type;
+}
 
 /**
  * The inventory's categories, in the order they are shown.
@@ -12,20 +24,7 @@ import { QuantityEditor } from './utility-quantity.js';
  * One list, read by both views. The template used to carry this five times over
  * as copy-pasted blocks, which is why "group these by bag as well" would have
  * meant a second copy of the whole thing rather than a second loop over one.
- *
- * `container` covers dnd5e's `backpack` too — the two are the same idea in
- * different system versions, and the item mapping normalises to `container`.
  */
-/**
- * dnd5e has called the container type two things. `backpack` is the old name and
- * `container` is the current one; a world can hold items of either, and every
- * grouping in this panel has to treat them as one category or a bag lands in a
- * section of its own with a heading nobody expects.
- */
-function inventoryCategoryType(type) {
-    return type === 'backpack' ? 'container' : type;
-}
-
 const INVENTORY_CATEGORIES = [
     { type: 'equipment', label: 'Equipment' },
     { type: 'consumable', label: 'Consumables' },
@@ -60,7 +59,7 @@ export class InventoryPanel {
         // because it could not find a single bag to group by. Both names, since
         // an old world can still hold the old type.
         const items = this.actor.items.filter(item => 
-            ['equipment', 'consumable', 'tool', 'loot', 'container', 'backpack'].includes(item.type)
+            ['equipment', 'consumable', 'tool', 'loot', ...CONTAINER_ITEM_TYPES].includes(item.type)
         );
         
         // Get active light source ID for this actor (from actor flag - most reliable)
@@ -556,10 +555,7 @@ export class InventoryPanel {
             const inventoryItem = rollOverlay.closest('.panel-item');
             if (!inventoryItem) return;
             const itemId = inventoryItem.dataset.itemId;
-            const item = this.actor.items.get(itemId);
-            if (item) {
-                await item.use({}, { event });
-            }
+            await useOrOpenItem(this.actor.items.get(itemId), event);
         };
         panel.addEventListener('click', rollOverlayHandler);
         this._eventHandlers.push({ element: panel, event: 'click', handler: rollOverlayHandler });

@@ -202,6 +202,19 @@
   - Squire 13.3.13 sidesteps the whole area (notes unpin now deletes instead of unplacing), so this is no longer blocking us; it likely still affects any consumer that unplaces.
 - [ ] **BUG (Medium — other repo: coffee-pub-blacksmith)** `ui-journal-encounter.js:378` reads the bare `JournalSheet` global (`Object.values(ui.windows).find(w => w instanceof JournalSheet && ...)`). Deprecated since v13, **removed in v15** — it becomes a hard `ReferenceError` inside a hook that fires on every journal-page write, which Squire triggers constantly (imports, pin flags). Needs `foundry.appv1.sheets.JournalSheet`, and `ui.windows` on the same line is also v13-deprecated in favour of `foundry.applications.instances`.
 
+### TRAY ROW BEHAVIOUR
+
+- [x] **Rolling a container opens it (2026-08-30).** The dice overlay on a bag ran `item.use()`,
+  which posts a description card to chat — dnd5e's fallback for an item with no activity, and not
+  a useful thing to do with a backpack. `helpers.js` → `useOrOpenItem()` opens the sheet for a
+  container and uses everything else; wired into the Inventory panel, the Favorites panel and the
+  handle, since a container can be favorited and dragged onto the strip.
+  - Weapons, Spells and Features still call `item.use()` directly, correctly: a container cannot
+    appear in any of them.
+  - [ ] **Follow-up worth considering:** the overlay is still a d20 on a container row, which now
+    promises a roll and delivers an open. A sack glyph for containers would make the icon say what
+    the click does. Small, and only worth doing if the mismatch actually reads as wrong in play.
+
 ### INVENTORY BAG VIEW (2026-08-22)
 
 - [x] **Shipped.** A toggle at the head of the Inventory title bar switches between the flat list and

@@ -591,6 +591,46 @@ export function getCampaignContext() {
  *
  * @returns {{id: string, name: string, img: string}|null}
  */
+/**
+ * The two names dnd5e has used for the container item type.
+ *
+ * `backpack` is the old name and `container` is the current one. A world can
+ * hold items of either, so every list that means "is this a bag" has to name
+ * both — and every list that named only one has been a bug. The inventory panel
+ * dropped every container on modern worlds for exactly this reason.
+ */
+export const CONTAINER_ITEM_TYPES = ['container', 'backpack'];
+
+/** Whether this item is a container, under either of dnd5e's names for it. */
+export function isContainerItem(item) {
+    return CONTAINER_ITEM_TYPES.includes(item?.type);
+}
+
+/**
+ * What the tray's roll button does to an item.
+ *
+ * For everything with an activity, `use()` — attack, cast, drink, the normal
+ * thing. For a CONTAINER, open it.
+ *
+ * `use()` on a bag posts a description card to chat, which is dnd5e answering
+ * a question nobody asked: a backpack has no activity, so "use it" degrades to
+ * "announce it". The useful verb for a bag is open, and the tray already has
+ * that verb on the feather. This makes the dice agree with it rather than
+ * offering a second, worse thing to do with the same row.
+ *
+ * Shared by the inventory panel, the favorites panel and the handle, because a
+ * container can be favourited and dragged onto the strip like anything else,
+ * and three copies of this would be three chances to fix it in only two.
+ */
+export async function useOrOpenItem(item, event) {
+    if (!item) return;
+    if (isContainerItem(item)) {
+        item.sheet?.render(true);
+        return;
+    }
+    await item.use({}, { event });
+}
+
 export function getContainerInfo(item, actor) {
     const containerId = item?.system?.container;
     if (!containerId || !actor) return null;

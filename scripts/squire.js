@@ -2,7 +2,7 @@ import { MODULE, SQUIRE, getHandleWidth } from './const.js';
 import { PanelManager, _updateTrayFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings, migrateCompendiumAccessSetting } from './settings.js';
-import { getTransferBlocker, registerHelpers, showSquireToast } from './helpers.js';
+import { getTransferBlocker, registerHelpers, showSquireToast, CONTAINER_ITEM_TYPES } from './helpers.js';
 import {
     transferRequestGMApproval, transferRequestReceiver, transferComplete,
     transferRejected, transferFailed, transferExpired,
@@ -588,11 +588,11 @@ Hooks.once('ready', async () => {
                 await StatblockUtility.refreshIfWarningsAffected(item);
 
                 // Refresh only the panels this item type appears in
-                // Both container type names — see inventoryCategoryType in
-                // panel-inventory.js. Without `container`, editing a bag on a
+                // Both container type names — see CONTAINER_ITEM_TYPES in
+                // helpers.js. Without the current one, editing a bag on a
                 // current-dnd5e world refreshed nothing, so its row and its bag
                 // section stayed stale until something else rebuilt the panel.
-                const affectsInventory = ['equipment', 'consumable', 'tool', 'loot', 'container', 'backpack'].includes(item.type);
+                const affectsInventory = ['equipment', 'consumable', 'tool', 'loot', ...CONTAINER_ITEM_TYPES].includes(item.type);
                 const affectsWeapons = item.type === 'weapon';
 
                 if (affectsWeapons && panelManager.instance.weaponsPanel?.element) {
