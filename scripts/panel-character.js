@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getTokenDisplayName, getNativeElement, getTextEditor, renderTemplate, getHealthPercent, getHealthPercentFromHP, getActorHP } from './helpers.js';
+import { getTokenDisplayName, getNativeElement, getTextEditor, renderTemplate, getHealthPercent, getHealthPercentFromHP, getActorHP, getTokenDisposition } from './helpers.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -428,6 +428,12 @@ export class CharacterPanel {
                 ownedCharacters: PanelManager.getOwnedCharacters(this.actor),
                 displayName: this.displayName,
                 isGM: game.user.isGM,
+                // Off the TOKEN this panel already resolved above, not the actor:
+                // disposition is per-token, so two tokens of one actor can
+                // disagree. Null when the actor has no token on the scene, which
+                // is the honest answer — there is no disposition to report,
+                // rather than a default one to display.
+                disposition: token ? getTokenDisposition(token) : null,
                 speeds,
                 speedUnits: units,
                 canHover: hover,

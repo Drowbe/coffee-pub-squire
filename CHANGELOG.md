@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Disposition on the party card.** A coloured dot and label — FRIENDLY / NEUTRAL / HOSTILE / SECRET — on the card's details row, using the same treatment as Blacksmith's combat hover card, because it is the same fact about the same token and should not have to be learned twice. The colours are Blacksmith's `--blacksmith-disposition-*` properties, which are Foundry's own `CONFIG.Canvas.dispositionColors` verbatim, so a hostile token is the same red in the tray, the combat bar and on the canvas.
+- **Disposition on the party card and the character panel's header.** A coloured dot and label — FRIENDLY / NEUTRAL / HOSTILE / SECRET — on the card's details row, using the same treatment as Blacksmith's combat hover card, because it is the same fact about the same token and should not have to be learned twice. The colours are Blacksmith's `--blacksmith-disposition-*` properties, which are Foundry's own `CONFIG.Canvas.dispositionColors` verbatim, so a hostile token is the same red in the tray, the combat bar and on the canvas.
   - Shown on every NPC card, and on a player card only when the disposition is *not* friendly. Labelling every ally FRIENDLY is labelling the default — noise on the common case, and it makes the rare one harder to spot rather than easier.
   - Read from the token **document**, never the actor: two tokens of one actor can disagree about disposition, which is the entire point of the field.
+  - On the character panel it sits beside the alignment, and is **not** the same thing: alignment is what the character believes, disposition is how this token behaves toward the party. An NPC can be Lawful Good and hostile. It is omitted entirely when the actor has no token on the scene — there is no disposition to report, rather than a default one to show.
+  - One `.squire-disposition` class in `common.css` serves both panels. A badge defined next to the first panel that needed it is a badge the second panel copies.
   - The party panel decorated its player and non-player token lists with two identical `forEach` blocks. They are one `_decorateToken()` now — which is how a field added to one of them ends up missing from the other half of the panel.
 
 ### Fixed

@@ -331,3 +331,67 @@
 .squire-tray [data-panel] #gm-toggle:hover {
     color: var(--squire-color-hover);
 }
+
+
+/* ==========================================================================
+   DISPOSITION BADGE
+
+   One class, because two panels show the same fact: the party card and the
+   character panel's header. It lives here rather than in either of them for
+   that reason — a badge defined next to the first panel that needed it is a
+   badge the second panel copies.
+
+   Deliberately the same treatment Blacksmith's combat hover card uses — a
+   coloured dot and an uppercase label — because it is the same fact about the
+   same token, and a reader should not have to learn it twice.
+
+   The colours come from Blacksmith's `--blacksmith-disposition-*` custom
+   properties, which are Foundry's own CONFIG.Canvas.dispositionColors verbatim.
+   That is what keeps a hostile token the same red here, in the combat bar and
+   on the canvas. The fallbacks are those same values, so a Blacksmith that
+   somehow has not loaded its variables costs the colour's SOURCE, not the
+   colour.
+   ========================================================================== */
+
+.squire-disposition {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 6px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    /* The rows it sits in are already uppercase and small; this only has to be
+       heavier than its neighbours, not louder. */
+    text-transform: uppercase;
+}
+
+/* The dot carries the colour, not the text. A whole word in disposition red
+   competes with the character's name for the eye at a glance, and the name is
+   what you are actually scanning for. */
+.squire-disposition::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    /* Neutral is the fallback for anything unrecognised, which matches how
+       getTokenDisposition() resolves an unreadable value. */
+    background-color: var(--blacksmith-disposition-neutral, #f1d836);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    flex: none;
+}
+
+.squire-disposition.disposition-friendly::before {
+    background-color: var(--blacksmith-disposition-friendly, #43dfdf);
+}
+
+.squire-disposition.disposition-neutral::before {
+    background-color: var(--blacksmith-disposition-neutral, #f1d836);
+}
+
+.squire-disposition.disposition-hostile::before {
+    background-color: var(--blacksmith-disposition-hostile, #e72124);
+}
+
+.squire-disposition.disposition-secret::before {
+    background-color: var(--blacksmith-disposition-secret, #a612d4);
+}

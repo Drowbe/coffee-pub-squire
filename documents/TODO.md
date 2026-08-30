@@ -69,8 +69,12 @@
 ### PLAY SESSION (2026-08-27)
 
 - [x] **Add disposition to the character card (2026-08-30).** A dot-and-label badge on the party
-  card's primary details row, matching the treatment Blacksmith's combat hover card uses — same
-  fact about the same token, so it should not have to be learned twice.
+  card's details row AND in the character panel's header, matching the treatment Blacksmith's
+  combat hover card uses — same fact about the same token, so it should not have to be learned
+  twice. One `.squire-disposition` class in `common.css` serves both.
+  - In the character header it sits beside the alignment and is deliberately distinct from it:
+    alignment is what the character believes, disposition is how this token behaves toward the
+    party. An NPC can be Lawful Good and hostile. Omitted when the actor has no token on scene.
   - **Not a Blacksmith API.** Blacksmith has the same four-line mapping inside `CombatBarManager`,
     but it is a static on an internal manager keyed off a COMBATANT, not part of `api.*`. Squire
     has its own `getTokenDisposition()` in `helpers.js`; a mapping this thin is not worth an API

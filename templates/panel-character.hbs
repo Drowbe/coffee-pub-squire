@@ -30,6 +30,21 @@
                         {{#if actor.system.details.cr}}CR {{actor.system.details.cr}}{{/if}}
                     {{/if}}
                     {{#if actor.system.details.alignment}} • {{actor.system.details.alignment}}{{/if}}
+                    {{!-- Disposition, and NOT the same thing as the alignment above
+                          it: alignment is what the character believes, disposition
+                          is how this token behaves toward the party. An NPC can be
+                          Lawful Good and hostile.
+
+                          Same rule as the party card — always for a non-character
+                          actor, and for a player character only when it is not
+                          friendly. Labelling every ally FRIENDLY labels the default,
+                          which makes the rare case harder to spot rather than
+                          easier. --}}
+                    {{#if disposition}}
+                    {{#if (or (ne actor.type "character") (ne disposition.key "friendly"))}}
+                    <span class="squire-disposition disposition-{{disposition.key}}">{{disposition.label}}</span>
+                    {{/if}}
+                    {{/if}}
                 </div>
                 <div class="details-secondary">
                     {{#if speeds}}
