@@ -1511,16 +1511,19 @@ Hooks.once('ready', async function() {
     document.documentElement.style.setProperty('--squire-tray-top-offset', SQUIRE.TRAY_TOP_OFFSET);
     document.documentElement.style.setProperty('--squire-tray-bottom-offset', SQUIRE.TRAY_BOTTOM_OFFSET);
 
-    // Set UI position
-    const isPinned = game.settings.get(MODULE.ID, 'isPinned');
-    const uiLeft = document.querySelector('#ui-left');
-    if (uiLeft) {
-        if (isPinned) {
-            uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
-        } else {
-            uiLeft.style.marginLeft = `${handleWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
-        }
-    }
+    // Set UI position.
+    //
+    // Seeding PanelManager.isPinned here rather than letting createTray() do it
+    // on its own: this runs first, and the static is what every consumer of the
+    // pin state reads. Leaving it at its class default until the tray is built
+    // means anything in between answers "not pinned" for a world that is.
+    //
+    // The margin itself goes through updateUiMargin() rather than being
+    // computed again here. It was written out twice — the same two branches,
+    // the same two widths — and a second copy of an arithmetic is a second
+    // place for it to disagree with the first.
+    PanelManager.isPinned = game.settings.get(MODULE.ID, 'isPinned');
+    PanelManager.updateUiMargin();
     
     // Register Handlebars helpers
     registerHelpers();

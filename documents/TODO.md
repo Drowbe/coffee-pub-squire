@@ -44,7 +44,18 @@
 
 ### PLAY SESSION (2026-08-27)
 
-- [ ] **CRITICAL: A pinned tray must shift the Foundry UI on load.** It used to. It no longer does: the tray comes back pinned, but the interface stays unshifted until you unpin and pin again. Load should restore the same layout pin currently produces. Unpin-then-repin is the control that still works.
+- [ ] ~~**CRITICAL: A pinned tray must shift the Foundry UI on load.**~~ **FIXED 2026-08-30.**
+  `createTray()` restored `PanelManager.isPinned` two lines *after* `applyHandleMode()`, which ends
+  in the margin calculation — so load computed the margin against the class default of `false`.
+  `setPinned()` was the only path that ran it with `isPinned` already true, which is why
+  unpin-then-repin was the workaround. Regression from the 2026-08-22 handle width toggle, which
+  is what put a margin update at that point in the sequence.
+  - The real defect underneath: the margin arithmetic existed in **four** copies. Three were
+    right; the fourth ran too early and overwrote them. It is one function now
+    (`PanelManager.updateUiMargin()`) and the other three call it.
+  - **Rule this leaves behind:** `updateUiMargin()` reads `PanelManager.isPinned`, not the
+    setting, so it can stay synchronous. That makes the static a *precondition*, not a cache —
+    seed it from the setting before calling this on any path that runs before the tray is built.
 
 ### LEGACY V1 WINDOW MIGRATION → BLACKSMITH WINDOW FRAMEWORK
 - [x] **Dice Tray undocking and V2 migration (13.3.18)**: Removed the tray slot, legacy tray wrappers, and docking lifecycle, then migrated the standalone tool to `BlacksmithToolWindowBaseV2` with the Micro title bar, Window API registration, and Blacksmith-owned position persistence. The fixed compact body keeps its controls stationary and makes only the recent-roll list scroll.

@@ -132,8 +132,17 @@ export class PanelManager {
     /**
      * Push #ui-left clear of whatever the tray currently occupies.
      * Pinned reserves the full tray width; unpinned reserves only the handle.
+     *
+     * The ONLY place this arithmetic lives. It was written out four times — here,
+     * in the ready hook, and twice in settings.js — and the copies are what let
+     * the load path drift: three of them handled the pinned case correctly while
+     * the fourth ran before the pin state was restored and overwrote them.
+     *
+     * Reads `PanelManager.isPinned`, not the setting, so it stays synchronous.
+     * That makes the static a precondition rather than a cache: anything calling
+     * this before the tray is built must seed it from the setting first.
      */
-    static _updateUiMargin() {
+    static updateUiMargin() {
         const uiLeft = document.querySelector('#ui-left');
         if (!uiLeft) return;
         const reserved = PanelManager.isPinned
@@ -175,7 +184,7 @@ export class PanelManager {
             `translateX(-${trayWidth - handleWidth - parseInt(SQUIRE.TRAY_HANDLE_ADJUSTMENT)}px)`
         );
 
-        PanelManager._updateUiMargin();
+        PanelManager.updateUiMargin();
     }
 
     /**
@@ -202,7 +211,7 @@ export class PanelManager {
             if (PanelManager.isPinned) tray.classList.add('pinned', 'expanded');
             else tray.classList.remove('pinned');
         }
-        PanelManager._updateUiMargin();
+        PanelManager.updateUiMargin();
     }
 
     /**
@@ -553,13 +562,21 @@ export class PanelManager {
         
         document.body.appendChild(trayElement);
         PanelManager.element = trayElement;
-        PanelManager.applyHandleMode();
-        
-        // Restore pin state
+
+        // Restore the pin state FIRST, and specifically before applyHandleMode()
+        // below. That call ends in updateUiMargin(), which branches on
+        // PanelManager.isPinned — so with the restore underneath it, every load
+        // computed the margin against the class default of `false` and reserved
+        // a handle's width for a tray that was about to be pinned open. The
+        // symptom was a tray that came back pinned over an unshifted interface,
+        // with unpin-then-repin as the only way to fix it, because setPinned()
+        // is the one path that updates the margin after isPinned is true.
         PanelManager.isPinned = game.settings.get(MODULE.ID, 'isPinned');
         if (PanelManager.isPinned) {
             trayElement.classList.add('pinned', 'expanded');
         }
+
+        PanelManager.applyHandleMode();
 
         // Ensure viewMode is properly set
         PanelManager.viewMode = viewMode;

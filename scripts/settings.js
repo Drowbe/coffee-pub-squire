@@ -142,11 +142,8 @@ export const registerSettings = function() {
                     document.documentElement.style.setProperty('--squire-tray-top-offset', SQUIRE.TRAY_TOP_OFFSET);
                     document.documentElement.style.setProperty('--squire-tray-bottom-offset', SQUIRE.TRAY_BOTTOM_OFFSET);
 
-                    if (isPinned) {
-                        uiLeft.style.marginLeft = `${trayWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
-                    } else {
-                        uiLeft.style.marginLeft = `${handleWidth + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
-                    }
+                    PanelManager.isPinned = isPinned;
+                    PanelManager.updateUiMargin();
                     // Register the partial if user is not excluded
                     if (!Handlebars.partials['handle-player']) {
                         const handlePlayerTemplate = await fetch(`modules/${MODULE.ID}/templates/handle-player.hbs`).then(response => response.text());
@@ -210,16 +207,9 @@ export const registerSettings = function() {
             document.documentElement.style.setProperty('--squire-tray-width', `${value}px`);
             document.documentElement.style.setProperty('--squire-tray-transform', `translateX(-${value - parseInt(getHandleWidth()) - parseInt(SQUIRE.TRAY_HANDLE_ADJUSTMENT)}px)`);
             
-            // Update UI margin based on pin state
-            const uiLeft = document.querySelector('#ui-left');
-            const isPinned = game.settings.get(MODULE.ID, 'isPinned');
-            if (uiLeft) {
-                if (isPinned) {
-                    uiLeft.style.marginLeft = `${value + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
-                } else {
-                    uiLeft.style.marginLeft = `${parseInt(getHandleWidth()) + parseInt(SQUIRE.TRAY_OFFSET_WIDTH)}px`;
-                }
-            }
+            // onChange fires after the new value is stored, so the shared
+            // calculation reads the same `value` this handler was given.
+            PanelManager.updateUiMargin();
         }
     });
 

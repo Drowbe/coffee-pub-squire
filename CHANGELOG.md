@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **A pinned tray shifts the Foundry UI on load again.** The tray came back pinned over an unshifted interface, and unpin-then-repin was the only way to correct it. `createTray()` restored `PanelManager.isPinned` from the setting *two lines after* calling `applyHandleMode()`, which ends in the margin calculation — so every load computed the margin against the class default of `false` and reserved a handle's width for a tray that was about to be pinned open. `setPinned()` was the one path that updated the margin with `isPinned` already true, which is exactly why the repin worked.
+  - Introduced on 2026-08-22 with the handle width toggle, which is what added a margin update to that spot.
+  - **The margin arithmetic was written out four times** — in `PanelManager`, in the ready hook, and twice in `settings.js` — and that is what let the load path drift: three copies handled the pinned case correctly while the fourth ran too early and overwrote them. There is one now, and the other three call it.
+  - It is `PanelManager.updateUiMargin()` rather than `_updateUiMargin()`: the underscore claimed it was internal while three other files called it, and a private marker everyone ignores teaches the next reader nothing. Its doc comment now states the precondition it actually has — it reads the static, not the setting, so anything calling it before the tray exists must seed the static first.
+
 ### Changed
 - **Rolling a container opens it instead of posting it to chat.** The dice overlay on a bag called `item.use()`, which for an item with no activity degrades to announcing its description in chat — dnd5e answering a question nobody asked. The useful verb for a bag is open, the tray already has that verb on the feather, and the dice now agree with it rather than offering a second, worse thing to do with the same row.
   - Shared as `useOrOpenItem()` in `helpers.js` and used by all three places a container can be rolled from: the Inventory panel, the Favorites panel, and the handle — a container can be favorited and dragged onto the strip like anything else. Three copies would have been three chances to fix it in only two.
