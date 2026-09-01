@@ -8,6 +8,8 @@ character sheet, and a second tab turns the same tray into a party view with ite
 reputation and the GM's party tools. Squire is part of the Coffee Pub suite and requires Coffee Pub
 Blacksmith.
 
+![The tray open on the Character tab: the character block, GM Details, Summary, the Character Sheet strip with its filter bar and search, then Favorites and Weapons, with the handle beside it and a transfer in progress](assets/product-expanded.webp)
+
 This page routes. Each section points at the document that answers the question rather than answering
 it here.
 

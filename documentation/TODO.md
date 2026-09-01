@@ -26,8 +26,8 @@
 | Monitor init timing / event efficiency during load | Medium | M | Open |
 | Add disposition to the character card | Medium | S | Open |
 | Pinned tray on load no longer shifts the Foundry UI | **Critical** | S | Open |
-| Screenshots for the wiki and the README: `product/` predates the module split | High | S | Open |
-| Walk both user guides in a running world and correct the labels | High | S | Open |
+| Walk both user guides in a running world; screenshots corrected five claims, the rest are unchecked | High | S | Open |
+| Decide what happens to `product/`, now that `documentation/assets/` carries the real screens | Low | S | Open |
 
 **Priority:** urgency scale from **Critical** down to **Low** (matches section intent below).
 
@@ -50,26 +50,23 @@
 
 ### DOCUMENTATION
 
-- [ ] **Fresh screenshots.** `documentation/assets/` is empty apart from its `.gitkeep`, so the wiki
-  and the README both ship without an image, which for a visual product is the biggest single gap in
-  the front door. The seven files in `product/` cannot be used: they were captured before the module
-  split and show a five-tab strip (TOKEN, PARTY, NOTES, CODEX, QUESTS) against the two tabs the tray
-  has now, plus the pre-2026-08-21 handle with the rotated character name.
-  - Needed: one overview shot for the README and `home.md`, as `assets/product-overview.webp`, and one
-    per user guide taking that guide's prefix.
-  - **WebP, not PNG** -- the standard is explicit, and git keeps every version of a binary forever.
-  - Once they land, decide what happens to `product/`. Three of the seven document Quests, the Codex
-    and Notes, which are Librarian's and Blacksmith's now; they may be worth handing over rather than
-    deleting.
+- [ ] **Retire `product/`.** `documentation/assets/` now carries eleven current screens, so the seven
+  in `product/` are superseded and nothing references them. Three of them document Quests, the Codex
+  and Notes, which are Librarian's and Blacksmith's now, so they may be worth handing over rather than
+  deleting outright. The other four show a five-tab strip against the two tabs the tray has, and are
+  only misleading.
 
-- [ ] **Walk both user guides in a running world.** `userguide-getting-started.md` and
-  `userguide-settings.md` were written from source and from the templates' literal English labels.
-  That is reliable about what exists and unreliable about what a screen calls it and what order things
-  appear in, which are the only two things a reader navigates by. Every claim needs performing once.
-  - The claims most likely to be wrong: the order of the panels down the Character tab, the order and
-    grouping of the settings page's headings, whether the filter chips read the way the tooltips say,
-    and whether the character switcher chips appear when they are described as appearing.
-  - Do this after the screenshots, not before -- the images are what surface the wrong labels.
+- [ ] **Finish walking the user guides in a running world.** The screenshots corrected five claims that
+  reading the source could never have caught: the panel header reads Summary rather than Character
+  Summary, the Party tab has a Party Health panel that was not documented at all, the compendium mode
+  replaces the filter bar as well as the panel stack, the tickbox sits under the search box rather than
+  under the results, and Cleanup's undo covers the merge alone -- the window says in as many words that
+  there is no undo for the run.
+  - Still unchecked, because no screenshot covers them: the order and grouping of the settings page's
+    headings, whether shift-click solos a filter chip within its group the way the tooltips imply,
+    whether the character switcher chips appear when and how they are described, and every claim in the
+    who-can-do-what table from the player's side.
+  - The settings guide has no screenshots at all and is entirely source-derived.
 
 ### FALLOUT FROM THE `instance.element` FIX (13.3.14)
 

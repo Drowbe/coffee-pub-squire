@@ -11,12 +11,15 @@ function getBlacksmith() {
 // Configuration object for print functionality
 const PRINT_CONFIG = {
     IMAGE_LOAD_TIMEOUT: 5000,
+    // Backstop for removing the print frame when `afterprint` never arrives.
+    // Long, because it is racing a dialog a human has to dismiss.
+    FRAME_CLEANUP_TIMEOUT: 60000,
     SKILL_COLUMNS: 2,
     DEFAULT_ICON: 'fa-question',
     ERROR_MESSAGES: {
         NO_ACTOR: 'No actor provided for printing',
         INVALID_ACTOR: 'Invalid actor data structure',
-        POPUP_BLOCKED: 'Pop-up blocked. Please allow pop-ups for this site.',
+        FRAME_FAILED: 'Could not build the print view. See console for details.',
         TEMPLATE_ERROR: 'Failed to render character sheet template'
     }
 };
@@ -520,29 +523,52 @@ export class PrintCharacterSheet {
                 throw new Error(PRINT_CONFIG.ERROR_MESSAGES.TEMPLATE_ERROR);
             }
 
-            // Create a new window
-            const printWindow = window.open('', '_blank');
-            if (!printWindow) {
-                ui.notifications.error(PRINT_CONFIG.ERROR_MESSAGES.POPUP_BLOCKED);
+            // Print through an off-screen iframe rather than a popup window.
+            //
+            // `window.open` is not available to us in the desktop client. It is
+            // Electron, where a renderer may only open a window if the main process
+            // registered a `setWindowOpenHandler` for it, and Foundry's does not --
+            // the call returns null and there is no setting a user can change to
+            // allow it. The browser permitted it only because the click's transient
+            // activation had not expired yet, which every `await` above was already
+            // eating into, so it was fragile there too. An iframe needs neither: it
+            // is same-origin, it can be created at any point, and printing it prints
+            // its own document rather than the page it sits in.
+            const frame = document.createElement('iframe');
+            // Off-screen rather than `display: none`. A hidden frame has no layout,
+            // and this sheet needs one before print media takes over -- it is 900px
+            // wide at most and its cover page is sized in `vh`, both of which resolve
+            // against the frame's viewport. A4 proportions, wide enough not to
+            // squeeze the sheet.
+            frame.setAttribute('aria-hidden', 'true');
+            frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:1000px;height:1400px;border:0;';
+            document.body.appendChild(frame);
+
+            const frameDoc = frame.contentDocument;
+            const frameWindow = frame.contentWindow;
+            if (!frameDoc || !frameWindow) {
+                frame.remove();
+                console.error('Squire | Print frame produced no document.');
+                ui.notifications.error(PRINT_CONFIG.ERROR_MESSAGES.FRAME_FAILED);
                 return;
             }
 
-            // Write the content to the new window
-            printWindow.document.write(html);
-            printWindow.document.close();
+            frameDoc.open();
+            frameDoc.write(html);
+            frameDoc.close();
 
             // Wait for images to load with timeout
             await Promise.race([
                 new Promise(resolve => {
-                    const images = printWindow.document.getElementsByTagName('img');
+                    const images = frameDoc.getElementsByTagName('img');
                     let loadedImages = 0;
                     const totalImages = images.length;
-                    
+
                     if (totalImages === 0) {
                         resolve();
                         return;
                     }
-                    
+
                     for (let img of images) {
                         if (img.complete) {
                             loadedImages++;
@@ -561,6 +587,21 @@ export class PrintCharacterSheet {
                 }),
                 moduleDelay(PRINT_CONFIG.IMAGE_LOAD_TIMEOUT)
             ]);
+
+            // Tear the frame down when the dialog closes, never before: removing it
+            // while the dialog is open cancels the job. Guarded because both the
+            // event and the backstop can arrive.
+            let frameRemoved = false;
+            const removeFrame = () => {
+                if (frameRemoved) return;
+                frameRemoved = true;
+                frame.remove();
+            };
+            frameWindow.addEventListener('afterprint', removeFrame, { once: true });
+            moduleDelay(PRINT_CONFIG.FRAME_CLEANUP_TIMEOUT).then(removeFrame);
+
+            frameWindow.focus();
+            frameWindow.print();
 
         } catch (error) {
             console.error('Error printing character sheet:', error);

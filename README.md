@@ -13,6 +13,8 @@ and favourites sit one click away down the left edge of the screen, with hit poi
 readable at a glance even when the tray is closed. A second tab turns the same tray into a party view
 with item transfers, reputation, and the GM's party tools.
 
+![The tray open on the Character tab: the character block, GM Details, Summary, the Character Sheet strip with its filter bar and search, then Favorites and Weapons, with the handle beside it and a transfer in progress](documentation/assets/product-expanded.webp)
+
 ## What it does
 
 - **A tray that follows your token.** Select a character and the tray is theirs -- portrait, health,

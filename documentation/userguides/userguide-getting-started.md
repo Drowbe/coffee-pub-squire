@@ -6,6 +6,8 @@ Your first five minutes: what appears on screen, how to open and pin the tray, h
 character, and the handful of things you will do with it every session. Every control on the settings
 page is in [the settings guide](userguide-settings.md).
 
+![The tray open on the Character tab: the character block, GM Details, Summary, the Character Sheet strip with its filter bar and search, then Favorites and Weapons, with the handle beside it and a transfer in progress](../assets/product-expanded.webp)
+
 ## What Squire needs
 
 Coffee Pub Blacksmith, installed and enabled, and socketlib. Squire will not run without them.
@@ -30,6 +32,8 @@ bottom:
   control in the same place.
 
 The conditions grid, the favourites and the health bar can each be turned off on the settings page.
+
+![The closed handle: the pin at the head, then the portrait, the health chip, the conditions button with its count, the conditions grid and the favourites, with the width and collapse controls at the foot](../assets/product-collapsed.webp)
 
 Down the outer edge of the handle runs a thin coloured bar. That is the same hit points again, filled
 from the bottom and coloured by how bad things are. It is the one readout that stays visible when the
@@ -81,9 +85,9 @@ Stacked down the tray, in this order:
 
 1. **The character panel** -- portrait, name, class and level, alignment, speeds.
 2. **GM Details** -- GM only, and players never see it whatever the setting says.
-3. **Character Summary** -- one compact card carrying level, initiative, speed, armour, proficiency,
-   the ability scores and experience. The ability scores are clickable: they roll the check or the
-   save.
+3. **Summary** -- one compact card carrying level, initiative, speed, armour, proficiency, the
+   ability scores and experience. The ability scores are clickable: they roll the check or the save.
+   Its setting is called Show Character Summary Panel; the panel header on screen says Summary.
 4. **Character Sheet** -- a thin strip with the filter bar and the search box under it. This is the
    control strip for everything below.
 5. **Favorites**, then **Weapons**, **Spells**, **Features** and **Inventory**.
@@ -95,7 +99,18 @@ drinks the potion -- the normal thing. For a container it opens the bag instead,
 has nothing to roll.
 
 Hover a row and the D&D 5e system's own item card appears, the same one the character sheet shows. You
-do not have to open a sheet to read what something does.
+do not have to open a sheet to read what something does. Middle-click the card to lock it open.
+
+![The Favorites and Weapons sections, each row carrying its action-cost badge and its equip, favourite and send controls](../assets/userguide-favorites-weapons.webp)
+
+The Spells section groups by level and shows the slots you have left on each.
+
+![The Spells section: cantrips and levelled spells, with the remaining slots shown against each level](../assets/userguide-spells.webp)
+
+Inventory can be read as a flat list or grouped by container. The toggle is on the Inventory section's
+own title bar, next to its category filters.
+
+![The Inventory section grouped by container, with the currency row and its send and consolidate controls](../assets/userguide-inventory.webp)
 
 ### Favourite something
 
@@ -129,12 +144,15 @@ tray.
 The search box under the bar -- **Search All Sections...** -- filters every section at once. The cross
 at its right clears it.
 
+![A search across every section at once, with each section showing only its matching rows](../assets/userguide-search.webp)
+
 ### Send an item to another character
 
 Two ways, and they do the same thing.
 
-- Click the share arrow on an inventory or weapon row. A window opens: pick who gets it, and how many
-  if it stacks.
+- Click the share arrow on an inventory or weapon row. **Transfer Item** opens: a quantity slider
+  reading Give and Keep at its ends, and the party underneath. Pick who gets it and confirm with
+  **Transfer**. Your own character is listed but cannot be chosen.
 - Or open the Party tab and drag the item onto a party member's card.
 
 What happens next depends on **GM Approves Transfers**, which is the GM's setting for the whole world.
@@ -149,18 +167,23 @@ next to it consolidates your money into the fewest pieces.
 
 You cannot send a container that still has things in it. Empty it first.
 
+![The Transfer Item window: the item, a quantity slider between Give and Keep, and the party list with the recipient selected](../assets/userguide-transfer.webp)
+
 ### Add something from a compendium
 
-If the GM has allowed it, the Character Sheet strip carries a magnifying glass. Click it and the panel
-stack is replaced by a search across the compendiums Blacksmith is configured to use. The person icon
-next to it goes back to the character's own items.
+If the GM has allowed it, the Character Sheet strip carries a magnifying glass. Click it and the filter
+bar and the panel stack are both replaced by a search box and **Add from Compendiums**, listing matches
+grouped by the compendium they came from. Each row has a plus that adds it. The person icon next to the
+magnifying glass goes back to the character's own items.
 
 **Let Players Use Compendiums** is the GM's setting and has four positions: off, look only, ask the GM
 -- where adding sends a request to approve or deny -- and add freely. The GM can always search and add.
 
-The tickbox under the search results, **Clear search and keep open on add**, decides what happens after
-you add something: leave it ticked to stay in search and add several things, untick it to go back to
-the character and land on the new item.
+The tickbox directly under the search box, **Clear search and keep open on add**, decides what happens
+after you add something: leave it ticked to stay in search and add several things, untick it to go back
+to the character and land on the new item.
+
+![Add from Compendiums: a search for a sword, with results grouped under the compendium each came from and a plus on every row](../assets/userguide-compendium-search.webp)
 
 ## Tidy up a character sheet
 
@@ -175,6 +198,13 @@ plan before it does any of them:
 
 Every row can be unticked, and it reports what it did rather than closing behind a notification.
 
+Read the warning in the window before you apply: **there is no undo** for the run as a whole, and it
+tells you to duplicate the actor, or export its data from the sidebar, if you want a way back. The one
+exception is the merge, which keeps a snapshot -- **Undo the Last Merge** appears at the top of the
+window afterwards, with a **Restore** button, and it holds only the most recent one.
+
+![The Cleanup window: the undo-the-last-merge banner, Consolidate Currency showing the coins before and after, and Link Items to Their Compendium Entry with its rows](../assets/userguide-cleanup.webp)
+
 By default only the GM can run it. If the GM turns on **Players Can Request Cleanup**, a player can run
 it on a character they own -- but applying sends the plan to the GM, who reviews the same rows in the
 same window and decides. A player never writes to their own sheet this way.
@@ -182,8 +212,12 @@ same window and decides. A player never writes to their own sheet this way.
 ## The Party tab
 
 The Party tab lists everyone with a token on the current scene: player characters always, and for a GM
-the other tokens too. Each card carries a portrait, hit points, and a coloured disposition dot on
-anything that is not a friendly player character.
+the other tokens too. Each card carries a portrait, the character's class, level and speed, a hit-point
+bar, and a coloured disposition dot on anything that is not a friendly player character. The card for
+the character the tray is showing is outlined.
+
+**Party Health** sits above the cards: one bar totalling the party's current and maximum hit points, so
+you can see how the group as a whole is doing without adding it up.
 
 Along the top:
 
@@ -193,12 +227,23 @@ Along the top:
 - **Deploy Party** and **Clear Party** -- puts every party member's token on the canvas, or takes them
   all off.
 
-**Party Reputation** sits above the cards. Reputation is stored per scene, so the card names the scene
-it belongs to; the bar runs the whole range from hostile to friendly with a marker showing where the
-party sits, rather than filling up like a progress bar. A GM gets plus and minus controls.
+**Party Reputation** sits at the top. Reputation is stored per scene, so the card names the scene it
+belongs to; the bar runs the whole range from hostile to friendly with a marker showing where the party
+sits, rather than filling up like a progress bar. A GM gets four buttons -- **-5** and **-1** to the
+left of the bar, **+1** and **+5** to its right.
 
-**Party Stats** is a lifetime MVP leaderboard, off by default, and it needs Blacksmith's statistics to
-have something to show.
+**Lifetime MVP Leaderboard** is the Party Stats panel, off by default. It ranks players by total,
+average, best and battles, and it needs Blacksmith's statistics to have anything to show.
+
+![The Party tab: the Experience button and party tools, Party Reputation with its scene, Party Health, the member cards, and the Lifetime MVP Leaderboard](../assets/userguide-party.webp)
+
+## Print a character sheet
+
+The printer icon on the character panel builds a full sheet -- abilities, stats, saving throws,
+languages, skills in two columns, and the biography -- and opens your browser's print dialog on it.
+Print it, or save it as a PDF from the same dialog.
+
+![The printed character sheet: header, Ability Scores, Stats with saving throws and languages, and Skills in two columns](../assets/userguide-print.webp)
 
 ## Who can do what
 

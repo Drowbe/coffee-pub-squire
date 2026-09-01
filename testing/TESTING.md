@@ -3,10 +3,35 @@
 Things that need a live world and a human, and only those -- anything a script can decide
 lives in the checks beside this file, described in [README.md](README.md).
 
-**Nothing below has been walked.** Both sections are entirely unverified: the codex
-extraction and the favourites sync with the character sheet. The 13.6.1 quest-removal
+**Nothing below has been walked.** All three sections are entirely unverified: the character
+sheet print rewrite, the codex extraction, and the favourites sync with the character sheet. The 13.6.1 quest-removal
 section was here and is gone, which is what a discharged section looks like -- passing
 means delete the item, not tick it, so a box still on this page is a debt.
+
+---
+
+## Character sheet print, via iframe instead of a popup
+
+Needs BOTH clients -- the desktop app is the one this fixes, the browser is the one that
+used to work and must not have regressed.
+
+### The desktop client
+- [ ] Click the print icon on the character panel. A print dialog opens. No "Pop-up blocked"
+      notification appears.
+- [ ] The sheet is laid out, not a narrow column: portrait, header, skills in two columns.
+- [ ] Cancel the dialog. No stray frame is left behind -- `document.querySelectorAll('iframe')`
+      in the console returns what it did before printing.
+- [ ] Print to PDF. The cover page is its own page and sections are not split across pages.
+
+### The browser
+- [ ] Same four, in Chrome.
+- [ ] Print a second character straight after the first. The second dialog shows the second
+      character, not the first -- the frame from the first print is gone by then.
+
+### Edge cases
+- [ ] A character whose portrait fails to load still reaches the dialog rather than hanging
+      (the image wait times out at 5 seconds).
+- [ ] Print with the Font Awesome CDN unreachable. Icons are missing; nothing else breaks.
 
 ---
 
