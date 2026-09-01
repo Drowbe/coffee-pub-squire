@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [13.9.3]
 
 ### Changed
 - **Adopted the suite-wide documentation standard.** `documents/` is `documentation/`, which is the whole reason none of the shared tooling reached Squire before now -- nothing looks in `documents/`. The three architecture files were already correctly named and moved with `git mv` so history follows; each gained the uniform header and audience line the standard requires, and `architecture-squire.md` no longer describes Notes, the Codex and Quests as Squire's, which they have not been since 13.7.0.
