@@ -1,0 +1,30 @@
+/* PRINT CHARACTER WINDOW
+ *
+ * The sheet is a whole HTML document in an iframe, so there is almost nothing to
+ * style here: the document inside brings its own everything. What it does need
+ * is a height chain, because a percentage height on the frame resolves against a
+ * parent that has one -- without it the frame collapses to its default 150px and
+ * the sheet appears as a letterbox.
+ *
+ * `.squire-tool-window` in window-tool-shared.css already does most of it. The
+ * one difference: that chain ends in a body that SCROLLS, and this one must not.
+ * The frame scrolls its own document, so a scrollbar out here would be a second
+ * one wrapped around the first.
+ */
+
+.squire-print-window .blacksmith-window-tool-body {
+    display: flex;
+    overflow: hidden;
+    padding: 0;
+}
+
+.squire-print-window .squire-print-frame {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    border: 0;
+    /* The sheet's own body is white. Painting the frame to match stops a dark
+       flash between the window opening and the document being written into it. */
+    background: #fff;
+}

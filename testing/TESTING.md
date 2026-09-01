@@ -4,34 +4,39 @@ Things that need a live world and a human, and only those -- anything a script c
 lives in the checks beside this file, described in [README.md](README.md).
 
 **Nothing below has been walked.** All three sections are entirely unverified: the character
-sheet print rewrite, the codex extraction, and the favourites sync with the character sheet. The 13.6.1 quest-removal
+sheet print window, the codex extraction, and the favourites sync with the character sheet. The 13.6.1 quest-removal
 section was here and is gone, which is what a discharged section looks like -- passing
 means delete the item, not tick it, so a box still on this page is a debt.
 
 ---
 
-## Character sheet print, via iframe instead of a popup
+## Character sheet print, as a window instead of a popup
 
 Needs BOTH clients -- the desktop app is the one this fixes, the browser is the one that
 used to work and must not have regressed.
 
 ### The desktop client
-- [ ] Click the print icon on the character panel. A print dialog opens. No "Pop-up blocked"
-      notification appears.
-- [ ] The sheet is laid out, not a narrow column: portrait, header, skills in two columns.
-- [ ] Cancel the dialog. No stray frame is left behind -- `document.querySelectorAll('iframe')`
-      in the console returns what it did before printing.
-- [ ] Print to PDF. The cover page is its own page and sections are not split across pages.
+- [ ] Click the print icon on the character panel. A Squire window opens showing the
+      rendered sheet. No "Pop-up blocked" notification appears.
+- [ ] The sheet is laid out, not a narrow column or a letterbox: portrait, header, ability
+      scores, stats, skills in two columns, biography.
+- [ ] The window scrolls the sheet. There is no second scrollbar wrapped around the first.
+- [ ] Resize the window. The sheet reflows and the frame keeps filling it.
+- [ ] Click **Print or Save as PDF**. The dialog previews the SHEET, not the Foundry
+      application around it.
+- [ ] Save as PDF from that dialog. The cover page is its own page and sections are not
+      split across pages.
+- [ ] Close and reopen for the same character. One window, not two.
+- [ ] Open it for a second character while the first is open. Two windows, each with its
+      own sheet.
 
 ### The browser
-- [ ] Same four, in Chrome.
-- [ ] Print a second character straight after the first. The second dialog shows the second
-      character, not the first -- the frame from the first print is gone by then.
+- [ ] Same as above, in Chrome.
 
 ### Edge cases
-- [ ] A character whose portrait fails to load still reaches the dialog rather than hanging
-      (the image wait times out at 5 seconds).
-- [ ] Print with the Font Awesome CDN unreachable. Icons are missing; nothing else breaks.
+- [ ] A character whose portrait fails to load still renders the rest of the sheet.
+- [ ] Open with the Font Awesome CDN unreachable. Icons are missing; nothing else breaks.
+- [ ] Reopen after a world reload. The window remembers where it was.
 
 ---
 

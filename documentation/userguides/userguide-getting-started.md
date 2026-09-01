@@ -237,13 +237,20 @@ average, best and battles, and it needs Blacksmith's statistics to have anything
 
 ![The Party tab: the Experience button and party tools, Party Reputation with its scene, Party Health, the member cards, and the Lifetime MVP Leaderboard](../assets/userguide-party.webp)
 
-## Print a character sheet
+## Read or print a character sheet
 
 The printer icon on the character panel builds a full sheet -- abilities, stats, saving throws,
-languages, skills in two columns, and the biography -- and opens your browser's print dialog on it.
-Print it, or save it as a PDF from the same dialog.
+languages, skills in two columns, and the biography -- and opens it in its own window. Read it there,
+resize it, leave it open beside the tray.
 
-![The printed character sheet: header, Ability Scores, Stats with saving throws and languages, and Skills in two columns](../assets/userguide-print.webp)
+**Print or Save as PDF** at the foot of that window hands the sheet to your browser's print dialog,
+which is where saving a PDF lives as well as printing one. It prints the sheet rather than Foundry
+around it.
+
+Each character gets one window, so clicking the icon again brings the same one back rather than
+stacking another on top. Two different characters get two windows.
+
+![The character sheet window: header, Ability Scores, Stats with saving throws and languages, and Skills in two columns](../assets/userguide-print.webp)
 
 ## Who can do what
 
