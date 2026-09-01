@@ -1,4 +1,10 @@
-# Coffee Pub Squire – Party Tab Architecture
+# Party Tab Architecture
+
+**Audience:** anyone changing Squire's Party tab.
+
+How the Party tab is built: what it lists, the toolbar, and the drag-and-drop transfer flow with its
+request and approval path. The tray as a whole is in
+[architecture-squire.md](architecture-squire.md).
 
 ## Overview
 

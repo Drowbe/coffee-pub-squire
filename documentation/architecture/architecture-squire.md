@@ -1,8 +1,18 @@
-# Coffee Pub Squire – Architecture
+# Squire Architecture
+
+**Audience:** anyone changing Squire, and the rest of the suite.
+
+The map of the module: how the tray is assembled, which class owns what, and where Squire ends and
+Blacksmith begins. The Character and Party tabs have their own documents --
+[architecture-character.md](architecture-character.md) and
+[architecture-party.md](architecture-party.md).
 
 ## Overview
 
-Coffee Pub Squire is a FoundryVTT module in the Coffee Pub suite. It provides quick access to character-specific combat information and world tools (Notes, Codex, Quests) through a sliding tray interface. It serves as both a practical tool and a reference implementation of the Blacksmith API integration.
+Squire is a FoundryVTT module in the Coffee Pub suite. It puts a character's own tools within reach
+through a sliding tray that follows the selected token: spells, weapons, inventory, features,
+favourites, health and conditions, plus a party view and item transfers. Notes, the Codex and Quests
+were Squire's until 13.7.0; they are Librarian's and Blacksmith's now.
 
 ## Project Structure
 
@@ -43,7 +53,7 @@ coffee-pub-squire/
 │   └── print-character.hbs
 ├── resources/
 │   └── light-sources.json
-└── documents/                 # Architecture and planning docs
+└── documentation/             # Architecture and planning docs
 ```
 
 ## Core Components

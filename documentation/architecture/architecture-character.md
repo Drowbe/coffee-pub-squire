@@ -1,4 +1,9 @@
-# Coffee Pub Squire – Character Tab Architecture
+# Character Tab Architecture
+
+**Audience:** anyone changing Squire's Character tab.
+
+How the Character tab is built: which panels it stacks, what feeds them, and how they react to actor
+and token updates. The tray as a whole is in [architecture-squire.md](architecture-squire.md).
 
 ## Overview
 

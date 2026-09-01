@@ -6,16 +6,10 @@
 |------|----------|-----|--------|
 | Migrate remaining legacy V1 `Application` windows to the Blacksmith window framework | **Critical** | M | Done (13.3.19) |
 | v14/v15 readiness: migrate remaining V1 Dialog call sites to Blacksmith `api.dialog` | High | M | Done (13.3.19) |
-| Blacksmith (other repo): `JournalSheet` global is a hard break in v15 (`ui-journal-encounter.js:378`) | Medium | S | Open |
-| Blacksmith (other repo): pin renderer leaks elements — `unplace()` GM path and `delete()` unplaced path never call `PinRenderer.removePin()` | Medium | S | Open |
-| Blacksmith (other repo): `api.inventory` has no `requestGM` escape, so every write fails for a non-owner | Medium | S | Open |
-| Blacksmith (other repo): promote the shared tool-window row/section components out of Squire and Curator | Medium | M | Open |
 | Migrate the four hand-rolled item-transfer copies to Blacksmith `api.inventory` | High | M | Open |
 | Pressure-test the transfer flow end to end after the chat card migration (player → GM approval → receiver accept) | **Critical** | S | Open |
 | `executeItemTransfer` socket takes actor/item ids from any client and moves items as GM without checking the caller is entitled | High | M | Open |
-| Blacksmith (other repo): a throwing card action handler is logged and swallowed, so a card that already retired reads as success | Medium | S | Open |
 | Migrate chat cards to the Blacksmith Chat Cards API | High | L | Done (unreleased) |
-| Blacksmith (other repo): co-sign the dnd5e `updateEncumbrance` upstream report after v14 | Low | S | Open |
 | Let the handle filter which statuses it shows (`showHandleConditions` is all-or-nothing) | Low | M | Open |
 | Unified tray filter bar: global type / action / equipped-prepared chips replacing the per-panel filter icons | High | L | In progress (bar is live, 14 chips on one bucket rule; remaining: inert-chip states and polish) |
 | Watch: AC/movement re-render branch went live in 13.3.14 (was dead) — real cost in combat | High | S | Open |
@@ -32,6 +26,8 @@
 | Monitor init timing / event efficiency during load | Medium | M | Open |
 | Add disposition to the character card | Medium | S | Open |
 | Pinned tray on load no longer shifts the Foundry UI | **Critical** | S | Open |
+| Screenshots for the wiki and the README: `product/` predates the module split | High | S | Open |
+| Walk both user guides in a running world and correct the labels | High | S | Open |
 
 **Priority:** urgency scale from **Critical** down to **Low** (matches section intent below).
 
@@ -46,13 +42,34 @@
 
 - [ ] **`executeItemTransfer` is an unauthenticated socket.** It accepts arbitrary `sourceActorId` / `targetActorId` / `itemId` from any client and moves items with GM authority. It re-validates that the item exists and the quantity is available, but never that the caller was entitled to the transfer. The card button is now guarded against acting on someone else's request; the socket underneath is still reachable by a crafted call. Needs a decision on what authorization should look like rather than a patch — probably checking the caller against the transfer's recorded participants GM-side.
 
-- [ ] **Blacksmith (other repo): a throwing card action handler is swallowed.** `bindCardActions` logs and continues, which is right for card robustness, but it means a handler that retires the card and *then* throws leaves a card asserting success. That is exactly how the broken GM-approval leg above went silent. Raised with Blacksmith; either surfacing the throw or offering consumers a "this action failed" path would fix it.
-
 ### V14/V15 READINESS (audited July 13, 2026 — world moves to v14 within weeks)
 
 - [ ] **VERIFY** First v14 session: watch the console for deprecation warnings from Squire paths and log any not already covered by the two items above.
 
 ## MEDIUM PRIORITY
+
+### DOCUMENTATION
+
+- [ ] **Fresh screenshots.** `documentation/assets/` is empty apart from its `.gitkeep`, so the wiki
+  and the README both ship without an image, which for a visual product is the biggest single gap in
+  the front door. The seven files in `product/` cannot be used: they were captured before the module
+  split and show a five-tab strip (TOKEN, PARTY, NOTES, CODEX, QUESTS) against the two tabs the tray
+  has now, plus the pre-2026-08-21 handle with the rotated character name.
+  - Needed: one overview shot for the README and `home.md`, as `assets/product-overview.webp`, and one
+    per user guide taking that guide's prefix.
+  - **WebP, not PNG** -- the standard is explicit, and git keeps every version of a binary forever.
+  - Once they land, decide what happens to `product/`. Three of the seven document Quests, the Codex
+    and Notes, which are Librarian's and Blacksmith's now; they may be worth handing over rather than
+    deleting.
+
+- [ ] **Walk both user guides in a running world.** `userguide-getting-started.md` and
+  `userguide-settings.md` were written from source and from the templates' literal English labels.
+  That is reliable about what exists and unreliable about what a screen calls it and what order things
+  appear in, which are the only two things a reader navigates by. Every claim needs performing once.
+  - The claims most likely to be wrong: the order of the panels down the Character tab, the order and
+    grouping of the settings page's headings, whether the filter chips read the way the tooltips say,
+    and whether the character switcher chips appear when they are described as appearing.
+  - Do this after the screenshots, not before -- the images are what surface the wrong labels.
 
 ### FALLOUT FROM THE `instance.element` FIX (13.3.14)
 
@@ -67,18 +84,6 @@
 - [ ] **REFACTOR (Medium, M)** `PanelManager` keeps its state static (`element`, `currentActor`, `instance`, `viewMode`) while also being instantiated and carrying instance fields. That unresolved "singleton or object?" ambiguity is exactly what let `element` be declared on the instance and only ever assigned on the class. The getter bridges the two spellings; it does not settle the question. Settle it as part of **Modularize `manager-panel.js`** — pick one home for tray state and delete the other.
 
 ### CHARACTER SHEET CLEANUP
-
-- [ ] **ASK (other repo: coffee-pub-blacksmith)** `api.inventory` writes to actors directly and
-  has no GM-routing escape, so every call fails for a non-owner. Their `api.pins` already solves
-  exactly this with `pins.requestGM('create', ...)`, so the pattern exists in their own codebase.
-  With `requestGM` on inventory, Squire would not need permission checks at all — only the
-  approval *experience*, which is Squire's by charter. What it blocks:
-  - Player-to-player currency transfer. Today `transferCurrency` needs ownership of BOTH actors,
-    so it works for a GM, or for a player moving coins between their own characters, and not
-    otherwise.
-  - CORRECTION (2026-08-11): this was also recorded as blocking cleanup phase 2. It does not.
-    `canCleanup` is `game.user.isGM && actor.type === 'character'` (scripts/panel-control.js:36),
-    so the runner is always a GM and always has write permission. Phase 2 is not gated on this.
 
 - [ ] **PHASE 2 FOLLOW-UPS**, deliberately not built yet — wait for the blocked list on real sheets:
   - **`system.identified` and `system.container` still split a group.** Equipped was relaxed on the
@@ -95,23 +100,6 @@
     quantities is arithmetic; swapping the survivor for a compendium copy is a re-import that
     discards every GM customisation. Opt-in, separately, possibly never. Phase 1's source links are
     what would make it possible.
-
-### SHARED TOOL-WINDOW COMPONENTS
-
-- [ ] **ASK (other repo: coffee-pub-blacksmith)** The row-and-section vocabulary every tool window
-  needs now exists three times: Curator's Loot window, Squire's `styles/window-tool-shared.css`,
-  and — partially — Blacksmith's own `styles/window-list.css`. Squire's copy matches Loot's
-  measurements by hand, which is the interim step, not the answer: two files that agree today
-  because somebody copied numbers will disagree the first time either is touched.
-  - `.blacksmith-list` already covers the plain row (`-row`, `-row-img`, `-row-main`, `-row-title`,
-    `-row-meta`, `-row-action`, `.is-active`) and `.blacksmith-entity` covers the selectable row.
-    What is missing is the **section** — the bordered box with an uppercase accent heading, an
-    optional count pill, and a head-actions slot — plus the **height chain** that lets a capped,
-    resizable tool window scroll instead of growing, and a **drawn checkbox** so multi-select rows
-    stop inheriting Foundry's theming of bare inputs.
-  - Also missing: `-note` / `-banner` copy styles, the coin strip, and the totals rule. Those are
-    less obviously general, and the coin strip in particular may belong to whoever owns currency.
-  - Once it lands, Squire's `window-tool-shared.css` should shrink to nothing and be deleted.
 
 ### CROSS-MODULE WORK
 
@@ -131,21 +119,6 @@
   - Worth doing sooner than later. One session found four separate bugs across those hand-rolled
     copies — unlinked-token classification, guard placement, prototype names, duplicate chat cards —
     every one of which the API handles centrally.
-
-- [ ] **Revisit the dnd5e `updateEncumbrance` upstream report after the v14 migration.**
-  `Actor5e#updateEncumbrance` is an unguarded check-then-create against a fixed effect id, so any two
-  writes to one actor can collide. Blacksmith holds a prepared report in its `TODO-GLOBAL.md`; filing
-  was deferred because a report against a system version this world cannot run earns "upgrade and
-  retry". Squire offered to co-sign. Blacksmith's `enableEncumbranceGuard` mitigates it meanwhile.
-
-### RELEASE / COMPATIBILITY
-
-- [ ] **BUG (other repo: coffee-pub-blacksmith) — root cause UNCONFIRMED, and no longer Squire's to chase.** Squire has no pins as of the Notes removal; kept because the analysis is worth having when Blacksmith looks at it. Symptom, reproduced in a live world: after a note pin/unpin/re-pin cycle as GM, `PinRenderer._pins` holds a DOM element for a pin id that exists in **neither** the scene's flag list **nor** the unplaced store, so every `loadScenePins` logs `updateAllPositions: No pin data for <id>` forever, and the freshly placed pin flickers and disappears. Verified with console dumps taken before and after: the scene list is byte-identical and every id in it resolves — the leak is renderer-side only.
-  - **One provable gap** (`manager-pins.js:2267`): `delete()`'s `loc.location === 'unplaced'` branch removes the data and clears tags but never calls `PinRenderer.removePin()`, unlike the scene branch at `:2275`. Whether that is *this* symptom's cause is unproven — `unplace()` (`:2181`) does remove the element on both the GM and non-GM paths, so by delete-time there should be nothing left to leak. Worth closing regardless as a defensive fix.
-  - **The real puzzle**: the newly created pin's scene entry vanishes without its element being removed — i.e. something drops a pin from the scene flag list on a path that doesn't go through `delete()`. Suspect a read-modify-write race on `scene.setFlag(FLAG_KEY, …)` (both `unplace()` and `delete()` read the list, filter, and write it back — a stale read would clobber a concurrently-added pin).
-  - Squire 13.3.13 sidesteps the whole area (notes unpin now deletes instead of unplacing), so this is no longer blocking us; it likely still affects any consumer that unplaces.
-
-- [ ] **BUG (Medium — other repo: coffee-pub-blacksmith)** `ui-journal-encounter.js:378` reads the bare `JournalSheet` global (`Object.values(ui.windows).find(w => w instanceof JournalSheet && ...)`). Deprecated since v13, **removed in v15** — it becomes a hard `ReferenceError` inside a hook that fires on every journal-page write, which Squire triggers constantly (imports, pin flags). Needs `foundry.appv1.sheets.JournalSheet`, and `ui.windows` on the same line is also v13-deprecated in favour of `foundry.applications.instances`.
 
 ### TRAY ROW BEHAVIOUR
 

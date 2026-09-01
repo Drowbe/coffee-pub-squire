@@ -1,0 +1,39 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# JavaScript files
+*.js text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+
+# Web files
+*.html text eol=lf
+*.css text eol=lf
+*.hbs text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf
+
+# The files every module copies from the hub unchanged. Without these, `text=auto` plus
+# core.autocrlf=true turns them CRLF in the working tree on the next checkout while the hub's stay LF,
+# and a byte-identity diff then reports every line changed -- looking exactly like a local edit.
+# .yml and the two dotfiles are the three of the five copied files that no extension rule reaches.
+*.yml text eol=lf
+*.yaml text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# Images should be treated as binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+
+# Font files
+*.ttf binary
+*.eot binary
+*.woff binary
+*.woff2 binary

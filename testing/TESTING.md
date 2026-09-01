@@ -1,61 +1,16 @@
 # Manual test checklist
 
-Things that need a live world and a human. Tick as you go; delete a section once
-its release has shipped and nothing in it regressed.
+Things that need a live world and a human, and only those -- anything a script can decide
+lives in the checks beside this file, described in [README.md](README.md).
+
+**Nothing below has been walked.** Both sections are entirely unverified: the codex
+extraction and the favourites sync with the character sheet. The 13.6.1 quest-removal
+section was here and is gone, which is what a discharged section looks like -- passing
+means delete the item, not tick it, so a box still on this page is a debt.
 
 ---
 
-## 13.6.1 — Quests removed (Librarian now owns them)
-
-**Run Librarian's migration macro first, with both modules enabled.** Pins are found by
-`moduleId`; until it has run, existing quest pins still say `coffee-pub-squire` and nothing
-in either module will be looking for them once this build is in.
-
-### Nothing quest-shaped is left in Squire
-
-- [x] World loads with no console errors, Squire enabled.
-- [x] Settings → Squire: no Quest Configuration heading, no Quest Journal, no Quest Categories.
-- [x] Menubar middle zone shows Codex and Notes from Squire, Quests from Librarian — one Quests
-  ```
-  button, not two.
-  ```
-- [x] Tray cycles Character → Party only; the handle shows no quest row.
-
-
-
-### The Codex did not lose anything on the way out
-
-The codex list and the codex pin cursor were styled by rules that lived in the quest
-stylesheets, so these are the things most likely to break silently.
-
-- [x] Codex browser opens and entries expand/collapse.
-- [x] The pin icon on a codex entry is dim when unpinned and highlighted-orange when pinned.
-- [x] "Pin to scene" gives a crosshair cursor and a round preview marker that follows the
-  ```
-  mouse; Esc and right-click both cancel it.
-  ```
-- [x] Placing, locating (crosshairs), and unplacing a codex pin all still work.
-- [x] Codex export dialog opens and its title reads "Codex JSON".
-
-
-
-### Notes are untouched
-
-- [x] Note pins: click opens the card, double-click opens the window, context menu offers
-  ```
-  View / Edit / Delete.
-  ```
-- [x] A note updated by another user still raises a menubar notification.
-
-
-
-### Cross-module
-
-- [x] Librarian's quest pins and Squire's note/codex pins coexist on one scene: both render,
-  ```
-  both respond to their own module's double-click.
-  ```
-- [x] Codex unlock notification still fires and clicking it opens the Codex browser.## Codex removed (Librarian now owns it)
+## Codex removed (Librarian now owns it)
 
 **Run Librarian's `macros/migrate-codex-from-squire.js` before loading this build.** Codex
 pages are a declared subtype and Squire no longer declares it, so an unmigrated world will
