@@ -216,8 +216,18 @@ the other tokens too. Each card carries a portrait, the character's class, level
 bar, and a coloured disposition dot on anything that is not a friendly player character. The card for
 the character the tray is showing is outlined.
 
+The list is sorted, not in the order tokens were dropped on the scene: the living first, then the dead,
+alphabetical within each. A character who drops to zero hit points sinks to the bottom of the list --
+which is the point, because that is a change worth noticing. The GM's monster and NPC list under the
+divider is sorted the same way.
+
 **Party Health** sits above the cards: one bar totalling the party's current and maximum hit points, so
 you can see how the group as a whole is doing without adding it up.
+
+**Search Party**, below Party Health, filters the list down to the names that match what you type. It
+matches on the name only, anywhere in it, and ignores capitals. **Escape** or the **x** in the box
+clears it. Reputation, Party Health and the search box stay put while the list below them scrolls, so
+you can keep typing however long the roster is.
 
 Along the top:
 

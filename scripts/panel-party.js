@@ -19,6 +19,11 @@ export class PartyPanel {
         this._onTokenUpdate = this._onTokenUpdate.bind(this);
         this._onActorUpdate = this._onActorUpdate.bind(this);
         this._onControlToken = this._onControlToken.bind(this);
+        // The name filter's text. Held on the panel, not read off the input,
+        // because every re-render throws the input away and rebuilds it -- a
+        // token moving or taking damage would otherwise silently clear the
+        // filter out from under whoever was typing.
+        this._searchTerm = '';
 
         // Note: Hooks are now managed centrally by HookManager
         // No need to register hooks here anymore
@@ -31,14 +36,15 @@ export class PartyPanel {
         // v13: Convert jQuery to native DOM if needed
         this.element = getNativeElement(element);
         const partyContainer = this.element?.querySelector('[data-panel="party"]');
+        const headerContainer = this.element?.querySelector('[data-panel="party-header"]');
         if (!partyContainer) return;
 
         // Get all player-owned tokens on the canvas
-        const tokens = canvas.tokens.placeables.filter(token => token.actor?.hasPlayerOwner);
-        
+        const tokens = this._sortTokens(canvas.tokens.placeables.filter(token => token.actor?.hasPlayerOwner));
+
         // Get non-player tokens (for GM only)
-        const nonPlayerTokens = game.user.isGM ? 
-            canvas.tokens.placeables.filter(token => token.actor && !token.actor.hasPlayerOwner) : 
+        const nonPlayerTokens = game.user.isGM ?
+            this._sortTokens(canvas.tokens.placeables.filter(token => token.actor && !token.actor.hasPlayerOwner)) :
             [];
 
         // Both lists get the same decoration. It used to be written out twice,
@@ -81,7 +87,7 @@ export class PartyPanel {
 
         const reputation = await this._getReputationData();
 
-        const html = await renderTemplate(TEMPLATES.PANEL_PARTY, { 
+        const templateData = {
             tokens,
             reputation,
             nonPlayerTokens,
@@ -93,11 +99,146 @@ export class PartyPanel {
             partyTotalHP,
             partyHealthbarStatus,
             showHandleHealthBar: game.settings.get(MODULE.ID, 'showHandleHealthBar')
-        });
-        // v13: Use native DOM innerHTML instead of jQuery html()
-        partyContainer.innerHTML = html;
+        };
 
+        // Two targets: the pinned controls up top and the scrolling roster below.
+        // Both render from here rather than splitting into two panel classes,
+        // because they are one panel's worth of data -- the health totals in the
+        // header are a sum over the very cards underneath it.
+        // The panel re-renders on token updates, actor updates and selection
+        // changes — all of which fire while someone is mid-word in the search
+        // box. The text survives on this._searchTerm, but the caret does not,
+        // so it is carried across the innerHTML swap by hand.
+        const oldInput = headerContainer?.querySelector('.party-search-input');
+        const searchWasFocused = !!oldInput && document.activeElement === oldInput;
+        const caret = searchWasFocused ? oldInput.selectionStart : null;
+
+        if (headerContainer) {
+            headerContainer.innerHTML = await renderTemplate(TEMPLATES.PANEL_PARTY_HEADER, templateData);
+        }
+        // v13: Use native DOM innerHTML instead of jQuery html()
+        partyContainer.innerHTML = await renderTemplate(TEMPLATES.PANEL_PARTY, templateData);
+
+        if (headerContainer) this.activateListeners(headerContainer);
         this.activateListeners(partyContainer);
+
+        // Re-apply whatever was typed before this render replaced the input.
+        this._activateSearchListeners(headerContainer, partyContainer);
+        this._applySearchFilter(partyContainer);
+
+        if (searchWasFocused) {
+            const newInput = headerContainer?.querySelector('.party-search-input');
+            if (newInput) {
+                newInput.focus();
+                if (caret !== null) newInput.setSelectionRange(caret, caret);
+            }
+        }
+    }
+
+    /**
+     * Roster order: the living, then the dead, alphabetical within each.
+     *
+     * Canvas order is placement order, which is meaningless to read down -- it
+     * is "whichever token got dropped first". The two tiers exist because the
+     * two questions the panel answers carry different urgency: who can still
+     * act is the live one, and a downed character sinking to the bottom is
+     * itself the status change you want to notice.
+     *
+     * "Dead" is HP at or below zero, which is what the card's skull and drained
+     * portrait already say -- this only agrees with them. A token with no HP
+     * track at all (a vehicle, a prop) sorts as living rather than being buried
+     * under the corpses.
+     */
+    _sortTokens(tokens) {
+        const isDown = (token) => {
+            const hp = token.actor?.system?.attributes?.hp;
+            if (hp?.value === null || hp?.value === undefined) return false;
+            return Number(hp.value) <= 0;
+        };
+
+        // Copied, not sorted in place: the array arrives from
+        // canvas.tokens.placeables via filter() today, but reordering the
+        // canvas's own list would be a very quiet bug if that ever changes.
+        return [...tokens].sort((a, b) => {
+            const downDelta = Number(isDown(a)) - Number(isDown(b));
+            if (downDelta !== 0) return downDelta;
+            return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+        });
+    }
+
+    /**
+     * Wire the header's name filter to the roster below it.
+     *
+     * The input lives in one container and everything it hides lives in another,
+     * so the roster is passed in rather than looked up from the input's subtree.
+     */
+    _activateSearchListeners(headerContainer, partyContainer) {
+        const input = headerContainer?.querySelector('.party-search-input');
+        if (!input) return;
+
+        input.value = this._searchTerm;
+
+        input.addEventListener('input', (event) => {
+            this._searchTerm = event.currentTarget.value;
+            this._applySearchFilter(partyContainer);
+        });
+
+        // Escape clears rather than merely blurring. With the box pinned to the
+        // header it is always on screen, so "get out of this filter" needs a key
+        // as well as a target to click.
+        input.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            this._searchTerm = '';
+            input.value = '';
+            this._applySearchFilter(partyContainer);
+        });
+
+        headerContainer.querySelector('.party-search-clear')?.addEventListener('click', () => {
+            this._searchTerm = '';
+            input.value = '';
+            input.focus();
+            this._applySearchFilter(partyContainer);
+        });
+    }
+
+    /**
+     * Hide the cards that do not match the filter.
+     *
+     * Substring, case-insensitive, on the name only. The cards also carry class,
+     * level, CR and disposition, but matching those would mean "orc" quietly
+     * finding every character whose class contains the letters -- a name search
+     * that does less is easier to predict than one that does more.
+     *
+     * The MONSTERS & NPCs divider and the empty-roster message follow the cards:
+     * a heading over nothing, or "no party tokens" while you are filtering a
+     * scene full of them, both read as bugs.
+     */
+    _applySearchFilter(partyContainer) {
+        if (!partyContainer) return;
+
+        const term = this._searchTerm.trim().toLowerCase();
+        const cards = partyContainer.querySelectorAll('.party-card');
+        let visiblePlayers = 0;
+        let visibleNpcs = 0;
+
+        cards.forEach(card => {
+            const name = card.querySelector('.party-card-name')?.textContent?.trim().toLowerCase() ?? '';
+            const match = !term || name.includes(term);
+            card.hidden = !match;
+            if (!match) return;
+            if (card.classList.contains('party-npc-card')) visibleNpcs++;
+            else visiblePlayers++;
+        });
+
+        const divider = partyContainer.querySelector('.section-divider');
+        if (divider) divider.hidden = !!term && visibleNpcs === 0;
+
+        const noParty = partyContainer.querySelector('.no-party-message');
+        if (noParty) noParty.hidden = !!term;
+
+        const noMatches = partyContainer.querySelector('.party-search-empty');
+        if (noMatches) noMatches.hidden = !term || (visiblePlayers + visibleNpcs) > 0;
     }
 
     /**

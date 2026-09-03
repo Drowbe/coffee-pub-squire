@@ -68,7 +68,24 @@
     padding-right: 6px;
 }
 
-.squire-tray .tray-view-content.party-view {
+/* The party tab splits in two: a header that stays put and a roster that
+   scrolls under it. The tab itself scrolls nothing -- the base
+   .tray-view-content rule above already says overflow: hidden, and the two
+   children divide the height between them.
+
+   The header takes its natural height and refuses to be squeezed. Without
+   flex-shrink: 0 a long roster would compress reputation and the search box
+   rather than scroll, because that is what a flex column does when its
+   contents overflow. */
+.squire-tray .tray-view-content.party-view > .party-view-header {
+    flex: 0 0 auto;
+}
+
+/* Everything the search box filters lives in here: the roster and the stats
+   panel under it. */
+.squire-tray .tray-view-content.party-view > .party-view-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
@@ -76,24 +93,24 @@
 }
 
 /* Custom scrollbar for party view */
-.squire-tray .tray-view-content.party-view::-webkit-scrollbar {
+.squire-tray .tray-view-content.party-view > .party-view-scroll::-webkit-scrollbar {
     width: 6px;
     height: 6px;
 }
 
-.squire-tray .tray-view-content.party-view::-webkit-scrollbar-track {
+.squire-tray .tray-view-content.party-view > .party-view-scroll::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 3px;
     margin: 4px 0;
 }
 
-.squire-tray .tray-view-content.party-view::-webkit-scrollbar-thumb {
+.squire-tray .tray-view-content.party-view > .party-view-scroll::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 3px;
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.squire-tray .tray-view-content.party-view::-webkit-scrollbar-thumb:hover {
+.squire-tray .tray-view-content.party-view > .party-view-scroll::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
 }
 

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **The Party tab's roster is sorted, and its controls no longer scroll away.** The list was in canvas placement order -- "whichever token got dropped first" -- which is not an order anybody can read down. It is now the living first, then the dead, alphabetical within each tier. The two tiers exist because the panel answers two questions with different urgency: who can still act is the live one, and a downed character sinking to the bottom of the list is itself the status change worth noticing. "Dead" is HP at or below zero, which is what the card's skull and drained portrait already say. A token with no HP track at all sorts as living rather than being buried under the corpses.
+  - Both halves of the panel sort the same way -- the party and, for the GM, the MONSTERS & NPCs list under the divider.
+
+- **Party Reputation, Party Health and the new filter are pinned; only the roster scrolls.** The tab used to be one scroller from top to bottom, so a scene with a dozen tokens pushed the reputation bar and the health total off the top. They are the tab's readouts and its controls, and scrolling a control away to reach what it controls is backwards. The scrolling half holds the roster and the Party Stats panel beneath it -- everything the filter acts on.
+
+### Added
+- **A name filter on the Party tab, below Party Health.** Deliberately the character tab's search box, declaration for declaration: two tabs, one search affordance. Substring, case-insensitive, matching on the token name alone -- the cards also carry class, level, CR and disposition, but matching those would mean "orc" quietly finding every character whose class contains the letters. Escape or the X clears it.
+  - The MONSTERS & NPCs divider hides when nothing under it matches, and a filter that matches nothing says so rather than showing an empty tab.
+  - Filtering hides rendered cards rather than re-rendering the roster from a narrowed token list: the cards carry live drag targets and click handlers, and rebuilding them on every keystroke would tear those down and rebuild them a dozen times a word. The typed text and the caret both survive the re-renders the panel does on token and actor updates, which otherwise fire mid-word and would drop you out of the box.
+
 ## [13.9.3]
 
 ### Changed

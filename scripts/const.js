@@ -117,6 +117,7 @@ export const TEMPLATES = {
     PANEL_FEATURES: `modules/${MODULE.ID}/templates/panel-features.hbs`,
     PANEL_CHARACTER_SUMMARY: `modules/${MODULE.ID}/templates/panel-character-summary.hbs`,
     PANEL_PARTY: `modules/${MODULE.ID}/templates/panel-party.hbs`,
+    PANEL_PARTY_HEADER: `modules/${MODULE.ID}/templates/panel-party-header.hbs`,
     PANEL_PARTY_STATS: `modules/${MODULE.ID}/templates/panel-party-stats.hbs`,
     HANDLE_PLAYER: `modules/${MODULE.ID}/templates/handle-player.hbs`,
     HANDLE_PARTY: `modules/${MODULE.ID}/templates/handle-party.hbs`,

@@ -531,3 +531,71 @@
     opacity: 0.55;
 }
 
+
+/* --------------- NAME FILTER --------------- */
+
+/* Deliberately the character tab's search box, declaration for declaration --
+   see .control-search in tray-controls.css. Two tabs, one search affordance:
+   a box that looked different here would read as a different kind of control
+   when it does exactly the same job. */
+
+.party-view .party-search {
+    padding: 0;
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.party-view .party-search-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.9);
+    padding: 4px 8px;
+    padding-right: 24px;
+    font-size: 13px;
+}
+
+.party-view .party-search-clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s ease;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px;
+    border-radius: 50%;
+    font-size: 10px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+/* The X only exists while there is something to clear -- an always-lit clear
+   button on an empty box is a control that does nothing. */
+.party-view .party-search-input:not(:placeholder-shown) + .party-search-clear {
+    opacity: 0.7;
+    pointer-events: auto;
+}
+
+.party-view .party-search-clear:hover {
+    opacity: 1;
+    color: rgba(0, 0, 0, 1.0);
+    background: var(--squire-color-hover);
+}
+
+/* The filter hides rows with the `hidden` property, which the UA stylesheet
+   honours at (0,0,1) — lower than the `display: flex` these cards are given
+   above, so without this the "hidden" cards stay on screen. Applies to the
+   divider and the two empty-state messages for the same reason. */
+.party-view .party-card[hidden],
+.party-view .section-divider[hidden],
+.party-view .squire-empty-message[hidden] {
+    display: none !important;
+}

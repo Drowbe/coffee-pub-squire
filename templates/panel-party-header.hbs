@@ -1,0 +1,83 @@
+
+{{#if reputation}}
+<!-- PARTY REPUTATION -->
+
+<div class="party-reputation-card">
+    <div class="party-reputation-header">
+        <span class="party-reputation-title">Party Reputation</span>
+        {{!-- The "where": reputation is stored per scene, so the value is
+              meaningless without saying which place it describes. --}}
+        <span class="party-reputation-where" data-tooltip="Reputation is tracked per scene">
+            <i class="fa-solid fa-location-dot"></i>{{reputation.sceneName}}
+        </span>
+    </div>
+
+    <div class="party-reputation-body">
+        {{#if reputation.canEdit}}
+        <div class="party-reputation-controls">
+            <button class="party-reputation-adjust" data-delta="-5" data-tooltip="Reputation -5" aria-label="Reputation minus 5">-5</button>
+            <button class="party-reputation-adjust" data-delta="-1" data-tooltip="Reputation -1" aria-label="Reputation minus 1">-1</button>
+        </div>
+        {{/if}}
+
+        {{!-- A balance, not a progress bar. The track shows the whole -100..+100
+              spectrum at once and the marker says where the party sits on it; a
+              left-anchored fill would imply reputation accumulates from nothing,
+              when its resting state is the middle.
+
+              Band and value live in the tooltip rather than under the bar: the
+              marker already answers "roughly where", and a permanent caption for
+              the exact figure competed with the card title for attention. --}}
+        <div class="party-reputation-readout {{#if reputation.canEdit}}clickable{{/if}}"
+             data-tooltip="{{reputation.label}} ({{reputation.value}})&#10;&#10;{{reputation.description}}{{#if reputation.canEdit}}&#10;&#10;Click to post the current standing to chat.{{/if}}">
+            <div class="party-reputation-bar">
+                <div class="party-reputation-track"></div>
+                <div class="party-reputation-midpoint"></div>
+                <div class="party-reputation-marker" style="left: {{reputation.percent}}%"></div>
+            </div>
+        </div>
+
+        {{#if reputation.canEdit}}
+        <div class="party-reputation-controls">
+            <button class="party-reputation-adjust" data-delta="1" data-tooltip="Reputation +1" aria-label="Reputation plus 1">+1</button>
+            <button class="party-reputation-adjust" data-delta="5" data-tooltip="Reputation +5" aria-label="Reputation plus 5">+5</button>
+        </div>
+        {{/if}}
+    </div>
+</div>
+{{/if}}
+
+<!-- PARTY HEALTH -->
+
+<div class="party-health-card clickable ">
+    <div class="party-health-card-info">
+        <div class="party-health-card-title">Party Health</div>
+        <div class="party-health-card-details">
+            <div class="party-hp-bar party-health-card-hp-bar">
+                <div class="hp-current">
+                    <span class="hp-value">{{partyRemainingHP}}</span>
+                </div>
+                <div class="hp-fill {{partyHealthbarStatus}}" style="width: {{multiply (divide partyRemainingHP partyTotalHP) 100}}%"></div>
+                <div class="hp-max">
+                    <span class="hp-value">{{partyTotalHP}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{!--
+    Name filter. Sits with reputation and health in the fixed header rather than
+    with the cards it filters, because it is the control and they are the result:
+    scrolling the box away mid-search would be scrolling away the thing you are
+    typing into.
+
+    Filtering happens in JS over the rendered cards, not by re-rendering with a
+    narrowed token list — the cards carry live drag targets and click handlers,
+    and rebuilding them on every keystroke would tear those down and rebuild them
+    a dozen times a word.
+--}}
+<div class="party-search">
+    <input type="text" class="party-search-input" placeholder="Search Party...">
+    <i class="fa-solid fa-times party-search-clear" title="Clear Search"></i>
+</div>

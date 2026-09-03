@@ -205,11 +205,21 @@
 
             <!-- Party Panels -->
 
+            {{!--
+                Two zones, not one scroller. Reputation, party health and the name
+                filter are the tab's controls: they have to stay put while you scroll
+                a long roster, or filtering a twenty-token scene means scrolling back
+                up to reach the box you are typing in. Everything the filter acts on
+                — the roster and the stats below it — lives in the scrolling half.
+            --}}
             <div class="tray-view-content party-view {{#unless (eq viewMode 'party')}}hidden{{/unless}}">
-                <div class="panel-container" data-panel="party"></div>
-                {{#if @root.settings.showPartyStatsPanel}}
-                <div class="panel-container" data-panel="party-stats"></div>
-                {{/if}}
+                <div class="panel-container party-view-header" data-panel="party-header"></div>
+                <div class="party-view-scroll">
+                    <div class="panel-container" data-panel="party"></div>
+                    {{#if @root.settings.showPartyStatsPanel}}
+                    <div class="panel-container" data-panel="party-stats"></div>
+                    {{/if}}
+                </div>
             </div>
 
 
