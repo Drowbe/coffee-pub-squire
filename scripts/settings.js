@@ -196,8 +196,11 @@ export const registerSettings = function() {
         scope: 'client',
         config: true,
         type: Number,
+        // The floor is SQUIRE.TRAY_MIN_WIDTH, not a literal: squire.js clamps
+        // already-stored widths to the same number at ready, and two copies of
+        // a floor that must agree is one copy too many.
         range: {
-            min: 350,
+            min: SQUIRE.TRAY_MIN_WIDTH,
             max: 600,
             step: 25
         },
@@ -642,51 +645,40 @@ export const registerSettings = function() {
         default: true
     });
 
-    // --- Filter Bar ---
+    // --- Section tabs ---
     //
-    // Twelve chips under the tray title, in three groups. They replace the old
-    // per-panel filter icons: an equipped toggle sitting inside the weapons
-    // panel and another inside inventory answered the same question twice, and
-    // neither reached favourites, where the answer is most useful.
+    // What is left of the fourteen-chip filter bar. Nine of those chips are
+    // gone: the five item-type chips became the tab strip, and the four
+    // availability chips became two "only" toggles that live on the
+    // ControlPanel instance.
     //
-    // Item-type chips persist because closing a section is a deliberate,
-    // remembered choice. Action-economy chips deliberately do NOT persist and
-    // live on the ControlPanel instance instead: logging in a week later to a
-    // half-empty sheet, with one dimmed chip as the only clue, is a bad morning.
+    // The chips that persisted were the problem. A dimmed chip is the entire
+    // evidence that a section is hidden, and settings.js said so itself about
+    // the action chips -- "logging in a week later to a half-empty sheet, with
+    // one dimmed chip as the only clue, is a bad morning" -- and then persisted
+    // nine others anyway. The availability chips were the worst of them,
+    // because they hid rows INSIDE a section rather than the section itself, so
+    // there was not even a missing heading to notice.
+    //
+    // What replaces them is not a smaller set of the same thing. A tab cannot
+    // be switched off, so the type dimension can no longer be filtered into
+    // nothing, and an "only" toggle is one lit control rather than two dimmed
+    // ones. Only the tab persists.
 
-    // Item types. "Favorites" is the odd one of the five — a flag rather than a
-    // type — so it hides its panel without filtering rows anywhere else.
-    for (const type of ['Favorites', 'Weapons', 'Spells', 'Features', 'Inventory']) {
-        game.settings.register(MODULE.ID, `filterType${type}`, {
-            scope: 'user',
-            config: false,
-            type: Boolean,
-            default: true
-        });
-    }
-
-    // Availability, as four buckets rather than two toggles. A toggle can only
-    // ever hide one side, so "what am I carrying that isn't equipped" and "what
-    // could I prepare that I haven't" were unaskable. Splitting each question
-    // into its two answers makes them chips like every other chip: on shows that
-    // slice, and all four on is everything.
+    // Which section tab the character view is showing. One of PANEL_TABS in
+    // panel-control.js.
     //
-    // Equipped and prepared stay separate questions. Preparing a fixed number of
-    // spells and equipping what you can carry have something in common
-    // mechanically, but not in anyone's head, which is the part that matters.
-    //
-    // Named `filterShow*` rather than reusing the old `filterState*` keys: those
-    // were stored with the opposite meaning — true meant "restrict to equipped"
-    // — so a stored `false` would now read as "hide everything equipped" and
-    // empty the panel for anyone who ran the previous build.
-    for (const bucket of ['Equipped', 'Unequipped', 'Prepared', 'Unprepared']) {
-        game.settings.register(MODULE.ID, `filterShow${bucket}`, {
-            scope: 'user',
-            config: false,
-            type: Boolean,
-            default: true
-        });
-    }
+    // This is the only piece of the old filter bar that persists, and it
+    // persists for the reason the nine chips it replaced could not: a tab is
+    // labelled and lit, so a narrowed view you return to a week later explains
+    // itself at a glance. The chips said the same thing by being 30% opaque,
+    // which is not a thing anyone reads.
+    game.settings.register(MODULE.ID, 'controlActiveTab', {
+        scope: 'user',
+        config: false,
+        type: String,
+        default: 'all'
+    });
 
     // View Mode Setting
     game.settings.register(MODULE.ID, 'viewMode', {

@@ -11,56 +11,6 @@
     {{/if}}
 </div>
 </div>
-{{!--
-    The filter bar. Fourteen chips in three groups, all obeying one rule:
-
-        Every chip names a bucket. A row hides when its bucket is off. A row in
-        no bucket in a group is untouched by that group.
-
-    The groups differ only in how completely they cover the rows, and that falls
-    out of the data rather than out of behaviour anyone has to learn. Every row
-    has exactly one item type, so turning off all five empties the tray. Every
-    row has at least one action cost — Passive is what guarantees it — so the
-    same is true there. Only some rows can answer "equipped?" or "prepared?", so
-    turning off all four of those leaves the rows that answer neither.
-
-    That last case is why availability is four chips rather than two toggles: a
-    toggle can only hide one side, which made "what am I carrying but not
-    wearing" impossible to ask.
-
-    Equipped/unequipped and prepared/unprepared are separated because they are
-    two questions, not one group of four — which is also the scope shift-click
-    solos within. Shift-clicking Equipped means "equipped rather than stowed"
-    and leaves spells alone, so the rule has to be visible in the layout or the
-    gesture will surprise people.
---}}
-<div class="control-filter-bar">
-<div class="filter-group">
-<i class="fa-solid fa-heart filter-chip" data-filter-kind="type" data-filter-value="favorites" data-tooltip="Favorites section"></i>
-<i class="fa-solid fa-swords filter-chip" data-filter-kind="type" data-filter-value="weapons" data-tooltip="Weapons — hides them everywhere, favorites included"></i>
-<i class="fa-solid fa-sparkles filter-chip" data-filter-kind="type" data-filter-value="spells" data-tooltip="Spells — hides them everywhere, favorites included"></i>
-<i class="fa-solid fa-stars filter-chip" data-filter-kind="type" data-filter-value="features" data-tooltip="Features — hides them everywhere, favorites included"></i>
-<i class="fa-solid fa-backpack filter-chip" data-filter-kind="type" data-filter-value="inventory" data-tooltip="Inventory — hides it everywhere, favorites included"></i>
-</div>
-<span class="filter-separator"></span>
-<div class="filter-group">
-<i class="fa-solid fa-square-a filter-chip" data-filter-kind="action" data-filter-value="action" data-tooltip="Costs an action"></i>
-<i class="fa-solid fa-square-b filter-chip" data-filter-kind="action" data-filter-value="bonus" data-tooltip="Costs a bonus action"></i>
-<i class="fa-solid fa-square-r filter-chip" data-filter-kind="action" data-filter-value="reaction" data-tooltip="Costs a reaction"></i>
-<i class="fa-solid fa-square-s filter-chip" data-filter-kind="action" data-filter-value="special" data-tooltip="Special activation"></i>
-<i class="fa-solid fa-square-p filter-chip" data-filter-kind="action" data-filter-value="passive" data-tooltip="Costs no turn action — gear, passives, and anything slower than a turn"></i>
-</div>
-<span class="filter-separator"></span>
-<div class="filter-group">
-<i class="fa-solid fa-shield-halved filter-chip" data-filter-kind="state" data-filter-value="equipped" data-tooltip="Equipped gear. Says nothing about spells or features."></i>
-<i class="fa-solid fa-shield-slash filter-chip" data-filter-kind="state" data-filter-value="unequipped" data-tooltip="Gear you are carrying but not wearing or wielding."></i>
-</div>
-<span class="filter-separator"></span>
-<div class="filter-group">
-<i class="fa-solid fa-sun filter-chip" data-filter-kind="state" data-filter-value="prepared" data-tooltip="Prepared spells, plus cantrips and anything always available."></i>
-<i class="fa-solid fa-moon filter-chip" data-filter-kind="state" data-filter-value="unprepared" data-tooltip="Spells you know but have not prepared."></i>
-</div>
-</div>
 <div class="control-search">
 <input type="text" class="global-search" placeholder="Search All Sections...">
 <i class="fa-solid fa-times search-clear" title="Clear Search"></i>
@@ -71,3 +21,65 @@
 <span>Clear search and keep open on add</span>
 </label>
 {{/if}}
+{{!--
+    SECTION TABS
+
+    These were five chips, and the chips were a multi-select whose common use was
+    single-select. That is the whole reason they are tabs now: five chips can all
+    be off at once, and "I filtered away the thing I was looking for" was mostly
+    that. A tab has no off state, so the item-type dimension can no longer be
+    narrowed to nothing, and where you are is a lit label rather than an
+    inference from which of five icons is not dimmed.
+
+    Favorites is not among them. It is a flag rather than an item kind, so it was
+    never the same axis -- it sits above whichever tab is open, always shown.
+
+    Five text labels need room: the tray's minimum width is 400px for this strip
+    and nothing else. See SQUIRE.TRAY_MIN_WIDTH.
+--}}
+<div class="control-tabs">
+{{#each tabs}}
+<button class="control-tab{{#if active}} active{{/if}}" data-tab="{{key}}">{{label}}</button>
+{{/each}}
+</div>
+{{!--
+    THE FILTER BAR
+
+    What survived. Five action chips, and the two availability toggles.
+
+    Every chip names a bucket and a row hides when its bucket is off; a row in no
+    bucket is untouched. Every row has at least one action cost -- Passive is
+    what guarantees it -- so turning all five off empties the tray, which is the
+    same "you can filter this to nothing" hazard the type chips had. It stays
+    here because five chips you set this session and that reset on reload is a
+    different animal from nine that persisted for a week.
+
+    The availability toggles are the four equipped/unequipped/prepared/unprepared
+    chips collapsed back into two questions with two answers each: show all, or
+    show only the usable ones. That loses "what am I carrying but not wearing",
+    which the four-chip split existed to make askable -- a real question, a rare
+    one, and worth the trade for two controls that read at a glance.
+
+    Which toggles appear depends on the open tab, but what they MEAN never does:
+    the flags are global. Weapons and Inventory share the equipped flag; Spells
+    owns prepared; Feats can answer neither so it shows none; All shows both and
+    is therefore the one place the whole filter state is legible.
+--}}
+<div class="control-filter-bar">
+<div class="filter-group">
+<i class="fa-solid fa-square-a filter-chip" data-filter-kind="action" data-filter-value="action" data-tooltip="Costs an action"></i>
+<i class="fa-solid fa-square-b filter-chip" data-filter-kind="action" data-filter-value="bonus" data-tooltip="Costs a bonus action"></i>
+<i class="fa-solid fa-square-r filter-chip" data-filter-kind="action" data-filter-value="reaction" data-tooltip="Costs a reaction"></i>
+<i class="fa-solid fa-square-s filter-chip" data-filter-kind="action" data-filter-value="special" data-tooltip="Special activation"></i>
+<i class="fa-solid fa-square-p filter-chip" data-filter-kind="action" data-filter-value="passive" data-tooltip="Costs no turn action — gear, passives, and anything slower than a turn"></i>
+</div>
+<span class="filter-separator"></span>
+<div class="filter-group filter-group-availability">
+<button class="availability-toggle" data-availability="equipped" data-tooltip="Only equipped gear. Says nothing about spells or features, and applies on both the Weapons and Inventory tabs." hidden>
+<i class="fa-solid fa-shield-halved"></i><span>Equipped</span>
+</button>
+<button class="availability-toggle" data-availability="prepared" data-tooltip="Only prepared spells, plus cantrips and anything always available. Says nothing about gear." hidden>
+<i class="fa-solid fa-sun"></i><span>Prepared</span>
+</button>
+</div>
+</div>

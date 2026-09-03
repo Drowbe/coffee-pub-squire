@@ -1500,7 +1500,18 @@ Hooks.once('ready', async function() {
     blacksmith.renderMenubar?.(true);
 
     // Set up tray for non-excluded users
-    const trayWidth = game.settings.get(MODULE.ID, 'trayWidth');
+    //
+    // Raising a range setting's `min` does not touch what is already stored, and
+    // Foundry will happily keep handing back a below-floor value that its own
+    // slider can no longer express -- so anyone who had the tray at 350 or 375
+    // would sit under the new floor until they next dragged the slider, with no
+    // way to see why. Clamped once, here, so the stored value and the control
+    // agree again.
+    const storedTrayWidth = game.settings.get(MODULE.ID, 'trayWidth');
+    const trayWidth = Math.max(storedTrayWidth, SQUIRE.TRAY_MIN_WIDTH);
+    if (trayWidth !== storedTrayWidth) {
+        await game.settings.set(MODULE.ID, 'trayWidth', trayWidth);
+    }
     const handleWidth = parseInt(getHandleWidth());
     document.documentElement.style.setProperty('--squire-tray-handle-width', `${handleWidth}px`);
     document.documentElement.style.setProperty('--squire-tray-handle-adjustment', SQUIRE.TRAY_HANDLE_ADJUSTMENT);

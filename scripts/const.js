@@ -76,7 +76,13 @@ export const SQUIRE = {
     // settings-page real estate for that; change them here if the tray ever needs
     // to clear something.
     TRAY_TOP_OFFSET: '10px',
-    TRAY_BOTTOM_OFFSET: '10px'
+    TRAY_BOTTOM_OFFSET: '10px',
+    // Narrowest the tray may be, in px. The floor is set by the section tab
+    // strip: five labels have to fit across it, and below 400 they truncate or
+    // fall back to icons. Lives here rather than only in the range slider
+    // because the slider stops people CHOOSING a smaller width but says nothing
+    // about the widths already stored from when the floor was lower.
+    TRAY_MIN_WIDTH: 400
 };
 
 /**

@@ -88,9 +88,9 @@ Stacked down the tray, in this order:
 3. **Summary** -- one compact card carrying level, initiative, speed, armour, proficiency, the
    ability scores and experience. The ability scores are clickable: they roll the check or the save.
    Its setting is called Show Character Summary Panel; the panel header on screen says Summary.
-4. **Character Sheet** -- a thin strip with the filter bar and the search box under it. This is the
-   control strip for everything below.
-5. **Favorites**, then **Weapons**, **Spells**, **Features** and **Inventory**.
+4. **Character Sheet** -- a thin strip carrying the search box, the section tabs and the filter bar.
+   This is the control strip for everything below.
+5. **Favorites**, always first, then whichever section the open tab shows.
 
 ### Do something with an item
 
@@ -125,23 +125,41 @@ To get a favourite onto the handle so it is reachable with the tray closed, drag
 on top of an existing icon inserts it above; dropping past the end adds it at the bottom. The handle
 shows as many as fit and hides the rest, so a short list is a usable list.
 
+### Choose a section
+
+Five tabs sit under the search box: **All**, **Weapons**, **Spells**, **Feats** and **Inventory**. They
+pick which section you are looking at, and the one you are on stays lit. **All** shows every section at
+once, which is where the tray starts.
+
+**Favorites is always above them**, whatever tab you are on -- it is a flag rather than a kind of item,
+so it never belonged in the same row as the other four. On a specific tab your favourites narrow to
+match: the Weapons tab shows your favourite weapons, not your favourite spells.
+
+The tab you are on is remembered between sessions. That is safe in a way the old type filters were not,
+because a lit, labelled tab explains itself the moment you look at it.
+
 ### Narrow down what you are looking at
 
-The filter bar on the Character Sheet strip is fourteen small icons in four groups, and every one of
-them names a bucket to show. A group with all of its icons on shows everything.
+The filter bar under the tabs is five action-cost icons -- action, bonus action, reaction, special and
+passive. Each names a bucket to show, and with all five on you see everything. Passive covers gear and
+anything slower than a turn, so everything you own falls into one of the five. Shift-click one to show
+only that cost, and shift-click it again to put the rest back. These are deliberately forgotten when
+you log out, so you never come back to a half-empty tray.
 
-- **Five item types** -- Favorites, Weapons, Spells, Features, Inventory. Turning one off hides those
-  items everywhere, favourites included.
-- **Five action costs** -- action, bonus action, reaction, special, and passive. Passive covers gear
-  and anything slower than a turn, so everything you own falls into one of the five.
-- **Equipped and unequipped**, which are about gear and say nothing about spells.
-- **Prepared and unprepared**, which are about spells and say nothing about gear.
+Beside them sit up to two buttons, and which ones appear depends on the tab:
 
-Shift-click an icon to show only that one within its group. The type filters are remembered between
-sessions; the action-cost ones deliberately are not, so you never log in a week later to a half-empty
-tray.
+- **Equipped** -- on the Weapons, Inventory and All tabs. Pressed, it hides gear you are carrying but
+  not wearing or wielding. It says nothing about spells or features.
+- **Prepared** -- on the Spells and All tabs. Pressed, it hides spells you know but have not prepared;
+  cantrips and anything always available stay. It says nothing about gear.
 
-The search box under the bar -- **Search All Sections...** -- filters every section at once. The cross
+Both are off until you press them, they light up while they are hiding something, and they are
+forgotten when you log out. They are the same two switches wherever they appear -- pressing Equipped on
+the Weapons tab also applies on Inventory, because it is one question about gear asked in two places.
+The **All** tab is the only one showing both, so it is the place to look if something seems to be
+missing.
+
+The search box above the tabs -- **Search All Sections...** -- filters every section at once. The cross
 at its right clears it.
 
 ![A search across every section at once, with each section showing only its matching rows](../assets/userguide-search.webp)
@@ -171,9 +189,9 @@ You cannot send a container that still has things in it. Empty it first.
 
 ### Add something from a compendium
 
-If the GM has allowed it, the Character Sheet strip carries a magnifying glass. Click it and the filter
-bar and the panel stack are both replaced by a search box and **Add from Compendiums**, listing matches
-grouped by the compendium they came from. Each row has a plus that adds it. The person icon next to the
+If the GM has allowed it, the Character Sheet strip carries a magnifying glass. Click it and the tabs,
+the filter bar and the panel stack are all replaced by a search box and **Add from Compendiums**,
+listing matches grouped by the compendium they came from. Each row has a plus that adds it. The person icon next to the
 magnifying glass goes back to the character's own items.
 
 **Let Players Use Compendiums** is the GM's setting and has four positions: off, look only, ask the GM

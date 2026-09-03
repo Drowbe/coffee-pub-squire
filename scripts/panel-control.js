@@ -4,19 +4,60 @@ import { getNativeElement, renderTemplate, getPanelItemName, setRowFilter, isRow
 import { CompendiumSearchUtility } from './utility-compendium-search.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
-/** The stacked panels the filter bar governs, in tray order. */
+/** The stacked panels, in tray order. Favorites is always the first of them. */
 const PANEL_TYPES = ['favorites', 'weapons', 'spells', 'features', 'inventory'];
 
 /**
- * Which item-type chip owns a row, keyed by the row's `data-item-type`.
+ * The section tabs, in strip order.
  *
- * 'favorites' is deliberately absent: a favourite is a flag rather than an item
- * kind, so that chip hides its own section without filtering rows anywhere else.
- * Every other chip reaches every panel — turning off Weapons hides weapons in
- * the favourites list too, and the weapons panel collapses because nothing is
- * left in it rather than because the chip hid it directly.
+ * Favorites is NOT one of them, and that is the point: a favourite is a flag
+ * rather than an item kind, so it was never the same axis as the other four.
+ * It sits above whichever tab is open instead, always first, always shown.
  */
-const CHIP_FOR_ITEM_TYPE = {
+const PANEL_TABS = ['all', 'weapons', 'spells', 'features', 'inventory'];
+
+/** Tab labels. Short enough that five fit across the tray at its 400px floor. */
+const TAB_LABELS = {
+    all: 'All',
+    weapons: 'Weapons',
+    spells: 'Spells',
+    features: 'Feats',
+    inventory: 'Inventory'
+};
+
+/**
+ * Which availability toggle each tab is allowed to show.
+ *
+ * The toggles are global -- one `_onlyEquipped`, one `_onlyPrepared` -- and the
+ * tab decides only which of them is on screen, never what they mean. Per-tab
+ * state was the alternative and it makes the All tab unanswerable: if Weapons
+ * says only-equipped and Inventory says all, All has to invent a rule.
+ *
+ * A consequence worth knowing: setting "only equipped" on Weapons also filters
+ * Inventory, because it is one question about gear asked in two places. That is
+ * why neither flag persists across sessions -- a global lens you set last
+ * Tuesday is worse than a per-tab one, not better.
+ */
+const TAB_TOGGLES = {
+    all: ['equipped', 'prepared'],
+    weapons: ['equipped'],
+    spells: ['prepared'],
+    features: [],
+    inventory: ['equipped']
+};
+
+/**
+ * Which tab owns a row, keyed by the row's `data-item-type`.
+ *
+ * Used to filter rows WITHIN a tab, which only ever bites in Favorites: the
+ * weapons panel holds nothing but weapons, so the rule is a no-op there. On the
+ * Weapons tab your favourites narrow to your favourite weapons, because a tab
+ * labelled Weapons showing a block of favourite spells contradicts its own
+ * label.
+ *
+ * A row whose type is not in this map is never hidden by the tab.
+ */
+const TAB_FOR_ITEM_TYPE = {
     weapon: 'weapons',
     spell: 'spells',
     feat: 'features',
@@ -31,13 +72,21 @@ const CHIP_FOR_ITEM_TYPE = {
 /** Action-economy buckets, in bar order. Passive is what makes the set complete. */
 const ACTION_BUCKETS = ['action', 'bonus', 'reaction', 'special', 'passive'];
 
-/** Availability buckets, keyed by the row attribute that answers each question. */
-const STATE_BUCKETS = {
-    equipState: ['equipped', 'unequipped'],
-    prepareState: ['prepared', 'unprepared']
+/**
+ * The two availability questions: the flag that answers each, the row attribute
+ * that carries the answer, and the value that fails when the flag is on.
+ *
+ * `hideWhen` is the whole safety property of this feature. "Only equipped" means
+ * hide rows that say `unequipped` -- NOT rows that fail to say `equipped`. A
+ * spell carries no `data-equip-state` at all, so written the first way it is
+ * untouched and written the second way your entire spell list disappears. Same
+ * for a weapon under "only prepared". Where-applicable falls out of matching the
+ * failing value rather than negating the passing one.
+ */
+const AVAILABILITY = {
+    equipped: { attribute: 'equipState', hideWhen: 'unequipped' },
+    prepared: { attribute: 'prepareState', hideWhen: 'unprepared' }
 };
-
-const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice(1);
 
 export class ControlPanel {
     constructor(actor) {
@@ -51,9 +100,31 @@ export class ControlPanel {
         // do right now", which is a question about this moment, not a preference
         // worth restoring next week. See settings.js.
         this._shownActions = new Set(ACTION_BUCKETS);
+        // Narrow to what is usable right now. Global rather than per-tab, and
+        // deliberately not persisted -- see TAB_TOGGLES. Both start off, so the
+        // tray opens showing everything.
+        this._onlyEquipped = false;
+        this._onlyPrepared = false;
         // When true the stacked panels are hidden and the quick-add results
         // panel takes their place; the same search box drives both.
         this._compendiumMode = false;
+    }
+
+    /**
+     * The open section tab. Read through a getter so a stored value that is no
+     * longer a tab -- a world that saw an older build, a hand-edited setting --
+     * falls back to All rather than showing an empty tray with no lit tab to
+     * explain it.
+     */
+    get activeTab() {
+        const stored = game.settings.get(MODULE.ID, 'controlActiveTab');
+        return PANEL_TABS.includes(stored) ? stored : 'all';
+    }
+
+    async setActiveTab(tab) {
+        if (!PANEL_TABS.includes(tab) || tab === this.activeTab) return;
+        await game.settings.set(MODULE.ID, 'controlActiveTab', tab);
+        this._updateVisibility();
     }
 
     async render(html) {
@@ -74,6 +145,11 @@ export class ControlPanel {
                 ? 'Search Compendiums to Add Items'
                 : 'Search Compendiums',
             clearOnAdd: game.settings.get(MODULE.ID, 'compendiumClearOnAdd'),
+            tabs: PANEL_TABS.map(tab => ({
+                key: tab,
+                label: TAB_LABELS[tab],
+                active: tab === this.activeTab
+            })),
             // Owners, not just GMs. A player never writes to their own sheet
             // here: applying sends the plan to the GM as an approval window, and
             // the GM decides. `isOwner` rather than a player check, because the
@@ -127,6 +203,12 @@ export class ControlPanel {
     async revealAddedItem(item) {
         if (!item) return;
         await this.setCompendiumMode(false);
+
+        // Switch to the tab that holds it first. Adding a longbow while the
+        // Spells tab is open used to land you on a sheet with no longbow on it,
+        // and _waitForItemRow would poll a hidden panel and give up in silence.
+        const owner = TAB_FOR_ITEM_TYPE[item.type];
+        if (owner && this.activeTab !== 'all') await this.setActiveTab(owner);
 
         // The item arrives via createItem hooks that re-render whichever panel
         // holds it, and those run independently of this call — so poll briefly
@@ -189,16 +271,18 @@ export class ControlPanel {
     }
 
     /**
-     * True when something other than section visibility is hiding rows.
+     * True when a FILTER is hiding rows.
      *
-     * Every group is now "on by default", so a filter is active when a chip is
-     * switched *off* rather than on.
+     * The open tab is deliberately not counted. A tab is a place, not a filter:
+     * it is labelled, lit, and cannot be switched off, so it needs none of the
+     * "you are looking at less than everything" machinery the chips did. The
+     * emptied-section test in _applyFilters adds the tab back for its own
+     * purposes, which is a different question.
      */
     hasActiveFilters() {
         if (this._searchTerm !== '') return true;
         if (this._shownActions.size < ACTION_BUCKETS.length) return true;
-        return Object.values(STATE_BUCKETS).flat()
-            .some(bucket => !game.settings.get(MODULE.ID, `filterShow${capitalize(bucket)}`));
+        return this._onlyEquipped || this._onlyPrepared;
     }
 
     /**
@@ -268,60 +352,73 @@ export class ControlPanel {
         // column where vertical room is the scarce thing.
         controlEl?.classList.toggle('compendium-mode', this._compendiumMode);
 
-        PANEL_TYPES.forEach(panel => {
-            const isVisible = game.settings.get(MODULE.ID, `filterType${capitalize(panel)}`);
+        const activeTab = this.activeTab;
 
-            controlEl
-                ?.querySelector(`.filter-chip[data-filter-kind="type"][data-filter-value="${panel}"]`)
-                ?.classList.toggle('active', isVisible);
+        // Favorites is not a tab and is never hidden by one -- it sits above
+        // whatever the tab reveals. The other four show when their tab is open,
+        // or all together on All.
+        PANEL_TYPES.forEach(panel => {
+            const isVisible = panel === 'favorites'
+                || activeTab === 'all'
+                || panel === activeTab;
 
             this.element
                 .querySelector(`.panel-containers.stacked .panel-container[data-panel="${panel}"]`)
                 ?.classList.toggle('visible', isVisible);
         });
 
+        controlEl?.querySelectorAll('.control-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.tab === activeTab);
+        });
+
         controlEl?.querySelectorAll('.filter-chip[data-filter-kind="action"]').forEach(chip => {
             chip.classList.toggle('active', this._shownActions.has(chip.dataset.filterValue));
         });
 
-        controlEl?.querySelectorAll('.filter-chip[data-filter-kind="state"]').forEach(chip => {
-            chip.classList.toggle('active',
-                game.settings.get(MODULE.ID, `filterShow${capitalize(chip.dataset.filterValue)}`));
+        // A toggle the open tab has no use for is removed, not dimmed: "only
+        // prepared" on the Inventory tab is a control with nothing to act on,
+        // and dimming it would say it was switched off instead.
+        const allowed = TAB_TOGGLES[activeTab] ?? [];
+        controlEl?.querySelectorAll('.availability-toggle').forEach(toggle => {
+            const key = toggle.dataset.availability;
+            toggle.hidden = !allowed.includes(key);
+            toggle.classList.toggle('active', this._availabilityFlag(key));
         });
 
         this._applyFilters();
     }
 
+    /** Read one availability flag by name. */
+    _availabilityFlag(key) {
+        return key === 'equipped' ? this._onlyEquipped : this._onlyPrepared;
+    }
+
     /**
      * The one place row visibility is decided.
      *
-     * Each predicate stamps its own reason and reads none of the others, so the
-     * four of them intersect: a weapon that matches the search, survives the
-     * type chips, costs a bonus action and is equipped shows; failing any one of
-     * those hides it, and clearing that one filter brings it back without
-     * disturbing the rest.
+     * Each predicate stamps its own reason and reads none of the others, so they
+     * intersect: a weapon that matches the search, belongs to the open tab,
+     * costs a bonus action and is equipped shows; failing any one of those hides
+     * it, and clearing that one filter brings it back without disturbing the
+     * rest.
      *
-     * A chip only judges rows that can answer it. `data-equip-state` is absent
-     * from a spell and `data-prepare-state` from a rope, and an absent attribute
-     * never matches the failing value — so "where applicable" is the default
-     * behaviour here rather than a case anyone has to remember to write.
+     * A predicate only judges rows that can answer it. `data-equip-state` is
+     * absent from a spell and `data-prepare-state` from a rope, and each
+     * availability flag matches the FAILING value rather than negating the
+     * passing one -- so "where applicable" is the default behaviour here rather
+     * than a case anyone has to remember to write. See AVAILABILITY.
      */
     _applyFilters() {
         if (!this.element || this._compendiumMode) return;
 
         const term = this._searchTerm.toLowerCase();
         const shownActions = this._shownActions;
-        const filtering = this.hasActiveFilters();
+        const activeTab = this.activeTab;
 
-        const shownStates = {};
-        Object.values(STATE_BUCKETS).flat().forEach(bucket => {
-            shownStates[bucket] = game.settings.get(MODULE.ID, `filterShow${capitalize(bucket)}`);
-        });
-
-        const typeEnabled = {};
-        PANEL_TYPES.forEach(panel => {
-            typeEnabled[panel] = game.settings.get(MODULE.ID, `filterType${capitalize(panel)}`);
-        });
+        // The emptied-section test below counts the tab as well as the filters.
+        // hasActiveFilters() deliberately does not -- but a Favorites block with
+        // no weapons in it, on the Weapons tab, is still a heading over nothing.
+        const narrowing = this.hasActiveFilters() || activeTab !== 'all';
 
         PANEL_TYPES.forEach(panelType => {
             const panelElement = this.element.querySelector(`[data-panel="${panelType}"]`);
@@ -333,8 +430,9 @@ export class ControlPanel {
                 const name = getPanelItemName(row).toLowerCase();
                 setRowFilter(row, 'search', term !== '' && name !== '' && !name.includes(term));
 
-                const chip = CHIP_FOR_ITEM_TYPE[row.dataset.itemType];
-                setRowFilter(row, 'type', !!chip && !typeEnabled[chip]);
+                const owner = TAB_FOR_ITEM_TYPE[row.dataset.itemType];
+                setRowFilter(row, 'type',
+                    activeTab !== 'all' && !!owner && owner !== activeTab);
 
                 // An item usable two ways survives while either bucket is on.
                 // A row listing no action types at all can't answer this group
@@ -344,13 +442,13 @@ export class ControlPanel {
                     rowActions.length > 0 && !rowActions.some(a => shownActions.has(a)));
 
                 // Availability is one reason covering two questions, so both are
-                // decided here rather than each overwriting the other. A row
-                // without the attribute isn't in either bucket and so isn't
-                // judged — which is the whole of "where applicable".
-                setRowFilter(row, 'state', Object.keys(STATE_BUCKETS).some(attribute => {
-                    const bucket = row.dataset[attribute];
-                    return bucket !== undefined && !shownStates[bucket];
-                }));
+                // decided here rather than each overwriting the other. A row is
+                // hidden only when it positively declares the failing value, so
+                // a row that cannot answer is never judged.
+                setRowFilter(row, 'state', Object.entries(AVAILABILITY).some(
+                    ([key, { attribute, hideWhen }]) =>
+                        this._availabilityFlag(key) && row.dataset[attribute] === hideWhen
+                ));
             });
 
             PanelManager.instance?._updateHeadersVisibility(panelElement);
@@ -368,7 +466,14 @@ export class ControlPanel {
             // Category collapse is deliberately excluded from that test: those
             // chips live inside the panel's own heading, so hiding the panel
             // would take away the only control that could bring it back.
-            const emptied = filtering
+            //
+            // The open tab's OWN panel is exempt. It is the thing that was
+            // clicked, so it has to answer for itself: a character with no
+            // weapons who opens the Weapons tab needs to see "No weapons
+            // available", not a blank tray with a lit tab and nothing under it.
+            // Favorites still collapses, which is the case this test is for.
+            const emptied = narrowing
+                && panelType !== activeTab
                 && !Array.from(rows).some(isRowVisible);
             panelElement.classList.toggle('filtered-empty', emptied);
         });
@@ -414,59 +519,42 @@ export class ControlPanel {
      * the gesture is a trap: it can reach a state that takes four ordinary
      * clicks to leave.
      *
-     * Availability solos within its question, not across the whole group.
-     * Shift-clicking Equipped means "equipped rather than stowed" and says
-     * nothing about spells — the same thing the old equipped toggle meant, and
-     * the same "where applicable" rule the chips already follow. Soloing across
-     * all four would instead hide every spell, which is not what the tooltip
-     * promises.
+     * Only the action chips have siblings to solo against now -- the tabs are
+     * single-select by construction and the availability toggles are two
+     * independent booleans, so neither has a group for this gesture to mean
+     * anything within.
      */
-    async _soloChip(kind, value) {
-        if (kind === 'type') {
-            const soloed = PANEL_TYPES.every(type =>
-                game.settings.get(MODULE.ID, `filterType${capitalize(type)}`) === (type === value));
-            for (const type of PANEL_TYPES) {
-                await game.settings.set(MODULE.ID, `filterType${capitalize(type)}`, soloed || type === value);
-            }
-        } else if (kind === 'action') {
-            const soloed = this._shownActions.size === 1 && this._shownActions.has(value);
-            this._shownActions = new Set(soloed ? ACTION_BUCKETS : [value]);
-        } else if (kind === 'state') {
-            const siblings = Object.values(STATE_BUCKETS).find(group => group.includes(value));
-            if (!siblings) return;
-            const soloed = siblings.every(bucket =>
-                game.settings.get(MODULE.ID, `filterShow${capitalize(bucket)}`) === (bucket === value));
-            for (const bucket of siblings) {
-                await game.settings.set(MODULE.ID, `filterShow${capitalize(bucket)}`, soloed || bucket === value);
-            }
-        } else {
-            return;
-        }
+    _soloChip(kind, value) {
+        if (kind !== 'action') return;
 
+        const soloed = this._shownActions.size === 1 && this._shownActions.has(value);
+        this._shownActions = new Set(soloed ? ACTION_BUCKETS : [value]);
         this._updateVisibility();
     }
 
     /**
-     * Flip one chip.
-     *
-     * Type and availability chips are written to settings and survive a reload;
-     * action-economy chips live on this instance and don't. That split is
-     * deliberate — closing a section is a standing preference, "what can I do
-     * this turn" is not.
+     * Flip one action chip. Lives on the instance and does not persist: "what
+     * can I do this turn" is a question about this moment.
      */
-    async _toggleChip(kind, value) {
-        if (kind === 'type') {
-            const key = `filterType${capitalize(value)}`;
-            await game.settings.set(MODULE.ID, key, !game.settings.get(MODULE.ID, key));
-        } else if (kind === 'state') {
-            const key = `filterShow${capitalize(value)}`;
-            await game.settings.set(MODULE.ID, key, !game.settings.get(MODULE.ID, key));
-        } else if (kind === 'action') {
-            if (this._shownActions.has(value)) this._shownActions.delete(value);
-            else this._shownActions.add(value);
-        } else {
-            return;
-        }
+    _toggleChip(kind, value) {
+        if (kind !== 'action') return;
+
+        if (this._shownActions.has(value)) this._shownActions.delete(value);
+        else this._shownActions.add(value);
+        this._updateVisibility();
+    }
+
+    /**
+     * Flip "only equipped" or "only prepared".
+     *
+     * Global, so this reaches every tab that shows the same toggle -- Weapons
+     * and Inventory share the equipped flag. Not persisted, for the reason in
+     * TAB_TOGGLES.
+     */
+    _toggleAvailability(key) {
+        if (key === 'equipped') this._onlyEquipped = !this._onlyEquipped;
+        else if (key === 'prepared') this._onlyPrepared = !this._onlyPrepared;
+        else return;
 
         this._updateVisibility();
     }
@@ -524,27 +612,49 @@ export class ControlPanel {
         // every render, the root is not.
         this._activateCleanupListener(html);
 
-        // The filter bar. Delegated on the container rather than bound per chip:
-        // twelve listeners to rewire on every render is twelve chances to leave
-        // one behind, and the bar's contents are still settling.
+        // The section tabs. Delegated on the strip rather than bound per tab,
+        // for the same reason the filter bar is.
+        const tabStrip = controlPanel.querySelector('.control-tabs');
+        if (tabStrip) {
+            const newStrip = tabStrip.cloneNode(true);
+            tabStrip.parentNode?.replaceChild(newStrip, tabStrip);
+
+            newStrip.addEventListener('click', async (event) => {
+                if (this._compendiumMode) return;
+                const tab = event.target.closest('.control-tab');
+                if (!tab) return;
+                await this.setActiveTab(tab.dataset.tab);
+            });
+        }
+
+        // The filter bar: five action chips and the two availability toggles.
+        // Delegated on the container rather than bound per control, because the
+        // panel replaces its own innerHTML on every render and a listener bound
+        // to a chip dies with the node.
         const filterBar = controlPanel.querySelector('.control-filter-bar');
         if (filterBar) {
             const newBar = filterBar.cloneNode(true);
             filterBar.parentNode?.replaceChild(newBar, filterBar);
 
-            newBar.addEventListener('click', async (event) => {
+            newBar.addEventListener('click', (event) => {
                 // The bar is hidden in quick-add mode, so a click here would be
                 // changing state the user can't see.
                 if (this._compendiumMode) return;
+
+                const toggle = event.target.closest('.availability-toggle');
+                if (toggle) {
+                    this._toggleAvailability(toggle.dataset.availability);
+                    return;
+                }
 
                 const chip = event.target.closest('.filter-chip');
                 if (!chip) return;
 
                 if (event.shiftKey) {
-                    await this._soloChip(chip.dataset.filterKind, chip.dataset.filterValue);
+                    this._soloChip(chip.dataset.filterKind, chip.dataset.filterValue);
                     return;
                 }
-                await this._toggleChip(chip.dataset.filterKind, chip.dataset.filterValue);
+                this._toggleChip(chip.dataset.filterKind, chip.dataset.filterValue);
             });
         }
 

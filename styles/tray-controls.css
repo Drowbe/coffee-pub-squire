@@ -13,10 +13,67 @@
 
 /* FILTER BAR */
 
+/* SECTION TABS
+
+   Five text labels, and the reason SQUIRE.TRAY_MIN_WIDTH is 400. They read as
+   tabs rather than as another row of chips on purpose: the strip they replaced
+   was five chips that could all be switched off at once, and looking like the
+   thing that could do that would undo the point of the change.
+
+   Distinct from the CHARACTER / PARTY strip above them -- flat, lighter, no
+   raised tab shoulders -- because they are a different altitude of choice:
+   which part of the sheet, not which view of the tray. The search box sitting
+   between the two strips does most of that work; this keeps them from reading
+   as one control if the layout ever closes that gap. */
+.squire-tray [data-panel="control"] .control-tabs {
+    display: flex;
+    width: 100%;
+    gap: 2px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.squire-tray [data-panel="control"] .control-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 3px 2px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    box-shadow: none;
+    outline: none;
+    cursor: pointer;
+    /* Sized to fit "Inventory" across a fifth of a 400px tray. Sentence case,
+       not the uppercase the view tabs use: uppercase is ~15% wider and this is
+       the strip that has to fit five words. */
+    font-size: 0.78em;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: rgba(159, 146, 117, 0.7);
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.squire-tray [data-panel="control"] .control-tab:hover {
+    color: var(--squire-color-hover);
+}
+
+/* The open tab is the one lit thing in the strip. No dimming of the others
+   beyond their resting colour -- a tab you are not on is not "off". */
+.squire-tray [data-panel="control"] .control-tab.active {
+    color: rgba(255, 255, 255, 0.95);
+    border-bottom-color: rgba(159, 146, 117, 0.9);
+}
+
+/* FILTER BAR */
+
 /* These are the same control as the category filters in a panel heading — a
    bare glyph that dims when it is off — so they are styled from the same rules
-   rather than given a look of their own. Twelve of them in a ~343px column
-   could not carry the bordered buttons that used to sit here anyway. */
+   rather than given a look of their own. */
 .squire-tray [data-panel="control"] .control-filter-bar {
     display: flex;
     align-items: center;
@@ -57,6 +114,65 @@
    way, with no second state to keep in sync. */
 .squire-tray [data-panel="control"] .filter-chip:not(.active) {
     opacity: 0.3;
+}
+
+/* AVAILABILITY TOGGLES
+
+   Deliberately NOT chips. A chip means "this bucket is shown", and dimming it
+   hides that slice; these mean the opposite shape of thing -- lit is a
+   RESTRICTION, off is show-everything. Four chips saying that badly is what
+   they replaced, so they carry a label and a border and read as pressed rather
+   than as lit-or-dimmed.
+
+   `hidden` is set by _updateVisibility for tabs that cannot use them, and the
+   attribute needs the !important here because .filter-group's `display: flex`
+   on the parent does not stop these being flex items themselves. */
+.squire-tray [data-panel="control"] .filter-group-availability {
+    flex: 0 1 auto;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.squire-tray [data-panel="control"] .availability-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: auto;
+    padding: 1px 6px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+    box-shadow: none;
+    outline: none;
+    cursor: pointer;
+    font-size: 0.72em;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+    color: rgba(159, 146, 117, 0.75);
+    transition: all 0.2s ease;
+}
+
+.squire-tray [data-panel="control"] .availability-toggle[hidden] {
+    display: none !important;
+}
+
+.squire-tray [data-panel="control"] .availability-toggle i {
+    font-size: 0.95em;
+}
+
+.squire-tray [data-panel="control"] .availability-toggle:hover {
+    color: var(--squire-color-hover);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Pressed. This is the state that is hiding rows, so it is the loud one --
+   the whole complaint about the old chips was that the filtering state was the
+   quiet one. */
+.squire-tray [data-panel="control"] .availability-toggle.active {
+    background: rgba(159, 146, 117, 0.35);
+    border-color: rgba(159, 146, 117, 0.9);
+    color: rgba(255, 255, 255, 0.95);
 }
 
 /* SEARCH */
@@ -161,11 +277,13 @@
     opacity: 1;
 }
 
-/* The bar has nothing to act on while quick-add is showing, so it collapses
-   instead of sitting greyed out and eating vertical space. The search box moves
-   up into the gap, which is a deliberate part of that mode reading as a
-   different place rather than the same panel with things switched off. */
-.squire-tray [data-panel="control"].compendium-mode .control-filter-bar {
+/* Neither the tabs nor the bar has anything to act on while quick-add is
+   showing, so both collapse instead of sitting greyed out and eating vertical
+   space. The search box moves up into the gap, which is a deliberate part of
+   that mode reading as a different place rather than the same panel with
+   things switched off. */
+.squire-tray [data-panel="control"].compendium-mode .control-filter-bar,
+.squire-tray [data-panel="control"].compendium-mode .control-tabs {
     display: none;
 }
 
