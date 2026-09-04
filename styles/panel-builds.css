@@ -279,6 +279,100 @@
     border-radius: 0;
 }
 
+/* ---------------- RARITY ----------------
+
+   `data-rarity` carries the dnd5e key, and only magic items have one — a rope
+   stays plain, which is the point: the colour means something because most of
+   what a character owns does not have it.
+
+   The border and a soft outer glow, nothing else. Tinting the artwork would
+   fight whatever the item's own picture is doing, and tinting the caption would
+   put coloured text on a dark gradient at 0.6em, which is where legibility goes
+   to die. The glow is what makes a wall of gear read at a glance. */
+.squire-build-slot[data-rarity="common"].is-filled {
+    border-color: rgba(190, 190, 190, 0.55);
+}
+
+.squire-build-slot[data-rarity="uncommon"].is-filled {
+    border-color: #4fa64f;
+    box-shadow: 0 0 7px rgba(79, 166, 79, 0.45);
+}
+
+.squire-build-slot[data-rarity="rare"].is-filled {
+    border-color: #4a90d9;
+    box-shadow: 0 0 7px rgba(74, 144, 217, 0.45);
+}
+
+.squire-build-slot[data-rarity="veryRare"].is-filled {
+    border-color: #9a5cd0;
+    box-shadow: 0 0 8px rgba(154, 92, 208, 0.5);
+}
+
+.squire-build-slot[data-rarity="legendary"].is-filled {
+    border-color: #e0a52e;
+    box-shadow: 0 0 9px rgba(224, 165, 46, 0.55);
+}
+
+/* The one that gets to be loud. An artifact should stop the eye. */
+.squire-build-slot[data-rarity="artifact"].is-filled {
+    border-color: #d4553a;
+    box-shadow: 0 0 11px rgba(212, 85, 58, 0.6);
+}
+
+/* ---------------- ATTUNEMENT ----------------
+
+   Top-left, opposite nothing — the caption owns the bottom and the artwork owns
+   the middle, so the corner is the only quiet space on a filled slot. */
+.squire-build-attunement {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    z-index: 2;
+    font-size: 0.6em;
+    text-shadow: 0 1px 3px rgba(8, 6, 4, 0.95);
+}
+
+.squire-build-attunement.is-attuned {
+    color: #6fd3f2;
+}
+
+/* Hollow and warm: this item ASKS for attunement and has not got it, so it is
+   in the build and would do nothing. Deliberately the same colour as the
+   missing-item warning — both mean "this slot is not going to work". */
+.squire-build-attunement.is-unattuned {
+    color: #f08e78;
+}
+
+/* The footer counter. */
+.squire-build-summary {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72em;
+}
+
+.squire-build-attunement-count {
+    color: var(--blacksmith-tool-text-muted);
+}
+
+.squire-build-attunement-count i {
+    color: #6fd3f2;
+}
+
+/* Over the allowance. Not an error — a build is a plan, and planning past your
+   limit is a thing you might be doing on purpose — but it should be impossible
+   to miss. */
+.squire-build-attunement-count.is-over,
+.squire-build-attunement-count.is-over i {
+    color: #f08e78;
+    font-weight: 700;
+}
+
+.squire-build-attunement-warning {
+    color: #f08e78;
+}
+
 /* Says what the window is for. A ring of slots around a portrait otherwise reads
    as a statement about what the character is wearing right now. */
 .squire-build-note {

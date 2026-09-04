@@ -94,6 +94,26 @@ export const BUILD_SLOT_KEYS = [
     ...BUILD_WEAPON_SLOTS.map(slot => slot.key)
 ];
 
+/**
+ * Rarity, normalised to a dnd5e key.
+ *
+ * `system.rarity` is stored as whatever the sheet wrote — "very rare" from a
+ * hand-typed field, `veryRare` from the dropdown — so it is camel-cased back to
+ * the key `CONFIG.DND5E.itemRarity` uses before anything styles on it. Same
+ * normalisation the merchant module does, for the same reason.
+ *
+ * Returns null for anything unrated, which is most of what a character carries.
+ * A rope should look like a rope, not like a common magic item.
+ */
+function itemRarity(item) {
+    const raw = String(item?.system?.rarity ?? '').trim();
+    if (!raw) return null;
+
+    const camel = raw.replace(/\s+(.)/g, (_match, next) => next.toUpperCase());
+    const key = `${camel.charAt(0).toLowerCase()}${camel.slice(1)}`;
+    return key in (CONFIG.DND5E?.itemRarity ?? {}) ? key : null;
+}
+
 /** Where the builds live. Module-owned flag, so the sheet itself is untouched. */
 const BUILDS_FLAG = 'builds';
 
@@ -190,6 +210,8 @@ export function resolveSlots(actor, build, slotDefinitions) {
         const itemId = build?.slots?.[definition.key] ?? null;
         const item = itemId ? actor?.items?.get(itemId) : null;
 
+        const rarity = item ? itemRarity(item) : null;
+
         return {
             ...definition,
             itemId,
@@ -197,7 +219,37 @@ export function resolveSlots(actor, build, slotDefinitions) {
             missing: !!itemId && !item,
             name: item?.name ?? null,
             img: item?.img ?? null,
-            uuid: item?.uuid ?? null
+            uuid: item?.uuid ?? null,
+            rarity,
+            rarityLabel: rarity ? (CONFIG.DND5E?.itemRarity?.[rarity] ?? null) : null,
+            // `attuned` is the boolean the sheet ticks; `attunement` says whether
+            // the item asks for it at all. Both are needed: an attunement-
+            // requiring item that is NOT attuned is the interesting case, because
+            // it is the one that will not work when the build is worn.
+            attuned: !!item?.system?.attuned,
+            needsAttunement: item?.system?.attunement === 'required'
         };
     });
+}
+
+/**
+ * What a build spends of the character's attunement allowance.
+ *
+ * Counted over the build's own slots rather than over the actor: the question is
+ * "would this set of gear fit inside three", and items attuned elsewhere on the
+ * sheet are not part of this set. `max` comes from the actor because a world can
+ * change it, and falls back to the rules' three.
+ *
+ * `unattuned` is the count that REQUIRE attunement and have not got it. That is
+ * the number worth surfacing — a build can be legal on the count and still have
+ * three items in it that do nothing.
+ */
+export function attunementSummary(actor, slots) {
+    const filled = slots.filter(slot => slot.filled);
+
+    return {
+        used: filled.filter(slot => slot.attuned).length,
+        max: Number(actor?.system?.attributes?.attunement?.max ?? 3),
+        unattuned: filled.filter(slot => slot.needsAttunement && !slot.attuned).length
+    };
 }

@@ -3,7 +3,7 @@ import { PanelManager } from './manager-panel.js';
 import { renderTemplate } from './helpers.js';
 import {
     BUILD_BODY_SLOTS, BUILD_WEAPON_SLOTS, BUILD_SLOT_KEYS,
-    getBuild, renameBuild, setBuildSlot, resolveSlots
+    getBuild, renameBuild, setBuildSlot, resolveSlots, attunementSummary
 } from './utility-builds.js';
 
 /**
@@ -104,14 +104,22 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             };
         }
 
+        const bodySlots = resolveSlots(this.actor, build, BUILD_BODY_SLOTS);
+        const weaponSlots = resolveSlots(this.actor, build, BUILD_WEAPON_SLOTS);
+
+        // Counted across BOTH grids: a build's attunement cost is the whole set,
+        // and a sword is as capable of demanding attunement as an amulet.
+        const attunement = attunementSummary(this.actor, [...bodySlots, ...weaponSlots]);
+
         return {
             appId: this.id,
             bodyContent: await renderTemplate(TEMPLATES.WINDOW_BUILD, {
                 build,
                 actorName: this.actor?.name ?? '',
                 actorImg: this.actor?.img ?? 'icons/svg/mystery-man.svg',
-                bodySlots: resolveSlots(this.actor, build, BUILD_BODY_SLOTS),
-                weaponSlots: resolveSlots(this.actor, build, BUILD_WEAPON_SLOTS)
+                bodySlots,
+                weaponSlots,
+                attunement: { ...attunement, over: attunement.used > attunement.max }
             })
         };
     }

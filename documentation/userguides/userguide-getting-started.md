@@ -124,6 +124,11 @@ character surrounded by slots -- head, face, neck, back, chest, arms, hands, rin
 and the three weapon slots along the bottom. Drag items from the tray into the slots to say what this
 build is made of. Right-click a slot to empty it; right-click a build's tile to open or delete it.
 
+Magic items glow in their slot, coloured by rarity, and anything needing attunement carries a gem --
+lit if it is attuned, warm and hollow if it is not, which means it would do nothing if you wore this
+set. The foot of the window totals the attunement the build would spend against what your character
+has, so you can see at a glance whether the set actually fits.
+
 **A build is a plan, not a state.** Nothing in it changes what your character is actually wearing --
 it is somewhere to work out a set of gear, not a switch that puts it on. Only items already on your
 sheet can go in a slot, and if one later leaves your sheet the slot says so rather than quietly
