@@ -1,11 +1,12 @@
 import { TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { renderTemplate } from './helpers.js';
+import { renderTemplate, showSquireToast } from './helpers.js';
 import {
     BUILD_BODY_SLOTS, BUILD_WEAPON_SLOTS, BUILD_SLOT_KEYS,
     getBuild, renameBuild, setBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, getCantrips, resolvePreparedSpells, setBuildSpell,
-    refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages
+    refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
+    estimateArmorClass
 } from './utility-builds.js';
 
 /**
@@ -145,6 +146,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 weaponSlots,
                 attunement: { ...attunement, over: attunement.used > attunement.max },
                 weight: gearWeight(this.actor, build),
+                armorClass: estimateArmorClass(this.actor, build),
                 imageSlots: resolveImageSlots(this.actor, build),
                 casters,
                 cantrips: casters.length ? getCantrips(this.actor) : [],
@@ -191,6 +193,24 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
 
         // Portrait and token take a click, not a drop — they hold an image path
         // rather than an item, so there is nothing on the sheet to drag in.
+        // The system's own item card on anything holding an item — the same card
+        // the tray rows and the character sheet show. Set here rather than in the
+        // template because it replaces the slot's plain tooltip, and only a
+        // FILLED slot has an item to describe; an empty one keeps its "drag
+        // something here" text, which is the more useful thing to say about it.
+        //
+        // dnd5e's tooltip layer resolves any `.loading[data-uuid]` placeholder
+        // itself, so this is three attributes rather than a lookup — see
+        // applyItemTooltips() in helpers.js, which does the same for tray rows.
+        root.querySelectorAll('[data-item-uuid]').forEach(element => {
+            const uuid = element.dataset.itemUuid;
+            if (!uuid) return;
+            element.dataset.tooltip =
+                `<section class="loading" data-uuid="${uuid}"><i class="fas fa-spinner fa-spin-pulse"></i></section>`;
+            element.dataset.tooltipClass = 'dnd5e2 dnd5e-tooltip item-tooltip themed theme-light';
+            element.dataset.tooltipDirection ??= 'LEFT';
+        });
+
         root.querySelectorAll('.squire-build-image-slot').forEach(slot => {
             slot.addEventListener('click', () => this._pickImage(slot.dataset.image));
             slot.addEventListener('contextmenu', async (event) => {
@@ -261,6 +281,33 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         await picker.browse();
     }
 
+    /**
+     * Say what a dropped item changed, when it changed anything worth saying.
+     *
+     * Only AC and weight, and only when they moved. A silent swap is the right
+     * outcome for a torch; a breastplate that costs two points of armour class
+     * is the thing somebody wanted to know before they closed the window.
+     */
+    _reportSwap(item, before) {
+        const after = {
+            ac: estimateArmorClass(this.actor, this.build).value,
+            weight: gearWeight(this.actor, this.build) ?? 0
+        };
+
+        const parts = [];
+        if (after.ac !== before.ac) {
+            const delta = after.ac - before.ac;
+            parts.push(`AC ${before.ac} → ${after.ac} (${delta > 0 ? '+' : ''}${delta})`);
+        }
+        if (after.weight !== before.weight) {
+            const delta = Number((after.weight - before.weight).toFixed(2));
+            parts.push(`${delta > 0 ? '+' : ''}${delta} lb`);
+        }
+        if (!parts.length) return;
+
+        showSquireToast(item.name, { subtitle: parts.join(' · '), icon: 'fa-solid fa-shield' });
+    }
+
     /** Empty whichever kind of slot this is — gear by key, spell by class and index. */
     async _clearSlot(slot) {
         const { slot: slotKey, spellClass, spellIndex } = slot.dataset;
@@ -326,8 +373,17 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 return;
             }
 
+            // Measured before and after, so a swap can say whether it was an
+            // improvement. This is the honest version of "which is better": no
+            // invented score, just the two numbers that actually changed.
+            const before = {
+                ac: estimateArmorClass(this.actor, this.build).value,
+                weight: gearWeight(this.actor, this.build) ?? 0
+            };
+
             await setBuildSlot(this.actor, this.buildId, slotKey, item.id);
             await this._refresh();
+            this._reportSwap(item, before);
             return;
         }
 

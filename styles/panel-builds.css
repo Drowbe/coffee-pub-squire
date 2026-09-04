@@ -30,12 +30,12 @@
     color: var(--squire-color-hover);
 }
 
-/* Tiles, echoing the favourites wall below — but smaller, and without artwork.
-   A build has no picture of its own, and inventing one (the first item? a
-   generic shirt?) would say something untrue about what the build contains. */
+/* Rows, not a grid of squares. A build's identity is what is IN it, and three
+   104px cells had room for a generic shirt and a fraction — which said nothing
+   about the difference between two builds, the only thing this list is for. */
 .squire-tray .builds-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 6px;
     padding: 2px;
 }
@@ -43,10 +43,8 @@
 .squire-tray .build-tile {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    padding: 8px 6px;
+    gap: 5px;
+    padding: 7px 8px;
     cursor: pointer;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 5px;
@@ -59,26 +57,90 @@
     background: rgba(0, 0, 0, 0.55);
 }
 
-.squire-tray .build-tile-icon {
-    font-size: 1.1em;
+.squire-tray .build-tile-top {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* The gear itself, which is what tells two builds apart at a glance. Capped at
+   five in the context: a sixth thumbnail does not add information, it just
+   pushes the apply button around. */
+.squire-tray .build-tile-preview {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.squire-tray .build-tile-preview img {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+}
+
+.squire-tray .build-tile-empty {
+    color: rgba(241, 231, 214, 0.4);
+    font-size: 0.66em;
+    font-style: italic;
+}
+
+/* Apply is a button, not the row, and it looks like one. This is the only
+   control in the tray that re-equips a character, so it should be impossible to
+   hit while reaching for something else. */
+.squire-tray .build-tile-apply {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    padding: 3px 9px;
+    line-height: 1;
+    cursor: pointer;
+    border: 1px solid rgba(159, 146, 117, 0.4);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.4);
     color: rgba(159, 146, 117, 0.9);
+    font-size: 0.78em;
+    transition: all 0.15s ease;
+}
+
+.squire-tray .build-tile-apply:hover {
+    border-color: var(--squire-color-hover);
+    background: rgba(255, 100, 0, 0.18);
+    color: var(--squire-color-hover);
+    box-shadow: none;
 }
 
 .squire-tray .build-tile-name {
-    max-width: 100%;
     overflow: hidden;
     color: #f1e7d6;
-    font-size: 0.74em;
-    font-weight: 600;
+    font-size: 0.8em;
+    font-weight: 700;
     line-height: 1.2;
-    text-align: center;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
 
-.squire-tray .build-tile-count {
-    color: rgba(241, 231, 214, 0.5);
-    font-size: 0.62em;
+.squire-tray .build-tile-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    color: rgba(241, 231, 214, 0.55);
+    font-size: 0.64em;
+}
+
+.squire-tray .build-tile-stats i {
+    margin-right: 2px;
+    opacity: 0.8;
+}
+
+.squire-tray .build-tile-warning {
+    color: #f08e78;
 }
 
 /* The empty state is a grid child, so it has to be told to span the whole row
@@ -647,6 +709,28 @@
 
 .squire-build-weight {
     color: var(--blacksmith-tool-text-muted);
+}
+
+.squire-build-ac {
+    color: var(--blacksmith-tool-text);
+    font-weight: 700;
+}
+
+.squire-build-ac i {
+    color: var(--blacksmith-tool-accent);
+    font-weight: 400;
+}
+
+/* "est." is not decoration. This number leaves out class features, fighting
+   styles and active effects, and a bare "AC 18" beside a real attunement count
+   would read as a fact about the character rather than a comparison between
+   builds. */
+.squire-build-ac-note {
+    margin-left: 3px;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.82em;
+    font-style: italic;
+    font-weight: 400;
 }
 
 /* Says what the window is for. A ring of slots around a portrait otherwise reads

@@ -666,3 +666,174 @@ export function resolveImageSlots(actor, build) {
         };
     });
 }
+
+/* ==========================================================================
+   WHAT A BUILD ADDS UP TO
+   ========================================================================== */
+
+/**
+ * An ESTIMATED armour class for the gear in a build.
+ *
+ * Estimated, and labelled that way everywhere it is shown, because a character's
+ * real AC is the sum of things this cannot see: Unarmoured Defence, a Defence
+ * fighting style, a ring or cloak that grants a bonus through an active effect,
+ * a subclass feature, temporary buffs. What this does see is the armour and the
+ * shield in the build, plus Dexterity, which is what actually changes when you
+ * swap one breastplate for another — and comparing two builds is the question
+ * being asked.
+ *
+ * `system.armor.value` already has any magical bonus folded in: dnd5e adds it
+ * during data preparation, so a +1 breastplate reports 15 rather than 14.
+ * `system.armor.dex` is the cap on the Dexterity contribution — 0 for heavy
+ * armour, null for none at all.
+ *
+ * Returns `{ value, hasArmor, hasShield }`, never null: an unarmoured character
+ * still has an AC and 10 + Dex is the right answer for one.
+ */
+export function estimateArmorClass(actor, build) {
+    const dexMod = Number(actor?.system?.abilities?.dex?.mod ?? 0);
+    const items = Object.values(build?.slots ?? {})
+        .map(id => (id ? actor?.items?.get(id) : null))
+        .filter(Boolean);
+
+    const armorTypes = ['light', 'medium', 'heavy'];
+    const worn = items.find(item =>
+        item.type === 'equipment' && armorTypes.includes(item.system?.type?.value));
+    const shield = items.find(item =>
+        item.type === 'equipment' && item.system?.type?.value === 'shield');
+
+    let value;
+    if (worn) {
+        // `dex` is the cap, not the bonus. Null means uncapped (light armour),
+        // 0 means none at all (heavy).
+        const cap = worn.system?.armor?.dex;
+        const dexPart = cap === null || cap === undefined ? dexMod : Math.min(dexMod, Number(cap));
+        value = Number(worn.system?.armor?.value ?? 10) + dexPart;
+    } else {
+        value = 10 + dexMod;
+    }
+
+    if (shield) value += Number(shield.system?.armor?.value ?? 0);
+
+    return { value, hasArmor: !!worn, hasShield: !!shield };
+}
+
+/**
+ * Everything a build totals up to, for the tile and the footer.
+ *
+ * One pass so the tray tile and the window cannot disagree about the same build.
+ */
+export function buildSummary(actor, build) {
+    const bodySlots = resolveSlots(actor, build, BUILD_BODY_SLOTS);
+    const weaponSlots = resolveSlots(actor, build, BUILD_WEAPON_SLOTS);
+    const slots = [...bodySlots, ...weaponSlots];
+
+    const spellCount = Object.values(build?.spells ?? {})
+        .reduce((total, list) => total + list.filter(Boolean).length, 0);
+
+    return {
+        armorClass: estimateArmorClass(actor, build),
+        attunement: attunementSummary(actor, slots),
+        weight: gearWeight(actor, build),
+        gearCount: slots.filter(slot => slot.filled).length,
+        gearMax: BUILD_SLOT_KEYS.length,
+        missingCount: slots.filter(slot => slot.missing).length,
+        spellCount,
+        // The first few item pictures, for the tile to show instead of a generic
+        // shirt. A build's identity is the things in it.
+        preview: slots.filter(slot => slot.filled).slice(0, 5).map(slot => ({
+            img: slot.img,
+            name: slot.name
+        }))
+    };
+}
+
+/* ==========================================================================
+   APPLYING A BUILD
+
+   The one thing in this file that writes to the character. Everything above
+   records an intention; this is where the intention is carried out, and it is
+   deliberately the only place, invoked only from an explicit action that asks
+   first.
+   ========================================================================== */
+
+/**
+ * Equip the build's gear, prepare its spells, and set its artwork.
+ *
+ * Three rules, each chosen so that applying the same build twice is a no-op and
+ * applying a different one afterwards is a clean swap:
+ *
+ *   * Gear in the build is equipped; every other equippable item is UNEQUIPPED.
+ *     A build is a complete statement of what is worn, not a set of additions —
+ *     otherwise applying a light kit over a heavy one leaves you in both.
+ *   * Spells in the build are prepared; every other spell that counts against a
+ *     preparation limit is unprepared. Same reasoning. Cantrips and
+ *     always-prepared spells are untouched, because `countsPrepared` says they
+ *     are not part of the daily choice.
+ *   * Portrait and token are written only where the BUILD set them. A slot
+ *     showing the character's own face means "this build does not change it",
+ *     which is not the same as "set it to that", and only the second should
+ *     write. See resolveImageSlots.
+ *
+ * Attunement is deliberately NOT touched. Attuning is a short rest and a
+ * fiction-level decision, not a consequence of putting a ring on, and silently
+ * attuning six items would be the module making a call that belongs to the
+ * table.
+ *
+ * Returns a count of what actually changed, so the caller can report a result
+ * rather than a shrug.
+ */
+export async function applyBuild(actor, build) {
+    if (!actor || !build) return null;
+
+    const gearIds = new Set(Object.values(build.slots ?? {}).filter(Boolean));
+    const spellIds = new Set(
+        Object.values(build.spells ?? {}).flat().filter(Boolean)
+    );
+
+    const updates = [];
+    let equipped = 0;
+    let unequipped = 0;
+    let prepared = 0;
+    let unprepared = 0;
+
+    for (const item of actor.items) {
+        // Equippable is "has an equipped flag at all" — that is dnd5e's own way
+        // of saying the question applies to this item.
+        if (item.system?.equipped !== undefined) {
+            const shouldEquip = gearIds.has(item.id);
+            if (!!item.system.equipped !== shouldEquip) {
+                updates.push({ _id: item.id, 'system.equipped': shouldEquip });
+                shouldEquip ? equipped++ : unequipped++;
+            }
+        }
+
+        if (item.type === 'spell' && item.system?.countsPrepared) {
+            const shouldPrepare = spellIds.has(item.id);
+            // dnd5e models `prepared` as a number: 0 unprepared, 1 prepared,
+            // 2 always prepared. Only 0 and 1 are ours to set.
+            const isPrepared = Number(item.system.prepared) > 0;
+            if (isPrepared !== shouldPrepare) {
+                updates.push({ _id: item.id, 'system.prepared': shouldPrepare ? 1 : 0 });
+                shouldPrepare ? prepared++ : unprepared++;
+            }
+        }
+    }
+
+    // One write for every item rather than one per item: sixteen separate
+    // updates would each re-render the sheet and every panel watching it.
+    if (updates.length) await actor.updateEmbeddedDocuments('Item', updates);
+
+    const actorUpdate = {};
+    if (build.images?.portrait) actorUpdate.img = build.images.portrait;
+    if (build.images?.token) actorUpdate['prototypeToken.texture.src'] = build.images.token;
+    if (Object.keys(actorUpdate).length) await actor.update(actorUpdate);
+
+    return {
+        equipped,
+        unequipped,
+        prepared,
+        unprepared,
+        imagesChanged: Object.keys(actorUpdate).length
+    };
+}

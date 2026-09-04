@@ -142,7 +142,20 @@ does: the ammo slots take ammunition, Both Hands takes a weapon, and nothing tha
 object -- a spell, a feat, a class feature -- goes anywhere. If a slot turns
 something down it says what it was expecting.
 
-**A build is a plan, not a state.** Nothing in it changes what your character is actually wearing --
+Each build's row shows what is in it, its estimated armour class, how many slots are filled and what it
+weighs. The **runner** button equips it: everything in the build goes on, everything else comes off,
+its spells are prepared and anything else that counts against a preparation limit is unprepared. It
+asks first and tells you exactly what it will do. Attunement is never changed for you -- that is a
+decision for your table.
+
+The AC is marked **est.** because it is worked out from the build's armour, shield and your Dexterity
+alone. It cannot see Unarmoured Defence, a fighting style, or a bonus from an effect, so use it to
+compare two builds rather than as the number for your sheet.
+
+Hover anything in a slot for its full item card. Drop a replacement onto a filled slot and Squire tells
+you what changed -- `AC 16 -> 18 (+2)` -- so you can see whether the swap was worth it.
+
+**Until you equip it, a build is a plan, not a state.** Nothing in it changes what your character is actually wearing --
 it is somewhere to work out a set of gear, not a switch that puts it on. Only items already on your
 sheet can go in a slot, and if one later leaves your sheet the slot says so rather than quietly
 emptying itself.

@@ -21,7 +21,7 @@
         <div class="squire-build-slot{{#if this.round}} is-round{{/if}}{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
              data-rarity="{{this.rarity}}"
              style="grid-row: {{this.row}}; grid-column: {{this.column}};"
-             data-slot="{{this.key}}"
+             data-slot="{{this.key}}"{{#if this.uuid}} data-item-uuid="{{this.uuid}}"{{/if}}
              data-tooltip="{{#if this.filled}}{{this.name}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}{{this.label}} — drag an item here{{/if}}">
             {{#if this.filled}}
             {{!-- Drawn like a favourites tile: the artwork IS the slot, with the
@@ -81,7 +81,7 @@
         {{#each weaponSlots}}
         <div class="squire-build-slot{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
              data-rarity="{{this.rarity}}"
-             data-slot="{{this.key}}"
+             data-slot="{{this.key}}"{{#if this.uuid}} data-item-uuid="{{this.uuid}}"{{/if}}
              data-tooltip="{{#if this.filled}}{{this.name}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}{{this.label}} — drag an item here{{/if}}">
             {{#if this.filled}}
             {{!-- Drawn like a favourites tile: the artwork IS the slot, with the
@@ -135,7 +135,7 @@
             <div class="squire-build-spell-grid">
                 {{#each this.slots}}
                 <div class="squire-build-spell-slot{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
-                     data-spell-class="{{../id}}" data-spell-index="{{this.index}}"
+                     data-spell-class="{{../id}}" data-spell-index="{{this.index}}"{{#if this.uuid}} data-item-uuid="{{this.uuid}}"{{/if}}
                      data-tooltip="{{#if this.filled}}{{this.name}}<br><em>Right-click to clear</em>{{else if this.missing}}This spell is no longer on the sheet<br><em>Right-click to clear</em>{{else}}Drag a spell here{{/if}}">
                     {{#if this.filled}}
                     <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
@@ -198,6 +198,9 @@
               data-tooltip="Attunement slots this build would use{{#if attunement.over}}<br><strong>More than this character has</strong>{{/if}}">
             <i class="fa-solid fa-gem"></i> {{attunement.used}} / {{attunement.max}} attuned
         </span>
+        <span class="squire-build-ac" data-tooltip="Estimated from this build's armour, shield and Dexterity.<br>Class features, fighting styles and active effects are <strong>not</strong> counted, so this is for comparing builds rather than for your sheet.">
+            <i class="fa-solid fa-shield"></i> AC {{armorClass.value}}<span class="squire-build-ac-note">est.</span>
+        </span>
         {{#if weight}}
         <span class="squire-build-weight" data-tooltip="What the gear in this build weighs. Prepared spells are not included, and a slotted stack counts once.">
             <i class="fa-solid fa-weight-hanging"></i> {{weight}} lb
@@ -211,7 +214,11 @@
         {{/if}}
     </div>
 
+    {{!-- Says what this window is FOR, because nothing else in it does. A grid of
+          slots beside a portrait invites the reading that these ARE the
+          character's current gear, and editing here still changes nothing until
+          the build is equipped from its tile. --}}
     <p class="squire-build-note">
-        A build is a saved plan. Nothing here changes what is equipped on the sheet.
+        A plan. Nothing changes on the sheet until you equip this build from the tray.
     </p>
 </div>

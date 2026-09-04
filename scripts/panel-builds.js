@@ -1,7 +1,9 @@
 import { TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getBlacksmith } from './helpers.js';
-import { BUILD_SLOT_KEYS, getBuilds, createBuild, deleteBuild, duplicateBuild } from './utility-builds.js';
+import { getNativeElement, renderTemplate, getBlacksmith, showSquireToast } from './helpers.js';
+import {
+    getBuilds, createBuild, deleteBuild, duplicateBuild, buildSummary, applyBuild
+} from './utility-builds.js';
 import { BuildWindow } from './window-build.js';
 
 /** Blacksmith addresses an open menu by id; this is how this panel's gets closed. */
@@ -45,16 +47,23 @@ export class BuildsPanel {
                 // taking the populated branch and rendering nothing at all —
                 // the empty-state message could never appear.
                 hasBuilds: builds.length > 0,
-                builds: builds.map(build => ({
-                    id: build.id,
-                    name: build.name,
-                    // A count rather than a preview: the tile is small, and
-                    // "7 of 16" answers "did I finish this one" — which is the
-                    // only question a list of builds is asked before one is
-                    // opened.
-                    filledCount: Object.values(build.slots).filter(Boolean).length,
-                    slotCount: BUILD_SLOT_KEYS.length
-                }))
+                actorName: this.actor?.name ?? 'this character',
+                // Every figure comes from buildSummary, so the tile and the
+                // window cannot disagree about the same build.
+                builds: builds.map(build => {
+                    const summary = buildSummary(this.actor, build);
+                    return {
+                        id: build.id,
+                        name: build.name,
+                        preview: summary.preview,
+                        armorClass: summary.armorClass.value,
+                        gearCount: summary.gearCount,
+                        gearMax: summary.gearMax,
+                        spellCount: summary.spellCount,
+                        weight: summary.weight,
+                        missingCount: summary.missingCount
+                    };
+                })
             });
 
             // Re-query AFTER the await rather than reusing the node found above.
@@ -99,6 +108,16 @@ export class BuildsPanel {
                 return;
             }
 
+            // Apply is checked BEFORE the row, because the button lives inside
+            // it and a click on one is a click on both.
+            const applyButton = event.target.closest('.build-tile-apply');
+            if (applyButton) {
+                event.preventDefault();
+                event.stopPropagation();
+                await this._applyBuild(applyButton.dataset.buildId);
+                return;
+            }
+
             const tile = event.target.closest('.build-tile');
             if (!tile) return;
             event.preventDefault();
@@ -124,6 +143,10 @@ export class BuildsPanel {
                     name: 'Open',
                     icon: 'fa-solid fa-up-right-from-square',
                     callback: () => BuildWindow.open(this.actor, buildId)
+                }, {
+                    name: 'Equip This Build',
+                    icon: 'fa-solid fa-person-running',
+                    callback: () => this._applyBuild(buildId)
                 }, {
                     // The obvious next move once a build is full is "the same,
                     // but swap one thing" — sixteen drags without this.
@@ -158,6 +181,65 @@ export class BuildsPanel {
                 className: 'squire-favorite-context-menu'
             });
         }, { signal });
+    }
+
+    /**
+     * Equip a build, after asking.
+     *
+     * Asks because this is the only thing in the Builds feature that writes to
+     * the character, and it writes a lot: every equippable item and every
+     * preparable spell on the sheet can change in one click. The confirmation
+     * names what will happen rather than saying "are you sure", which is the
+     * weakest possible form of the question — the same reasoning the cleanup
+     * window's preview follows.
+     */
+    async _applyBuild(buildId) {
+        const build = getBuilds(this.actor).find(b => b.id === buildId);
+        if (!build) return;
+
+        const summary = buildSummary(this.actor, build);
+        const spellLine = summary.spellCount
+            ? `<li>Prepare its ${summary.spellCount} spell${summary.spellCount === 1 ? '' : 's'}, and unprepare everything else that counts against a limit.</li>`
+            : '';
+        const imageLine = (build.images?.portrait || build.images?.token)
+            ? '<li>Change the portrait or token artwork.</li>'
+            : '';
+
+        const confirmed = await getBlacksmith().dialog.confirm({
+            title: 'Equip Build',
+            content: `<p>Equip <strong>${foundry.utils.escapeHTML(build.name)}</strong> on `
+                + `<strong>${foundry.utils.escapeHTML(this.actor.name)}</strong>?</p>`
+                + '<p>This will:</p><ul>'
+                + `<li>Equip the ${summary.gearCount} item${summary.gearCount === 1 ? '' : 's'} in this build, and unequip everything else.</li>`
+                + spellLine
+                + imageLine
+                + '</ul><p>Attunement is not changed.</p>',
+            confirmLabel: 'Equip Build',
+            confirmIcon: 'fa-solid fa-person-running'
+        });
+        if (!confirmed) return;
+
+        const result = await applyBuild(this.actor, build);
+        if (!result) return;
+
+        // A receipt, not a shrug. "Nothing changed" is a real and useful outcome
+        // — it means the character was already wearing this — and saying so is
+        // better than a success message that looks identical to a no-op.
+        const changes = [];
+        if (result.equipped) changes.push(`equipped ${result.equipped}`);
+        if (result.unequipped) changes.push(`unequipped ${result.unequipped}`);
+        if (result.prepared) changes.push(`prepared ${result.prepared}`);
+        if (result.unprepared) changes.push(`unprepared ${result.unprepared}`);
+
+        showSquireToast(
+            changes.length ? build.name : `${build.name} was already equipped`,
+            {
+                subtitle: changes.length ? `${changes.join(', ')}.` : undefined,
+                icon: 'fa-solid fa-person-running'
+            }
+        );
+
+        await this.render(this.element);
     }
 
     destroy() {
