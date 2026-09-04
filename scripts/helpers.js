@@ -32,8 +32,13 @@ export function isGMOrPartyLeader() {
  * Instead each source owns one reason and only ever toggles its own class. The
  * stylesheet hides a row while any reason holds, so the verdicts intersect
  * rather than overwrite, and no source needs to know the others exist.
+ *
+ * 'type' used to be a fifth. It existed because the item-type chips could hide a
+ * row inside a panel that was itself still showing -- a weapon in the favourites
+ * block with the Weapons chip off. Section tabs hide whole panels instead, and
+ * favourites moved to a view of its own, so no source sets it any more.
  */
-export const FILTER_REASONS = ['search', 'type', 'action', 'state', 'category'];
+export const FILTER_REASONS = ['search', 'action', 'state', 'category'];
 
 /**
  * Record one filter's verdict on a row, leaving every other reason intact.

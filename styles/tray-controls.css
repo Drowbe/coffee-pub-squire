@@ -260,6 +260,15 @@
     transition: color 0.2s ease, opacity 0.2s ease;
 }
 
+/* The lit heart is red. Every other toggle in the strip says "selected" with
+   opacity alone, which is enough when the choice is a pair; with three it is
+   worth one of them being unmistakable, and the heart is already the icon whose
+   colour means something everywhere else in the tray. #ff4444 is the same
+   red a favourited row's heart already uses -- see .tray-buttons .fa-heart. */
+.squire-tray [data-panel="control"] .control-mode-toggle[data-mode="favorites"].active {
+    color: #ff4444;
+}
+
 /* Off is dimmed, on is simply not dimmed — exactly what .filter-chip does, with
    no second lit state to keep in sync.
 
@@ -284,6 +293,19 @@
    things switched off. */
 .squire-tray [data-panel="control"].compendium-mode .control-filter-bar,
 .squire-tray [data-panel="control"].compendium-mode .control-tabs {
+    display: none;
+}
+
+/* The favourites view goes further and drops the search box too, so the title
+   bar sits directly on the list. Nothing here is greyed out or empty: there are
+   no sections to tab between, no action costs worth filtering a shortlist by,
+   and a search box over a list you curated by hand is a control looking for a
+   job. The list keeps its own header and its own clear-all, which is the one
+   control the view does need. */
+.squire-tray [data-panel="control"].favorites-mode .control-filter-bar,
+.squire-tray [data-panel="control"].favorites-mode .control-tabs,
+.squire-tray [data-panel="control"].favorites-mode .control-search,
+.squire-tray [data-panel="control"].favorites-mode .control-search-option {
     display: none;
 }
 

@@ -90,7 +90,8 @@ Stacked down the tray, in this order:
    Its setting is called Show Character Summary Panel; the panel header on screen says Summary.
 4. **Character Sheet** -- a thin strip carrying the search box, the section tabs and the filter bar.
    This is the control strip for everything below.
-5. **Favorites**, always first, then whichever section the open tab shows.
+5. Whichever section the open tab shows. **Favorites** has a view of its own -- the heart in the
+   Character Sheet strip.
 
 ### Do something with an item
 
@@ -116,6 +117,10 @@ own title bar, next to its category filters.
 
 Click the heart on a row. Click it again to remove it.
 
+The **heart in the Character Sheet strip** opens your favourites on their own: no tabs, no search box
+and no filter bar, just the list and its **Clear All Favorites** button. The person icon beside the
+heart goes back to the sheet.
+
 Favourites are shared with the character sheet in both directions: favourite something in the tray and
 it appears on the sheet, favourite it on the sheet and it appears in the tray, and removing it in
 either place removes it in both. The activity, effect and resource favourites the sheet owns are left
@@ -131,9 +136,8 @@ Five tabs sit under the search box: **All**, **Weapons**, **Spells**, **Feats** 
 pick which section you are looking at, and the one you are on stays lit. **All** shows every section at
 once, which is where the tray starts.
 
-**Favorites is always above them**, whatever tab you are on -- it is a flag rather than a kind of item,
-so it never belonged in the same row as the other four. On a specific tab your favourites narrow to
-match: the Weapons tab shows your favourite weapons, not your favourite spells.
+Favourites are not one of the tabs. A favourite is a flag rather than a kind of item, so it never
+belonged in the same row as the other four -- it gets the heart in the strip above instead.
 
 The tab you are on is remembered between sessions. That is safe in a way the old type filters were not,
 because a lit, labelled tab explains itself the moment you look at it.
@@ -189,10 +193,11 @@ You cannot send a container that still has things in it. Empty it first.
 
 ### Add something from a compendium
 
-If the GM has allowed it, the Character Sheet strip carries a magnifying glass. Click it and the tabs,
-the filter bar and the panel stack are all replaced by a search box and **Add from Compendiums**,
-listing matches grouped by the compendium they came from. Each row has a plus that adds it. The person icon next to the
-magnifying glass goes back to the character's own items.
+If the GM has allowed it, the Character Sheet strip carries a magnifying glass alongside the heart and
+the person. Click it and the tabs, the filter bar and the panel stack are all replaced by a search box
+and **Add from Compendiums**, listing matches grouped by the compendium they came from. Each row has a plus that adds it. The person icon next to the
+magnifying glass goes back to the character's own items. Adding something switches to the tab that
+will hold it, so you land on the new row rather than on whichever tab you happened to leave open.
 
 **Let Players Use Compendiums** is the GM's setting and has four positions: off, look only, ask the GM
 -- where adding sends a request to approve or deny -- and add freely. The GM can always search and add.

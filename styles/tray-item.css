@@ -27,12 +27,11 @@
    row directly, so no filter can erase another's verdict. See FILTER_REASONS in
    scripts/helpers.js.
 
-   These five class names appear NOWHERE in the templates or scripts as literals
+   These four class names appear NOWHERE in the templates or scripts as literals
    — helpers.js builds them with classList.toggle('hidden-by-' + reason). A
    search for "hidden-by-search" finds nothing and a dead-CSS audit will report
-   all five as unused. They are not. Do not delete them. */
+   all four as unused. They are not. Do not delete them. */
 .squire-tray .panel-item.hidden-by-search,
-.squire-tray .panel-item.hidden-by-type,
 .squire-tray .panel-item.hidden-by-action,
 .squire-tray .panel-item.hidden-by-state,
 .squire-tray .panel-item.hidden-by-category {

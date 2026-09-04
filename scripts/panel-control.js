@@ -4,15 +4,40 @@ import { getNativeElement, renderTemplate, getPanelItemName, setRowFilter, isRow
 import { CompendiumSearchUtility } from './utility-compendium-search.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
-/** The stacked panels, in tray order. Favorites is always the first of them. */
+/**
+ * What the tray column can be showing.
+ *
+ * 'sheet'     the section tabs and the four item panels
+ * 'favorites' the favourites list on its own, no search and no filters
+ * 'search'    compendium quick-add
+ *
+ * Three places, one at a time. This was a `_compendiumMode` boolean until
+ * favourites became a place of its own, and a boolean cannot answer "which of
+ * three" -- the toggles in the title bar are a three-way switch now, so the
+ * state behind them has to be too.
+ */
+const MODES = ['sheet', 'favorites', 'search'];
+
+/** Every stacked panel, in tray order. */
 const PANEL_TYPES = ['favorites', 'weapons', 'spells', 'features', 'inventory'];
+
+/**
+ * The panels the section tabs and the filter bar govern.
+ *
+ * Favorites is not one of them any more. It has its own view, so it is never on
+ * screen at the same time as the tabs or the filter bar, and nothing those
+ * controls say could reach it. That is also why _applyFilters never stamps a
+ * favourites row: the list behind the heart is the whole list, always.
+ */
+const SHEET_PANELS = ['weapons', 'spells', 'features', 'inventory'];
 
 /**
  * The section tabs, in strip order.
  *
- * Favorites is NOT one of them, and that is the point: a favourite is a flag
- * rather than an item kind, so it was never the same axis as the other four.
- * It sits above whichever tab is open instead, always first, always shown.
+ * Favorites is NOT one of them: a favourite is a flag rather than an item kind,
+ * so it was never the same axis as the other four. It gets the heart in the
+ * title bar instead -- its own view, rather than a block pinned above every tab
+ * showing rows that also appear directly below it.
  */
 const PANEL_TABS = ['all', 'weapons', 'spells', 'features', 'inventory'];
 
@@ -47,15 +72,15 @@ const TAB_TOGGLES = {
 };
 
 /**
- * Which tab owns a row, keyed by the row's `data-item-type`.
+ * Which tab owns an item, keyed by `type`.
  *
- * Used to filter rows WITHIN a tab, which only ever bites in Favorites: the
- * weapons panel holds nothing but weapons, so the rule is a no-op there. On the
- * Weapons tab your favourites narrow to your favourite weapons, because a tab
- * labelled Weapons showing a block of favourite spells contradicts its own
- * label.
- *
- * A row whose type is not in this map is never hidden by the tab.
+ * Only for routing now -- revealAddedItem uses it to open the tab that will
+ * hold a newly added item. It used to filter rows within a tab as well, which
+ * mattered while Favorites sat above every tab and could hold anything. With
+ * favourites in their own view every sheet panel is homogeneous (the inventory
+ * panel takes equipment/consumable/tool/loot/containers, all of which are this
+ * tab; features takes only feats), so that predicate could never fire and is
+ * gone rather than left in as a comforting no-op.
  */
 const TAB_FOR_ITEM_TYPE = {
     weapon: 'weapons',
@@ -105,9 +130,10 @@ export class ControlPanel {
         // tray opens showing everything.
         this._onlyEquipped = false;
         this._onlyPrepared = false;
-        // When true the stacked panels are hidden and the quick-add results
-        // panel takes their place; the same search box drives both.
-        this._compendiumMode = false;
+        // Which of MODES the column is showing. Not persisted: 'sheet' is where
+        // the tray opens, and every mode is a lit icon plus an obviously
+        // different column, so there is nothing here for a stale value to hide.
+        this._mode = 'sheet';
     }
 
     /**
@@ -187,7 +213,7 @@ export class ControlPanel {
     _bindSearchPanelClose() {
         const searchPanel = PanelManager.instance?.compendiumSearchPanel;
         if (!searchPanel) return;
-        searchPanel.onRequestClose = () => this.setCompendiumMode(false);
+        searchPanel.onRequestClose = () => this.setMode('sheet');
         // The results panel doesn't own the search box, so it asks for the reset
         // rather than reaching across to clear it.
         searchPanel.onRequestClearSearch = () => this.clearSearch();
@@ -202,7 +228,7 @@ export class ControlPanel {
      */
     async revealAddedItem(item) {
         if (!item) return;
-        await this.setCompendiumMode(false);
+        await this.setMode('sheet');
 
         // Switch to the tab that holds it first. Adding a longbow while the
         // Spells tab is open used to land you on a sheet with no longbow on it,
@@ -285,16 +311,22 @@ export class ControlPanel {
         return this._onlyEquipped || this._onlyPrepared;
     }
 
+    /** True while the compendium quick-add results panel is showing. */
+    get isCompendiumMode() {
+        return this._mode === 'search';
+    }
+
     /**
-     * Enter or leave compendium quick-add mode.
+     * Switch the column between the sheet, the favourites list and quick-add.
      *
-     * The stacked panels and the results panel are mutually exclusive: the tray
-     * column isn't tall enough to show both, and the search box means something
-     * different in each mode (filter what you have vs. find what you don't).
+     * The three are mutually exclusive because the column is not tall enough to
+     * be two of them at once, and because the search box means something
+     * different in each: filter what you have, nothing at all, find what you
+     * don't.
      */
-    async setCompendiumMode(enabled) {
-        if (this._compendiumMode === enabled) return;
-        this._compendiumMode = enabled;
+    async setMode(mode) {
+        if (!MODES.includes(mode) || this._mode === mode) return;
+        this._mode = mode;
 
         const searchPanel = PanelManager.instance?.compendiumSearchPanel;
         this._bindSearchPanelClose();
@@ -304,7 +336,9 @@ export class ControlPanel {
         const controlPanel = this.element?.querySelector('[data-panel="control"]');
         const searchInput = controlPanel?.querySelector('.global-search');
         if (searchInput) {
-            searchInput.placeholder = enabled ? 'Search Compendiums...' : 'Search All Sections...';
+            searchInput.placeholder = this.isCompendiumMode
+                ? 'Search Compendiums...'
+                : 'Search All Sections...';
             searchInput.value = '';
         }
 
@@ -314,13 +348,15 @@ export class ControlPanel {
         // directions, so each mode starts clean.
         this._searchTerm = '';
 
-        if (enabled) {
+        if (this.isCompendiumMode) {
             await searchPanel?.render(this.element);
             searchPanel?.setQuery('');
             searchInput?.focus();
         } else {
             // Clear the filter the panels were showing, and restore any category
             // headers and "no matches" rows the previous search had hidden.
+            // Runs for favourites too: the box is gone from that view, so a term
+            // left behind would be filtering from somewhere you cannot see.
             this._handleSearch('');
         }
     }
@@ -328,43 +364,53 @@ export class ControlPanel {
     _updateVisibility() {
         if (!this.element) return;
 
-        // Swap the stack and the quick-add results panel.
+        // Swap the stack and the quick-add results panel. Favourites live in
+        // the stack like every other panel, so the stack shows for two of the
+        // three modes and only which panels are `.visible` differs.
         const stack = this.element.querySelector('.panel-containers.stacked');
-        if (stack) stack.style.display = this._compendiumMode ? 'none' : '';
+        if (stack) stack.style.display = this.isCompendiumMode ? 'none' : '';
 
         // Class only — the stylesheet owns hidden vs shown for this container,
         // so there's no inline style racing the CSS.
         this.element
             .querySelector('.panel-container[data-panel="compendium-search"]')
-            ?.classList.toggle('visible', this._compendiumMode);
+            ?.classList.toggle('visible', this.isCompendiumMode);
 
         const controlEl = this.element.querySelector('[data-panel="control"]');
 
-        // Two-state mode switch: the selected side is active, the other dimmed.
+        // Three-way switch: the mode you are in is lit, the other two dimmed.
         controlEl?.querySelectorAll('.control-mode-toggle').forEach(toggle => {
-            const selected = (toggle.dataset.mode === 'search') === this._compendiumMode;
+            const selected = toggle.dataset.mode === this._mode;
             toggle.classList.toggle('active', selected);
             toggle.classList.toggle('faded', !selected);
         });
 
-        // The bar has nothing to act on in quick-add mode, so it collapses
-        // rather than sitting there greyed out — it's pure dead space in a
-        // column where vertical room is the scarce thing.
-        controlEl?.classList.toggle('compendium-mode', this._compendiumMode);
+        // Neither quick-add nor favourites has anything for the tabs and the
+        // filter bar to act on, so they collapse rather than sitting there
+        // greyed out — pure dead space in a column where vertical room is the
+        // scarce thing. Favourites drops the search box with them.
+        controlEl?.classList.toggle('compendium-mode', this.isCompendiumMode);
+        controlEl?.classList.toggle('favorites-mode', this._mode === 'favorites');
 
         const activeTab = this.activeTab;
 
-        // Favorites is not a tab and is never hidden by one -- it sits above
-        // whatever the tab reveals. The other four show when their tab is open,
-        // or all together on All.
+        // Favourites shows in its own view and nowhere else; the four sheet
+        // panels show in the sheet view, one per tab or all together on All.
         PANEL_TYPES.forEach(panel => {
             const isVisible = panel === 'favorites'
-                || activeTab === 'all'
-                || panel === activeTab;
+                ? this._mode === 'favorites'
+                : this._mode === 'sheet' && (activeTab === 'all' || panel === activeTab);
 
-            this.element
-                .querySelector(`.panel-containers.stacked .panel-container[data-panel="${panel}"]`)
-                ?.classList.toggle('visible', isVisible);
+            const container = this.element
+                .querySelector(`.panel-containers.stacked .panel-container[data-panel="${panel}"]`);
+            container?.classList.toggle('visible', isVisible);
+
+            // `filtered-empty` is set inside the SHEET_PANELS loop in
+            // _applyFilters, which no longer reaches favourites -- so nothing
+            // would ever clear it again. The containers outlive their contents
+            // (only innerHTML is replaced on render), and a stale one here would
+            // beat `.visible` and leave the heart opening onto nothing.
+            if (panel === 'favorites') container?.classList.remove('filtered-empty');
         });
 
         controlEl?.querySelectorAll('.control-tab').forEach(tab => {
@@ -397,10 +443,9 @@ export class ControlPanel {
      * The one place row visibility is decided.
      *
      * Each predicate stamps its own reason and reads none of the others, so they
-     * intersect: a weapon that matches the search, belongs to the open tab,
-     * costs a bonus action and is equipped shows; failing any one of those hides
-     * it, and clearing that one filter brings it back without disturbing the
-     * rest.
+     * intersect: a weapon that matches the search, costs a bonus action and is
+     * equipped shows; failing any one of those hides it, and clearing that one
+     * filter brings it back without disturbing the rest.
      *
      * A predicate only judges rows that can answer it. `data-equip-state` is
      * absent from a spell and `data-prepare-state` from a rope, and each
@@ -409,18 +454,18 @@ export class ControlPanel {
      * than a case anyone has to remember to write. See AVAILABILITY.
      */
     _applyFilters() {
-        if (!this.element || this._compendiumMode) return;
+        // Only the sheet has anything to filter. Favourites carries no controls
+        // that could hide a row, so its rows are left unstamped rather than
+        // stamped-and-cleared -- there is no state to get out of step.
+        if (!this.element || this._mode !== 'sheet') return;
 
         const term = this._searchTerm.toLowerCase();
         const shownActions = this._shownActions;
         const activeTab = this.activeTab;
 
-        // The emptied-section test below counts the tab as well as the filters.
-        // hasActiveFilters() deliberately does not -- but a Favorites block with
-        // no weapons in it, on the Weapons tab, is still a heading over nothing.
-        const narrowing = this.hasActiveFilters() || activeTab !== 'all';
+        const filtering = this.hasActiveFilters();
 
-        PANEL_TYPES.forEach(panelType => {
+        SHEET_PANELS.forEach(panelType => {
             const panelElement = this.element.querySelector(`[data-panel="${panelType}"]`);
             if (!panelElement) return;
 
@@ -429,10 +474,6 @@ export class ControlPanel {
             rows.forEach(row => {
                 const name = getPanelItemName(row).toLowerCase();
                 setRowFilter(row, 'search', term !== '' && name !== '' && !name.includes(term));
-
-                const owner = TAB_FOR_ITEM_TYPE[row.dataset.itemType];
-                setRowFilter(row, 'type',
-                    activeTab !== 'all' && !!owner && owner !== activeTab);
 
                 // An item usable two ways survives while either bucket is on.
                 // A row listing no action types at all can't answer this group
@@ -468,11 +509,11 @@ export class ControlPanel {
             // would take away the only control that could bring it back.
             //
             // The open tab's OWN panel is exempt. It is the thing that was
-            // clicked, so it has to answer for itself: a character with no
-            // weapons who opens the Weapons tab needs to see "No weapons
-            // available", not a blank tray with a lit tab and nothing under it.
-            // Favorites still collapses, which is the case this test is for.
-            const emptied = narrowing
+            // clicked, so it has to answer for itself: a character on the
+            // Weapons tab whose weapons a filter has just emptied needs to see
+            // "no matches", not a blank column under a lit tab. On All nothing
+            // is exempt, which is the case this test is really for.
+            const emptied = filtering
                 && panelType !== activeTab
                 && !Array.from(rows).some(isRowVisible);
             panelElement.classList.toggle('filtered-empty', emptied);
@@ -486,7 +527,7 @@ export class ControlPanel {
 
         // In quick-add mode the box searches compendiums instead of filtering
         // the panels, which are hidden anyway.
-        if (this._compendiumMode) {
+        if (this.isCompendiumMode) {
             PanelManager.instance?.compendiumSearchPanel?.setQuery(searchTerm);
             return;
         }
@@ -620,7 +661,9 @@ export class ControlPanel {
             tabStrip.parentNode?.replaceChild(newStrip, tabStrip);
 
             newStrip.addEventListener('click', async (event) => {
-                if (this._compendiumMode) return;
+                // The strip is hidden outside the sheet, so a click here would
+                // be changing state the user cannot see.
+                if (this._mode !== 'sheet') return;
                 const tab = event.target.closest('.control-tab');
                 if (!tab) return;
                 await this.setActiveTab(tab.dataset.tab);
@@ -637,9 +680,8 @@ export class ControlPanel {
             filterBar.parentNode?.replaceChild(newBar, filterBar);
 
             newBar.addEventListener('click', (event) => {
-                // The bar is hidden in quick-add mode, so a click here would be
-                // changing state the user can't see.
-                if (this._compendiumMode) return;
+                // As above: the bar only exists on the sheet.
+                if (this._mode !== 'sheet') return;
 
                 const toggle = event.target.closest('.availability-toggle');
                 if (toggle) {
@@ -679,9 +721,9 @@ export class ControlPanel {
             newToggles.addEventListener('click', async (event) => {
                 const toggle = event.target.closest('.control-mode-toggle');
                 if (!toggle) return;
-                // Idempotent: clicking the already-selected side is a no-op
-                // rather than a toggle, which is what a two-state switch means.
-                await this.setCompendiumMode(toggle.dataset.mode === 'search');
+                // Idempotent: clicking the mode you are already in is a no-op
+                // rather than a toggle, which is what a three-way switch means.
+                await this.setMode(toggle.dataset.mode);
             });
         }
 
@@ -697,8 +739,8 @@ export class ControlPanel {
             });
 
             // Escape backs out one step: from compendium search to the sheet
-            // (setCompendiumMode clears the box on the way), or from a filtered
-            // sheet back to the unfiltered one.
+            // (setMode clears the box on the way), or from a filtered sheet
+            // back to the unfiltered one.
             //
             // stopPropagation because Foundry binds Escape globally — without it
             // the keypress also closes the topmost application or opens the game
@@ -708,8 +750,8 @@ export class ControlPanel {
                 event.preventDefault();
                 event.stopPropagation();
 
-                if (this._compendiumMode) {
-                    await this.setCompendiumMode(false);
+                if (this.isCompendiumMode) {
+                    await this.setMode('sheet');
                     return;
                 }
                 if (newInput.value !== '') {

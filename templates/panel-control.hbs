@@ -1,12 +1,26 @@
 <div class="tray-title-small">
 <span>Character Sheet</span>
+{{!--
+    The mode switch: favourites, the sheet, and compendium quick-add.
+
+    The heart and the person are always both here. Favourites is a view now
+    rather than a block pinned above the tabs, so there is always somewhere to
+    switch back FROM -- which is why the person icon is no longer gated behind
+    `canUseCompendiums` the way it was when the pair was a two-state switch and
+    the second state was compendiums. A player who cannot browse compendiums
+    still gets two modes and needs both icons to move between them.
+
+    The broom is not one of them and keeps its separator: it opens a window that
+    writes to the sheet, rather than changing what this column shows.
+--}}
 <div class="control-mode-toggles">
     {{#if canCleanup}}
     <i class="fa-solid fa-broom control-cleanup" title="{{cleanupTooltip}}"></i>
-    {{#if canUseCompendiums}}<span class="control-toggle-separator"></span>{{/if}}
+    <span class="control-toggle-separator"></span>
     {{/if}}
-    {{#if canUseCompendiums}}
+    <i class="fa-solid fa-heart control-mode-toggle" data-mode="favorites" title="Show Favorites"></i>
     <i class="fa-solid fa-user control-mode-toggle" data-mode="sheet" title="Show This Character's Items"></i>
+    {{#if canUseCompendiums}}
     <i class="fa-solid fa-magnifying-glass control-mode-toggle" data-mode="search" title="{{compendiumToggleTitle}}"></i>
     {{/if}}
 </div>
