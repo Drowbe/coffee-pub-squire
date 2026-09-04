@@ -28,21 +28,32 @@ import { MODULE } from './const.js';
  *      ARMS   [       ]   HANDS
  *   RING1  HIP1  WAIST  HIP2  RING2
  *              FEET
+ *
+ * `icon` is what an EMPTY slot shows. A word alone in a small box is a label
+ * with nothing to label; a glyph says what belongs there at a glance and the
+ * word underneath settles it. Every one is a real object rather than an
+ * abstraction — a boot, a helmet, a ring — because the slot is a place a thing
+ * goes, not a category.
+ *
+ * Two compromises, both because Font Awesome has no better glyph: `fa-grip-lines`
+ * for the waist (there is no belt in the set — this is the closest thing to a
+ * strap), and `fa-backpack` for the back, which is at least a thing worn there
+ * even when what goes in the slot is a cloak.
  */
 export const BUILD_BODY_SLOTS = [
-    { key: 'head',  label: 'Head',  row: 1, column: 3 },
-    { key: 'face',  label: 'Face',  row: 2, column: 1 },
-    { key: 'neck',  label: 'Neck',  row: 2, column: 5 },
-    { key: 'back',  label: 'Back',  row: 3, column: 1 },
-    { key: 'chest', label: 'Chest', row: 3, column: 5 },
-    { key: 'arms',  label: 'Arms',  row: 4, column: 1 },
-    { key: 'hands', label: 'Hands', row: 4, column: 5 },
-    { key: 'ring1', label: 'Ring',  row: 5, column: 1 },
-    { key: 'hip1',  label: 'Hip',   row: 5, column: 2 },
-    { key: 'waist', label: 'Waist', row: 5, column: 3 },
-    { key: 'hip2',  label: 'Hip',   row: 5, column: 4 },
-    { key: 'ring2', label: 'Ring',  row: 5, column: 5 },
-    { key: 'feet',  label: 'Feet',  row: 6, column: 3 }
+    { key: 'head',  label: 'Head',  icon: 'fa-helmet-battle',     row: 1, column: 3 },
+    { key: 'face',  label: 'Face',  icon: 'fa-mask',              row: 2, column: 1 },
+    { key: 'neck',  label: 'Neck',  icon: 'fa-gem',               row: 2, column: 5 },
+    { key: 'back',  label: 'Back',  icon: 'fa-backpack',          row: 3, column: 1 },
+    { key: 'chest', label: 'Chest', icon: 'fa-vest',              row: 3, column: 5 },
+    { key: 'arms',  label: 'Arms',  icon: 'fa-shirt-long-sleeve', row: 4, column: 1 },
+    { key: 'hands', label: 'Hands', icon: 'fa-mitten',            row: 4, column: 5 },
+    { key: 'ring1', label: 'Ring',  icon: 'fa-ring',              row: 5, column: 1 },
+    { key: 'hip1',  label: 'Hip',   icon: 'fa-sack',              row: 5, column: 2 },
+    { key: 'waist', label: 'Waist', icon: 'fa-grip-lines',        row: 5, column: 3 },
+    { key: 'hip2',  label: 'Hip',   icon: 'fa-sack',              row: 5, column: 4 },
+    { key: 'ring2', label: 'Ring',  icon: 'fa-ring',              row: 5, column: 5 },
+    { key: 'feet',  label: 'Feet',  icon: 'fa-boot',              row: 6, column: 3 }
 ];
 
 /**
@@ -59,9 +70,11 @@ export const BUILD_BODY_SLOTS = [
  * somebody meant.
  */
 export const BUILD_WEAPON_SLOTS = [
-    { key: 'mainhand',  label: 'Main Hand' },
-    { key: 'bothhands', label: 'Both Hands' },
-    { key: 'offhand',   label: 'Off Hand' }
+    { key: 'mainhand',  label: 'Main Hand',  icon: 'fa-sword' },
+    // An axe rather than crossed swords: `fa-swords` reads as dual-wielding,
+    // which is the opposite of what this slot means.
+    { key: 'bothhands', label: 'Both Hands', icon: 'fa-axe-battle' },
+    { key: 'offhand',   label: 'Off Hand',   icon: 'fa-shield-halved' }
 ];
 
 /** Every slot key, for validating what arrives from a dataset or a stored flag. */

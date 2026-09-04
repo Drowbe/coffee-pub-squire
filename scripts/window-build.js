@@ -1,4 +1,5 @@
 import { TEMPLATES } from './const.js';
+import { PanelManager } from './manager-panel.js';
 import { renderTemplate } from './helpers.js';
 import {
     BUILD_BODY_SLOTS, BUILD_WEAPON_SLOTS, BUILD_SLOT_KEYS,
@@ -76,6 +77,20 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         return getBuild(this.actor, this.buildId);
     }
 
+    /**
+     * Redraw this window and the tray's tile for it.
+     *
+     * The tile carries the name and a filled-slot count, so every change made
+     * here is a change to something visible over there. Nothing else refreshes
+     * it: the Builds panel has no hooks of its own, by design — a flag write
+     * that fires `updateActor` would re-render the whole tray for a slot.
+     */
+    async _refresh() {
+        await this.render(false);
+        const panel = PanelManager.instance?.buildsPanel;
+        if (panel) await panel.render(PanelManager.element);
+    }
+
     async getData() {
         const build = this.build;
 
@@ -121,6 +136,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 const value = nameInput.value;
                 if (value.trim() && value !== this.build?.name) {
                     await renameBuild(this.actor, this.buildId, value);
+                    await this._refresh();
                 }
             };
             nameInput.addEventListener('blur', commit);
@@ -164,7 +180,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 const slotKey = slot.dataset.slot;
                 if (!this.build?.slots?.[slotKey]) return;
                 await setBuildSlot(this.actor, this.buildId, slotKey, null);
-                await this.render(false);
+                await this._refresh();
             });
         });
     }
@@ -206,6 +222,6 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         }
 
         await setBuildSlot(this.actor, this.buildId, slotKey, item.id);
-        await this.render(false);
+        await this._refresh();
     }
 }

@@ -1,4 +1,5 @@
 import { TEMPLATES } from './const.js';
+import { PanelManager } from './manager-panel.js';
 import { getNativeElement, renderTemplate, getBlacksmith } from './helpers.js';
 import { BUILD_SLOT_KEYS, getBuilds, createBuild, deleteBuild } from './utility-builds.js';
 import { BuildWindow } from './window-build.js';
@@ -33,13 +34,12 @@ export class BuildsPanel {
         if (!html) return;
 
         this.element = getNativeElement(html);
-        const panel = this.element?.querySelector('[data-panel="builds"]');
-        if (!panel) return;
+        if (!this.element?.querySelector('[data-panel="builds"]')) return;
 
         try {
             const builds = this.actor ? getBuilds(this.actor) : [];
 
-            panel.innerHTML = await renderTemplate(TEMPLATES.PANEL_BUILDS, {
+            const content = await renderTemplate(TEMPLATES.PANEL_BUILDS, {
                 // `hasBuilds` rather than testing the array in the template: an
                 // empty array is TRUTHY in Handlebars, so `{{#if builds}}` was
                 // taking the populated branch and rendering nothing at all —
@@ -57,6 +57,22 @@ export class BuildsPanel {
                 }))
             });
 
+            // Re-query AFTER the await rather than reusing the node found above.
+            //
+            // PanelManager builds a brand-new tray element, appends it and
+            // reassigns `PanelManager.element` — and it fires every panel's
+            // render without awaiting any of them. So a tray rebuilt while this
+            // template was being fetched leaves the node found before the await
+            // detached, and writing to it puts this panel's markup in a document
+            // fragment nobody is looking at. That is not hypothetical: it is
+            // exactly how this panel spent its first outing rendering perfectly
+            // into nothing. Favourites never showed the bug because six other
+            // call sites re-render it afterwards; this one has none.
+            const panel = (PanelManager.element ?? this.element)
+                ?.querySelector('[data-panel="builds"]');
+            if (!panel) return;
+
+            panel.innerHTML = content;
             this._activateListeners(panel);
         } catch (error) {
             console.error('Coffee Pub Squire | Failed to render the Builds panel:', error);

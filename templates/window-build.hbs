@@ -20,12 +20,17 @@
              data-slot="{{this.key}}"
              data-tooltip="{{#if this.filled}}{{this.name}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}{{this.label}} — drag an item here{{/if}}">
             {{#if this.filled}}
+            {{!-- Drawn like a favourites tile: the artwork IS the slot, with the
+                  name over the bottom of it under a gradient. Same reasoning as
+                  there — a caption panel becomes a band of colour across every
+                  slot, and a text shadow vanishes on a pale icon. --}}
             <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
             <span class="squire-build-slot-name">{{this.name}}</span>
             {{else if this.missing}}
-            <i class="fa-solid fa-triangle-exclamation squire-build-slot-warning"></i>
+            <i class="fa-solid fa-triangle-exclamation squire-build-slot-icon is-warning"></i>
             <span class="squire-build-slot-label">{{this.label}}</span>
             {{else}}
+            <i class="fa-solid {{this.icon}} squire-build-slot-icon"></i>
             <span class="squire-build-slot-label">{{this.label}}</span>
             {{/if}}
         </div>
@@ -45,12 +50,17 @@
              data-slot="{{this.key}}"
              data-tooltip="{{#if this.filled}}{{this.name}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}{{this.label}} — drag an item here{{/if}}">
             {{#if this.filled}}
+            {{!-- Drawn like a favourites tile: the artwork IS the slot, with the
+                  name over the bottom of it under a gradient. Same reasoning as
+                  there — a caption panel becomes a band of colour across every
+                  slot, and a text shadow vanishes on a pale icon. --}}
             <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
             <span class="squire-build-slot-name">{{this.name}}</span>
             {{else if this.missing}}
-            <i class="fa-solid fa-triangle-exclamation squire-build-slot-warning"></i>
+            <i class="fa-solid fa-triangle-exclamation squire-build-slot-icon is-warning"></i>
             <span class="squire-build-slot-label">{{this.label}}</span>
             {{else}}
+            <i class="fa-solid {{this.icon}} squire-build-slot-icon"></i>
             <span class="squire-build-slot-label">{{this.label}}</span>
             {{/if}}
         </div>

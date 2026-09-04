@@ -126,12 +126,16 @@
     gap: 6px;
 }
 
+/* A slot is a favourites tile that happens to be droppable: `position: relative`
+   so a filled one can lay its artwork edge to edge inside it, and centred flex
+   so an empty one can hold a glyph over a word. */
 .squire-build-slot {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 3px;
     padding: 4px;
     overflow: hidden;
     text-align: center;
@@ -151,7 +155,10 @@
 .squire-build-slot.is-filled {
     border-style: solid;
     border-color: var(--blacksmith-tool-border);
-    background: var(--blacksmith-tool-surface-raised);
+    /* Dark, not the theme's raised surface: the artwork covers the whole slot
+       and its caption gradient has to land on something predictable. Same reason
+       the favourites tiles fix their own ground. */
+    background: rgba(8, 6, 4, 0.9);
 }
 
 /* The drop target lights up on dragover. Uses the shell's selected surface
@@ -162,22 +169,53 @@
     background: var(--blacksmith-tool-surface-selected);
 }
 
+/* The artwork IS the slot. Absolute rather than a sized thumbnail so a filled
+   slot reads as the item rather than as a box with a picture in it — the same
+   move the favourites tiles make. */
 .squire-build-slot-image {
-    width: 28px;
-    height: 28px;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
     border: 0;
-    border-radius: 3px;
+    border-radius: 0;
 }
 
+/* The name over the bottom of the artwork, under a gradient. A flat caption
+   panel becomes a band of colour across every slot and a plain text shadow
+   disappears on a pale icon; the gradient is the one treatment that survives
+   artwork nobody chose for the purpose. Hard-coded dark rather than a theme
+   variable for exactly that reason — it sits on the picture, not on the
+   window. */
 .squire-build-slot-name {
-    width: 100%;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    padding: 10px 4px 3px;
     overflow: hidden;
-    color: var(--blacksmith-tool-text);
-    font-size: 0.62em;
+    background: linear-gradient(to top, rgba(8, 6, 4, 0.94) 55%, rgba(8, 6, 4, 0));
+    color: #f4e7cd;
+    font-size: 0.6em;
+    font-weight: 600;
     line-height: 1.15;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+/* What an empty slot shows above its word. Sized to carry the box: at label
+   size a glyph is decoration, at this size it is the thing you actually read
+   and the word underneath only settles which of the two rings you are on. */
+.squire-build-slot-icon {
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 1.15em;
+    opacity: 0.75;
+}
+
+.squire-build-slot:hover .squire-build-slot-icon {
+    opacity: 1;
 }
 
 /* The empty slot's own word: quieter than a filled slot's item name, because it
@@ -197,9 +235,11 @@
     border-color: rgba(240, 142, 120, 0.5);
 }
 
-.squire-build-slot-warning {
+/* A missing slot keeps the icon slot but fills it with the alarm, so the shape
+   of the box does not change between "empty" and "broken" — only its colour. */
+.squire-build-slot-icon.is-warning {
     color: #f08e78;
-    font-size: 0.9em;
+    opacity: 1;
 }
 
 .squire-build-portrait {
