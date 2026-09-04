@@ -29,7 +29,7 @@
     display: flex;
     width: 100%;
     gap: 2px;
-    margin-bottom: 6px;
+    margin-bottom: 3px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -87,7 +87,10 @@
     flex-wrap: wrap;
     gap: 4px 8px;
     width: 100%;
-    margin-bottom: 6px;
+    /* Deliberately small. `.panel-containers` below adds 8px of its own margin,
+       so anything set here is on top of that — the 6px this used to be read as
+       14px of air under a row of five small glyphs. */
+    margin-bottom: 1px;
 }
 
 /* Each group closes up around its own contents rather than stretching. The
@@ -300,6 +303,26 @@
 .squire-tray [data-panel="control"].compendium-mode .control-filter-bar,
 .squire-tray [data-panel="control"].compendium-mode .control-tabs {
     display: none;
+}
+
+/* With everything below the title hidden, the strip ends on a heading — and the
+   next thing down is another heading, in a filled black bar. Two headings back
+   to back in two different treatments read as a mistake, which is what makes
+   this look wrong rather than merely tight. Sheet mode never shows it because
+   the search box, tabs and chips sit between them.
+   
+   Extra room rather than a rule or a matching background: the two ARE different
+   kinds of heading — one names the panel you are in, the other names the list
+   below it — so the fix is to stop them touching, not to make them look alike. */
+.squire-tray [data-panel="control"].favorites-mode,
+.squire-tray [data-panel="control"].compendium-mode {
+    /* `margin-bottom` REPLACES the 6px `.panel-container` gives every panel, it
+       does not add to it — so the padding is what actually buys the room. The
+       sheet has ~17px between its chip row and the first section header; this
+       comes to ~22px, deliberately more, because two headings meeting need more
+       than a row of glyphs meeting a heading does. */
+    margin-bottom: 2px;
+    padding-bottom: 10px;
 }
 
 /* The favourites view goes further and drops the search box too, so the title
