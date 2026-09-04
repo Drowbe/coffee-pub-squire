@@ -88,11 +88,14 @@
     font-size: 0.85em;
 }
 
-/* The hairline that fences one group of header icons off from another. The
-   control panel has had this since it grew filter groups; a section header can
-   want it for the same reason, which is that two adjacent icons that do
-   different KINDS of thing read as one row of peers unless something says
-   otherwise. */
+/* The hairline that fences one group of header icons off from another: two
+   adjacent icons that do different KINDS of thing read as one row of peers
+   unless something says otherwise.
+
+   The control panel's filter bar used to carry one too. It has two groups left
+   and pushes them to opposite ends of the row instead, which divides them
+   without drawing anything — a section header has no ends to push to, so it
+   still needs the line. */
 .squire-tray .section-header .filter-separator {
     width: 1px;
     align-self: stretch;

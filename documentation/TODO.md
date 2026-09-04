@@ -12,8 +12,6 @@
 | Migrate chat cards to the Blacksmith Chat Cards API | High | L | Done (unreleased) |
 | Let the handle filter which statuses it shows (`showHandleConditions` is all-or-nothing) | Low | M | Open |
 | Unified tray filter bar | High | L | Done (unreleased) -- superseded by section tabs; 14 chips are now 5 tabs, 5 action chips and 2 toggles, with favourites in a view of its own |
-| Walk the section tabs at the 400px minimum width -- five labels across the strip is the whole reason for that floor, and it has only been checked by arithmetic | Medium | S | Open |
-| Decide whether the action chips need a filter surface of their own (window or `is:` search tokens) now that tabs and the two toggles have absorbed the other nine chips | Low | M | Open |
 | Watch: AC/movement re-render branch went live in 13.3.14 (was dead) — real cost in combat | High | S | Open |
 | `PanelManager`: static-vs-instance state is unresolved; it's what let `element` go unassigned | Medium | M | Open |
 | Code cleanup: remove legacy fix code | Low | M | Open |

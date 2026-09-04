@@ -74,28 +74,31 @@
 /* These are the same control as the category filters in a panel heading — a
    bare glyph that dims when it is off — so they are styled from the same rules
    rather than given a look of their own. */
+/* Two groups pushed to opposite ends: action costs left, availability right.
+   They used to share the bar evenly with a hairline between them, which was the
+   right answer when there were four groups of chips competing for one row. With
+   two groups left, an even spread reads as five chips scattered across half a
+   bar for no reason, and the ends do the dividing that the hairline was there to
+   do — so the hairline is gone too. */
 .squire-tray [data-panel="control"] .control-filter-bar {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 4px 8px;
     width: 100%;
     margin-bottom: 6px;
 }
 
+/* Each group closes up around its own contents rather than stretching. The
+   6px gap is wider than the old 4px because five chips sitting together want a
+   little air to still read as five things. */
 .squire-tray [data-panel="control"] .filter-group {
     display: flex;
     align-items: center;
-    gap: 4px;
-    flex: 1 1 auto;
-    justify-content: space-evenly;
-}
-
-.squire-tray [data-panel="control"] .filter-separator {
-    width: 1px;
-    align-self: stretch;
-    margin: 2px;
-    background: rgba(255, 255, 255, 0.15);
+    gap: 6px;
+    flex: 0 1 auto;
+    justify-content: flex-start;
 }
 
 .squire-tray [data-panel="control"] .filter-chip {
@@ -128,7 +131,6 @@
    attribute needs the !important here because .filter-group's `display: flex`
    on the parent does not stop these being flex items themselves. */
 .squire-tray [data-panel="control"] .filter-group-availability {
-    flex: 0 1 auto;
     gap: 4px;
     justify-content: flex-end;
 }
