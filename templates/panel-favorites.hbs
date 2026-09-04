@@ -37,6 +37,7 @@
         {{#each favorites}}
         <div draggable="true" class="panel-item" 
              data-item-id="{{this.id}}" data-item-type="{{this.type}}"
+             data-span="{{this.span}}"
              data-action-types="{{this.actionTypes}}"{{#if this.equipState}}
              data-equip-state="{{this.equipState}}"{{/if}}{{#if this.prepareState}}
              data-prepare-state="{{this.prepareState}}"{{/if}}>

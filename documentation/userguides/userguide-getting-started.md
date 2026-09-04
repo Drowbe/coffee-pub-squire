@@ -128,6 +128,11 @@ squares, each one the item's own artwork with its name across the bottom and wha
 "Weapon - 4 lb", or a spell's level. The controls sit top-right, and hovering a tile brings up the die,
 exactly as hovering a row's picture does. Whichever you pick is remembered.
 
+Right-click a tile and open **Tile Size** to change how much room it takes: **1 x 1**, **2 x 1**,
+**1 x 2** or **2 x 2**, width first.
+Give the thing you reach for every round a big square and let the rest sit small around it. The same
+menu carries the move-up and move-down options it always has.
+
 Hovering an item's name shows Foundry's own card for it, in the tiles and in every list. The feather
 shows the same card, so you can see what opening the sheet will give you before you click it.
 

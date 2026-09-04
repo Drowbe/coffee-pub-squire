@@ -72,25 +72,63 @@
 
 .squire-tray .favorites-list.favorites-layout-tiles {
     display: grid;
-    /* Three across at the tray's 400px floor gives ~118px tiles; `auto-fill`
-       rather than `repeat(3, ...)` so a widened tray gets a fourth column
-       instead of three fatter squares. */
+    /* Three across at the tray's 400px floor; `auto-fill` rather than
+       `repeat(3, ...)` so a widened tray gets a fourth column instead of three
+       fatter squares. */
     grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    /* A FIXED row height, which is what lets a tile span two of them.
+       `aspect-ratio` on the tiles was the earlier answer and gave perfect
+       squares, but a 2x1 tile cannot express its shape that way: its width is
+       two columns PLUS the gap between them, and aspect-ratio cannot see the
+       gap. So the row height is stated instead, and 116px is the column width
+       at the tray's 400px floor. Widen the tray and the cells go gently oblong
+       — the same trade the merchant module's shop wall makes, and the reason
+       its rows are a stated height too. */
+    grid-auto-rows: 116px;
+    /* Backfills the hole a 2x2 leaves beside a column of 1x1s. Nothing computes
+       placement here — every favourite is equally a thing you reach for, so
+       there is no packing to protect and the browser can simply fill. */
+    grid-auto-flow: dense;
     gap: 6px;
     padding: 2px;
 }
 
-/* Square, and the picture fills it. `aspect-ratio` rather than a fixed row
-   height so the tiles stay square as the columns stretch. */
+/* The tile fills whatever cells it was given. No `aspect-ratio`: the grid owns
+   the shape now, so a tile that stretches is a tile the user asked to stretch. */
 .squire-tray .favorites-layout-tiles .panel-item {
     position: relative;
-    aspect-ratio: 1;
+    height: 100%;
     margin: 0;
     padding: 0;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 5px;
     background: rgba(0, 0, 0, 0.35);
+}
+
+/* The four footprints, set from the context menu and carried on the row as
+   `data-span`. 1x1 needs no rule — it is one cell of each, which is what a grid
+   item is without being told otherwise. */
+.squire-tray .favorites-layout-tiles .panel-item[data-span="2x1"] {
+    grid-column: span 2;
+}
+
+.squire-tray .favorites-layout-tiles .panel-item[data-span="1x2"] {
+    grid-row: span 2;
+}
+
+.squire-tray .favorites-layout-tiles .panel-item[data-span="2x2"] {
+    grid-column: span 2;
+    grid-row: span 2;
+}
+
+/* A wider tile has room for a third line of name before it clips, and a taller
+   one has room for a bigger name. Only the two-cell-wide sizes get it: on a
+   single column the name is already using the full width it has. */
+.squire-tray .favorites-layout-tiles .panel-item[data-span="2x1"] .panel-item-label,
+.squire-tray .favorites-layout-tiles .panel-item[data-span="2x2"] .panel-item-label {
+    font-size: 0.95em;
+    -webkit-line-clamp: 3;
 }
 
 .squire-tray .favorites-layout-tiles .panel-item:hover {

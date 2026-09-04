@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getContextMenu, getActivityList, isSpellPrepared, getContainerInfo, activateContainerListener, applyItemTooltips, getBlacksmith, getActionType, getActionTypes, useOrOpenItem} from './helpers.js';
+import { getNativeElement, renderTemplate, getActivityList, isSpellPrepared, getContainerInfo, activateContainerListener, applyItemTooltips, getBlacksmith, getActionType, getActionTypes, useOrOpenItem} from './helpers.js';
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { QuantityEditor } from './utility-quantity.js';
@@ -9,6 +9,25 @@ import { QuantityEditor } from './utility-quantity.js';
 // table extras. When an actions compendium drops these onto NPC sheets they
 // all carry usable activities, which would flood auto-favorites with rules
 // reminders (see: 25 hearts on one CR 9 caster). Matched by lowercased name.
+/**
+ * The tile footprints a favourite can take, as `columns x rows`.
+ *
+ * Width first, height second, the way CSS grid reads: `2x1` is two cells wide
+ * and one tall. Order here is the order they appear in the context menu.
+ */
+const FAVORITE_SPANS = ['1x1', '2x1', '1x2', '2x2'];
+
+/** Blacksmith addresses an open menu by id, so this is how it gets closed. */
+const FAVORITE_MENU_ID = 'squire-favorite-menu';
+
+/** The glyph for each footprint — the shape it makes, not an abstraction of it. */
+const SPAN_ICONS = {
+    '1x1': 'fa-square',
+    '2x1': 'fa-rectangle-wide',
+    '1x2': 'fa-rectangle-vertical',
+    '2x2': 'fa-table-cells-large'
+};
+
 const GENERIC_ACTIONS_DEFAULT = [
     'activate an item', 'attack', 'break an object', 'cast a spell',
     'check cover', 'climb', 'climb onto a bigger creature', 'crawl', 'dash',
@@ -476,6 +495,106 @@ export class FavoritesPanel {
     }
 
     /**
+     * The right-click menu for one favourite, built fresh each time it opens.
+     *
+     * Blacksmith's menu takes a plain array and has no `condition` hook, which
+     * suits this better than the one it replaced: the entries that depend on
+     * where a row sits in the list are simply not pushed, rather than pushed and
+     * then hidden by a callback that re-derives the same index.
+     */
+    _buildMenuItems(itemId) {
+        const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
+        const index = favorites.indexOf(itemId);
+        const items = [];
+
+        if (index > 0) {
+            items.push({
+                name: 'Move to Top',
+                icon: 'fa-solid fa-angle-double-up',
+                callback: () => this._reorderFavorite(itemId, 0)
+            }, {
+                name: 'Move Up',
+                icon: 'fa-solid fa-angle-up',
+                callback: () => this._reorderFavorite(itemId, index - 1)
+            });
+        }
+
+        if (index > -1 && index < favorites.length - 1) {
+            items.push({
+                name: 'Move Down',
+                icon: 'fa-solid fa-angle-down',
+                callback: () => this._reorderFavorite(itemId, index + 1)
+            }, {
+                name: 'Move to Bottom',
+                icon: 'fa-solid fa-angle-double-down',
+                callback: () => this._reorderFavorite(itemId, favorites.length - 1)
+            });
+        }
+
+        // Tile size, as a flyout. The four footprints are one question with four
+        // answers, and four sibling rows in the top level would have read as four
+        // unrelated commands. Only in the tile layout: offering to make a list
+        // row two cells tall would be offering nothing.
+        if (FavoritesPanel.getLayout() === 'tiles') {
+            const current = FavoritesPanel.getSpan(this.actor, itemId);
+            if (items.length) items.push({ separator: true });
+            items.push({
+                name: 'Tile Size',
+                icon: 'fa-solid fa-up-right-and-down-left-from-center',
+                description: current.replace('x', ' × '),
+                submenu: FAVORITE_SPANS.map(span => ({
+                    name: span.replace('x', ' × '),
+                    icon: `fa-solid ${SPAN_ICONS[span]}`,
+                    // The current size is shown but not clickable, so the menu
+                    // says which one you are on instead of leaving you to infer
+                    // it from the tile — and clicking it cannot be a silent
+                    // no-op that looks like a failure.
+                    disabled: span === current,
+                    callback: async () => {
+                        await FavoritesPanel.setSpan(this.actor, itemId, span);
+                        await this.render(this.element);
+                    }
+                }))
+            });
+        }
+
+        return items;
+    }
+
+    /**
+     * How much of the tile grid one favourite takes, as `columns x rows`.
+     *
+     * Stored per actor in a `favoriteSpans` map rather than as a flag on the
+     * item, because it is a fact about this panel's layout and not about the
+     * longsword. Writing it to the item would also put a Squire key on a
+     * document that may be shared, moved or exported, to say something that
+     * means nothing outside this grid.
+     *
+     * Keys for items that are no longer favourites are simply ignored on read.
+     * They cost a few bytes, and clearing them on unfavourite would mean the
+     * heart silently discarding a layout choice that comes straight back the
+     * moment the item is favourited again.
+     */
+    static getSpan(actor, itemId) {
+        const spans = actor?.getFlag(MODULE.ID, 'favoriteSpans') || {};
+        const span = spans[itemId];
+        return FAVORITE_SPANS.includes(span) ? span : '1x1';
+    }
+
+    static async setSpan(actor, itemId, span) {
+        if (!actor || !itemId || !FAVORITE_SPANS.includes(span)) return;
+
+        const spans = { ...(actor.getFlag(MODULE.ID, 'favoriteSpans') || {}) };
+        // 1x1 is the default, so it is stored as absence rather than as a value.
+        // Otherwise every tile anybody ever touched would sit in the map saying
+        // "ordinary", and the map would only ever grow.
+        if (span === '1x1') delete spans[itemId];
+        else spans[itemId] = span;
+
+        await actor.setFlag(MODULE.ID, 'favoriteSpans', spans);
+    }
+
+    /**
      * The tile caption's second line: what kind of thing this is, and how heavy.
      *
      * Only the tiles draw it -- a list row has the whole panel width for its
@@ -529,74 +648,6 @@ export class FavoritesPanel {
         this._listenerController = null;
         // Initialize filter states
 
-        // Set up the context menu options once
-        // v13: Callbacks receive native DOM elements (not jQuery) when jQuery: false is passed
-        this.menuOptions = [{
-            name: "Move to Top",
-            icon: '<i class="fa-solid fa-angle-double-up"></i>',
-            condition: li => {
-                // v13: Use native DOM dataset instead of jQuery .data()
-                const itemId = li.dataset.itemId;
-                const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
-                const currentIndex = favorites.indexOf(itemId);
-                return currentIndex > 0;
-            },
-            callback: li => {
-                // v13: Use native DOM dataset instead of jQuery .data()
-                const itemId = li.dataset.itemId;
-                this._reorderFavorite(itemId, 0);
-            }
-        }, {
-            name: "Move Up",
-            icon: '<i class="fa-solid fa-angle-up"></i>',
-            condition: li => {
-                // v13: Use native DOM dataset instead of jQuery .data()
-                const itemId = li.dataset.itemId;
-                const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
-                const currentIndex = favorites.indexOf(itemId);
-                return currentIndex > 0;
-            },
-            callback: li => {
-                // v13: Use native DOM dataset instead of jQuery .data()
-                const itemId = li.dataset.itemId;
-                const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
-                const currentIndex = favorites.indexOf(itemId);
-                this._reorderFavorite(itemId, currentIndex - 1);
-            }
-        }, {
-            name: "Move Down",
-            icon: '<i class="fa-solid fa-angle-down"></i>',
-            condition: li => {
-                // v13: Use native DOM dataset instead of jQuery .data()
-                const itemId = li.dataset.itemId;
-                const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
-                const currentIndex = favorites.indexOf(itemId);
-                return currentIndex < favorites.length - 1;
-            },
-            callback: li => {
-                // v13: Use native DOM dataset instead of jQuery .data()
-                const itemId = li.dataset.itemId;
-                const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
-                const currentIndex = favorites.indexOf(itemId);
-                this._reorderFavorite(itemId, currentIndex + 1);
-            }
-        }, {
-            name: "Move to Bottom",
-            icon: '<i class="fa-solid fa-angle-double-down"></i>',
-            condition: li => {
-                // v13: Use native DOM dataset instead of jQuery .data()
-                const itemId = li.dataset.itemId;
-                const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
-                const currentIndex = favorites.indexOf(itemId);
-                return currentIndex < favorites.length - 1;
-            },
-            callback: li => {
-                // v13: Use native DOM dataset instead of jQuery .data()
-                const itemId = li.dataset.itemId;
-                const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
-                this._reorderFavorite(itemId, favorites.length - 1);
-            }
-        }];
         
         // Auto-favorite is driven by PanelManager on actor init and by the
         // createItem hook — both of which await it. Firing it from the
@@ -671,6 +722,7 @@ export class FavoritesPanel {
                     isNew: !!(item.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(item.id)),
                     container: getContainerInfo(item, this.actor),
                     detailLabel: FavoritesPanel._getDetailLabel(item),
+                    span: FavoritesPanel.getSpan(this.actor, item.id),
                     isLightSource: isLightSource,
                     isLightActive: isLightActive
                 };
@@ -765,13 +817,12 @@ export class FavoritesPanel {
         // All listeners are registered with this controller's signal, so aborting it
         // above removes them — no element cloning needed.
         
-        // Properly cleanup context menu
-        // v13: Don't try to close the context menu during render - the DOM is about to be replaced
-        // The old context menu will be garbage collected, and a new one will be created in _activateListeners
-        if (this._contextMenu) {
-            // Just nullify the reference - don't try to close it as the DOM is being replaced
-            this._contextMenu = null;
-        }
+        // An open menu is closed rather than left floating. Blacksmith's menu
+        // lives on `document.body`, not inside the row it was opened from, so
+        // replacing this panel's markup no longer takes it with it — it would
+        // otherwise sit there over an empty panel, its entries still pointing at
+        // rows that have been rebuilt underneath it.
+        getBlacksmith()?.uiContextMenu?.close(FAVORITE_MENU_ID);
     }
 
     _activateListeners(html) {
@@ -791,26 +842,40 @@ export class FavoritesPanel {
         this._removeEventListeners(panel);
         this._listenerController = new AbortController();
         const listenerSignal = this._listenerController.signal;
-        const favoritesList = panel.querySelector('.favorites-list');
         
-        // Always create a fresh context menu
-        // v13: Use namespaced API and opt out of jQuery
-        try {
-            const ContextMenu = getContextMenu();
-            this._contextMenu = new ContextMenu(favoritesList, '.panel-item', this.menuOptions, { jQuery: false });
-        } catch (error) {
-            console.error('Error creating context menu:', error);
-            // Fallback: use native context menu
-            // v13: Use native DOM event delegation
-            panel.addEventListener('contextmenu', (event) => {
-                const favoriteItem = event.target.closest('.panel-item');
-                if (!favoriteItem) return;
-                event.preventDefault();
-                const itemId = favoriteItem.dataset.itemId;
-                // For now, just log - we can implement a custom context menu later
-            }, { signal: listenerSignal });
-        }
-        
+        // The right-click menu, from Blacksmith rather than from Foundry.
+        //
+        // Foundry's ContextMenu INJECTS its markup into the row it was opened
+        // on and positions it there. A favourites tile is `overflow: hidden` —
+        // it has to be, to keep the artwork inside its rounded corners — so the
+        // menu was being clipped to nothing on every tile while still working
+        // in the list. Blacksmith's appends to `document.body` at the pointer,
+        // which no ancestor can clip, and brings flyouts and zones with it.
+        panel.addEventListener('contextmenu', (event) => {
+            const row = event.target.closest('.panel-item[data-item-id]');
+            if (!row) return;
+
+            const menu = getBlacksmith()?.uiContextMenu;
+            // No Blacksmith means no menu. Letting the browser's own appear
+            // instead would offer Copy Image on a tile, which is worse than
+            // nothing happening.
+            if (!menu) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            const items = this._buildMenuItems(row.dataset.itemId);
+            if (!items.length) return;
+
+            menu.show({
+                id: FAVORITE_MENU_ID,
+                x: event.clientX,
+                y: event.clientY,
+                zones: items,
+                className: 'squire-favorite-context-menu'
+            });
+        }, { signal: listenerSignal });
+
         // Roll/Use item — delegated to the panel (one listener regardless of list size)
         panel.addEventListener('click', async (event) => {
             if (!event.target.classList.contains('panel-item-roll-overlay')) return;
@@ -1059,10 +1124,6 @@ export class FavoritesPanel {
 
     destroy() {
         this._removeEventListeners(this.element);
-        if (this._contextMenu) {
-            this._contextMenu.close();
-            this._contextMenu = null;
-        }
         this.element = null;
     }
 
@@ -1102,12 +1163,6 @@ export class FavoritesPanel {
         panelFavoriteIds.splice(newIndex, 0, movedId);
 
         try {
-            // Clean up context menu before updates
-            if (this._contextMenu) {
-                this._contextMenu.close();
-                delete this._contextMenu;
-            }
-
             // Update the actor's panel favorites flag
             await actor.setFlag(MODULE.ID, 'favoritePanel', panelFavoriteIds);
             
