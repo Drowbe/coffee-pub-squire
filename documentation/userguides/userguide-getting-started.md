@@ -124,9 +124,12 @@ the first time.
 
 Favourites draw two ways, and the pair of icons at the right of the Favorites header switches between
 them. **List** is the ordinary row, the same one every other section uses. **Tiles** is a grid of
-squares, each one the item's own artwork with its name across the bottom; the controls sit top-right
-and hovering a tile brings up the die, exactly as hovering a row's picture does. Whichever you pick is
-remembered.
+squares, each one the item's own artwork with its name across the bottom and what it is under that --
+"Weapon - 4 lb", or a spell's level. The controls sit top-right, and hovering a tile brings up the die,
+exactly as hovering a row's picture does. Whichever you pick is remembered.
+
+Hovering an item's name shows Foundry's own card for it, in the tiles and in every list. The feather
+shows the same card, so you can see what opening the sheet will give you before you click it.
 
 Favourites are shared with the character sheet in both directions: favourite something in the tray and
 it appears on the sheet, favourite it on the sheet and it appears in the tray, and removing it in

@@ -48,6 +48,11 @@
                 <div class="panel-item-name">
                     <span class="panel-item-label">{{this.name}}</span>
                     {{~#if this.isNew}}<span class="new-tag">NEW</span>{{/if~}}
+                    {{!-- Kind and weight. Drawn only by the tile layout, which
+                          hides the rest of the row's context behind a clipped
+                          two-line name; the list has the whole panel width and
+                          does not need telling that a longsword is a weapon. --}}
+                    <span class="panel-item-detail">{{this.detailLabel}}</span>
                     {{#if this.showContext}}
                     <span class="panel-item-context">
                         {{> action-badge actionType=this.actionType}}

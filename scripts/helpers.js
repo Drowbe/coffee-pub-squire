@@ -143,11 +143,21 @@ export function applyItemTooltips(html, actor) {
         // and carries `flex: 1`, so it spans the whole row — hanging the card
         // there put it on everything but the icons, which is indistinguishable
         // from putting it on the row.
-        const target = row.querySelector('.panel-item-label');
-        // No label element means a row this doesn't understand; leave it alone
-        // rather than fall back to something row-width.
-        if (!target || target.dataset.tooltip) continue;
-        decorate(target, item);
+        //
+        // The feather gets the same card. It is the control that opens the
+        // sheet, so the card is a preview of exactly what clicking it will
+        // show — and on a favourites tile, where the name is two clipped lines
+        // in a corner, it is the easier of the two to aim at. These feathers
+        // carry no `title` of their own to displace; the ones that do (the
+        // character panel's, the compendium results') are not `.panel-item`
+        // rows and are never reached from here.
+        for (const target of [row.querySelector('.panel-item-label'),
+                              row.querySelector('.tray-buttons .fa-feather')]) {
+            // A missing element means a row this doesn't understand; leave it
+            // alone rather than fall back to something row-width.
+            if (!target || target.dataset.tooltip) continue;
+            decorate(target, item);
+        }
     }
 
     for (const icon of html.querySelectorAll('.handle-favorite-icon[data-item-id]')) {

@@ -476,6 +476,41 @@ export class FavoritesPanel {
     }
 
     /**
+     * The tile caption's second line: what kind of thing this is, and how heavy.
+     *
+     * Only the tiles draw it -- a list row has the whole panel width for its
+     * name and does not need telling that a longsword is a weapon. A tile
+     * clips the name to two short lines over a picture, where "Weapon · 4 lb"
+     * is most of what distinguishes two similar-looking icons.
+     *
+     * Shaped after the merchant module's rows, which read "Weapon · 4 lb" in
+     * the same slot. Spells say their level instead of a weight, because a
+     * spell has no weight and its level is the thing you actually sort them by.
+     */
+    static _getDetailLabel(item) {
+        const kind = item.type === 'feat'
+            ? 'Feature'
+            : item.type.charAt(0).toUpperCase() + item.type.slice(1);
+
+        if (item.type === 'spell') {
+            const level = Number(item.system?.level);
+            if (!Number.isFinite(level)) return kind;
+            return level === 0 ? 'Cantrip' : `${kind} · Level ${level}`;
+        }
+
+        // dnd5e moved weight from a plain number to `{value, units}` partway
+        // through 3.x, so both shapes are still in the wild on older worlds.
+        let weight = item.system?.weight;
+        if (weight && typeof weight === 'object') weight = weight.value;
+        const pounds = Number(weight);
+        if (!Number.isFinite(pounds) || pounds <= 0) return kind;
+
+        // Trailing zeroes off a fractional weight: "0.25 lb" but "4 lb", not
+        // "4.00 lb". A column of ragged decimals reads as noise.
+        return `${kind} · ${Number(pounds.toFixed(2))} lb`;
+    }
+
+    /**
      * How the favourites view draws its rows: 'list' or 'tiles'.
      *
      * Validated rather than returned raw, so a setting written by an older
@@ -635,6 +670,7 @@ export class FavoritesPanel {
                     canEditQuantity: canEditThisQuantity,
                     isNew: !!(item.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(item.id)),
                     container: getContainerInfo(item, this.actor),
+                    detailLabel: FavoritesPanel._getDetailLabel(item),
                     isLightSource: isLightSource,
                     isLightActive: isLightActive
                 };
