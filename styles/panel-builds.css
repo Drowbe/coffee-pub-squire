@@ -992,6 +992,70 @@
     box-shadow: 0 0 6px rgba(240, 142, 120, 0.4);
 }
 
+/* ---------------- THE COSTUME VIEW ----------------
+
+   Three pictures and a name. The doll is absent rather than hidden: a costume
+   never touches gear or spells, so sixteen slots that could only sit empty would
+   be a promise the mode does not make. */
+.squire-build-costume {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+}
+
+/* The big one, in the proportion a portrait is usually painted. */
+.squire-build-costume-main {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-radius: 5px;
+    background: var(--blacksmith-tool-surface-sunken);
+    transition: border-color 0.15s ease;
+}
+
+.squire-build-costume-main:hover {
+    border-color: var(--blacksmith-color-brand-accent, var(--blacksmith-tool-accent));
+}
+
+.squire-build-costume-main img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 0;
+    border-radius: 4px;
+}
+
+/* The two that actually get written when this is worn. Labelled, because there
+   is room for a word here — on the doll they are circles beside a head and have
+   to earn their space with a glyph instead. */
+.squire-build-costume-pair {
+    display: flex;
+    gap: 22px;
+    justify-content: center;
+}
+
+.squire-build-costume-image {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: center;
+}
+
+.squire-build-costume-image .squire-build-slot {
+    width: 78px;
+}
+
+.squire-build-costume-label {
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.66em;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
 /* ---------------- THE PORTRAIT PLATES ----------------
 
    Attunement, weight and the unattuned warning, on the portrait's corners. They

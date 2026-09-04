@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 
 ### Added
+- **Costume mode serves its own view**: the build's picture large, the portrait and token beneath it with labels, and the name. The doll is *absent* rather than hidden — a costume never touches gear or spells, so sixteen slots that could only sit empty would be a promise the mode does not make, and the armour class, the plates and the spell column all describe equipment this view has nothing to do with. The window resizes to match, since a costume left in a doll's window is several hundred pixels of nothing; `_widthForMode()` is shared with `open()` so the first render and every later one agree rather than the window jumping the moment something re-renders it.
+  - The portrait and token circles get written labels here. On the doll they sit beside a head and have to earn their space with a glyph; in this view there is room for the word.
+
 - **A build has its own picture**, in the middle of the doll, browsed for the same way the portrait and the token are. Unset, it falls back through the build's portrait to the character's captured artwork — never to `actor.img`, and that distinction is the whole point: a costume worn a moment ago has already changed `actor.img`, and a centre image that followed it would be the one thing in this window that moves when the outfit does. Applying a build never writes it, because it belongs to the *build* rather than to the character.
   - It is deliberately not part of `BUILD_IMAGE_SLOTS`, which is the pair flanking the head. The centre is not a slot in that ring, and rendering it as one would put a third circle where the character's body is — so it takes the click behaviour and none of the shape.
 

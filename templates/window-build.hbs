@@ -103,6 +103,45 @@
         </div>
     </div>
 
+    {{#if isCostume}}
+    {{!-- A costume is three pictures and a name. The doll is not hidden here so
+          much as absent: a costume never touches gear or spells, so sixteen
+          slots that can only sit empty would be a promise the mode does not
+          make — and the plates, the armour class and the spell column all
+          describe equipment this view has nothing to do with. --}}
+    <div class="squire-build-costume">
+        <div class="squire-build-costume-main squire-build-image-slot{{#unless mainImage.isDefault}} is-set{{/unless}}"
+             data-image="main"
+             data-tooltip="{{#if mainImage.isDefault}}This costume has no picture of its own<br><em>Click to choose one</em>{{else}}Costume image<br><em>Click to change, right-click to reset</em>{{/if}}">
+            <img src="{{mainImage.path}}" alt="{{build.name}}">
+            {{#if mainImage.isDefault}}
+            <span class="squire-build-image-unset">unset</span>
+            {{/if}}
+        </div>
+
+        {{!-- The two that actually get written when this is worn. Labelled here,
+              where there is room for a word — on the doll they are circles
+              beside a head and have to earn their space with a glyph. --}}
+        <div class="squire-build-costume-pair">
+            {{#each imageSlots}}
+            <div class="squire-build-costume-image">
+                <div class="squire-build-slot is-round squire-build-image-slot{{#unless this.isDefault}} is-set{{/unless}}"
+                     data-image="{{this.key}}"
+                     data-tooltip="{{#if this.isDefault}}Not set — wearing this costume leaves the {{this.label}} alone<br><em>Click to choose an image</em>{{else}}<em>Click to change, right-click to reset</em>{{/if}}">
+                    {{#if this.path}}
+                    <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}">
+                    {{/if}}
+                    <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
+                    {{#if this.isDefault}}
+                    <span class="squire-build-image-unset">unset</span>
+                    {{/if}}
+                </div>
+                <span class="squire-build-costume-label">{{this.label}}</span>
+            </div>
+            {{/each}}
+        </div>
+    </div>
+    {{else}}
     <div class="squire-build-columns">
     <div class="squire-build-doll">
     <div class="squire-build-body">
@@ -339,6 +378,7 @@
     {{/if}}
     </div>
 
+    {{/if}}
     {{else}}
     <div class="squire-empty-message squire-build-empty">
         <p>- No Builds Yet -</p>

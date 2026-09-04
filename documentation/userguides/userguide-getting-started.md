@@ -145,7 +145,8 @@ something down it says what it was expecting.
 
 Beside a build's name is a **Build / Costume** switch. A **Costume** changes only your portrait and
 token when applied and leaves your gear and spells completely alone -- useful for a disguise, a
-wild shape, or a change of clothes. A **Build** does the lot.
+wild shape, or a change of clothes. Switch to it and the window changes with it: no slots, no spells,
+just the costume's picture and the two images it will actually set. A **Build** does the lot.
 
 Each entry in the rail shows its estimated armour class and how many slots are filled. The **runner**
 button equips it: everything in the build goes on, everything else comes off,
