@@ -8,6 +8,47 @@
 --}}
 <div class="squire-build">
 
+
+    {{!-- The rail: every build this character has, and the only place they are
+          managed. It replaced a section in the tray, which spent a lot of a
+          narrow column on something touched rarely — and split one feature in
+          two, since editing happened here and applying happened there.
+
+          Entries drag onto the tray handle, which is how a build gets somewhere
+          reachable with the tray shut. --}}
+    <div class="squire-build-rail">
+        <div class="squire-build-rail-list">
+            {{#each rail}}
+            <div class="squire-build-rail-entry{{#if this.active}} is-active{{/if}}"
+                 draggable="true" data-build-id="{{this.id}}"
+                 data-tooltip="{{this.name}}<br><em>Drag onto the tray handle to keep it to hand</em><br><em>Right-click for more</em>">
+                <div class="squire-build-rail-head">
+                    <span class="squire-build-rail-name">{{this.name}}</span>
+                    <button type="button" class="squire-build-rail-apply" data-build-id="{{this.id}}"
+                            data-tooltip="Equip this build">
+                        <i class="fa-solid fa-person-running"></i>
+                    </button>
+                </div>
+                <div class="squire-build-rail-preview">
+                    {{#each this.preview}}
+                    <img src="{{this.img}}" alt="{{this.name}}">
+                    {{/each}}
+                </div>
+                <div class="squire-build-rail-stats">
+                    <span><i class="fa-solid fa-shield"></i> {{this.armorClass}}</span>
+                    <span><i class="fa-solid fa-shirt"></i> {{this.gearCount}}</span>
+                </div>
+            </div>
+            {{/each}}
+        </div>
+
+        <button type="button" class="squire-build-rail-new">
+            <i class="fa-solid fa-plus"></i> New Build
+        </button>
+    </div>
+
+    <div class="squire-build-workspace">
+    {{#if hasBuilds}}
     {{!-- The name reads as a heading and edits as a field. It was a full-width
           boxed input, which made the least important thing in the window the
           biggest — it only needs to be reachable, not announced. --}}
@@ -74,6 +115,22 @@
               than as a scattered grid. --}}
         <div class="squire-build-portrait" style="grid-row: 2 / 5; grid-column: 2 / 5;">
             <img src="{{actorImg}}" alt="{{actorName}}">
+
+            {{!-- The armour class, big, on the portrait's hem — where Baldur's
+                  Gate puts it, and for the same reason: it is the number you are
+                  actually playing against, and it belongs on the character
+                  rather than in a line of footnotes.
+
+                  It updates live while an item hovers a slot, which is why the
+                  value and the delta are separate elements the window can write
+                  to without re-rendering. --}}
+            <div class="squire-build-ac-badge"
+                 data-tooltip="Estimated from this build's armour, shield and Dexterity.<br>Class features, fighting styles and active effects are <strong>not</strong> counted, so this is for comparing builds rather than for your sheet.">
+                <i class="fa-solid fa-shield squire-build-ac-badge-shield"></i>
+                <span class="squire-build-ac-badge-value">{{armorClass.value}}</span>
+                <span class="squire-build-ac-badge-label">AC est.</span>
+                <span class="squire-build-ac-badge-delta" hidden></span>
+            </div>
         </div>
     </div>
 
@@ -198,14 +255,9 @@
               data-tooltip="Attunement slots this build would use{{#if attunement.over}}<br><strong>More than this character has</strong>{{/if}}">
             <i class="fa-solid fa-gem"></i> {{attunement.used}} / {{attunement.max}} attuned
         </span>
-        <span class="squire-build-ac" data-tooltip="Estimated from this build's armour, shield and Dexterity.<br>Class features, fighting styles and active effects are <strong>not</strong> counted, so this is for comparing builds rather than for your sheet.">
-            <i class="fa-solid fa-shield"></i> AC {{armorClass.value}}<span class="squire-build-ac-note">est.</span>
-        </span>
-        {{#if weight}}
         <span class="squire-build-weight" data-tooltip="What the gear in this build weighs. Prepared spells are not included, and a slotted stack counts once.">
-            <i class="fa-solid fa-weight-hanging"></i> {{weight}} lb
+            <i class="fa-solid fa-weight-hanging"></i> <span class="squire-build-weight-value">{{#if weight}}{{weight}}{{else}}0{{/if}}</span> lb
         </span>
-        {{/if}}
         {{#if attunement.unattuned}}
         <span class="squire-build-attunement-warning"
               data-tooltip="These items require attunement and have not got it, so they would do nothing.">
@@ -213,12 +265,19 @@
         </span>
         {{/if}}
     </div>
+    {{else}}
+    <div class="squire-empty-message squire-build-empty">
+        <p>- No Builds Yet -</p>
+        <p>Use New Build to start one</p>
+    </div>
+    {{/if}}
 
     {{!-- Says what this window is FOR, because nothing else in it does. A grid of
           slots beside a portrait invites the reading that these ARE the
           character's current gear, and editing here still changes nothing until
           the build is equipped from its tile. --}}
     <p class="squire-build-note">
-        A plan. Nothing changes on the sheet until you equip this build from the tray.
+        A plan. Nothing changes on the sheet until you equip it.
     </p>
+    </div>
 </div>

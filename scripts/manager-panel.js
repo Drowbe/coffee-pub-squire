@@ -10,7 +10,6 @@ import { SpellsPanel } from './panel-spells.js';
 import { WeaponsPanel } from './panel-weapons.js';
 import { InventoryPanel } from './panel-inventory.js';
 import { FavoritesPanel } from './panel-favorites.js';
-import { BuildsPanel } from './panel-builds.js';
 import { syncFavorites } from './manager-favorites-sync.js';
 import { ControlPanel } from './panel-control.js';
 import { CompendiumSearchPanel } from './panel-compendium-search.js';
@@ -288,7 +287,6 @@ export class PanelManager {
             this.controlPanel = new ControlPanel(actor);
             this.compendiumSearchPanel = new CompendiumSearchPanel(actor);
             this.favoritesPanel = new FavoritesPanel(actor);
-            this.buildsPanel = new BuildsPanel(actor);
             this.spellsPanel = new SpellsPanel(actor);
             this.weaponsPanel = new WeaponsPanel(actor);
             this.inventoryPanel = new InventoryPanel(actor);
@@ -660,7 +658,6 @@ export class PanelManager {
         this.controlPanel = new ControlPanel(this.actor);
         this.compendiumSearchPanel = new CompendiumSearchPanel(this.actor);
         this.favoritesPanel = new FavoritesPanel(this.actor);
-        this.buildsPanel = new BuildsPanel(this.actor);
         this.spellsPanel = new SpellsPanel(this.actor);
         this.weaponsPanel = new WeaponsPanel(this.actor);
         this.inventoryPanel = new InventoryPanel(this.actor);
@@ -678,7 +675,6 @@ export class PanelManager {
         this.controlPanel.element = PanelManager.element;
         this.compendiumSearchPanel.element = PanelManager.element;
         this.favoritesPanel.element = PanelManager.element;
-        this.buildsPanel.element = PanelManager.element;
         this.spellsPanel.element = PanelManager.element;
         this.weaponsPanel.element = PanelManager.element;
         this.inventoryPanel.element = PanelManager.element;
@@ -713,7 +709,6 @@ export class PanelManager {
                 PanelManager.removePanelDom(this.gmPanel);
             }
             this.controlPanel?.render(element);
-            this.buildsPanel?.render(element);
             this.favoritesPanel?.render(element);
             this.spellsPanel?.render(element);
             this.weaponsPanel?.render(element);
@@ -818,6 +813,14 @@ export class PanelManager {
                 // it. The transfer zone checks this flag; cleared on dragend.
                 PanelManager._trayItemDragActive = true;
 
+                // The item's id as well as the flag, because dataTransfer is
+                // PROTECTED during dragover — a drop target can be told that
+                // something is being dragged over it but not what, until the
+                // drop lands. The build window needs to know before then, to
+                // show what a swap would do to armour class while the item is
+                // still hovering. Cleared on dragend beside the flag.
+                PanelManager._trayDragItemId = row.dataset.itemId;
+
                 // toDragData() is the canonical payload every Foundry drop target
                 // understands — {type, uuid, data}. Hand-rolling {type:'Item', uuid}
                 // would work today and rot the moment core changes the shape.
@@ -832,6 +835,7 @@ export class PanelManager {
             // drop landed, was cancelled, or went nowhere.
             nativeTray.addEventListener('dragend', () => {
                 PanelManager._trayItemDragActive = false;
+                PanelManager._trayDragItemId = null;
                 // Cancelling with Escape over the handle fires no dragleave, so
                 // the drop highlight has to be cleared from the one event that
                 // always fires. This handler already owns "the drag is over".
@@ -1763,9 +1767,6 @@ export class PanelManager {
         }
         
         // Clean up other panels that might have event listeners
-        if (PanelManager.instance.buildsPanel && typeof PanelManager.instance.buildsPanel.destroy === 'function') {
-            PanelManager.instance.buildsPanel.destroy();
-        }
         if (PanelManager.instance.favoritesPanel && typeof PanelManager.instance.favoritesPanel.destroy === 'function') {
             PanelManager.instance.favoritesPanel.destroy();
         }
@@ -2130,7 +2131,6 @@ export async function _updateTrayFromSelection() {
             if (PanelManager.instance.characterPanel) PanelManager.instance.characterPanel.actor = actorToUse;
             if (PanelManager.instance.controlPanel) PanelManager.instance.controlPanel.actor = actorToUse;
             if (PanelManager.instance.favoritesPanel) PanelManager.instance.favoritesPanel.actor = actorToUse;
-            if (PanelManager.instance.buildsPanel) PanelManager.instance.buildsPanel.actor = actorToUse;
             if (PanelManager.instance.spellsPanel) PanelManager.instance.spellsPanel.actor = actorToUse;
             if (PanelManager.instance.weaponsPanel) PanelManager.instance.weaponsPanel.actor = actorToUse;
             if (PanelManager.instance.inventoryPanel) PanelManager.instance.inventoryPanel.actor = actorToUse;

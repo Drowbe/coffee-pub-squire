@@ -64,7 +64,6 @@
     "scripts/panel-weapons.js",
     "scripts/panel-favorites.js",
     "scripts/utility-builds.js",
-    "scripts/panel-builds.js",
     "scripts/panel-character-summary.js",
     "scripts/panel-party.js",
     "scripts/panel-party-stats.js",

@@ -119,8 +119,9 @@ Click the heart on a row. Click it again to remove it.
 
 ### Plan a set of gear
 
-Above your favourites is **Builds**. The **+** in its header starts one and opens it: a figure of your
-character surrounded by slots -- head, face, neck, back, chest, arms, hands, rings, hips, waist, feet,
+The **shirt** in the Character Sheet strip opens the builder. Down its left is every build you have --
+click one to work on it, **New Build** to start another, right-click for duplicate and delete. The rest
+of the window is that build: a figure of your character surrounded by slots -- head, face, neck, back, chest, arms, hands, rings, hips, waist, feet,
 and the three weapon slots along the bottom. Drag items from the tray into the slots to say what this
 build is made of. The two circles beside the head hold a **portrait** and a **token** image. Click either to pick a picture, right-click to reset it. Until you set one, each shows what your character already uses. Right-click a gear slot to empty it; right-click a build's tile to open, duplicate or delete it. Duplicating is the quick way to try a variant -- the same set with one thing swapped -- without building it again from nothing. The foot of the window totals what the gear weighs.
 
@@ -142,8 +143,8 @@ does: the ammo slots take ammunition, Both Hands takes a weapon, and nothing tha
 object -- a spell, a feat, a class feature -- goes anywhere. If a slot turns
 something down it says what it was expecting.
 
-Each build's row shows what is in it, its estimated armour class, how many slots are filled and what it
-weighs. The **runner** button equips it: everything in the build goes on, everything else comes off,
+Each entry in the rail shows its estimated armour class and how many slots are filled. The **runner**
+button equips it: everything in the build goes on, everything else comes off,
 its spells are prepared and anything else that counts against a preparation limit is unprepared. It
 asks first and tells you exactly what it will do. Attunement is never changed for you -- that is a
 decision for your table.
@@ -152,8 +153,13 @@ The AC is marked **est.** because it is worked out from the build's armour, shie
 alone. It cannot see Unarmoured Defence, a fighting style, or a bonus from an effect, so use it to
 compare two builds rather than as the number for your sheet.
 
-Hover anything in a slot for its full item card. Drop a replacement onto a filled slot and Squire tells
-you what changed -- `AC 16 -> 18 (+2)` -- so you can see whether the swap was worth it.
+Your armour class sits on a shield at the foot of the portrait. **Drag an item over a slot and watch it
+move** -- the badge shows what the swap would give you and by how much, before you let go. Hover
+anything already in a slot for its full item card.
+
+**Drag a build from the rail onto the tray handle** to keep it within reach. It joins a strip above your
+favourites, and clicking it there equips it -- so you can switch your whole kit with the tray shut.
+Right-click takes it back off.
 
 **Until you equip it, a build is a plan, not a state.** Nothing in it changes what your character is actually wearing --
 it is somewhere to work out a set of gear, not a switch that puts it on. Only items already on your

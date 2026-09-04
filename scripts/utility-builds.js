@@ -837,3 +837,94 @@ export async function applyBuild(actor, build) {
         imagesChanged: Object.keys(actorUpdate).length
     };
 }
+
+/**
+ * What the build's numbers WOULD be with one slot changed.
+ *
+ * Used while an item is hovering over a slot, before any drop has happened, so
+ * the window can show the consequence of a swap while there is still time to
+ * think better of it. Nothing is written: the build is copied, the slot is
+ * changed in the copy, and the copy is measured.
+ *
+ * Pass a null `itemId` to preview emptying the slot.
+ */
+export function previewSlotChange(actor, build, slotKey, itemId) {
+    const hypothetical = {
+        ...build,
+        slots: { ...build.slots, [slotKey]: itemId ?? null }
+    };
+
+    return {
+        armorClass: estimateArmorClass(actor, hypothetical).value,
+        weight: gearWeight(actor, hypothetical) ?? 0
+    };
+}
+
+/* ==========================================================================
+   BUILDS ON THE HANDLE
+
+   The handle is what stays on screen when the tray is shut, so a build kept
+   there is one that can be switched into mid-fight without opening anything.
+   A separate list from the builds themselves, and deliberately so: which builds
+   are worth a handle slot is a different question from which builds exist, in
+   exactly the way the handle's favourites are separate from the favourites
+   panel's.
+   ========================================================================== */
+
+const HANDLE_BUILDS_FLAG = 'handleBuilds';
+
+/** The build ids on the handle, in their placed order. Ids that no longer name a build are dropped. */
+export function getHandleBuildIds(actor) {
+    const stored = actor?.getFlag(MODULE.ID, HANDLE_BUILDS_FLAG);
+    if (!Array.isArray(stored)) return [];
+
+    const live = new Set(getBuilds(actor).map(build => build.id));
+    return stored.filter(id => typeof id === 'string' && live.has(id));
+}
+
+/**
+ * The handle's builds, resolved for display.
+ *
+ * Each carries the first item picture in the build as its face, because a build
+ * has no artwork of its own and a row of identical shirts would defeat the
+ * purpose of putting them somewhere glanceable.
+ */
+export function getHandleBuilds(actor) {
+    const byId = new Map(getBuilds(actor).map(build => [build.id, build]));
+
+    return getHandleBuildIds(actor).map(id => {
+        const build = byId.get(id);
+        const summary = buildSummary(actor, build);
+        return {
+            id,
+            name: build.name,
+            img: summary.preview[0]?.img ?? null,
+            armorClass: summary.armorClass.value,
+            gearCount: summary.gearCount
+        };
+    });
+}
+
+/**
+ * Put a build on the handle, or move one already there.
+ *
+ * `beforeId` is the build to insert above, or null for the end — the same
+ * contract the handle's favourites use, so one drop gesture behaves identically
+ * whichever list it lands in.
+ */
+export async function addBuildToHandle(actor, buildId, beforeId = null) {
+    if (!buildId || !getBuilds(actor).some(build => build.id === buildId)) return;
+
+    const ids = getHandleBuildIds(actor).filter(id => id !== buildId);
+    const index = beforeId ? ids.indexOf(beforeId) : -1;
+
+    if (index === -1) ids.push(buildId);
+    else ids.splice(index, 0, buildId);
+
+    await actor.setFlag(MODULE.ID, HANDLE_BUILDS_FLAG, ids);
+}
+
+export async function removeBuildFromHandle(actor, buildId) {
+    await actor.setFlag(MODULE.ID, HANDLE_BUILDS_FLAG,
+        getHandleBuildIds(actor).filter(id => id !== buildId));
+}

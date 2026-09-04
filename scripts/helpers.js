@@ -1,4 +1,5 @@
 import { MODULE } from './const.js';
+import { getHandleBuilds } from './utility-builds.js';
 
 /**
  * True when this user is the GM or the current party leader.
@@ -942,6 +943,19 @@ export const registerHelpers = function() {
     Handlebars.registerHelper('includes', function(array, value) {
         if (!Array.isArray(array)) return false;
         return array.includes(value);
+    });
+
+    // The builds kept on the handle. A thin wrapper: utility-builds.js owns the
+    // resolving, so the strip and the builder cannot disagree about a build's
+    // armour class or which item's picture represents it.
+    Handlebars.registerHelper('getHandleBuilds', function(actor) {
+        if (typeof actor?.getFlag !== 'function') return [];
+        try {
+            return getHandleBuilds(actor);
+        } catch (error) {
+            console.error('Coffee Pub Squire | Failed to read handle builds:', error);
+            return [];
+        }
     });
 
     // Helper to get handle favorites from actor

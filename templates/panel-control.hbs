@@ -10,14 +10,17 @@
     the second state was compendiums. A player who cannot browse compendiums
     still gets two modes and needs both icons to move between them.
 
-    The broom is not one of them and keeps its separator: it opens a window that
-    writes to the sheet, rather than changing what this column shows.
+    The broom and the builds icon are not modes and sit before the separator:
+    they open WINDOWS, rather than changing what this column shows. Builds moved
+    here from a section of its own in the favourites view, which spent a lot of a
+    narrow column on something touched rarely.
 --}}
 <div class="control-mode-toggles">
+    <i class="fa-solid fa-shirt control-builds" data-tooltip="Gear Builds"></i>
     {{#if canCleanup}}
     <i class="fa-solid fa-broom control-cleanup" title="{{cleanupTooltip}}"></i>
-    <span class="control-toggle-separator"></span>
     {{/if}}
+    <span class="control-toggle-separator"></span>
     <i class="fa-solid fa-heart control-mode-toggle" data-mode="favorites" title="Show Favorites"></i>
     <i class="fa-solid fa-user control-mode-toggle" data-mode="sheet" title="Show This Character's Items"></i>
     {{#if canUseCompendiums}}

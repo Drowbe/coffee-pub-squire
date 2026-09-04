@@ -6,7 +6,7 @@ import {
     getBuild, renameBuild, setBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, getCantrips, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
-    estimateArmorClass
+    estimateArmorClass, previewSlotChange
 } from './utility-builds.js';
 
 /**
@@ -25,6 +25,9 @@ import { BlacksmithToolWindowBaseV2 } from '/modules/coffee-pub-blacksmith/api/b
  * own). The note at the foot of the window says so, because a ring of slots
  * around a portrait otherwise reads as a statement about the character now.
  */
+/** How much width the build rail takes. Mirrored in panel-builds.css. */
+const RAIL_WIDTH = 180;
+
 export class BuildWindow extends BlacksmithToolWindowBaseV2 {
 
     static DEFAULT_OPTIONS = foundry.utils.mergeObject(
@@ -72,7 +75,9 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
 
         // A caster needs the second column; everyone else would get 300px of
         // empty. Set at construction because options are frozen afterwards.
-        const width = getPreparingClasses(actor).length ? 840 : 520;
+        // The rail adds its own column on top of the doll and, for a caster,
+        // the spell page.
+        const width = (getPreparingClasses(actor).length ? 840 : 520) + RAIL_WIDTH;
         // Before the window is even drawn. Applying a build will one day
         // overwrite the actor's portrait and token, and once it has, the
         // character's own artwork exists nowhere — so it is recorded at the
@@ -80,7 +85,11 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // second window cannot overwrite what the first one captured.
         await captureDefaultImages(actor);
 
-        const win = new BuildWindow({ id, actor, buildId, position: { width, height: 'auto' } });
+        // Whichever build was asked for, else the first there is. Opening on
+        // nothing would make the common case — one build — need a click before
+        // it showed anything.
+        const selected = buildId ?? getBuilds(actor)[0]?.id ?? null;
+        const win = new BuildWindow({ id, actor, buildId: selected, position: { width, height: 'auto' } });
         await win.render({ force: true });
         return win;
     }
@@ -88,6 +97,113 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
     /** The build this window is showing, re-read every time rather than cached. */
     get build() {
         return getBuild(this.actor, this.buildId);
+    }
+
+    /**
+     * Equip a build without a window necessarily being open.
+     *
+     * The handle needs to apply builds too, and the confirmation, the rules and
+     * the receipt should exist once rather than in every place that can trigger
+     * them. An open window applies through itself so its own view refreshes;
+     * anything else gets a detached instance that never renders.
+     */
+    static async applyFromAnywhere(actor, buildId) {
+        const open = foundry.applications.instances.get(`squire-builds-${actor.id}`);
+        if (open) return open.applySelected(buildId);
+
+        const detached = new BuildWindow({ id: `squire-builds-apply-${foundry.utils.randomID()}`, actor });
+        await detached.applySelected(buildId);
+    }
+
+    /** Show a different build. */
+    async selectBuild(buildId) {
+        if (!buildId || buildId === this.buildId) return;
+        this.buildId = buildId;
+        await this.render(false);
+    }
+
+    /** Make one and show it. */
+    async createAndSelect() {
+        const build = await createBuild(this.actor);
+        this.buildId = build.id;
+        await this._refresh();
+    }
+
+    async duplicateSelected(buildId) {
+        const copy = await duplicateBuild(this.actor, buildId);
+        if (copy) this.buildId = copy.id;
+        await this._refresh();
+    }
+
+    async deleteSelected(buildId) {
+        const build = getBuild(this.actor, buildId);
+        if (!build) return;
+
+        const confirmed = await getBlacksmith().dialog.confirm({
+            title: 'Delete Build',
+            content: `<p>Delete <strong>${foundry.utils.escapeHTML(build.name)}</strong>?</p><p>This cannot be undone.</p>`,
+            confirmLabel: 'Delete Build',
+            confirmIcon: 'fa-solid fa-trash',
+            destructive: true
+        });
+        if (!confirmed) return;
+
+        await deleteBuild(this.actor, buildId);
+        // Fall to whatever is left rather than showing a build that is gone.
+        if (this.buildId === buildId) this.buildId = getBuilds(this.actor)[0]?.id ?? null;
+        await this._refresh();
+    }
+
+    /**
+     * Equip the selected build, after asking.
+     *
+     * The confirmation names what will happen rather than asking "are you sure",
+     * which is the weakest form of the question — nobody can evaluate a prompt
+     * that does not say what it will do. Same reasoning as the cleanup window.
+     */
+    async applySelected(buildId) {
+        const build = getBuild(this.actor, buildId);
+        if (!build) return;
+
+        const summary = buildSummary(this.actor, build);
+        const spellLine = summary.spellCount
+            ? `<li>Prepare its ${summary.spellCount} spell${summary.spellCount === 1 ? '' : 's'}, and unprepare everything else that counts against a limit.</li>`
+            : '';
+        const imageLine = (build.images?.portrait || build.images?.token)
+            ? '<li>Change the portrait or token artwork.</li>'
+            : '';
+
+        const confirmed = await getBlacksmith().dialog.confirm({
+            title: 'Equip Build',
+            content: `<p>Equip <strong>${foundry.utils.escapeHTML(build.name)}</strong> on `
+                + `<strong>${foundry.utils.escapeHTML(this.actor.name)}</strong>?</p>`
+                + '<p>This will:</p><ul>'
+                + `<li>Equip the ${summary.gearCount} item${summary.gearCount === 1 ? '' : 's'} in this build, and unequip everything else.</li>`
+                + spellLine + imageLine
+                + '</ul><p>Attunement is not changed.</p>',
+            confirmLabel: 'Equip Build',
+            confirmIcon: 'fa-solid fa-person-running'
+        });
+        if (!confirmed) return;
+
+        const result = await applyBuild(this.actor, build);
+        if (!result) return;
+
+        const changes = [];
+        if (result.equipped) changes.push(`equipped ${result.equipped}`);
+        if (result.unequipped) changes.push(`unequipped ${result.unequipped}`);
+        if (result.prepared) changes.push(`prepared ${result.prepared}`);
+        if (result.unprepared) changes.push(`unprepared ${result.unprepared}`);
+
+        showSquireToast(
+            changes.length ? build.name : `${build.name} was already equipped`,
+            {
+                subtitle: changes.length ? `${changes.join(', ')}.` : undefined,
+                icon: 'fa-solid fa-person-running'
+            }
+        );
+
+        await this._refresh();
     }
 
     /**
@@ -99,24 +215,35 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
      * that fires `updateActor` would re-render the whole tray for a slot.
      */
     async _refresh() {
-        await this.render(false);
-        const panel = PanelManager.instance?.buildsPanel;
-        if (panel) await panel.render(PanelManager.element);
+        // `rendered` guards the detached instance applyFromAnywhere() builds to
+        // borrow the apply logic — it has no DOM and must not grow one.
+        if (this.rendered) await this.render(false);
+
+        // The handle can carry builds, and their armour class and item pictures
+        // come from the same build this just changed.
+        await PanelManager.instance?.handleManager?.updateHandle();
     }
 
     async getData() {
         const build = this.build;
 
-        // A build deleted from the panel while its window is open leaves nothing
-        // to draw. Say so rather than rendering sixteen empty slots that would
-        // silently write back to a build that no longer exists.
-        if (!build) {
+        const builds = getBuilds(this.actor);
+        const rail = builds.map(entry => {
+            const summary = buildSummary(this.actor, entry);
             return {
-                appId: this.id,
-                bodyContent: '<p class="squire-build-note">This build has been deleted.</p>'
+                id: entry.id,
+                name: entry.name,
+                active: entry.id === this.buildId,
+                armorClass: summary.armorClass.value,
+                gearCount: summary.gearCount,
+                preview: summary.preview.slice(0, 3)
             };
-        }
+        });
 
+        // `build` may be null — no builds yet, or the selected one was deleted.
+        // The doll still resolves, as sixteen empty slots, and the template hides
+        // it behind `hasBuilds`; resolveSlots reading a null build is exactly the
+        // "never filled" case it already handles.
         const bodySlots = resolveSlots(this.actor, build, BUILD_BODY_SLOTS);
         const weaponSlots = resolveSlots(this.actor, build, BUILD_WEAPON_SLOTS);
 
@@ -139,6 +266,8 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         return {
             appId: this.id,
             bodyContent: await renderTemplate(TEMPLATES.WINDOW_BUILD, {
+                rail,
+                hasBuilds: builds.length > 0,
                 build,
                 actorName: this.actor?.name ?? '',
                 actorImg: this.actor?.img ?? 'icons/svg/mystery-man.svg',
@@ -191,6 +320,75 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             });
         }
 
+        // The rail. Delegated on the strip, because its rows are rebuilt on every
+        // selection and per-row listeners would die with them.
+        const rail = root.querySelector('.squire-build-rail');
+        if (rail) {
+            rail.addEventListener('click', async (event) => {
+                if (event.target.closest('.squire-build-rail-new')) {
+                    await this.createAndSelect();
+                    return;
+                }
+
+                const apply = event.target.closest('.squire-build-rail-apply');
+                if (apply) {
+                    event.stopPropagation();
+                    await this.applySelected(apply.dataset.buildId);
+                    return;
+                }
+
+                const entry = event.target.closest('.squire-build-rail-entry');
+                if (entry) await this.selectBuild(entry.dataset.buildId);
+            });
+
+            // Dragging a rail entry onto the tray handle keeps that build within
+            // reach when the tray is shut. A flag rather than a payload, because
+            // dataTransfer is protected during dragover and the handle has to
+            // know it is being offered a BUILD before the drop — the same reason
+            // the tray parks an item id for the AC preview.
+            rail.addEventListener('dragstart', (event) => {
+                const entry = event.target.closest('.squire-build-rail-entry');
+                if (!entry) return;
+
+                PanelManager._buildDragId = entry.dataset.buildId;
+                event.dataTransfer.effectAllowed = 'copy';
+                // Deliberately not a Foundry document payload. A real one would
+                // let this drop on the canvas and make something; "put this
+                // build on the handle" must not be able to do that.
+                event.dataTransfer.setData('text/plain', JSON.stringify({
+                    type: 'squire-build', buildId: entry.dataset.buildId
+                }));
+            });
+
+            rail.addEventListener('dragend', () => {
+                PanelManager._buildDragId = null;
+            });
+
+            rail.addEventListener('contextmenu', (event) => {
+                const entry = event.target.closest('.squire-build-rail-entry');
+                if (!entry) return;
+                event.preventDefault();
+                event.stopPropagation();
+
+                const buildId = entry.dataset.buildId;
+                getBlacksmith().uiContextMenu.show({
+                    id: 'squire-build-rail-menu',
+                    x: event.clientX,
+                    y: event.clientY,
+                    zones: [
+                        { name: 'Equip This Build', icon: 'fa-solid fa-person-running',
+                          callback: () => this.applySelected(buildId) },
+                        { name: 'Duplicate', icon: 'fa-solid fa-clone',
+                          callback: () => this.duplicateSelected(buildId) },
+                        { separator: true },
+                        { name: 'Delete Build', icon: 'fa-solid fa-trash',
+                          callback: () => this.deleteSelected(buildId) }
+                    ],
+                    className: 'squire-favorite-context-menu'
+                });
+            });
+        }
+
         // Portrait and token take a click, not a drop — they hold an image path
         // rather than an item, so there is nothing on the sheet to drag in.
         // The system's own item card on anything holding an item — the same card
@@ -231,13 +429,21 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 event.preventDefault();
                 event.dataTransfer.dropEffect = 'copy';
                 slot.classList.add('is-drop-target');
+                this._previewDrop(slot);
             });
 
             slot.addEventListener('dragleave', (event) => {
                 // Only when the pointer has actually left the slot, not when it
                 // crosses onto a child of it.
-                if (!slot.contains(event.relatedTarget)) slot.classList.remove('is-drop-target');
+                if (slot.contains(event.relatedTarget)) return;
+                slot.classList.remove('is-drop-target');
+                this._clearPreview();
             });
+
+            // A drop and a cancelled drag both end the preview. Without the
+            // second, dragging away and releasing over nothing would leave the
+            // badge showing a swap that never happened.
+            slot.addEventListener('drop', () => this._clearPreview());
 
             slot.addEventListener('drop', (event) => this._onDrop(event, slot));
 
@@ -279,6 +485,73 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         });
 
         await picker.browse();
+    }
+
+    /**
+     * Show what the hovering item would do, before it lands.
+     *
+     * `dataTransfer` is protected during dragover — a drop target is told that
+     * something is over it, never what — so the item comes from the id the
+     * tray's own dragstart parked on PanelManager. That is the same trick the
+     * handle's reorder uses, and the only way to answer "would this be better?"
+     * at the moment the question is actually being asked.
+     *
+     * Writes to the badge directly rather than re-rendering: dragover fires
+     * continuously, and a re-render per frame would tear down the drag.
+     */
+    _previewDrop(slot) {
+        const slotKey = slot.dataset.slot;
+        if (!slotKey || !this.build) return;
+
+        const itemId = PanelManager._trayDragItemId;
+        const item = itemId ? this.actor?.items?.get(itemId) : null;
+        // Silent on an item this slot would refuse: promising an AC change for a
+        // drop that is about to be turned down would be a lie.
+        if (!item || refuseSlotDrop(slotKey, item)) return;
+
+        const now = {
+            ac: estimateArmorClass(this.actor, this.build).value,
+            weight: gearWeight(this.actor, this.build) ?? 0
+        };
+        const next = previewSlotChange(this.actor, this.build, slotKey, item.id);
+
+        this._paintPreview(next.armorClass, next.armorClass - now.ac, next.weight);
+    }
+
+    /** Put the badge and the weight back to what the build actually is. */
+    _clearPreview() {
+        this._paintPreview(
+            estimateArmorClass(this.actor, this.build).value,
+            0,
+            gearWeight(this.actor, this.build) ?? 0
+        );
+    }
+
+    /**
+     * Write the numbers into the badge.
+     *
+     * One place, so the live preview and the reset cannot drift apart in how
+     * they format the same figures.
+     */
+    _paintPreview(armorClass, delta, weight) {
+        const root = this.element;
+        if (!root) return;
+
+        const badge = root.querySelector('.squire-build-ac-badge');
+        const value = root.querySelector('.squire-build-ac-badge-value');
+        const deltaEl = root.querySelector('.squire-build-ac-badge-delta');
+        const weightEl = root.querySelector('.squire-build-weight-value');
+
+        if (value) value.textContent = armorClass;
+        if (weightEl) weightEl.textContent = Number(weight.toFixed(2));
+
+        if (deltaEl) {
+            deltaEl.hidden = !delta;
+            deltaEl.textContent = delta > 0 ? `+${delta}` : `${delta}`;
+            deltaEl.classList.toggle('is-better', delta > 0);
+            deltaEl.classList.toggle('is-worse', delta < 0);
+        }
+        badge?.classList.toggle('is-previewing', !!delta);
     }
 
     /**

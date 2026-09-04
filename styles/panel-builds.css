@@ -10,143 +10,71 @@
    silence its minimisation.
    ========================================================================== */
 
-/* ---------------- THE TRAY SECTION ---------------- */
+/* ---------------- THE LAUNCHER ---------------- */
 
-.squire-tray .builds-panel .header-right {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-}
-
-.squire-tray .builds-create {
+/* Builds opens a window, so its icon sits with the broom on the launcher side
+   of the Character Sheet strip's separator rather than with the three view
+   modes. It had a section of its own in the favourites view and gave a lot of a
+   narrow column to something touched rarely. */
+.squire-tray [data-panel="control"] .control-builds {
     cursor: pointer;
     padding: 2px 1px;
-    font-size: 0.85em;
     color: rgba(159, 146, 117, 0.9);
+    background: none;
     transition: color 0.2s ease;
 }
 
-.squire-tray .builds-create:hover {
+.squire-tray [data-panel="control"] .control-builds:hover {
     color: var(--squire-color-hover);
 }
 
-/* Rows, not a grid of squares. A build's identity is what is IN it, and three
-   104px cells had room for a generic shirt and a fraction — which said nothing
-   about the difference between two builds, the only thing this list is for. */
-.squire-tray .builds-list {
+/* ---------------- THE HANDLE STRIP ---------------- */
+
+/* Builds kept on the handle, above the favourites. Same footprint as a handle
+   favourite, because they sit in the same column and a strip of two sizes reads
+   as broken rather than as organised. */
+.squire-tray .handle-builds {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 2px;
-}
-
-.squire-tray .build-tile {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 7px 8px;
-    cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 5px;
-    background: rgba(0, 0, 0, 0.35);
-    transition: all 0.15s ease;
-}
-
-.squire-tray .build-tile:hover {
-    border-color: rgba(255, 100, 0, 0.6);
-    background: rgba(0, 0, 0, 0.55);
-}
-
-.squire-tray .build-tile-top {
-    display: flex;
-    gap: 8px;
     align-items: center;
-    justify-content: space-between;
+    gap: 4px;
+    margin-bottom: 6px;
 }
 
-/* The gear itself, which is what tells two builds apart at a glance. Capped at
-   five in the context: a sixth thumbnail does not add information, it just
-   pushes the apply button around. */
-.squire-tray .build-tile-preview {
-    display: flex;
-    gap: 3px;
-    align-items: center;
-    min-width: 0;
+.squire-tray .handle-build-icon {
+    position: relative;
     overflow: hidden;
-}
-
-.squire-tray .build-tile-preview img {
-    flex: 0 0 auto;
-    width: 26px;
-    height: 26px;
-    object-fit: cover;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 3px;
-}
-
-.squire-tray .build-tile-empty {
-    color: rgba(241, 231, 214, 0.4);
-    font-size: 0.66em;
-    font-style: italic;
-}
-
-/* Apply is a button, not the row, and it looks like one. This is the only
-   control in the tray that re-equips a character, so it should be impossible to
-   hit while reaching for something else. */
-.squire-tray .build-tile-apply {
-    flex: 0 0 auto;
-    width: auto;
-    min-width: 0;
-    margin: 0;
-    padding: 3px 9px;
-    line-height: 1;
     cursor: pointer;
-    border: 1px solid rgba(159, 146, 117, 0.4);
     border-radius: 4px;
-    background: rgba(0, 0, 0, 0.4);
-    color: rgba(159, 146, 117, 0.9);
-    font-size: 0.78em;
-    transition: all 0.15s ease;
 }
 
-.squire-tray .build-tile-apply:hover {
-    border-color: var(--squire-color-hover);
-    background: rgba(255, 100, 0, 0.18);
-    color: var(--squire-color-hover);
-    box-shadow: none;
+.squire-tray .handle-build-icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 0;
 }
 
-.squire-tray .build-tile-name {
-    overflow: hidden;
-    color: #f1e7d6;
-    font-size: 0.8em;
-    font-weight: 700;
-    line-height: 1.2;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-.squire-tray .build-tile-stats {
+.squire-tray .handle-build-blank {
     display: flex;
-    flex-wrap: wrap;
-    gap: 9px;
-    color: rgba(241, 231, 214, 0.55);
-    font-size: 0.64em;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: rgba(159, 146, 117, 0.8);
 }
 
-.squire-tray .build-tile-stats i {
-    margin-right: 2px;
-    opacity: 0.8;
-}
-
-.squire-tray .build-tile-warning {
-    color: #f08e78;
-}
-
-/* The empty state is a grid child, so it has to be told to span the whole row
-   or it sits in the first cell at a fifth of the width. */
-.squire-tray .builds-list .builds-empty {
-    grid-column: 1 / -1;
+/* The runner marks these apart from favourites: a favourite is a thing you use,
+   a build is a thing you put on, and the strip has to say which is which. */
+.squire-tray .handle-build-overlay {
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+    color: #f4e7cd;
+    font-size: 0.6em;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+    pointer-events: none;
 }
 
 /* ---------------- THE PAPER DOLL ---------------- */
@@ -220,6 +148,9 @@
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 6px;
+    /* The AC badge hangs below the portrait's edge, and the ring row is directly
+       under it. Without this the shield would sit on top of the waist slot. */
+    margin-bottom: 10px;
 }
 
 /* Thirds, so the weapons are the biggest thing in the window. `aspect-ratio` on
@@ -363,7 +294,9 @@
     opacity: 1;
 }
 
+/* The portrait is the badge's anchor, so it has to be one. */
 .squire-build-portrait {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -379,6 +312,156 @@
     object-fit: cover;
     border: 0;
     border-radius: 0;
+}
+
+/* ---------------- THE BUILD RAIL ----------------
+
+   Every build this character has, down the left. It is the whole builds manager
+   now: a section in the tray gave a narrow column a lot of space for something
+   touched rarely, and split one feature across two places — editing here,
+   applying there. */
+.squire-build-rail {
+    flex: 0 0 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding-right: 10px;
+    border-right: 1px solid var(--blacksmith-tool-divider);
+}
+
+.squire-build-rail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.squire-build-rail-entry {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 7px;
+    cursor: pointer;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-left: 3px solid transparent;
+    border-radius: 4px;
+    background: var(--blacksmith-tool-surface-sunken);
+    transition: all 0.15s ease;
+}
+
+.squire-build-rail-entry:hover {
+    background: var(--blacksmith-tool-surface-hover);
+}
+
+/* The open build is marked on its leading edge rather than by fill: the entries
+   carry item pictures, and a filled background behind them muddies both. */
+.squire-build-rail-entry.is-active {
+    border-left-color: var(--blacksmith-tool-accent);
+    background: var(--blacksmith-tool-surface-selected);
+}
+
+.squire-build-rail-head {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.squire-build-rail-name {
+    overflow: hidden;
+    color: var(--blacksmith-tool-text);
+    font-size: 0.78em;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Apply is its own target inside the entry, never the entry itself. Selecting a
+   build to look at it must not re-equip the character. */
+.squire-build-rail-apply {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    padding: 1px 6px;
+    line-height: 1.4;
+    cursor: pointer;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-radius: 3px;
+    background: var(--blacksmith-tool-surface-raised);
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.7em;
+    transition: all 0.15s ease;
+}
+
+.squire-build-rail-apply:hover {
+    border-color: var(--blacksmith-color-brand-accent, var(--blacksmith-tool-accent));
+    color: var(--blacksmith-tool-text);
+    box-shadow: none;
+}
+
+.squire-build-rail-preview {
+    display: flex;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.squire-build-rail-preview img {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    object-fit: cover;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-radius: 2px;
+}
+
+.squire-build-rail-stats {
+    display: flex;
+    gap: 8px;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.62em;
+}
+
+.squire-build-rail-new {
+    width: 100%;
+    margin: 0;
+    padding: 4px;
+    cursor: pointer;
+    border: 1px dashed var(--blacksmith-tool-divider);
+    border-radius: 4px;
+    background: none;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.72em;
+    transition: all 0.15s ease;
+}
+
+.squire-build-rail-new:hover {
+    border-color: var(--blacksmith-tool-accent);
+    color: var(--blacksmith-tool-text);
+    box-shadow: none;
+}
+
+/* The rail sits beside everything else, so the root is a row and the rest of the
+   window is a column inside it. The name, the doll and the totals all belong to
+   the SELECTED build, so they live together on the right rather than the name
+   floating above a list it does not describe. */
+.squire-build {
+    flex-direction: row;
+    gap: 0;
+}
+
+.squire-build-workspace {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding-left: 10px;
+}
+
+.squire-build-empty {
+    flex: 1 1 auto;
 }
 
 /* ---------------- THE TWO COLUMNS ----------------
@@ -711,26 +794,92 @@
     color: var(--blacksmith-tool-text-muted);
 }
 
-.squire-build-ac {
-    color: var(--blacksmith-tool-text);
-    font-weight: 700;
+/* ---------------- THE AC BADGE ----------------
+
+   Big, on the portrait's hem, where Baldur's Gate puts it — because it is the
+   number you are actually playing against, and it belongs on the character
+   rather than in a line of footnotes under everything else.
+
+   Its value and delta are written directly by the window during a drag, never
+   re-rendered: dragover fires every frame and a re-render would tear the drag
+   apart. */
+.squire-build-ac-badge {
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 62px;
+    height: 62px;
+    transform: translateX(-50%);
 }
 
-.squire-build-ac i {
-    color: var(--blacksmith-tool-accent);
-    font-weight: 400;
+/* The shield is drawn behind the number rather than beside it, so the badge is a
+   shield with a number on it and not a row of two things. */
+.squire-build-ac-badge-shield {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1a1512;
+    font-size: 62px;
+    line-height: 1;
+    text-shadow: 0 0 0 transparent;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
 }
 
-/* "est." is not decoration. This number leaves out class features, fighting
-   styles and active effects, and a bare "AC 18" beside a real attunement count
-   would read as a fact about the character rather than a comparison between
-   builds. */
-.squire-build-ac-note {
-    margin-left: 3px;
-    color: var(--blacksmith-tool-text-muted);
-    font-size: 0.82em;
-    font-style: italic;
-    font-weight: 400;
+.squire-build-ac-badge-value {
+    position: relative;
+    z-index: 1;
+    margin-top: -4px;
+    color: #f4e7cd;
+    font-size: 1.5em;
+    font-weight: 800;
+    line-height: 1;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.squire-build-ac-badge-label {
+    position: relative;
+    z-index: 1;
+    color: rgba(244, 231, 205, 0.6);
+    font-size: 0.5em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* The badge outlines while a hovering item would change it, so the number being
+   different is visibly a PREVIEW and not the build's own value. */
+.squire-build-ac-badge.is-previewing .squire-build-ac-badge-shield {
+    color: #2b2119;
+}
+
+/* The delta rides above the shield, which is the only free space left on it. */
+.squire-build-ac-badge-delta {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    z-index: 2;
+    padding: 1px 5px;
+    border-radius: 9px;
+    background: rgba(8, 6, 4, 0.92);
+    font-size: 0.62em;
+    font-weight: 800;
+    line-height: 1.5;
+}
+
+.squire-build-ac-badge-delta.is-better {
+    color: #7fd97f;
+    box-shadow: 0 0 6px rgba(127, 217, 127, 0.4);
+}
+
+.squire-build-ac-badge-delta.is-worse {
+    color: #f08e78;
+    box-shadow: 0 0 6px rgba(240, 142, 120, 0.4);
 }
 
 /* Says what the window is for. A ring of slots around a portrait otherwise reads

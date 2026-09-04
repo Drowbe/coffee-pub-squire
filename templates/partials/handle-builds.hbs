@@ -1,0 +1,24 @@
+{{!-- BUILDS
+
+      Only appears once a build has been dragged here from the builder's rail.
+      An empty strip would be a permanent question about a feature most
+      characters never use.
+
+      Clicking one EQUIPS it, which is the whole point of a build being on the
+      handle: switching kit without opening anything. It confirms first, like
+      every other path to applying does. --}}
+<div class="handle-builds">
+    {{#each (getHandleBuilds actor)}}
+        <div draggable="true"
+             class="squire-handle-control handle-build-icon"
+             data-build-id="{{this.id}}"
+             data-tooltip="<strong>{{this.name}}</strong><br>AC {{this.armorClass}} · {{this.gearCount}} items<br><em>Click to equip</em><br><em>Right-click to take off the handle</em>">
+            {{#if this.img}}
+            <img draggable="false" src="{{this.img}}" alt="{{this.name}}"/>
+            {{else}}
+            <i class="fa-solid fa-shirt handle-build-blank"></i>
+            {{/if}}
+            <i class="fa-solid fa-person-running handle-build-overlay"></i>
+        </div>
+    {{/each}}
+</div>

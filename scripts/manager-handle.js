@@ -308,6 +308,38 @@ export class HandleManager {
             await openHealthWindow(handleToken ? [handleToken] : null);
         });
 
+        // Builds on the handle. Clicking one EQUIPS it — that is the whole point
+        // of a build being here, switching kit without opening anything — and it
+        // confirms first, like every other route to applying.
+        handleElement.addEventListener('click', async (event) => {
+            const buildIcon = event.target.closest('.handle-build-icon');
+            if (!buildIcon) return;
+            event.preventDefault();
+            event.stopPropagation();
+
+            const actor = this.actor || PanelManager.currentActor;
+            if (!actor?.isOwner) return;
+
+            const { BuildWindow } = await import('./window-build.js');
+            // Routed through the window's own apply so the confirmation, the
+            // receipt and the rules live in one place rather than two that drift.
+            await BuildWindow.applyFromAnywhere(actor, buildIcon.dataset.buildId);
+        });
+
+        handleElement.addEventListener('contextmenu', async (event) => {
+            const buildIcon = event.target.closest('.handle-build-icon');
+            if (!buildIcon) return;
+            event.preventDefault();
+            event.stopPropagation();
+
+            const actor = this.actor || PanelManager.currentActor;
+            if (!actor?.isOwner) return;
+
+            const { removeBuildFromHandle } = await import('./utility-builds.js');
+            await removeBuildFromHandle(actor, buildIcon.dataset.buildId);
+            await this.updateHandle();
+        });
+
         // Handle favorite item clicks
         // v13: Use handleElement (the cloned handle that's actually in the DOM) for event delegation
         handleElement.addEventListener('click', async (event) => {
@@ -404,7 +436,9 @@ export class HandleManager {
         });
 
         handleElement.addEventListener('dragover', (event) => {
-            if (!PanelManager._trayItemDragActive && !PanelManager._handleReorderActive) return;
+            if (!PanelManager._trayItemDragActive
+                && !PanelManager._handleReorderActive
+                && !PanelManager._buildDragId) return;
             // preventDefault is what makes an element a drop target at all;
             // without it the browser refuses the drop and shows the "no" cursor.
             event.preventDefault();
@@ -427,7 +461,8 @@ export class HandleManager {
 
         handleElement.addEventListener('drop', async (event) => {
             const reordering = PanelManager._handleReorderActive;
-            if (!PanelManager._trayItemDragActive && !reordering) return;
+            const buildId = PanelManager._buildDragId;
+            if (!PanelManager._trayItemDragActive && !reordering && !buildId) return;
             event.preventDefault();
             event.stopPropagation();
             handleElement.classList.remove('handle-drop-target');
@@ -441,6 +476,16 @@ export class HandleManager {
 
             const actor = this.actor || PanelManager.currentActor;
             if (!actor?.isOwner) return;
+
+            // A build lands in the handle's build strip, not among its
+            // favourites: they are two lists, and a build is not an item.
+            if (buildId) {
+                const { addBuildToHandle } = await import('./utility-builds.js');
+                await addBuildToHandle(actor, buildId,
+                    event.target.closest('.handle-build-icon')?.dataset.buildId ?? null);
+                await this.updateHandle();
+                return;
+            }
 
             let itemId = null;
 

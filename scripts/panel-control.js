@@ -19,16 +19,10 @@ import { trackModuleTimeout } from './timer-utils.js';
 const MODES = ['sheet', 'favorites', 'search'];
 
 /** Every stacked panel, in tray order. */
-const PANEL_TYPES = ['builds', 'favorites', 'weapons', 'spells', 'features', 'inventory'];
+const PANEL_TYPES = ['favorites', 'weapons', 'spells', 'features', 'inventory'];
 
-/**
- * The panels the favourites view shows, in order.
- *
- * Builds is above Favorites and appears with it rather than being a fourth
- * mode: a build is assembled out of the same items the list below it holds,
- * and separating them would mean switching views mid-drag.
- */
-const FAVORITES_VIEW_PANELS = ['builds', 'favorites'];
+/** The panels the favourites view shows. */
+const FAVORITES_VIEW_PANELS = ['favorites'];
 
 /**
  * The panels the section tabs and the filter bar govern.
@@ -684,6 +678,17 @@ export class ControlPanel {
         // The tray root, not the panel: the panel's innerHTML is replaced on
         // every render, the root is not.
         this._activateCleanupListener(html);
+
+        // Builds opens its own window. Delegated on the panel because the icon
+        // is replaced on every render.
+        controlPanel.addEventListener('click', async (event) => {
+            if (!event.target.closest('.control-builds')) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (!this.actor) return;
+            const { BuildWindow } = await import('./window-build.js');
+            await BuildWindow.open(this.actor);
+        });
 
         // The section tabs. Delegated on the strip rather than bound per tab,
         // for the same reason the filter bar is.

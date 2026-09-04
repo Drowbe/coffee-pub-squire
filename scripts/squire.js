@@ -1394,6 +1394,7 @@ Hooks.once('init', async function() {
     const partials = [
         { name: 'handle-health', path: 'handle-health.hbs' },
         { name: 'handle-favorites', path: 'handle-favorites.hbs' },
+        { name: 'handle-builds', path: 'handle-builds.hbs' },
         { name: 'handle-conditions', path: 'handle-conditions.hbs' },
         { name: 'action-badge', path: 'action-badge.hbs' }
     ];

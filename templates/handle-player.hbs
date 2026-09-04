@@ -28,6 +28,13 @@
         {{> handle-conditions}}
     {{/if}}
 
+    {{!-- BUILDS. Above favourites: switching your whole kit is a bigger, rarer
+          act than reaching for one item, and it should not be at the end of a
+          list that can grow past the strip's height. --}}
+    {{#if (getHandleBuilds actor)}}
+        {{> handle-builds}}
+    {{/if}}
+
     {{!-- FAVOURITES --}}
     {{#if showHandleFavorites}}
         {{#if (getHandleFavorites actor)}}
