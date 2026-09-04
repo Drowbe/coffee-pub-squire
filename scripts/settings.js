@@ -709,6 +709,20 @@ export const registerSettings = function() {
         default: 'list'
     });
 
+    // How the favourites list is ordered: 'manual', 'alpha' or 'category'.
+    // One of FAVORITE_SORTS in panel-favorites.js.
+    //
+    // Defaults to manual, which is the order the `favoritePanel` flag holds and
+    // the one the move-up/move-down entries write. The other two are lenses over
+    // that list and never write to it, so switching away and back returns a
+    // hand-made order intact.
+    game.settings.register(MODULE.ID, 'favoritesSort', {
+        scope: 'user',
+        config: false,
+        type: String,
+        default: 'manual'
+    });
+
     // View Mode Setting
     game.settings.register(MODULE.ID, 'viewMode', {
         name: 'View Mode',

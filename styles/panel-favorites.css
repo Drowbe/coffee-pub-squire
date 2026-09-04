@@ -38,6 +38,21 @@
     opacity: 1;
 }
 
+/* The sort control. Same glyph vocabulary as the layout pair beside it, but
+   always at full strength: it is not a two-position switch with an off state,
+   it is one button whose ICON is the current sort. */
+.squire-tray .favorites-sort-toggle {
+    cursor: pointer;
+    padding: 2px 1px;
+    font-size: 0.85em;
+    color: rgba(159, 146, 117, 0.9);
+    transition: color 0.2s ease;
+}
+
+.squire-tray .favorites-sort-toggle:hover {
+    color: var(--squire-color-hover);
+}
+
 /* Divides "how this is drawn" from "throw it all away". The clear-all is the
    one control here that changes data rather than presentation, and a row of
    three evenly spaced glyphs would say the three are the same kind of thing. */

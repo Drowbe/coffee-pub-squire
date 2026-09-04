@@ -20,6 +20,40 @@ const FAVORITE_SPANS = ['1x1', '2x1', '1x2', '2x2'];
 /** Blacksmith addresses an open menu by id, so this is how it gets closed. */
 const FAVORITE_MENU_ID = 'squire-favorite-menu';
 
+/**
+ * How the favourites list is ordered.
+ *
+ * 'manual' is the order the `favoritePanel` flag holds, which is the order the
+ * move-up/move-down entries write. The other two are views over that list and
+ * do not touch it — switching to alphabetical and back returns the hand-made
+ * order untouched, because sorting never wrote to the flag.
+ */
+const FAVORITE_SORTS = ['manual', 'alpha', 'category'];
+
+const SORT_LABELS = {
+    manual: 'Manual',
+    alpha: 'Alphabetical',
+    category: 'By Category'
+};
+
+const SORT_ICONS = {
+    manual: 'fa-bars-sort',
+    alpha: 'fa-arrow-down-a-z',
+    category: 'fa-layer-group'
+};
+
+/**
+ * Category order for the 'category' sort — the tray's own panel order, so a
+ * sorted favourites list reads down in the same sequence as the section tabs.
+ *
+ * Anything not listed sorts after everything listed, grouped by its own type
+ * name. A homebrew item type should land in a block of its own rather than
+ * scattered through the weapons.
+ */
+const FAVORITE_CATEGORY_ORDER = [
+    'weapon', 'spell', 'feat', 'equipment', 'consumable', 'tool', 'loot', 'backpack'
+];
+
 /** The glyph for each footprint — the shape it makes, not an abstraction of it. */
 const SPAN_ICONS = {
     '1x1': 'fa-square',
@@ -507,7 +541,13 @@ export class FavoritesPanel {
         const index = favorites.indexOf(itemId);
         const items = [];
 
-        if (index > 0) {
+        // Moving is manual-order only. The move entries write positions into the
+        // flag, and under a sort those positions are not what you are looking
+        // at — "Move Up" would rewrite an order the screen is not showing and
+        // appear to do nothing at all.
+        const canReorder = FavoritesPanel.getSort() === 'manual';
+
+        if (canReorder && index > 0) {
             items.push({
                 name: 'Move to Top',
                 icon: 'fa-solid fa-angle-double-up',
@@ -519,7 +559,7 @@ export class FavoritesPanel {
             });
         }
 
-        if (index > -1 && index < favorites.length - 1) {
+        if (canReorder && index > -1 && index < favorites.length - 1) {
             items.push({
                 name: 'Move Down',
                 icon: 'fa-solid fa-angle-down',
@@ -630,6 +670,54 @@ export class FavoritesPanel {
     }
 
     /**
+     * The favourites list's order: 'manual', 'alpha' or 'category'.
+     *
+     * Validated on read for the same reason getLayout is: a value from an older
+     * build should fall back to the hand-made order rather than to a sort
+     * nothing implements, which would silently show the list unsorted while the
+     * header claimed otherwise.
+     */
+    static getSort() {
+        const stored = game.settings.get(MODULE.ID, 'favoritesSort');
+        return FAVORITE_SORTS.includes(stored) ? stored : 'manual';
+    }
+
+    /**
+     * Order a mapped favourites list.
+     *
+     * Sorts a COPY and only ever reorders what it was given: the flag is the
+     * manual order and no sort may write to it. That is what makes alphabetical
+     * a lens rather than a one-way door — switch back to manual and the order
+     * somebody arranged by hand is still there.
+     */
+    static _sortFavorites(favorites, sort) {
+        if (sort === 'manual') return favorites;
+
+        // `sensitivity: 'base'` so "arrow" and "Arrow" sort together rather than
+        // in two blocks divided by case, which is how a naive sort separates
+        // items somebody named inconsistently.
+        const byName = (a, b) =>
+            (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+
+        if (sort === 'alpha') return [...favorites].sort(byName);
+
+        const rank = (type) => {
+            const index = FAVORITE_CATEGORY_ORDER.indexOf(type);
+            return index === -1 ? FAVORITE_CATEGORY_ORDER.length : index;
+        };
+
+        return [...favorites].sort((a, b) => {
+            const delta = rank(a.type) - rank(b.type);
+            if (delta !== 0) return delta;
+            // Two unlisted types share a rank, so they are separated by type
+            // name before falling through to the item name — otherwise every
+            // homebrew type would interleave into one block.
+            if (a.type !== b.type) return (a.type || '').localeCompare(b.type || '');
+            return byName(a, b);
+        });
+    }
+
+    /**
      * How the favourites view draws its rows: 'list' or 'tiles'.
      *
      * Validated rather than returned raw, so a setting written by an older
@@ -728,7 +816,7 @@ export class FavoritesPanel {
                 };
             }));
             
-        return favoritedItems;
+        return FavoritesPanel._sortFavorites(favoritedItems, FavoritesPanel.getSort());
     }
 
     async render(html) {
@@ -745,7 +833,11 @@ export class FavoritesPanel {
         const favoritesData = {
             favorites: this.favorites,
             hasFavorites: this.favorites.length > 0,
-            layout: FavoritesPanel.getLayout()
+            layout: FavoritesPanel.getLayout(),
+            // The icon IS the state — the header shows which sort is on rather
+            // than a generic sort glyph you have to open a menu to interrogate.
+            sortIcon: SORT_ICONS[FavoritesPanel.getSort()],
+            sortLabel: SORT_LABELS[FavoritesPanel.getSort()]
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_FAVORITES, favoritesData);
@@ -822,7 +914,7 @@ export class FavoritesPanel {
         // replacing this panel's markup no longer takes it with it — it would
         // otherwise sit there over an empty panel, its entries still pointing at
         // rows that have been rebuilt underneath it.
-        getBlacksmith()?.uiContextMenu?.close(FAVORITE_MENU_ID);
+        getBlacksmith().uiContextMenu.close(FAVORITE_MENU_ID);
     }
 
     _activateListeners(html) {
@@ -855,19 +947,13 @@ export class FavoritesPanel {
             const row = event.target.closest('.panel-item[data-item-id]');
             if (!row) return;
 
-            const menu = getBlacksmith()?.uiContextMenu;
-            // No Blacksmith means no menu. Letting the browser's own appear
-            // instead would offer Copy Image on a tile, which is worse than
-            // nothing happening.
-            if (!menu) return;
-
             event.preventDefault();
             event.stopPropagation();
 
             const items = this._buildMenuItems(row.dataset.itemId);
             if (!items.length) return;
 
-            menu.show({
+            getBlacksmith().uiContextMenu.show({
                 id: FAVORITE_MENU_ID,
                 x: event.clientX,
                 y: event.clientY,
@@ -1085,6 +1171,38 @@ export class FavoritesPanel {
             if (layout === FavoritesPanel.getLayout()) return;
             await game.settings.set(MODULE.ID, 'favoritesLayout', layout);
             await this.render(this.element);
+        }, { signal: listenerSignal });
+
+        // Sort. A menu rather than a cycling button: three states do not cycle
+        // legibly, and the same flyout vocabulary as Tile Size means one kind of
+        // "pick one of these" gesture in this panel rather than two.
+        panel.addEventListener('click', (event) => {
+            const toggle = event.target.closest('.favorites-sort-toggle');
+            if (!toggle) return;
+            event.preventDefault();
+            event.stopPropagation();
+
+            const current = FavoritesPanel.getSort();
+            const rect = toggle.getBoundingClientRect();
+
+            getBlacksmith().uiContextMenu.show({
+                id: FAVORITE_MENU_ID,
+                // Anchored under the icon rather than at the pointer: this one is
+                // opened by a left-click on a known control, so it should drop
+                // from that control the way any menu button does.
+                x: rect.left,
+                y: rect.bottom + 2,
+                zones: FAVORITE_SORTS.map(sort => ({
+                    name: SORT_LABELS[sort],
+                    icon: `fa-solid ${SORT_ICONS[sort]}`,
+                    disabled: sort === current,
+                    callback: async () => {
+                        await game.settings.set(MODULE.ID, 'favoritesSort', sort);
+                        await this.render(this.element);
+                    }
+                })),
+                className: 'squire-favorite-context-menu'
+            });
         }, { signal: listenerSignal });
 
         // Add clear all button listener

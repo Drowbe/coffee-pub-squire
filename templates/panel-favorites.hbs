@@ -21,6 +21,12 @@
            data-layout="list" data-tooltip="Show favourites as a list"></i>
         <i class="fa-solid fa-grid-2 favorites-layout-toggle{{#if (eq layout 'tiles')}} active{{/if}}"
            data-layout="tiles" data-tooltip="Show favourites as tiles"></i>
+        <span class="favorites-header-separator"></span>
+        {{!-- Sort opens a menu rather than being three more glyphs in the row.
+              Three layout-ish icons and three sort icons side by side would be
+              six controls saying two different kinds of thing, and the header is
+              already carrying the clear-all. --}}
+        <i class="fa-solid {{sortIcon}} favorites-sort-toggle" data-tooltip="Sort: {{sortLabel}}"></i>
         {{#if hasFavorites}}
         <span class="favorites-header-separator"></span>
         <i class="fa-solid fa-heart-circle-xmark favorites-clear-all" title="Clear All Favorites"></i>
