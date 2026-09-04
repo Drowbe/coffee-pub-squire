@@ -1,0 +1,211 @@
+/* ==========================================================================
+   FAVORITES
+
+   The favourites view: its header switch, and the tile layout.
+
+   The list layout is not here. It is the ordinary `.panel-item` row every other
+   panel draws, styled in tray-item.css, and favourites deliberately does not
+   restyle it — a favourite weapon should look like the same weapon it looks
+   like everywhere else.
+   ========================================================================== */
+
+/* ---------------- HEADER SWITCH ---------------- */
+
+/* The list/tiles pair and the clear-all, in the section header's right zone.
+   Same vocabulary as the filter chips one panel up: bare glyphs, on is full
+   strength, off is dimmed, nothing paints a background. */
+.squire-tray .favorites-panel .header-right {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.squire-tray .favorites-layout-toggle {
+    cursor: pointer;
+    padding: 2px 1px;
+    font-size: 0.85em;
+    color: rgba(159, 146, 117, 0.9);
+    opacity: 0.35;
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.squire-tray .favorites-layout-toggle.active {
+    opacity: 1;
+}
+
+.squire-tray .favorites-layout-toggle:hover {
+    color: var(--squire-color-hover);
+    opacity: 1;
+}
+
+/* Divides "how this is drawn" from "throw it all away". The clear-all is the
+   one control here that changes data rather than presentation, and a row of
+   three evenly spaced glyphs would say the three are the same kind of thing. */
+.squire-tray .favorites-header-separator {
+    width: 1px;
+    align-self: stretch;
+    margin: 2px 1px;
+    background: rgba(159, 146, 117, 0.35);
+}
+
+/* ---------------- TILE LAYOUT ----------------
+
+   Borrowed from the merchant module's shop wall, with one deliberate change.
+
+   What is borrowed: the tile IS the picture, not a card with a picture on it.
+   The words sit over the bottom of the art under a gradient, which is the one
+   treatment that stays legible over artwork nobody chose for the purpose — a
+   flat caption panel becomes a band of colour across every tile, and a plain
+   text shadow vanishes on a pale image. Small dark plates carry anything that
+   has to be read against the art.
+
+   What differs: merchant packs three tile sizes (1x1, 1x2, 2x2) and computes an
+   explicit placement for every one, because it sells the leftover cells as
+   advertising and therefore has to know which cells are free. Nothing here is
+   for sale. Every favourite is equally a thing you reach for, so they are equal
+   squares in a plain grid and the browser places them.
+
+   The markup is the list's markup, unchanged. Every control on a row is
+   delegated from the panel, so re-shaping rows in CSS keeps rolling, equipping,
+   unfavouriting and drag-to-handle working with no second template to keep in
+   step. That is why this file is all positioning and no new elements. */
+
+.squire-tray .favorites-list.favorites-layout-tiles {
+    display: grid;
+    /* Three across at the tray's 400px floor gives ~118px tiles; `auto-fill`
+       rather than `repeat(3, ...)` so a widened tray gets a fourth column
+       instead of three fatter squares. */
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 6px;
+    padding: 2px;
+}
+
+/* Square, and the picture fills it. `aspect-ratio` rather than a fixed row
+   height so the tiles stay square as the columns stretch. */
+.squire-tray .favorites-layout-tiles .panel-item {
+    position: relative;
+    aspect-ratio: 1;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.squire-tray .favorites-layout-tiles .panel-item:hover {
+    border-color: rgba(255, 100, 0, 0.6);
+}
+
+/* The row's flex wrapper stops being a row and becomes the tile's frame; every
+   child below positions itself against it. */
+.squire-tray .favorites-layout-tiles .panel-item-row {
+    display: block;
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    gap: 0;
+}
+
+/* The image container is the whole tile rather than a 24px chip, which also
+   means the d20 roll overlay it already carries covers the whole tile — the
+   same hover-to-roll target the list has, just bigger. */
+.squire-tray .favorites-layout-tiles .panel-item-image-container {
+    position: absolute;
+    inset: 0;
+    flex: none;
+    width: auto;
+    height: auto;
+}
+
+.squire-tray .favorites-layout-tiles .panel-item-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    object-fit: cover;
+}
+
+/* The overlay is `inset: 0` on its container, so on a tile it becomes a
+   full-tile hover scrim with the d20 in the middle — and because the click
+   handler tests for the overlay element itself, hovering and clicking anywhere
+   on the tile rolls. That is the list's behaviour scaled up, not a new one.
+
+   Sized in px, not em: the base rule is an absolute 16px, so an em here would
+   be relative to the inherited font size rather than to that. */
+.squire-tray .favorites-layout-tiles .panel-item-roll-overlay {
+    font-size: 28px;
+}
+
+/* The caption. Bottom-anchored on its gradient, over the art. */
+.squire-tray .favorites-layout-tiles .panel-item-name {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    padding: 14px 5px 4px;
+    background: linear-gradient(to top, rgba(8, 6, 4, 0.92) 45%, rgba(8, 6, 4, 0));
+    pointer-events: none;
+}
+
+/* Two lines then clip. A tile is not wide enough to argue with a long name, and
+   letting one push the badges around would make every tile a different shape
+   inside. */
+.squire-tray .favorites-layout-tiles .panel-item-label {
+    display: -webkit-box;
+    overflow: hidden;
+    color: #f1e7d6;
+    font-size: 0.72em;
+    line-height: 1.2;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+/* Action badge and quantity, bottom-right on the same gradient the name sits
+   on. Above the caption's z-index because the quantity is click-to-edit and the
+   caption is pointer-events: none — the badge has to take its own clicks back. */
+.squire-tray .favorites-layout-tiles .panel-item-context {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    z-index: 2;
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    margin-left: 0;
+    pointer-events: auto;
+}
+
+/* The row controls, top-right, on a plate so they survive a pale image. Always
+   visible rather than shown on hover: on a touch device and for anyone reading
+   rather than pointing, a control that only exists under the cursor does not
+   exist. */
+.squire-tray .favorites-layout-tiles .tray-buttons {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    z-index: 2;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 2px 4px;
+    border-radius: 3px;
+    background: rgba(8, 6, 4, 0.72);
+}
+
+.squire-tray .favorites-layout-tiles .tray-buttons i {
+    font-size: 0.72em;
+}
+
+/* The NEW badge takes the top-left corner, opposite the controls — the only
+   corner left, and the one the eye reaches first. */
+.squire-tray .favorites-layout-tiles .new-tag {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    z-index: 2;
+}

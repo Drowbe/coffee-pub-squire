@@ -45,6 +45,8 @@
 
 @import "panel-character-summary.css";
 
+@import "panel-favorites.css";
+
 @import "panel-inventory.css";
 
 @import "panel-spells.css"; 

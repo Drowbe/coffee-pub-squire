@@ -119,7 +119,14 @@ Click the heart on a row. Click it again to remove it.
 
 The **heart in the Character Sheet strip** opens your favourites on their own: no tabs, no search box
 and no filter bar, just the list and its **Clear All Favorites** button. The person icon beside the
-heart goes back to the sheet.
+heart goes back to the sheet. Squire opens on whichever of the two you were last in, and on favourites
+the first time.
+
+Favourites draw two ways, and the pair of icons at the right of the Favorites header switches between
+them. **List** is the ordinary row, the same one every other section uses. **Tiles** is a grid of
+squares, each one the item's own artwork with its name across the bottom; the controls sit top-right
+and hovering a tile brings up the die, exactly as hovering a row's picture does. Whichever you pick is
+remembered.
 
 Favourites are shared with the character sheet in both directions: favourite something in the tray and
 it appears on the sheet, favourite it on the sheet and it appears in the tray, and removing it in

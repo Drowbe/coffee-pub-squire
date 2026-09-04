@@ -3,14 +3,36 @@
     <div class="header-left">
         <i class="fa-solid fa-heart"></i> Favorites
     </div>
+    {{!--
+        List or tiles, then clear-all.
+
+        The layout switch lives here rather than in the Character Sheet strip
+        above because it is a choice WITHIN this view, not a choice of view --
+        the strip's three icons say where you are, and a fourth saying how this
+        one is drawn would be a different kind of thing wearing the same clothes.
+        Clear-all keeps the last slot it has always had.
+
+        Two icons rather than one that toggles: a single button has to show
+        either the state or the action and is read as the wrong one half the
+        time. A pair is a two-position switch, which is what this is.
+    --}}
     <div class="header-right">
+        <i class="fa-solid fa-list favorites-layout-toggle{{#if (eq layout 'list')}} active{{/if}}"
+           data-layout="list" data-tooltip="Show favourites as a list"></i>
+        <i class="fa-solid fa-grid-2 favorites-layout-toggle{{#if (eq layout 'tiles')}} active{{/if}}"
+           data-layout="tiles" data-tooltip="Show favourites as tiles"></i>
         {{#if hasFavorites}}
+        <span class="favorites-header-separator"></span>
         <i class="fa-solid fa-heart-circle-xmark favorites-clear-all" title="Clear All Favorites"></i>
         {{/if}}
     </div>
 </div>
 
-    <div class="favorites-list">
+    {{!-- The tile layout is the same rows under a different class: every control
+          on a row is delegated from the panel, so re-shaping them in CSS keeps
+          rolling, equipping, unfavouriting and drag-to-handle working without a
+          second copy of the markup to keep in step. --}}
+    <div class="favorites-list favorites-layout-{{layout}}">
         {{#if favorites}}
         {{#each favorites}}
         <div draggable="true" class="panel-item" 

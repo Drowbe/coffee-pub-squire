@@ -680,6 +680,35 @@ export const registerSettings = function() {
         default: 'all'
     });
 
+    // Which of the three views the Character tab opens on: 'sheet' or
+    // 'favorites'. One of MODES in panel-control.js, minus 'search'.
+    //
+    // 'search' is never written here. Compendium quick-add is a thing you are
+    // in the middle of doing, not a place you live, and restoring into it on
+    // load would also mean restoring into a mode the GM may since have revoked
+    // access to. Leaving it returns you to whatever this last held.
+    //
+    // Favourites is the default because it is the answer to "what do I reach
+    // for", which is the question the tray is open to answer most of the time.
+    game.settings.register(MODULE.ID, 'controlMode', {
+        scope: 'user',
+        config: false,
+        type: String,
+        default: 'favorites'
+    });
+
+    // How the favourites view draws its rows: 'list' or 'tiles'.
+    //
+    // Defaults to list because that is what favourites has always looked like
+    // and a layout is not a thing to change under someone. Remembered per user
+    // from the first time they press the other one.
+    game.settings.register(MODULE.ID, 'favoritesLayout', {
+        scope: 'user',
+        config: false,
+        type: String,
+        default: 'list'
+    });
+
     // View Mode Setting
     game.settings.register(MODULE.ID, 'viewMode', {
         name: 'View Mode',

@@ -475,6 +475,19 @@ export class FavoritesPanel {
         }
     }
 
+    /**
+     * How the favourites view draws its rows: 'list' or 'tiles'.
+     *
+     * Validated rather than returned raw, so a setting written by an older
+     * build or edited by hand lands on the list instead of on a layout class
+     * no stylesheet defines -- which would render as an unstyled column of
+     * naked rows rather than as anything recognisable.
+     */
+    static getLayout() {
+        const stored = game.settings.get(MODULE.ID, 'favoritesLayout');
+        return stored === 'tiles' ? 'tiles' : 'list';
+    }
+
     constructor(actor) {
         this.actor = actor;
         this.favorites = []; // Initialize empty, will be populated in render
@@ -643,7 +656,8 @@ export class FavoritesPanel {
         
         const favoritesData = {
             favorites: this.favorites,
-            hasFavorites: this.favorites.length > 0
+            hasFavorites: this.favorites.length > 0,
+            layout: FavoritesPanel.getLayout()
         };
 
         const template = await renderTemplate(TEMPLATES.PANEL_FAVORITES, favoritesData);
@@ -955,6 +969,22 @@ export class FavoritesPanel {
 
         // Open the container an item is stored inside
         activateContainerListener(panel, this.actor, listenerSignal);
+
+        // List / tiles. Delegated on the panel like everything else here, and
+        // re-rendered rather than just re-classed: the row markup is identical
+        // in both layouts, but a re-render is what keeps the header's own lit
+        // state in step with what it just did.
+        panel.addEventListener('click', async (event) => {
+            const toggle = event.target.closest('.favorites-layout-toggle');
+            if (!toggle) return;
+            event.preventDefault();
+            event.stopPropagation();
+
+            const layout = toggle.dataset.layout;
+            if (layout === FavoritesPanel.getLayout()) return;
+            await game.settings.set(MODULE.ID, 'favoritesLayout', layout);
+            await this.render(this.element);
+        }, { signal: listenerSignal });
 
         // Add clear all button listener
         // v13: Use nativeHtml instead of html

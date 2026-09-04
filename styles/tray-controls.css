@@ -228,11 +228,24 @@
 
 /* Lives in the title bar's right zone, the same slot the GM Details and
    Character Summary chevrons occupy — so a right-edge icon consistently means
-   "this header has an action". */
+   "this header has an action".
+
+   The gap went from 4px to 7px when the heart made it three icons: at 4px a row
+   of three glyphs reads as one shape rather than as three targets, and these are
+   click targets barely wider than the glyph itself. The right pad keeps the last
+   icon off the panel edge. */
 .squire-tray [data-panel="control"] .control-mode-toggles {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 7px;
+    padding-right: 2px;
+}
+
+/* A little room of its own around each glyph, so the hit area is bigger than the
+   ink and a near miss lands on nothing rather than on the neighbour. */
+.squire-tray [data-panel="control"] .control-mode-toggle,
+.squire-tray [data-panel="control"] .control-cleanup {
+    padding: 2px 1px;
 }
 
 /* The mode toggles and the cleanup launcher are one cluster of header icons,
@@ -258,15 +271,6 @@
     color: rgba(159, 146, 117, 0.9);
     background: none;
     transition: color 0.2s ease, opacity 0.2s ease;
-}
-
-/* The lit heart is red. Every other toggle in the strip says "selected" with
-   opacity alone, which is enough when the choice is a pair; with three it is
-   worth one of them being unmistakable, and the heart is already the icon whose
-   colour means something everywhere else in the tray. #ff4444 is the same
-   red a favourited row's heart already uses -- see .tray-buttons .fa-heart. */
-.squire-tray [data-panel="control"] .control-mode-toggle[data-mode="favorites"].active {
-    color: #ff4444;
 }
 
 /* Off is dimmed, on is simply not dimmed — exactly what .filter-chip does, with

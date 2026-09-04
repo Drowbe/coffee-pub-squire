@@ -130,10 +130,10 @@ export class ControlPanel {
         // tray opens showing everything.
         this._onlyEquipped = false;
         this._onlyPrepared = false;
-        // Which of MODES the column is showing. Not persisted: 'sheet' is where
-        // the tray opens, and every mode is a lit icon plus an obviously
-        // different column, so there is nothing here for a stale value to hide.
-        this._mode = 'sheet';
+        // Which of MODES the column is showing. Seeded from the remembered view
+        // -- see `controlMode` in settings.js for why 'search' is never one of
+        // the values that can come back.
+        this._mode = ControlPanel._rememberedMode();
     }
 
     /**
@@ -311,6 +311,22 @@ export class ControlPanel {
         return this._onlyEquipped || this._onlyPrepared;
     }
 
+    /**
+     * The view to open on, from the remembered setting.
+     *
+     * Static because the constructor needs it before there is an instance, and
+     * validating here rather than trusting the stored string means a value
+     * written by an older build -- or one naming a mode that no longer exists --
+     * lands on favourites instead of on nothing at all.
+     *
+     * 'search' is rejected as well as unknown values: it is never written, but
+     * a hand-edited setting should not be able to open the tray into quick-add.
+     */
+    static _rememberedMode() {
+        const stored = game.settings.get(MODULE.ID, 'controlMode');
+        return (stored === 'sheet' || stored === 'favorites') ? stored : 'favorites';
+    }
+
     /** True while the compendium quick-add results panel is showing. */
     get isCompendiumMode() {
         return this._mode === 'search';
@@ -327,6 +343,13 @@ export class ControlPanel {
     async setMode(mode) {
         if (!MODES.includes(mode) || this._mode === mode) return;
         this._mode = mode;
+
+        // Remember where they were, but never quick-add: leaving it should put
+        // you back where you were before you went looking, not leave the tray
+        // opening into a search box next session.
+        if (mode !== 'search') {
+            await game.settings.set(MODULE.ID, 'controlMode', mode);
+        }
 
         const searchPanel = PanelManager.instance?.compendiumSearchPanel;
         this._bindSearchPanelClose();
