@@ -86,9 +86,9 @@ coffee-pub-squire/
 | Character | panel-character.js | Portrait, name, class/level, speeds, quick actions |
 | GM | panel-gm.js | GM-only actor details |
 | Character Summary | panel-character-summary.js | Portrait, HP, abilities, AC/speed/senses, XP |
-| Control | panel-control.js | Search, type chips, action and state filters |
+| Control | panel-control.js | Search, the three view modes (sheet / favourites / compendium quick-add), the section tabs, the action-cost chips and the two availability switches |
 | Compendium Search | panel-compendium-search.js | Quick-add search over Blacksmith's Compendiums API |
-| Favorites | panel-favorites.js | Pinned items |
+| Favorites | panel-favorites.js | Pinned items, in their own view rather than the panel stack. Two layouts (list or tiles), three sort orders, and a per-item tile footprint set from Blacksmith's context menu |
 | Weapons | panel-weapons.js | Weapon attacks |
 | Spells | panel-spells.js | Spell slots, casting |
 | Features | panel-features.js | Class/race features |
@@ -126,7 +126,7 @@ The tray has a collapsible handle (left edge) and main content:
 
 - **Handle**: Pin, collapse and view-cycle buttons; handle content (portrait, health bar, favorites, conditions, health-tray button)
 - **Content**: View tabs (Character, Party) and stacked panel containers
-- **Player view**: Character Summary, GM (if GM), Control, Favorites/Weapons/Spells/Features/Inventory. Health and Status Effects open as Blacksmith windows.
+- **Player view**: Character Summary, GM (if GM), Control, then whichever the Control panel's mode selects — the open section tab's panel, the Favorites panel, or the compendium results. Health and Status Effects open as Blacksmith windows.
 
 ## Blacksmith Integration
 

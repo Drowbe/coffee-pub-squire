@@ -13,7 +13,7 @@ and favourites sit one click away down the left edge of the screen, with hit poi
 readable at a glance even when the tray is closed. A second tab turns the same tray into a party view
 with item transfers, reputation, and the GM's party tools.
 
-![The tray open on the Character tab: the character block, GM Details, Summary, the Character Sheet strip with its filter bar and search, then Favorites and Weapons, with the handle beside it and a transfer in progress](documentation/assets/product-expanded.webp)
+![The tray open on the Character tab: the character block, GM Details, Summary, the Character Sheet strip with its search box, section tabs and filter bar, then the open section, with the handle beside it and a transfer in progress](documentation/assets/product-expanded.webp)
 
 ## What it does
 
@@ -22,9 +22,10 @@ with item transfers, reputation, and the GM's party tools.
 - **Roll from the tray.** Click a row to attack, cast, or drink it. Hover it for the D&D 5e system's
   own item card, without opening a sheet.
 - **Favourites that agree with the sheet.** Favourite something in either place and it appears in both.
-  Drag one onto the handle and it stays reachable with the tray closed.
-- **Filters that answer a question.** Fourteen chips over one search box: what costs an action, what
-  am I carrying but not wearing, what could I prepare that I have not.
+  Drag one onto the handle and it stays reachable with the tray closed. They get a view of their own,
+  as a list or as a wall of tiles you can size and sort.
+- **Filters that answer a question.** Section tabs pick what you are looking at; five chips ask what
+  it costs to use; two switches narrow to what is equipped or prepared right now.
 - **Item transfers between characters.** Drag an item onto a party member, or use the send arrow.
   Optionally routed through the GM for approval, with chat cards carrying each step.
 - **A party view.** Everyone on the scene with their health, plus per-scene party reputation and, for

@@ -14,7 +14,8 @@ The Party tab shows all player-owned tokens on the current scene (and, for GMs, 
 
 - **View**: Party tab (`viewMode === 'party'`).
 - **Visibility**: Controlled by `showTabParty` (user setting); tab can be hidden.
-- **Order**: Party toolbar (Select Party / Award) → `[data-panel="party"]` (PartyPanel) → `[data-panel="party-stats"]` (PartyStatsPanel, if `showPartyStatsPanel`).
+- **Order**: Party toolbar (Select Party / Award) → `[data-panel="party-header"]` → `.party-view-scroll` holding `[data-panel="party"]` (PartyPanel) and `[data-panel="party-stats"]` (PartyStatsPanel, if `showPartyStatsPanel`).
+- **Two zones, one panel.** `PartyPanel.render()` fills both containers: reputation, party health and the name filter go to the header, the roster to the scrolling half. The tab itself scrolls nothing — the header is `flex: 0 0 auto` and the scroll wrapper takes the rest, so filtering a long roster never scrolls away the box being typed into.
 - **Container**: `templates/tray.hbs` includes party-view content; `PanelManager` injects party and party-stats HTML into their containers.
 
 ## Project Files

@@ -33,7 +33,7 @@ reload.
 **Excluded Users** -- the world's. A comma-separated list of user IDs who never see the tray. For a
 player who does not want it, or a display account.
 
-**Tray Width** -- this browser's. How wide the open tray is, from 350 to 600 pixels in steps of 25.
+**Tray Width** -- this browser's. How wide the open tray is, from 400 to 600 pixels in steps of 25.
 400 by default. It takes effect immediately, and a pinned tray pushes Foundry's interface across by
 the new amount.
 
@@ -164,8 +164,11 @@ it means something:
 - **The handle's narrow or wide shape**, toggled by the left-right arrow on the handle itself.
 - **The inventory's flat or grouped-by-container view**, toggled from the Inventory panel's own title
   bar.
-- **The filter chips** on the Character Sheet strip. The five item-type chips are remembered between
-  sessions; the action-cost ones deliberately are not.
+- **The Character Sheet strip's own controls.** Which view you were in (the sheet or your favourites),
+  which section tab was open, and how favourites were laid out and sorted are all remembered. The five
+  action-cost chips and the Equipped and Prepared switches deliberately are not: they answer "what can
+  I do right now", and coming back a week later to a sheet quietly filtered by them would be worse than
+  starting from everything.
 
 Squire has no colour theme setting. It had one once, offering Dark, Light and Custom; the control is
 gone and the tray has a single appearance.

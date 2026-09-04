@@ -12,7 +12,7 @@ The Character tab is the **Player** view of the Squire tray. It shows the curren
 ## Placement in the Tray
 
 - **View**: Player tab (`viewMode === 'player'`).
-- **Order**: First panel when `actor` exists: Character → Character Summary → GM (if GM) → Control → Favorites/Weapons/Spells/Features/Inventory. Health and Status Effects are Blacksmith windows opened from the handle, not tray panels; Dice Tray and Macros are Blacksmith's menubar tools and Squire does not touch them.
+- **Order**: First panel when `actor` exists: Character → Character Summary → GM (if GM) → Control → the stacked panels. Which of the stacked panels is visible is the Control panel's business, not this order's: its mode picks between the sheet, favourites and compendium quick-add, and on the sheet its section tab picks between Weapons, Spells, Features and Inventory (or shows all four on **All**). Favorites is in the same stack but only ever visible in its own mode. Health and Status Effects are Blacksmith windows opened from the handle, not tray panels; Dice Tray and Macros are Blacksmith's menubar tools and Squire does not touch them.
 - **The handle is 60px and shows the same thing in every tray state.** `SQUIRE.TRAY_HANDLE_WIDTH` is that width, because the handle is what stays on screen when the tray collapses and both the collapsed transform and the `#ui-left` margin are measured off it. Everything in the column — portrait, HP chip, each favorite, the conditions grid — is exactly the column's width and lines up flush; conditions pack two to a row inside their own group.
 - **Container**: `templates/tray.hbs` includes `<div class="panel-container" data-panel="character" data-clickable="true"></div>`; `PanelManager` injects the character panel HTML there.
 
