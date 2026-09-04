@@ -89,49 +89,25 @@
 
 /* ---------------- THE PAPER DOLL ---------------- */
 
-/* The window's own ground.
+/* No background image here, deliberately.
    
-   Applied to THIS module's content root, not to the shell — the Blacksmith
-   window API is explicit that the frame, title bar and cover belong to the base
-   class, and an id-level selector over them can silence its minimisation.
-   Everything here is inside `bodyContent`.
+   Two were tried: a daylit photograph, which fought everything on top of it —
+   a scene has its own subjects and its own bright and dark regions, and sixteen
+   dark boxes with pale captions land wherever the composition happens to put
+   them — and then a dark texture scrimmed back to a fifth, which was quieter and
+   still wrong. What the window actually wants behind the slots is the shell's
+   own surface: the doll is already busy with artwork, borders, rarity glows and
+   corner badges, and anything underneath it is one more thing competing.
    
-   A TEXTURE, not a scene. A photograph behind the doll was the first attempt and
-   it fought everything on top of it: a daylit field has its own subjects, its
-   own bright and dark regions, and sixteen dark boxes with pale captions landing
-   wherever the composition happened to put them. This is mottled dark green with
-   its own vignette — it reads as the surface the slots are laid on rather than
-   as a picture they are covering up, which is the only job a background in a
-   working window has.
-   
-   Almost entirely hidden, and meant to be. At a fifth visible it reads as
-   texture in the surface — something you notice only if you look for it — and
-   at anything more it starts being a green thing behind the slots rather than
-   the ground under them. The scrim is nearly opaque on purpose: what survives it
-   is the mottling and the vignette, which is the whole of what this is for. */
+   If this is revisited, the lesson from both attempts is that the background has
+   to read as the surface the slots are laid ON rather than as a picture they are
+   covering up — and at the point it is quiet enough to manage that, it is not
+   contributing enough to justify the file. */
 .squire-build {
-    position: relative;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 8px;
-    border-radius: 4px;
-    background-image:
-        linear-gradient(rgba(8, 6, 4, 0.88), rgba(8, 6, 4, 0.92)),
-        url('../images/banners/panel-background-03.webp');
-    background-position: center;
-    background-size: cover;
-    background-repeat: no-repeat;
-}
-
-/* The readouts and the footer sit directly on the picture rather than in a box,
-   so they carry their own shadow to stay legible over whatever is behind them. */
-.squire-build-readout-label,
-.squire-build-caster-name,
-.squire-build-caster-count,
-.squire-build-summary,
-.squire-build-note {
-    text-shadow: 0 1px 3px rgba(8, 6, 4, 0.9);
+    padding: 4px;
 }
 
 /* The name is an input rather than a title, because renaming is the second
