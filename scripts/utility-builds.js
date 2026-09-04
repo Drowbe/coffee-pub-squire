@@ -53,19 +53,26 @@ export const BUILD_BODY_SLOTS = [
     { key: 'waist', label: 'Waist', icon: 'fa-grip-lines',        row: 5, column: 3 },
     { key: 'hip2',  label: 'Hip',   icon: 'fa-sack',              row: 5, column: 4 },
     { key: 'ring2', label: 'Ring',  icon: 'fa-ring',              row: 5, column: 5 },
-    { key: 'feet',  label: 'Feet',  icon: 'fa-boot',              row: 6, column: 3 }
+    { key: 'feet',  label: 'Feet',  icon: 'fa-boot',              row: 6, column: 3 },
+    // Ammo rides the Feet row, at the outer columns, directly above the weapons
+    // it feeds. Two rather than one per weapon: a quiver is a thing you carry,
+    // not a thing each hand carries, and three would have implied that Both
+    // Hands needs its own supply separate from the bow in it.
+    { key: 'ammo1', label: 'Ammo',  icon: 'fa-bow-arrow',         row: 6, column: 1, round: true },
+    { key: 'ammo2', label: 'Ammo',  icon: 'fa-bow-arrow',         row: 6, column: 5, round: true }
 ];
 
 /**
  * The weapon slots, in their own row under the doll.
  *
- * A grid of their own, but on the SAME five columns the body uses, with the
- * three slots at columns 1, 3 and 5. Equal thirds was the first arrangement and
- * it made these three the only slots in the window that were not square, because
- * a third of the width is not a fifth of it. Sharing the column track makes them
- * exactly the size of every other slot and lines them up under the ring row; the
- * separate grid survives only to keep the visual break between the doll and the
- * weapons.
+ * Three equal thirds, which makes them the biggest slots in the window — and
+ * they should be. Everything above is worn; these are what the character
+ * actually swings, and the doll reading with weight at the bottom is most of
+ * why it looks like a character rather than a spreadsheet.
+ *
+ * They were briefly on the body's five columns, to make them square. That is no
+ * longer what squareness costs: `aspect-ratio` on the slot means a third of the
+ * width is square at a third of the width, so they can be as big as they deserve.
  *
  * Both Hands does NOT lock Main and Off. A two-handed weapon occupying all three
  * is a rule the game system knows and this module does not — enforcing it here
@@ -74,11 +81,11 @@ export const BUILD_BODY_SLOTS = [
  * somebody meant.
  */
 export const BUILD_WEAPON_SLOTS = [
-    { key: 'mainhand',  label: 'Main Hand',  icon: 'fa-sword',         column: 1 },
+    { key: 'mainhand',  label: 'Main Hand',  icon: 'fa-sword' },
     // An axe rather than crossed swords: `fa-swords` reads as dual-wielding,
     // which is the opposite of what this slot means.
-    { key: 'bothhands', label: 'Both Hands', icon: 'fa-axe-battle',    column: 3 },
-    { key: 'offhand',   label: 'Off Hand',   icon: 'fa-shield-halved', column: 5 }
+    { key: 'bothhands', label: 'Both Hands', icon: 'fa-axe-battle' },
+    { key: 'offhand',   label: 'Off Hand',   icon: 'fa-shield-halved' }
 ];
 
 /** Every slot key, for validating what arrives from a dataset or a stored flag. */

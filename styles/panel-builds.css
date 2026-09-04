@@ -120,14 +120,13 @@
     gap: 6px;
 }
 
-/* The same five columns as the body, with the three weapons at 1, 3 and 5. Equal
-   thirds made these the only slots in the window that could not be square, since
-   a third of the width is not a fifth of it. A separate grid still, so the break
-   between the doll and the weapons survives. */
+/* Thirds, so the weapons are the biggest thing in the window. `aspect-ratio` on
+   the slot keeps them square at any width, which is what frees them to be a
+   third rather than a fifth — squareness used to cost them their size. */
 .squire-build-weapons {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
 }
 
 /* A slot is a favourites tile that happens to be droppable: `position: relative`
@@ -164,6 +163,21 @@
        and its caption gradient has to land on something predictable. Same reason
        the favourites tiles fix their own ground. */
     background: rgba(8, 6, 4, 0.9);
+}
+
+/* Ammo is round: it is the one thing on the doll that is neither worn nor held,
+   and a circle says "different kind of thing" without a word. The clip keeps a
+   filled slot's artwork inside the curve. */
+.squire-build-slot.is-round {
+    border-radius: 50%;
+}
+
+/* Its caption cannot be a bar across the bottom of a circle — the corners of the
+   gradient would sit outside the curve. The name goes under the slot instead. */
+.squire-build-slot.is-round .squire-build-slot-name {
+    padding: 0 2px 4px;
+    background: none;
+    text-shadow: 0 1px 3px rgba(8, 6, 4, 0.95), 0 0 6px rgba(8, 6, 4, 0.85);
 }
 
 /* The drop target lights up on dragover. Uses the shell's selected surface
