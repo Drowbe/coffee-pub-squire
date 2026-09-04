@@ -5,7 +5,7 @@ import {
     BUILD_BODY_SLOTS, BUILD_WEAPON_SLOTS, BUILD_SLOT_KEYS,
     getBuild, renameBuild, setBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, getCantrips, resolvePreparedSpells, setBuildSpell,
-    refuseSlotDrop, gearWeight
+    refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages
 } from './utility-builds.js';
 
 /**
@@ -72,6 +72,13 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // A caster needs the second column; everyone else would get 300px of
         // empty. Set at construction because options are frozen afterwards.
         const width = getPreparingClasses(actor).length ? 840 : 520;
+        // Before the window is even drawn. Applying a build will one day
+        // overwrite the actor's portrait and token, and once it has, the
+        // character's own artwork exists nowhere — so it is recorded at the
+        // first moment a build is in play at all. Idempotent, so opening a
+        // second window cannot overwrite what the first one captured.
+        await captureDefaultImages(actor);
+
         const win = new BuildWindow({ id, actor, buildId, position: { width, height: 'auto' } });
         await win.render({ force: true });
         return win;
@@ -138,6 +145,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 weaponSlots,
                 attunement: { ...attunement, over: attunement.used > attunement.max },
                 weight: gearWeight(this.actor, build),
+                imageSlots: resolveImageSlots(this.actor, build),
                 casters,
                 cantrips: casters.length ? getCantrips(this.actor) : [],
                 spellSlots: casters.length ? getSpellSlots(this.actor) : []
@@ -181,7 +189,20 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             });
         }
 
-        root.querySelectorAll('.squire-build-slot, .squire-build-spell-slot').forEach(slot => {
+        // Portrait and token take a click, not a drop — they hold an image path
+        // rather than an item, so there is nothing on the sheet to drag in.
+        root.querySelectorAll('.squire-build-image-slot').forEach(slot => {
+            slot.addEventListener('click', () => this._pickImage(slot.dataset.image));
+            slot.addEventListener('contextmenu', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!this.build?.images?.[slot.dataset.image]) return;
+                await setBuildImage(this.actor, this.buildId, slot.dataset.image, null);
+                await this._refresh();
+            });
+        });
+
+        root.querySelectorAll('.squire-build-slot:not(.squire-build-image-slot), .squire-build-spell-slot').forEach(slot => {
             // dragover must preventDefault or the browser refuses the drop. The
             // class is added here rather than on dragenter because dragenter
             // fires again for every child element crossed, and a slot with an
@@ -209,6 +230,35 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 await this._clearSlot(slot);
             });
         });
+    }
+
+    /**
+     * Choose the portrait or token image for this build.
+     *
+     * Foundry's own picker, opened the way core opens it from a document sheet,
+     * so it lands where people expect with the sources they already have. It
+     * starts at whatever the slot is currently showing — the build's choice if
+     * it has one, otherwise the character's own image — because the common edit
+     * is a variation on the current picture rather than a search from the root.
+     */
+    async _pickImage(key) {
+        const current = resolveImageSlots(this.actor, this.build)
+            .find(slot => slot.key === key)?.path ?? '';
+
+        const picker = new foundry.applications.apps.FilePicker.implementation({
+            type: 'image',
+            current,
+            callback: async (path) => {
+                await setBuildImage(this.actor, this.buildId, key, path);
+                await this._refresh();
+            },
+            position: {
+                top: (this.position?.top ?? 0) + 40,
+                left: (this.position?.left ?? 0) + 10
+            }
+        });
+
+        await picker.browse();
     }
 
     /** Empty whichever kind of slot this is — gear by key, spell by class and index. */

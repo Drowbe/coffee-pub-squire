@@ -53,6 +53,22 @@
         </div>
         {{/each}}
 
+        {{!-- Portrait and token, flanking the head. Not gear: these hold an image
+              path, not an item, so they take a click rather than a drop. Round,
+              like the ammo slots, because a circle marks "different kind of
+              thing" without spending a word. --}}
+        {{#each imageSlots}}
+        <div class="squire-build-slot is-round squire-build-image-slot{{#unless this.isDefault}} is-set{{/unless}}"
+             style="grid-row: {{this.row}}; grid-column: {{this.column}};"
+             data-image="{{this.key}}"
+             data-tooltip="{{this.label}}{{#if this.isDefault}} — currently the character's own<br><em>Click to choose an image</em>{{else}}<br><em>Click to change, right-click to reset</em>{{/if}}">
+            {{#if this.path}}
+            <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}">
+            {{/if}}
+            <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
+        </div>
+        {{/each}}
+
         {{!-- The portrait, filling the middle of the doll. Not a slot and not
               droppable: it is there so the ring of slots reads as a body rather
               than as a scattered grid. --}}

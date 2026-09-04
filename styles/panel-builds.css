@@ -106,8 +106,12 @@
 .squire-build {
     display: flex;
     flex-direction: column;
+    /* The same 10px gap and 8px padding `.squire-tool-content` gives the cleanup
+       and transfer windows — see window-tool-shared.css. This was 4px and read as
+       cramped against them; a tool window in this suite should not be able to be
+       identified by its margins. */
     gap: 10px;
-    padding: 4px;
+    padding: 8px;
 }
 
 /* The name is an input rather than a title, because renaming is the second
@@ -518,6 +522,28 @@
 .squire-build-slot[data-rarity="artifact"].is-filled {
     border-color: #d4553a;
     box-shadow: 0 0 11px rgba(212, 85, 58, 0.6);
+}
+
+/* Portrait and token. Round like the ammo slots, and a click rather than a drop:
+   they hold an image path, so there is nothing on the sheet to drag into them. */
+.squire-build-image-slot {
+    cursor: pointer;
+}
+
+/* Solid once the BUILD has chosen one. Dashed while it is only showing the
+   character's current image, because "this build changes nothing here" and "this
+   build sets it to what it already is" are different intentions, and the border
+   is where every other slot in this window draws that line. */
+.squire-build-image-slot.is-set {
+    border-style: solid;
+    border-color: var(--blacksmith-tool-border);
+}
+
+/* The glyph stays legible over the picture underneath it, which unlike an item
+   icon is a face and may be pale. */
+.squire-build-image-slot .squire-build-slot-hint {
+    color: rgba(241, 231, 214, 0.85);
+    font-size: 0.62em;
 }
 
 /* The slot's own glyph, kept once the artwork has taken the label's place.

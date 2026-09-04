@@ -19,17 +19,27 @@ import { MODULE } from './const.js';
  *
  *   * Nothing non-physical, anywhere. A spell, a feat, a class or a background
  *     is not an object; `item.type` says so outright.
- *   * `ring` is a real `equipmentTypes` key, so the ring slots are real.
- *   * `shield` is a real `armorTypes` key, so an off hand knows a shield.
- *   * `ammo` is a real `consumableTypes` key, so the ammo slots are real.
+ *   * `ammo` is a real `consumableTypes` key that content reliably sets, because
+ *     ammunition is functionally special in dnd5e — weapon attacks consume it.
+ *   * Both Hands takes a `weapon`, a top-level item type that is always right.
  *
- * Everywhere else it does not: a helm, a cloak, a belt and a pair of boots are
- * all `trinket` or `wondrous` or `clothing` with nothing to tell them apart. So
- * Head, Face, Neck, Back, Chest, Arms, Hands, Waist, Hip and Feet take any
- * physical item, and a player who puts their boots on their head is not making a
- * mistake this module is in a position to identify. A guess that refuses a drop
- * is worse than no guess at all — but a CHECK is not a guess, and refusing to
- * make the checks that are possible was over-correcting.
+ * Everywhere else it does not, and the reason is worth keeping because it has
+ * now caught two rules that looked defensible and were not:
+ *
+ *     A KEY EXISTING IN CONFIG IS NOT THE SAME AS CONTENT USING IT.
+ *
+ * `ring` is a real `equipmentTypes` key, so the ring slots were validated on it —
+ * and then a Ring of Fire Resistance was refused, because published content
+ * types rings as `trinket` and very little sets `ring` at all. `weaponOrShield`
+ * on the hands went the same way when it refused a torch. Both rules were
+ * grounded in a field that existed and turned down more real items than the
+ * imaginary ones they caught.
+ *
+ * So Head, Face, Neck, Back, Chest, Arms, Hands, Waist, Hip, Ring, Feet, Main
+ * Hand and Off Hand all take any physical item. A helm, a cloak, a belt, a ring
+ * and a pair of boots are `trinket` or `wondrous` or `clothing` with nothing to
+ * tell them apart, and a player who puts their boots on their head is not making
+ * a mistake this module is in a position to identify.
  */
 
 /**
@@ -52,10 +62,6 @@ const SLOT_RULES = {
     gear: {
         test: item => PHYSICAL_ITEM_TYPES.includes(item.type),
         refusal: item => `${item.name} is not something a character can wear or carry.`
-    },
-    ring: {
-        test: item => item.type === 'equipment' && item.system?.type?.value === 'ring',
-        refusal: item => `${item.name} is not a ring.`
     },
     ammo: {
         test: item => item.type === 'consumable' && item.system?.type?.value === 'ammo',
@@ -106,11 +112,11 @@ export const BUILD_BODY_SLOTS = [
     { key: 'chest', label: 'Chest', icon: 'fa-vest',              row: 3, column: 5 },
     { key: 'arms',  label: 'Arms',  icon: 'fa-shirt-long-sleeve', row: 4, column: 1 },
     { key: 'hands', label: 'Hands', icon: 'fa-mitten',            row: 4, column: 5 },
-    { key: 'ring1', label: 'Ring',  icon: 'fa-ring',              row: 5, column: 1, accepts: 'ring' },
+    { key: 'ring1', label: 'Ring',  icon: 'fa-ring',              row: 5, column: 1 },
     { key: 'hip1',  label: 'Hip',   icon: 'fa-sack',              row: 5, column: 2 },
     { key: 'waist', label: 'Waist', icon: 'fa-grip-lines',        row: 5, column: 3 },
     { key: 'hip2',  label: 'Hip',   icon: 'fa-sack',              row: 5, column: 4 },
-    { key: 'ring2', label: 'Ring',  icon: 'fa-ring',              row: 5, column: 5, accepts: 'ring' },
+    { key: 'ring2', label: 'Ring',  icon: 'fa-ring',              row: 5, column: 5 },
     { key: 'feet',  label: 'Feet',  icon: 'fa-boot',              row: 6, column: 3 },
     // Ammo rides the Feet row, at the outer columns, directly above the weapons
     // it feeds. Two rather than one per weapon: a quiver is a thing you carry,
@@ -145,6 +151,29 @@ export const BUILD_WEAPON_SLOTS = [
     { key: 'bothhands', label: 'Both Hands', icon: 'fa-axe-battle', accepts: 'weapon' },
     { key: 'offhand',   label: 'Off Hand',   icon: 'fa-shield-halved' }
 ];
+
+/**
+ * The two image slots, flanking the head.
+ *
+ * Not gear. They hold an image PATH rather than an item id, and they are the
+ * first piece of a build that describes the character rather than what the
+ * character is carrying: applying a build will eventually set the actor's
+ * portrait and its token artwork from these. Until then they record the
+ * intention, which is the same thing every other slot in this window does.
+ *
+ * Round, like the ammo slots, and for the same reason — a circle marks "not the
+ * same kind of thing as its neighbours" without spending a word on it.
+ *
+ * `fallback` names where the current image comes from when the build has not set
+ * one, so an untouched slot shows the character as they are rather than an empty
+ * hole. Read at render time, never written.
+ */
+export const BUILD_IMAGE_SLOTS = [
+    { key: 'portrait', label: 'Portrait', icon: 'fa-image-portrait', row: 1, column: 2 },
+    { key: 'token',    label: 'Token',    icon: 'fa-chess-pawn',     row: 1, column: 4 }
+];
+
+export const BUILD_IMAGE_KEYS = BUILD_IMAGE_SLOTS.map(slot => slot.key);
 
 /** Every slot key, for validating what arrives from a dataset or a stored flag. */
 export const BUILD_SLOT_KEYS = [
@@ -197,6 +226,12 @@ export function getBuilds(actor) {
             const value = build.slots?.[key];
             return [key, typeof value === 'string' ? value : null];
         })),
+        // Portrait and token, as paths. Validated to strings so a malformed flag
+        // costs one slot rather than the panel.
+        images: Object.fromEntries(BUILD_IMAGE_KEYS.map(key => {
+            const value = build.images?.[key];
+            return [key, typeof value === 'string' && value ? value : null];
+        })),
         // Prepared spells, keyed by class identifier. Unlike the gear slots
         // these cannot be normalised against a fixed key set — how many a class
         // prepares depends on the character, so the raw lists are kept here and
@@ -230,6 +265,7 @@ export async function createBuild(actor, name = 'New Build') {
         id: foundry.utils.randomID(),
         name,
         slots: Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null])),
+        images: Object.fromEntries(BUILD_IMAGE_KEYS.map(key => [key, null])),
         spells: {}
     };
     await saveBuilds(actor, [...getBuilds(actor), build]);
@@ -256,6 +292,7 @@ export async function duplicateBuild(actor, buildId) {
         id: foundry.utils.randomID(),
         name: `${source.name} (Copy)`,
         slots: { ...source.slots },
+        images: { ...source.images },
         // Each class's list copied rather than shared, or editing one build's
         // spells would edit the other's.
         spells: Object.fromEntries(
@@ -528,4 +565,104 @@ export function refuseSlotDrop(slotKey, item) {
 
     const rule = SLOT_RULES[definition.accepts ?? 'gear'];
     return rule.test(item) ? null : rule.refusal(item);
+}
+
+/** Set or clear one of a build's image paths. */
+export async function setBuildImage(actor, buildId, key, path) {
+    if (!BUILD_IMAGE_KEYS.includes(key)) return;
+
+    await saveBuilds(actor, getBuilds(actor).map(build =>
+        build.id === buildId
+            ? { ...build, images: { ...build.images, [key]: path || null } }
+            : build));
+}
+
+/** Where the character's own, pre-build portrait and token are kept. */
+const DEFAULT_IMAGES_FLAG = 'defaultImages';
+
+/**
+ * Remember the character's own portrait and token, once and for good.
+ *
+ * Applying a build will overwrite `actor.img` and the prototype token's texture.
+ * The moment it does, the character's real artwork is gone — the actor no longer
+ * holds it anywhere, and a second apply would then "restore" to whatever the
+ * first one set. So it is captured HERE, the first time a build window opens
+ * against this actor, which is the earliest moment it can be and comfortably
+ * before anything is able to overwrite it.
+ *
+ * Idempotent by design: it writes only when the flag is absent, so it can be
+ * called from as many places as is convenient and can never record a value a
+ * build has already polluted. That guard is the whole feature — a capture that
+ * ran twice would be worse than none, because the second run would look like a
+ * success while recording a costume as the face.
+ *
+ * A module flag, so nothing on the sheet itself is touched.
+ */
+export async function captureDefaultImages(actor) {
+    if (!actor || actor.getFlag(MODULE.ID, DEFAULT_IMAGES_FLAG)) return;
+
+    await actor.setFlag(MODULE.ID, DEFAULT_IMAGES_FLAG, {
+        portrait: actor.img ?? null,
+        token: actor.prototypeToken?.texture?.src ?? null
+    });
+}
+
+/**
+ * The character's own artwork, as captured before any build touched it.
+ *
+ * Falls back to what the actor currently shows when nothing has been captured —
+ * which is correct precisely because nothing has been applied in that case, so
+ * current and original are the same thing.
+ */
+export function getDefaultImages(actor) {
+    const stored = actor?.getFlag(MODULE.ID, DEFAULT_IMAGES_FLAG);
+
+    return {
+        portrait: stored?.portrait ?? actor?.img ?? null,
+        token: stored?.token ?? actor?.prototypeToken?.texture?.src ?? null
+    };
+}
+
+/**
+ * Put the character's own portrait and token back.
+ *
+ * Not wired to anything yet — applying a build is a later step — but it is the
+ * other half of the capture above and belongs beside it. Deliberately does NOT
+ * clear the flag: the defaults are the character's identity, not a one-shot
+ * undo, and a second build applied later needs them just as much.
+ */
+export async function restoreDefaultImages(actor) {
+    const defaults = getDefaultImages(actor);
+    if (!defaults.portrait && !defaults.token) return;
+
+    await actor.update({
+        ...(defaults.portrait ? { img: defaults.portrait } : {}),
+        ...(defaults.token ? { 'prototypeToken.texture.src': defaults.token } : {})
+    });
+}
+
+/**
+ * The image slots resolved for display.
+ *
+ * A slot the build has not set falls back to the character's OWN artwork rather
+ * than to whatever the actor is showing right now — see getDefaultImages. Once a
+ * build can be applied those two stop being the same thing, and an unset slot
+ * showing the previous build's costume would be showing the wrong answer to
+ * "what does this build change".
+ *
+ * `isDefault` marks the difference between "this build changes nothing here" and
+ * "this build sets it to exactly what it already is". Only the second should
+ * survive being applied.
+ */
+export function resolveImageSlots(actor, build) {
+    const fallbacks = getDefaultImages(actor);
+
+    return BUILD_IMAGE_SLOTS.map(definition => {
+        const chosen = build?.images?.[definition.key] ?? null;
+        return {
+            ...definition,
+            path: chosen ?? fallbacks[definition.key],
+            isDefault: !chosen
+        };
+    });
 }
