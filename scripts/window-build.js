@@ -8,7 +8,7 @@ import {
     getPreparingClasses, getSpellSlots, getCantrips, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
     estimateArmorClass, previewSlotChange, setBuildMode, revertBuild, damageLabel,
-    setActiveBuildId, getActiveBuildId, ensureDefaultCostume, moveBuild
+    setActiveBuildId, getActiveBuildId, ensureDefaultCostume, moveBuild, resolveMainImage
 } from './utility-builds.js';
 
 /**
@@ -332,7 +332,10 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 updatesHandle: game.settings.get(MODULE.ID, 'buildsUpdateHandle'),
                 build,
                 actorName: this.actor?.name ?? '',
-                actorImg: this.actor?.img ?? 'icons/svg/mystery-man.svg',
+                // The BUILD's own picture, not the actor's. `actor.img` moves
+                // the moment a costume is worn, and the centre of the doll is
+                // the one thing here that should not.
+                mainImage: resolveMainImage(this.actor, build),
                 bodySlots,
                 weaponSlots,
                 attunement: { ...attunement, over: attunement.used > attunement.max },
@@ -565,8 +568,9 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
      * is a variation on the current picture rather than a search from the root.
      */
     async _pickImage(key) {
-        const current = resolveImageSlots(this.actor, this.build)
-            .find(slot => slot.key === key)?.path ?? '';
+        const current = (key === 'main'
+            ? resolveMainImage(this.actor, this.build)
+            : resolveImageSlots(this.actor, this.build).find(slot => slot.key === key))?.path ?? '';
 
         const picker = new foundry.applications.apps.FilePicker.implementation({
             type: 'image',

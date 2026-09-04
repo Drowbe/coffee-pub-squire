@@ -739,6 +739,29 @@
     border-color: var(--blacksmith-tool-border);
 }
 
+/* The centre is an image slot too, but it is a large rectangle rather than one
+   of the small circles — so it takes the click behaviour and none of the shape.
+   Its "unset" marker sits in a corner rather than across the middle of a face. */
+.squire-build-portrait.squire-build-image-slot {
+    cursor: pointer;
+}
+
+.squire-build-portrait .squire-build-image-unset {
+    right: auto;
+    bottom: auto;
+    top: 5px;
+    left: 5px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: rgba(8, 6, 4, 0.8);
+}
+
+/* Its own hint glyph would be a third thing in an already busy corner, and the
+   picture is self-evidently a picture. */
+.squire-build-portrait .squire-build-slot-hint {
+    display: none;
+}
+
 /* "unset" over the bottom of the circle. The dashed border was carrying this on
    its own and it was too quiet: an unset slot shows the character's current
    artwork, so it looks chosen, and a build writes only the images it actually

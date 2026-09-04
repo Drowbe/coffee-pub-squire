@@ -191,7 +191,20 @@ export const BUILD_IMAGE_SLOTS = [
     { key: 'token',    label: 'Token',    icon: 'fa-chess-pawn',     row: 1, column: 4 }
 ];
 
-export const BUILD_IMAGE_KEYS = BUILD_IMAGE_SLOTS.map(slot => slot.key);
+/**
+ * Every image a build stores, including the one that is not a ring slot.
+ *
+ * `main` is the picture in the MIDDLE of the doll — the build's own portrait,
+ * chosen the same way the other two are and shown nowhere else. It is
+ * deliberately absent from BUILD_IMAGE_SLOTS, which is the pair flanking the
+ * head; the centre is not a slot in that ring and rendering it as one would put
+ * a third circle where the character's body is.
+ *
+ * Applying a build never writes it. The portrait and the token belong to the
+ * actor and change when a build is worn; this belongs to the BUILD and is how
+ * that build looks in this window, whatever the character happens to be wearing.
+ */
+export const BUILD_IMAGE_KEYS = [...BUILD_IMAGE_SLOTS.map(slot => slot.key), 'main'];
 
 /** Every slot key, for validating what arrives from a dataset or a stored flag. */
 export const BUILD_SLOT_KEYS = [
@@ -707,6 +720,28 @@ export async function restoreDefaultImages(actor) {
  * "this build sets it to exactly what it already is". Only the second should
  * survive being applied.
  */
+/**
+ * The picture at the centre of the doll.
+ *
+ * Falls back through the build's own portrait to the character's captured
+ * artwork — never to `actor.img`. That distinction is the whole point: a costume
+ * applied a moment ago has already changed `actor.img`, and a centre image that
+ * followed it would be the one thing on this window that moves when the outfit
+ * does. The captured default cannot move, so neither can this.
+ */
+export function resolveMainImage(actor, build) {
+    const chosen = build?.images?.main ?? null;
+    const portrait = build?.images?.portrait ?? null;
+    const defaults = getDefaultImages(actor);
+
+    return {
+        key: 'main',
+        label: 'Build Image',
+        path: chosen ?? portrait ?? defaults.portrait,
+        isDefault: !chosen
+    };
+}
+
 export function resolveImageSlots(actor, build) {
     const fallbacks = getDefaultImages(actor);
 

@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 
 ### Added
+- **A build has its own picture**, in the middle of the doll, browsed for the same way the portrait and the token are. Unset, it falls back through the build's portrait to the character's captured artwork — never to `actor.img`, and that distinction is the whole point: a costume worn a moment ago has already changed `actor.img`, and a centre image that followed it would be the one thing in this window that moves when the outfit does. Applying a build never writes it, because it belongs to the *build* rather than to the character.
+  - It is deliberately not part of `BUILD_IMAGE_SLOTS`, which is the pair flanking the head. The centre is not a slot in that ring, and rendering it as one would put a third circle where the character's body is — so it takes the click behaviour and none of the shape.
+
 - **Builds reorder from their right-click menu**, with Move Up and Move Down. Blacksmith's menu has no `condition` hook, so an entry that cannot apply is simply not pushed — the build at the top has no Move Up rather than a dead one that looks clickable. Reordering deliberately does not change which build is selected: it is about the list, and having the doll jump to whatever you just nudged would make a tidy-up feel like navigation.
 
 - **Two quick-cast spell slots on the doll**, at the ends of the Feet row with the ammunition moved in beside the boots. Everything added to that row is something a character *uses* rather than wears, which is why all four are round — the distinction the ammo slots were already drawing on their own. Two rather than a list: this is the pair you reach for without thinking, the caster's equivalent of a main and an off hand, where the prepared column on the right is the whole daily choice. They join the weapons on the handle when that option is on, so the strip carries five things at most.
