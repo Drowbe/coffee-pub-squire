@@ -130,7 +130,8 @@ exactly as hovering a row's picture does. Whichever you pick is remembered.
 
 The icon beside those two sets the order, and shows which order you are in: **Manual** is the one you
 arrange yourself, **Alphabetical** is by name, and **By Category** groups weapons, spells, feats and
-gear in that order with names alphabetised inside each group. Sorting never disturbs your manual
+gear in that order with names alphabetised inside each group, under headings like the ones the Weapons
+and Inventory sections use. Sorting never disturbs your manual
 order -- switch back to Manual and your arrangement is exactly as you left it. While a sort is on, the
 move-up and move-down options leave the right-click menu, because they would be rearranging an order
 you are not currently looking at.

@@ -108,6 +108,31 @@
     padding: 2px;
 }
 
+/* Dense packing has to go when the list is grouped. `dense` lets a later item
+   fill an earlier hole, and an earlier hole may be ABOVE the heading that item
+   belongs under — so a small weapon would quietly climb into a gap left in the
+   spells. The headings are the promise here and the packing is the convenience,
+   so the packing yields. */
+.squire-tray .favorites-list.favorites-layout-tiles.favorites-grouped {
+    grid-auto-flow: row;
+}
+
+/* A heading owns its whole row, which is also what forces the next item to
+   start a fresh one. Without the full span it would sit in a single cell with
+   tiles beside it, reading as a label for the tile to its right rather than for
+   everything below it. */
+.squire-tray .favorites-layout-tiles .favorites-category-header {
+    grid-column: 1 / -1;
+    margin-top: 4px;
+    margin-bottom: 0;
+}
+
+/* The first heading has the panel header directly above it, so its top margin
+   would be doubling a gap that is already there. */
+.squire-tray .favorites-list .favorites-category-header:first-child {
+    margin-top: 0;
+}
+
 /* The tile fills whatever cells it was given. No `aspect-ratio`: the grid owns
    the shape now, so a tile that stretches is a tile the user asked to stretch. */
 .squire-tray .favorites-layout-tiles .panel-item {

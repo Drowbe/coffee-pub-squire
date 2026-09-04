@@ -54,6 +54,24 @@ const FAVORITE_CATEGORY_ORDER = [
     'weapon', 'spell', 'feat', 'equipment', 'consumable', 'tool', 'loot', 'backpack'
 ];
 
+/**
+ * The heading each category gets when the list is grouped.
+ *
+ * Plural, because a heading names a group. A type with no entry here falls back
+ * to its own capitalised name, which is the honest answer for a homebrew type:
+ * a wrong friendly label would be worse than the raw one.
+ */
+const CATEGORY_LABELS = {
+    weapon: 'Weapons',
+    spell: 'Spells',
+    feat: 'Features',
+    equipment: 'Equipment',
+    consumable: 'Consumables',
+    tool: 'Tools',
+    loot: 'Loot',
+    backpack: 'Containers'
+};
+
 /** The glyph for each footprint — the shape it makes, not an abstraction of it. */
 const SPAN_ICONS = {
     '1x1': 'fa-square',
@@ -690,6 +708,33 @@ export class FavoritesPanel {
      * a lens rather than a one-way door — switch back to manual and the order
      * somebody arranged by hand is still there.
      */
+    /**
+     * The sorted list as groups, ready for the template.
+     *
+     * Only the category sort produces named groups. The other two return a
+     * single unnamed one, so the template has one loop over groups rather than a
+     * flat branch and a grouped branch that would have to be kept identical by
+     * hand — the row markup is fifty lines and it is only worth having once.
+     *
+     * Groups are cut from the ALREADY SORTED list rather than bucketed
+     * separately, so the headings can only ever appear in the same order the
+     * sort put the rows in. Bucketing would be a second place for that order to
+     * be decided, and a second place for it to disagree.
+     */
+    static _groupFavorites(favorites, sort) {
+        if (sort !== 'category') return [{ label: null, items: favorites }];
+
+        const groups = [];
+        for (const item of favorites) {
+            const label = CATEGORY_LABELS[item.type]
+                ?? (item.type ? item.type.charAt(0).toUpperCase() + item.type.slice(1) : 'Other');
+            const last = groups[groups.length - 1];
+            if (last?.label === label) last.items.push(item);
+            else groups.push({ label, items: [item] });
+        }
+        return groups;
+    }
+
     static _sortFavorites(favorites, sort) {
         if (sort === 'manual') return favorites;
 
@@ -834,6 +879,8 @@ export class FavoritesPanel {
             favorites: this.favorites,
             hasFavorites: this.favorites.length > 0,
             layout: FavoritesPanel.getLayout(),
+            groups: FavoritesPanel._groupFavorites(this.favorites, FavoritesPanel.getSort()),
+            grouped: FavoritesPanel.getSort() === 'category',
             // The icon IS the state — the header shows which sort is on rather
             // than a generic sort glyph you have to open a menu to interrogate.
             sortIcon: SORT_ICONS[FavoritesPanel.getSort()],

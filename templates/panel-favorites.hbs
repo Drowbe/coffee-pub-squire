@@ -38,9 +38,16 @@
           on a row is delegated from the panel, so re-shaping them in CSS keeps
           rolling, equipping, unfavouriting and drag-to-handle working without a
           second copy of the markup to keep in step. --}}
-    <div class="favorites-list favorites-layout-{{layout}}">
+    {{!-- Always groups, even when there is only one and it has no name. One
+          copy of the row markup rather than a flat branch and a grouped branch
+          that would have to be kept identical by hand. --}}
+    <div class="favorites-list favorites-layout-{{layout}}{{#if grouped}} favorites-grouped{{/if}}">
         {{#if favorites}}
-        {{#each favorites}}
+        {{#each groups}}
+        {{#if this.label}}
+        <div class="category-header favorites-category-header">{{this.label}}</div>
+        {{/if}}
+        {{#each this.items}}
         <div draggable="true" class="panel-item" 
              data-item-id="{{this.id}}" data-item-type="{{this.type}}"
              data-span="{{this.span}}"
@@ -91,6 +98,7 @@
                 </div>
             </div>
         </div>
+        {{/each}}
         {{/each}}
         {{else}}
         <div class="tray-title-small" style="text-align: center; padding: 10px;">No favorites available</div>
