@@ -46,7 +46,8 @@
 
     <div class="squire-build-weapons">
         {{#each weaponSlots}}
-        <div class="squire-build-slot squire-build-slot-wide{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
+        <div class="squire-build-slot{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
+             style="grid-column: {{this.column}};"
              data-slot="{{this.key}}"
              data-tooltip="{{#if this.filled}}{{this.name}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}{{this.label}} — drag an item here{{/if}}">
             {{#if this.filled}}

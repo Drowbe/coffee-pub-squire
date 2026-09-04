@@ -109,20 +109,24 @@
 }
 
 /* Five columns: two side rails, and three in the middle that the portrait spans.
-   The row heights are stated so the doll keeps its shape whatever a slot holds —
-   a filled slot has an image and a name, an empty one has a word. */
+   Rows size themselves to the squares in them — see the aspect-ratio on the slot
+   below, which is what decides the height here. A stated row height was the
+   earlier answer and it is what made every slot a rectangle: the columns are a
+   fifth of the window and the rows were a flat 62px, so the two could only agree
+   by accident. */
 .squire-build-body {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    grid-auto-rows: 62px;
     gap: 6px;
 }
 
-/* Three equal thirds in a grid of their own. The body's five uneven columns
-   cannot describe them, and forcing it put Main Hand under a ring. */
+/* The same five columns as the body, with the three weapons at 1, 3 and 5. Equal
+   thirds made these the only slots in the window that could not be square, since
+   a third of the width is not a fifth of it. A separate grid still, so the break
+   between the doll and the weapons survives. */
 .squire-build-weapons {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 6px;
 }
 
@@ -136,6 +140,10 @@
     align-items: center;
     justify-content: center;
     gap: 3px;
+    /* Square, and the grid rows follow. Stating the ratio on the slot rather
+       than the row is what lets one rule cover both grids and every window
+       width — a slot is always as tall as its column is wide. */
+    aspect-ratio: 1;
     padding: 4px;
     overflow: hidden;
     text-align: center;
@@ -148,9 +156,6 @@
     transition: all 0.15s ease;
 }
 
-.squire-build-slot-wide {
-    min-height: 62px;
-}
 
 .squire-build-slot.is-filled {
     border-style: solid;
