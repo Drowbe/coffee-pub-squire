@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+
+## [unreleased]
+
 ## [13.10.0]
 
 ### Fixed
@@ -17,6 +21,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Applying lives in one place, `applySelected()`, reached by the rail, the handle and an open window alike. The handle borrows it through a detached instance that never renders, so the confirmation, the rules and the receipt cannot drift between the routes that trigger them.
 
 ### Added
+- **The worn build's weapons appear on the handle**, in a zone of their own above the hand-placed favourites. Main Hand, Both Hands and Off Hand only — the handle is for things you click to use, and a belt would be an icon that does nothing when pressed; ammunition and spells are each their own conversation. **Derived from whichever build is worn, never stored**: a second list would go stale the moment somebody edited the build it was copied from. The separate zone is the load-bearing part — without it, applying a build would have to guess which icons were its to remove, and the only honest answer to "who put this here" is to have recorded it. Items dragged onto the handle by hand are never touched.
+  - That needs one new fact: `activeBuild`, the build last applied, set on apply and restored on undo. It earns its keep twice, because the rail can now mark which build is **worn** as distinct from which is *selected* — two different things the window had no way to show.
+  - Gated on a **Weapons on handle** option, in a new global section at the foot of the rail. A setting rather than a per-build flag: nobody wants it on for their combat kit and off for their travelling clothes, and a per-build version would be one more thing to set correctly on every build to express something decided once.
+
+- **A Default Costume is created the first time a character's builds are opened**, holding their own portrait and token. The defaults captured by `captureDefaultImages` are a safety net nobody can see or click; this is the clickable one. Created once and never re-created, so deleting it is allowed to mean deleting it.
+
+- **Build or Costume**, on Blacksmith's own `.blacksmith-toggle` switch beside the build's name — the suite has one switch and this was not the place to invent a second. Labelled on both sides rather than one, because neither state is "off": a costume is as deliberate a choice as a build, and an unlabelled slider would make one the absence of the other. A costume applies only the portrait and token and leaves gear and spells exactly as they are — which is *not* the same as a build with empty slots, because applying one of those would strip the character bare. Two labelled buttons rather than a tick, since this decides what applying does and "will this take my armour off" should never be a state you read off a checkbox. The confirmation changes wording with it.
+
+- **Undo, offered on the toast after applying.** Blacksmith's toast has a single `onClick` and no button row, so it is "click to undo, ignore to keep" rather than a Keep/Undo pair — which is the right default anyway, since keeping is the common case. The snapshot is taken before the first write and held in memory rather than in a flag: undo is a right-now offer, not a history the world should carry. `showSquireToast` forwards `onClick` now, and the subtitle says the click is there, because an actionable toast that does not announce its action just eats a click.
+
+- **Applying repaints tokens already on the canvas.** `prototypeToken` is the stamp for tokens made *later* and does nothing to the ones already standing on the map, which is where everyone is looking — so applying a build changed the portrait and the sidebar and left the figure on the table wearing the old face. Matched on the actor's **uuid**, not its id: an unlinked token's synthetic actor shares the base actor's id, so an id check would repaint every token made from the same prototype, and a room of identical guards would all change because one of them did.
+
+- **Weapon swaps report their damage.** `AC` and weight say nothing about trading one sword for another, so a swap now reads `1d8 + 3 slashing → 1d10 + 3 slashing`. Uses dnd5e's own `damage.base.formula` getter, which already resolves a custom formula or assembles number/denomination/bonus, rather than rebuilding a dice expression by hand.
+
 - **Builds can be kept on the tray handle.** Drag one from the builder's rail onto the handle and it joins a strip above the favourites; **clicking it equips that build**, which is the whole point of it being there — switching kit without opening anything. Right-click takes it off. It confirms first like every other route to applying, and carries the first item picture in the build as its face, since a build has no artwork of its own and a column of identical shirts would defeat the purpose of putting them somewhere glanceable.
   - A separate list from the builds themselves, deliberately: which builds are worth a handle slot is a different question from which builds exist, exactly as the handle's favourites are separate from the favourites panel. Ids that no longer name a build are dropped on read.
   - Above the favourites, because switching a whole kit is a rarer and bigger act than reaching for one item, and it should not sit at the end of a list that can grow past the strip's height.
@@ -28,7 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Attunement is deliberately not touched.** Attuning is a short rest and a decision at the table, not a consequence of putting a ring on, and silently attuning six items would be the module making a call that is not its to make. The confirmation says so.
   - Every item change goes out as one `updateEmbeddedDocuments` call rather than one per item, which would re-render the sheet and every panel watching it sixteen times. The result is reported as a receipt — "equipped 4, unequipped 7, prepared 3" — and "was already equipped" is a real outcome that says so rather than looking identical to a success.
 
-- **The armour class is a badge on the portrait's hem**, where Baldur's Gate puts it and for the same reason: it is the number you are actually playing against, and it belongs on the character rather than in a line of footnotes. It **updates live while an item hovers a slot**, showing the value the swap would produce and a green or warm delta beside it — so "is this better?" is answered while the item is still in the air rather than after it has landed.
+- **The totals moved onto the portrait as plates** — attunement top left, weight top right, the unattuned warning bottom left. They were a line of text under the whole window, which is where things go when nobody has decided where they belong, and the armour class badge had already proved a portrait's corners are the most readable surface here. The "a plan, nothing changes until you equip it" disclaimer is gone with them: with a Build/Costume switch and an Equip button on every rail entry, it was explaining something the window now says structurally.
+  - The portrait's `overflow` is visible rather than hidden, which is what was slicing the AC badge in half at its hem. The image rounds its own corners now — the only thing the clip was ever for.
+
+- **The armour class is a big badge on the portrait's hem**, where Baldur's Gate puts it and for the same reason: it is the number you are actually playing against, and it belongs on the character rather than in a line of footnotes. It **updates live while an item hovers a slot**, showing the value the swap would produce and a green or warm delta beside it — so "is this better?" is answered while the item is still in the air rather than after it has landed.
   - That needs the item's identity during `dragover`, and `dataTransfer` is protected until the drop: a target is told something is over it, never what. So the tray's own dragstart parks the item id on `PanelManager._trayDragItemId`, the same trick the handle's reorder uses, and clears it on dragend. The badge is written directly rather than re-rendered — dragover fires every frame, and a render per frame would tear the drag apart.
   - The preview stays silent for an item the slot would refuse. Promising an AC change for a drop about to be turned down would be a lie.
 
