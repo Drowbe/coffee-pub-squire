@@ -177,6 +177,10 @@
 
                     <!-- FAVORITES -->
                     <div class="panel-containers stacked">
+                        {{!-- Builds sits above Favorites and shows with it: both
+                              belong to the same view, and a build is a plan made
+                              out of the things a favourites list is made of. --}}
+                        <div class="panel-container" data-panel="builds"></div>
                         <div class="panel-container" data-panel="favorites"></div>
                         <div class="panel-container" data-panel="weapons"></div>
                         <div class="panel-container" data-panel="spells"></div>

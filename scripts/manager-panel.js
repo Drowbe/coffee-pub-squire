@@ -10,6 +10,7 @@ import { SpellsPanel } from './panel-spells.js';
 import { WeaponsPanel } from './panel-weapons.js';
 import { InventoryPanel } from './panel-inventory.js';
 import { FavoritesPanel } from './panel-favorites.js';
+import { BuildsPanel } from './panel-builds.js';
 import { syncFavorites } from './manager-favorites-sync.js';
 import { ControlPanel } from './panel-control.js';
 import { CompendiumSearchPanel } from './panel-compendium-search.js';
@@ -287,6 +288,7 @@ export class PanelManager {
             this.controlPanel = new ControlPanel(actor);
             this.compendiumSearchPanel = new CompendiumSearchPanel(actor);
             this.favoritesPanel = new FavoritesPanel(actor);
+            this.buildsPanel = new BuildsPanel(actor);
             this.spellsPanel = new SpellsPanel(actor);
             this.weaponsPanel = new WeaponsPanel(actor);
             this.inventoryPanel = new InventoryPanel(actor);
@@ -658,6 +660,7 @@ export class PanelManager {
         this.controlPanel = new ControlPanel(this.actor);
         this.compendiumSearchPanel = new CompendiumSearchPanel(this.actor);
         this.favoritesPanel = new FavoritesPanel(this.actor);
+        this.buildsPanel = new BuildsPanel(this.actor);
         this.spellsPanel = new SpellsPanel(this.actor);
         this.weaponsPanel = new WeaponsPanel(this.actor);
         this.inventoryPanel = new InventoryPanel(this.actor);
@@ -675,6 +678,7 @@ export class PanelManager {
         this.controlPanel.element = PanelManager.element;
         this.compendiumSearchPanel.element = PanelManager.element;
         this.favoritesPanel.element = PanelManager.element;
+        this.buildsPanel.element = PanelManager.element;
         this.spellsPanel.element = PanelManager.element;
         this.weaponsPanel.element = PanelManager.element;
         this.inventoryPanel.element = PanelManager.element;
@@ -709,6 +713,7 @@ export class PanelManager {
                 PanelManager.removePanelDom(this.gmPanel);
             }
             this.controlPanel?.render(element);
+            this.buildsPanel?.render(element);
             this.favoritesPanel?.render(element);
             this.spellsPanel?.render(element);
             this.weaponsPanel?.render(element);
@@ -1758,6 +1763,9 @@ export class PanelManager {
         }
         
         // Clean up other panels that might have event listeners
+        if (PanelManager.instance.buildsPanel && typeof PanelManager.instance.buildsPanel.destroy === 'function') {
+            PanelManager.instance.buildsPanel.destroy();
+        }
         if (PanelManager.instance.favoritesPanel && typeof PanelManager.instance.favoritesPanel.destroy === 'function') {
             PanelManager.instance.favoritesPanel.destroy();
         }
@@ -2122,6 +2130,7 @@ export async function _updateTrayFromSelection() {
             if (PanelManager.instance.characterPanel) PanelManager.instance.characterPanel.actor = actorToUse;
             if (PanelManager.instance.controlPanel) PanelManager.instance.controlPanel.actor = actorToUse;
             if (PanelManager.instance.favoritesPanel) PanelManager.instance.favoritesPanel.actor = actorToUse;
+            if (PanelManager.instance.buildsPanel) PanelManager.instance.buildsPanel.actor = actorToUse;
             if (PanelManager.instance.spellsPanel) PanelManager.instance.spellsPanel.actor = actorToUse;
             if (PanelManager.instance.weaponsPanel) PanelManager.instance.weaponsPanel.actor = actorToUse;
             if (PanelManager.instance.inventoryPanel) PanelManager.instance.inventoryPanel.actor = actorToUse;

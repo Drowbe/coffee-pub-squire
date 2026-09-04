@@ -19,7 +19,16 @@ import { trackModuleTimeout } from './timer-utils.js';
 const MODES = ['sheet', 'favorites', 'search'];
 
 /** Every stacked panel, in tray order. */
-const PANEL_TYPES = ['favorites', 'weapons', 'spells', 'features', 'inventory'];
+const PANEL_TYPES = ['builds', 'favorites', 'weapons', 'spells', 'features', 'inventory'];
+
+/**
+ * The panels the favourites view shows, in order.
+ *
+ * Builds is above Favorites and appears with it rather than being a fourth
+ * mode: a build is assembled out of the same items the list below it holds,
+ * and separating them would mean switching views mid-drag.
+ */
+const FAVORITES_VIEW_PANELS = ['builds', 'favorites'];
 
 /**
  * The panels the section tabs and the filter bar govern.
@@ -420,7 +429,7 @@ export class ControlPanel {
         // Favourites shows in its own view and nowhere else; the four sheet
         // panels show in the sheet view, one per tab or all together on All.
         PANEL_TYPES.forEach(panel => {
-            const isVisible = panel === 'favorites'
+            const isVisible = FAVORITES_VIEW_PANELS.includes(panel)
                 ? this._mode === 'favorites'
                 : this._mode === 'sheet' && (activeTab === 'all' || panel === activeTab);
 
@@ -433,7 +442,7 @@ export class ControlPanel {
             // would ever clear it again. The containers outlive their contents
             // (only innerHTML is replaced on render), and a stale one here would
             // beat `.visible` and leave the heart opening onto nothing.
-            if (panel === 'favorites') container?.classList.remove('filtered-empty');
+            if (FAVORITES_VIEW_PANELS.includes(panel)) container?.classList.remove('filtered-empty');
         });
 
         controlEl?.querySelectorAll('.control-tab').forEach(tab => {

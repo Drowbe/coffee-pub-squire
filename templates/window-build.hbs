@@ -1,0 +1,66 @@
+{{!--
+    The paper doll. Two grids: the body around the portrait, and the weapons in
+    a row of thirds beneath it.
+
+    Every slot is the same markup whether it is empty, filled or broken — the
+    state is classes and content, not three branches, because a drop target that
+    changes shape as it fills is a drop target that moves under the cursor.
+--}}
+<div class="squire-build">
+
+    <div class="squire-build-name-row">
+        <input type="text" class="squire-build-name" value="{{build.name}}"
+               maxlength="60" spellcheck="false" aria-label="Build name">
+    </div>
+
+    <div class="squire-build-body">
+        {{#each bodySlots}}
+        <div class="squire-build-slot{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
+             style="grid-row: {{this.row}}; grid-column: {{this.column}};"
+             data-slot="{{this.key}}"
+             data-tooltip="{{#if this.filled}}{{this.name}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}{{this.label}} — drag an item here{{/if}}">
+            {{#if this.filled}}
+            <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
+            <span class="squire-build-slot-name">{{this.name}}</span>
+            {{else if this.missing}}
+            <i class="fa-solid fa-triangle-exclamation squire-build-slot-warning"></i>
+            <span class="squire-build-slot-label">{{this.label}}</span>
+            {{else}}
+            <span class="squire-build-slot-label">{{this.label}}</span>
+            {{/if}}
+        </div>
+        {{/each}}
+
+        {{!-- The portrait, filling the middle of the doll. Not a slot and not
+              droppable: it is there so the ring of slots reads as a body rather
+              than as a scattered grid. --}}
+        <div class="squire-build-portrait" style="grid-row: 2 / 5; grid-column: 2 / 5;">
+            <img src="{{actorImg}}" alt="{{actorName}}">
+        </div>
+    </div>
+
+    <div class="squire-build-weapons">
+        {{#each weaponSlots}}
+        <div class="squire-build-slot squire-build-slot-wide{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
+             data-slot="{{this.key}}"
+             data-tooltip="{{#if this.filled}}{{this.name}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}{{this.label}} — drag an item here{{/if}}">
+            {{#if this.filled}}
+            <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
+            <span class="squire-build-slot-name">{{this.name}}</span>
+            {{else if this.missing}}
+            <i class="fa-solid fa-triangle-exclamation squire-build-slot-warning"></i>
+            <span class="squire-build-slot-label">{{this.label}}</span>
+            {{else}}
+            <span class="squire-build-slot-label">{{this.label}}</span>
+            {{/if}}
+        </div>
+        {{/each}}
+    </div>
+
+    {{!-- Says what this window is FOR, because nothing else in it does. A grid of
+          empty boxes beside a portrait invites the reading that these are slots
+          the character is currently wearing. --}}
+    <p class="squire-build-note">
+        A build is a saved plan. Nothing here changes what is equipped on the sheet.
+    </p>
+</div>

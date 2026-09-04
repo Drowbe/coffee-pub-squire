@@ -117,6 +117,20 @@ own title bar, next to its category filters.
 
 Click the heart on a row. Click it again to remove it.
 
+### Plan a set of gear
+
+Above your favourites is **Builds**. The **+** in its header starts one and opens it: a figure of your
+character surrounded by slots -- head, face, neck, back, chest, arms, hands, rings, hips, waist, feet,
+and the three weapon slots along the bottom. Drag items from the tray into the slots to say what this
+build is made of. Right-click a slot to empty it; right-click a build's tile to open or delete it.
+
+**A build is a plan, not a state.** Nothing in it changes what your character is actually wearing --
+it is somewhere to work out a set of gear, not a switch that puts it on. Only items already on your
+sheet can go in a slot, and if one later leaves your sheet the slot says so rather than quietly
+emptying itself.
+
+### Work with your favourites
+
 The **heart in the Character Sheet strip** opens your favourites on their own: no tabs, no search box
 and no filter bar, just the list and its **Clear All Favorites** button. The person icon beside the
 heart goes back to the sheet. Squire opens on whichever of the two you were last in, and on favourites

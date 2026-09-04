@@ -122,6 +122,8 @@ export const TEMPLATES = {
     PANEL_FAVORITES: `modules/${MODULE.ID}/templates/panel-favorites.hbs`,
     PANEL_FEATURES: `modules/${MODULE.ID}/templates/panel-features.hbs`,
     PANEL_CHARACTER_SUMMARY: `modules/${MODULE.ID}/templates/panel-character-summary.hbs`,
+    PANEL_BUILDS: `modules/${MODULE.ID}/templates/panel-builds.hbs`,
+    WINDOW_BUILD: `modules/${MODULE.ID}/templates/window-build.hbs`,
     PANEL_PARTY: `modules/${MODULE.ID}/templates/panel-party.hbs`,
     PANEL_PARTY_HEADER: `modules/${MODULE.ID}/templates/panel-party-header.hbs`,
     PANEL_PARTY_STATS: `modules/${MODULE.ID}/templates/panel-party-stats.hbs`,

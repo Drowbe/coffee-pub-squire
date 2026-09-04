@@ -1,0 +1,31 @@
+<div class="builds-panel">
+<div class="section-header">
+    <div class="header-left">
+        <i class="fa-solid fa-shirt"></i> Builds
+    </div>
+    <div class="header-right">
+        <i class="fa-solid fa-plus builds-create" data-tooltip="New build"></i>
+    </div>
+</div>
+
+    {{!-- Tiles, like the favourites wall below. Deliberately smaller and without
+          artwork: a build has no picture of its own, so a tile here is a name
+          and a count of what is in it. --}}
+    <div class="builds-list">
+        {{#if hasBuilds}}
+        {{#each builds}}
+        <div class="build-tile" data-build-id="{{this.id}}"
+             data-tooltip="{{this.name}}<br>{{this.filledCount}} of {{this.slotCount}} slots filled<br><em>Right-click to delete</em>">
+            <i class="fa-solid fa-shirt build-tile-icon"></i>
+            <span class="build-tile-name">{{this.name}}</span>
+            <span class="build-tile-count">{{this.filledCount}}/{{this.slotCount}}</span>
+        </div>
+        {{/each}}
+        {{else}}
+        <div class="squire-empty-message builds-empty">
+            <p>- No Builds Yet -</p>
+            <p>Use the + above to start one</p>
+        </div>
+        {{/if}}
+    </div>
+</div>

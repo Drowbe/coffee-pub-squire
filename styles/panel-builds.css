@@ -1,0 +1,231 @@
+/* ==========================================================================
+   BUILDS
+
+   The Builds section in the tray, and the paper doll in its window.
+
+   The window half is scoped to `.squire-build-window` and styles CONTENT ONLY.
+   Per the Blacksmith window API: do not style the frame, the title bar or the
+   cover, and take colours from the `--blacksmith-tool-*` custom properties
+   rather than hard-coding them — an id selector here outranks the shell and can
+   silence its minimisation.
+   ========================================================================== */
+
+/* ---------------- THE TRAY SECTION ---------------- */
+
+.squire-tray .builds-panel .header-right {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.squire-tray .builds-create {
+    cursor: pointer;
+    padding: 2px 1px;
+    font-size: 0.85em;
+    color: rgba(159, 146, 117, 0.9);
+    transition: color 0.2s ease;
+}
+
+.squire-tray .builds-create:hover {
+    color: var(--squire-color-hover);
+}
+
+/* Tiles, echoing the favourites wall below — but smaller, and without artwork.
+   A build has no picture of its own, and inventing one (the first item? a
+   generic shirt?) would say something untrue about what the build contains. */
+.squire-tray .builds-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 6px;
+    padding: 2px;
+}
+
+.squire-tray .build-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 6px;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.35);
+    transition: all 0.15s ease;
+}
+
+.squire-tray .build-tile:hover {
+    border-color: rgba(255, 100, 0, 0.6);
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.squire-tray .build-tile-icon {
+    font-size: 1.1em;
+    color: rgba(159, 146, 117, 0.9);
+}
+
+.squire-tray .build-tile-name {
+    max-width: 100%;
+    overflow: hidden;
+    color: #f1e7d6;
+    font-size: 0.74em;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.squire-tray .build-tile-count {
+    color: rgba(241, 231, 214, 0.5);
+    font-size: 0.62em;
+}
+
+/* The empty state is a grid child, so it has to be told to span the whole row
+   or it sits in the first cell at a fifth of the width. */
+.squire-tray .builds-list .builds-empty {
+    grid-column: 1 / -1;
+}
+
+/* ---------------- THE PAPER DOLL ---------------- */
+
+.squire-build {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px;
+}
+
+/* The name is an input rather than a title, because renaming is the second
+   thing anyone does after making a build and a separate rename gesture for a
+   field that is right there would be ceremony. Colours come from the shell's
+   field variables, which the base class already applies to bare inputs — this
+   only sizes it. */
+.squire-build-name {
+    width: 100%;
+    font-size: 1.05em;
+    font-weight: 700;
+    text-align: center;
+}
+
+/* Five columns: two side rails, and three in the middle that the portrait spans.
+   The row heights are stated so the doll keeps its shape whatever a slot holds —
+   a filled slot has an image and a name, an empty one has a word. */
+.squire-build-body {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-auto-rows: 62px;
+    gap: 6px;
+}
+
+/* Three equal thirds in a grid of their own. The body's five uneven columns
+   cannot describe them, and forcing it put Main Hand under a ring. */
+.squire-build-weapons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+
+.squire-build-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px;
+    overflow: hidden;
+    text-align: center;
+    /* Dashed while empty, solid once filled: an empty slot is an invitation and
+       a filled one is a statement, and the border is the cheapest way to say
+       which without adding a word to a 62px box. */
+    border: 1px dashed var(--blacksmith-tool-divider);
+    border-radius: 4px;
+    background: var(--blacksmith-tool-surface-sunken);
+    transition: all 0.15s ease;
+}
+
+.squire-build-slot-wide {
+    min-height: 62px;
+}
+
+.squire-build-slot.is-filled {
+    border-style: solid;
+    border-color: var(--blacksmith-tool-border);
+    background: var(--blacksmith-tool-surface-raised);
+}
+
+/* The drop target lights up on dragover. Uses the shell's selected surface
+   rather than a colour of its own, so it reads the same in all three themes. */
+.squire-build-slot.is-drop-target {
+    border-style: solid;
+    border-color: var(--blacksmith-color-brand-accent, var(--blacksmith-tool-accent));
+    background: var(--blacksmith-tool-surface-selected);
+}
+
+.squire-build-slot-image {
+    width: 28px;
+    height: 28px;
+    object-fit: cover;
+    border: 0;
+    border-radius: 3px;
+}
+
+.squire-build-slot-name {
+    width: 100%;
+    overflow: hidden;
+    color: var(--blacksmith-tool-text);
+    font-size: 0.62em;
+    line-height: 1.15;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* The empty slot's own word: quieter than a filled slot's item name, because it
+   is a label for a hole rather than the name of a thing. */
+.squire-build-slot-label {
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.62em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* A slot whose item has left the sheet. Deliberately not blank: the difference
+   between "never filled" and "the sword you put here is gone" is most of why
+   anyone opens an old build. */
+.squire-build-slot.is-missing {
+    border-style: solid;
+    border-color: rgba(240, 142, 120, 0.5);
+}
+
+.squire-build-slot-warning {
+    color: #f08e78;
+    font-size: 0.9em;
+}
+
+.squire-build-portrait {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-radius: 4px;
+    background: var(--blacksmith-tool-surface-sunken);
+}
+
+.squire-build-portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 0;
+    border-radius: 0;
+}
+
+/* Says what the window is for. A ring of slots around a portrait otherwise reads
+   as a statement about what the character is wearing right now. */
+.squire-build-note {
+    margin: 0;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.72em;
+    font-style: italic;
+    text-align: center;
+}
