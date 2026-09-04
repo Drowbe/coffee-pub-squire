@@ -236,6 +236,72 @@ export async function createBuild(actor, name = 'New Build') {
     return build;
 }
 
+/**
+ * Copy a build, slots and prepared spells and all, and return the copy.
+ *
+ * Placed directly after the original rather than at the end, because a duplicate
+ * is a variant of the thing it came from and belongs beside it.
+ *
+ * The new build carries the same item ids, which is correct: both plans name the
+ * same longsword. Nothing is cloned on the sheet — a build has never owned an
+ * item, only pointed at one.
+ */
+export async function duplicateBuild(actor, buildId) {
+    const builds = getBuilds(actor);
+    const index = builds.findIndex(build => build.id === buildId);
+    if (index === -1) return null;
+
+    const source = builds[index];
+    const copy = {
+        id: foundry.utils.randomID(),
+        name: `${source.name} (Copy)`,
+        slots: { ...source.slots },
+        // Each class's list copied rather than shared, or editing one build's
+        // spells would edit the other's.
+        spells: Object.fromEntries(
+            Object.entries(source.spells ?? {}).map(([classId, list]) => [classId, [...list]])
+        )
+    };
+
+    await saveBuilds(actor, [...builds.slice(0, index + 1), copy, ...builds.slice(index + 1)]);
+    return copy;
+}
+
+/**
+ * What the gear in a build weighs.
+ *
+ * Gear only: prepared spells weigh nothing, and counting them would be absurd.
+ * Quantity is deliberately IGNORED — a build slots one arrow to mean "arrows",
+ * not to mean the whole stack of sixty, so multiplying by quantity would report
+ * a weight nobody is carrying because of this plan.
+ *
+ * Returns null when nothing in the build has a weight, so the footer can leave
+ * the figure out rather than claim a confident zero.
+ */
+export function gearWeight(actor, build) {
+    let total = 0;
+    let counted = 0;
+
+    for (const itemId of Object.values(build?.slots ?? {})) {
+        const item = itemId ? actor?.items?.get(itemId) : null;
+        if (!item) continue;
+
+        // dnd5e moved weight from a plain number to `{value, units}` partway
+        // through 3.x, and both shapes are still in the wild.
+        let weight = item.system?.weight;
+        if (weight && typeof weight === 'object') weight = weight.value;
+
+        const pounds = Number(weight);
+        if (!Number.isFinite(pounds) || pounds <= 0) continue;
+
+        total += pounds;
+        counted++;
+    }
+
+    // Two decimals at most, and no trailing zeroes: "12.5 lb", not "12.50 lb".
+    return counted ? Number(total.toFixed(2)) : null;
+}
+
 export async function deleteBuild(actor, buildId) {
     await saveBuilds(actor, getBuilds(actor).filter(build => build.id !== buildId));
 }

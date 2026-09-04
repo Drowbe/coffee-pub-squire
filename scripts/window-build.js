@@ -5,7 +5,7 @@ import {
     BUILD_BODY_SLOTS, BUILD_WEAPON_SLOTS, BUILD_SLOT_KEYS,
     getBuild, renameBuild, setBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, getCantrips, resolvePreparedSpells, setBuildSpell,
-    refuseSlotDrop
+    refuseSlotDrop, gearWeight
 } from './utility-builds.js';
 
 /**
@@ -137,6 +137,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 bodySlots,
                 weaponSlots,
                 attunement: { ...attunement, over: attunement.used > attunement.max },
+                weight: gearWeight(this.actor, build),
                 casters,
                 cantrips: casters.length ? getCantrips(this.actor) : [],
                 spellSlots: casters.length ? getSpellSlots(this.actor) : []

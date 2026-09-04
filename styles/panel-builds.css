@@ -89,23 +89,83 @@
 
 /* ---------------- THE PAPER DOLL ---------------- */
 
+/* The window's own ground.
+   
+   Applied to THIS module's content root, not to the shell — the Blacksmith
+   window API is explicit that the frame, title bar and cover belong to the base
+   class, and an id-level selector over them can silence its minimisation.
+   Everything here is inside `bodyContent`.
+   
+   A TEXTURE, not a scene. A photograph behind the doll was the first attempt and
+   it fought everything on top of it: a daylit field has its own subjects, its
+   own bright and dark regions, and sixteen dark boxes with pale captions landing
+   wherever the composition happened to put them. This is mottled dark green with
+   its own vignette — it reads as the surface the slots are laid on rather than
+   as a picture they are covering up, which is the only job a background in a
+   working window has.
+   
+   Almost entirely hidden, and meant to be. At a fifth visible it reads as
+   texture in the surface — something you notice only if you look for it — and
+   at anything more it starts being a green thing behind the slots rather than
+   the ground under them. The scrim is nearly opaque on purpose: what survives it
+   is the mottling and the vignette, which is the whole of what this is for. */
 .squire-build {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 4px;
+    padding: 8px;
+    border-radius: 4px;
+    background-image:
+        linear-gradient(rgba(8, 6, 4, 0.88), rgba(8, 6, 4, 0.92)),
+        url('../images/banners/panel-background-03.webp');
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+/* The readouts and the footer sit directly on the picture rather than in a box,
+   so they carry their own shadow to stay legible over whatever is behind them. */
+.squire-build-readout-label,
+.squire-build-caster-name,
+.squire-build-caster-count,
+.squire-build-summary,
+.squire-build-note {
+    text-shadow: 0 1px 3px rgba(8, 6, 4, 0.9);
 }
 
 /* The name is an input rather than a title, because renaming is the second
    thing anyone does after making a build and a separate rename gesture for a
-   field that is right there would be ceremony. Colours come from the shell's
-   field variables, which the base class already applies to bare inputs — this
-   only sizes it. */
+   field that is right there would be ceremony.
+
+   It READS as a heading and EDITS as a field: no box, no fill, no border until
+   you go near it. As a full-width boxed input it was the biggest thing in the
+   window and the least important thing in it, which is a bad trade for a word
+   most people set once. The base class themes bare inputs, so the fill and
+   border are turned off here deliberately rather than never having applied. */
 .squire-build-name {
     width: 100%;
-    font-size: 1.05em;
+    padding: 2px 6px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: none;
+    color: var(--blacksmith-tool-accent);
+    font-size: 1.0em;
     font-weight: 700;
     text-align: center;
+    transition: all 0.15s ease;
+}
+
+.squire-build-name:hover {
+    background: var(--blacksmith-tool-field-background);
+    border-color: var(--blacksmith-tool-field-border);
+}
+
+/* Focused, it is unmistakably a field again. */
+.squire-build-name:focus {
+    background: var(--blacksmith-tool-field-background);
+    border-color: var(--blacksmith-tool-field-focus-border);
+    color: var(--blacksmith-tool-field-text);
 }
 
 /* Five columns: two side rails, and three in the middle that the portrait spans.
@@ -581,6 +641,10 @@
 
 .squire-build-attunement-warning {
     color: #f08e78;
+}
+
+.squire-build-weight {
+    color: var(--blacksmith-tool-text-muted);
 }
 
 /* Says what the window is for. A ring of slots around a portrait otherwise reads

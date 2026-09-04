@@ -8,10 +8,11 @@
 --}}
 <div class="squire-build">
 
-    <div class="squire-build-name-row">
-        <input type="text" class="squire-build-name" value="{{build.name}}"
-               maxlength="60" spellcheck="false" aria-label="Build name">
-    </div>
+    {{!-- The name reads as a heading and edits as a field. It was a full-width
+          boxed input, which made the least important thing in the window the
+          biggest — it only needs to be reachable, not announced. --}}
+    <input type="text" class="squire-build-name" value="{{build.name}}"
+           maxlength="60" spellcheck="false" aria-label="Build name">
 
     <div class="squire-build-columns">
     <div class="squire-build-doll">
@@ -181,6 +182,11 @@
               data-tooltip="Attunement slots this build would use{{#if attunement.over}}<br><strong>More than this character has</strong>{{/if}}">
             <i class="fa-solid fa-gem"></i> {{attunement.used}} / {{attunement.max}} attuned
         </span>
+        {{#if weight}}
+        <span class="squire-build-weight" data-tooltip="What the gear in this build weighs. Prepared spells are not included, and a slotted stack counts once.">
+            <i class="fa-solid fa-weight-hanging"></i> {{weight}} lb
+        </span>
+        {{/if}}
         {{#if attunement.unattuned}}
         <span class="squire-build-attunement-warning"
               data-tooltip="These items require attunement and have not got it, so they would do nothing.">

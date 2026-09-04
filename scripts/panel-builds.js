@@ -1,7 +1,7 @@
 import { TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { getNativeElement, renderTemplate, getBlacksmith } from './helpers.js';
-import { BUILD_SLOT_KEYS, getBuilds, createBuild, deleteBuild } from './utility-builds.js';
+import { BUILD_SLOT_KEYS, getBuilds, createBuild, deleteBuild, duplicateBuild } from './utility-builds.js';
 import { BuildWindow } from './window-build.js';
 
 /** Blacksmith addresses an open menu by id; this is how this panel's gets closed. */
@@ -124,6 +124,16 @@ export class BuildsPanel {
                     name: 'Open',
                     icon: 'fa-solid fa-up-right-from-square',
                     callback: () => BuildWindow.open(this.actor, buildId)
+                }, {
+                    // The obvious next move once a build is full is "the same,
+                    // but swap one thing" — sixteen drags without this.
+                    name: 'Duplicate',
+                    icon: 'fa-solid fa-clone',
+                    callback: async () => {
+                        const copy = await duplicateBuild(this.actor, buildId);
+                        await this.render(this.element);
+                        if (copy) await BuildWindow.open(this.actor, copy.id);
+                    }
                 }, {
                     separator: true
                 }, {
