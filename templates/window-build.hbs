@@ -13,6 +13,8 @@
                maxlength="60" spellcheck="false" aria-label="Build name">
     </div>
 
+    <div class="squire-build-columns">
+    <div class="squire-build-doll">
     <div class="squire-build-body">
         {{#each bodySlots}}
         <div class="squire-build-slot{{#if this.round}} is-round{{/if}}{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
@@ -26,6 +28,10 @@
                   there — a caption panel becomes a band of colour across every
                   slot, and a text shadow vanishes on a pale icon. --}}
             <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
+            {{!-- The slot's own glyph, kept in the corner once the artwork has
+                  covered the label. A full doll is otherwise sixteen pictures
+                  with no way to tell which hole each one is filling. --}}
+            <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
             {{!-- Attunement, as a gem in the corner. Lit when attuned, hollow and
                   warned when the item requires it and has not got it — the
                   second is the one worth seeing, because that item will do
@@ -66,6 +72,10 @@
                   there — a caption panel becomes a band of colour across every
                   slot, and a text shadow vanishes on a pale icon. --}}
             <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
+            {{!-- The slot's own glyph, kept in the corner once the artwork has
+                  covered the label. A full doll is otherwise sixteen pictures
+                  with no way to tell which hole each one is filling. --}}
+            <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
             {{!-- Attunement, as a gem in the corner. Lit when attuned, hollow and
                   warned when the item requires it and has not got it — the
                   second is the one worth seeing, because that item will do
@@ -90,6 +100,79 @@
     {{!-- Says what this window is FOR, because nothing else in it does. A grid of
           empty boxes beside a portrait invites the reading that these are slots
           the character is currently wearing. --}}
+    </div>
+
+    {{#if casters}}
+    {{!-- The caster's half. One section per class that PREPARES: a Cleric 5 /
+          Wizard 3 has two independent limits and two lists, and one combined
+          number would be flatly wrong. A known caster — sorcerer, bard, warlock —
+          has no preparation maximum, so no section appears rather than an empty
+          one; their list is not a daily choice. --}}
+    <div class="squire-build-spells">
+        {{#each casters}}
+        <div class="squire-build-caster">
+            <div class="squire-build-caster-header">
+                <span class="squire-build-caster-name">{{this.name}}</span>
+                <span class="squire-build-caster-count">{{this.used}} / {{this.max}} prepared</span>
+            </div>
+            <div class="squire-build-spell-grid">
+                {{#each this.slots}}
+                <div class="squire-build-spell-slot{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
+                     data-spell-class="{{../id}}" data-spell-index="{{this.index}}"
+                     data-tooltip="{{#if this.filled}}{{this.name}}<br><em>Right-click to clear</em>{{else if this.missing}}This spell is no longer on the sheet<br><em>Right-click to clear</em>{{else}}Drag a spell here{{/if}}">
+                    {{#if this.filled}}
+                    <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
+                    {{#if this.concentration}}
+                    <i class="fa-solid fa-circle-c squire-build-concentration"
+                       data-tooltip="Concentration"></i>
+                    {{/if}}
+                    <span class="squire-build-spell-level">{{this.level}}</span>
+                    <span class="squire-build-slot-name">{{this.name}}</span>
+                    {{else if this.missing}}
+                    <i class="fa-solid fa-triangle-exclamation squire-build-slot-icon is-warning"></i>
+                    {{else}}
+                    <i class="fa-solid fa-sparkles squire-build-slot-icon"></i>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/each}}
+
+        {{!-- Cantrips are a READOUT, not slots. They are always available, so
+              they are not part of a daily plan and there is nothing to choose;
+              showing them beside the prepared list says what else is on hand. --}}
+        {{#if cantrips}}
+        <div class="squire-build-readout">
+            <div class="squire-build-readout-label">Cantrips</div>
+            <div class="squire-build-cantrips">
+                {{#each cantrips}}
+                <img class="squire-build-cantrip" src="{{this.img}}" alt="{{this.name}}" data-tooltip="{{this.name}}">
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+
+        {{!-- The slot pyramid, also a readout. It is what tells you whether a
+              prepared list is castable; it is not a set of containers, because
+              a prepared spell is not assigned to a slot in this game. --}}
+        {{#if spellSlots}}
+        <div class="squire-build-readout">
+            <div class="squire-build-readout-label">Slots</div>
+            <div class="squire-build-slot-ranks">
+                {{#each spellSlots}}
+                <span class="squire-build-rank" data-tooltip="{{this.label}} level: {{this.value}} of {{this.max}} remaining">
+                    <span class="squire-build-rank-label">{{this.label}}</span>
+                    <span class="squire-build-rank-pips">{{this.max}}</span>
+                </span>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+    </div>
+    {{/if}}
+    </div>
+
     {{!-- The one number this window can give you that counting by hand would not:
           attunement is the constraint that makes a build a puzzle rather than a
           list, and it is invisible on the sheet until you total it up. --}}

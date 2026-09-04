@@ -124,10 +124,23 @@ character surrounded by slots -- head, face, neck, back, chest, arms, hands, rin
 and the three weapon slots along the bottom. Drag items from the tray into the slots to say what this
 build is made of. Right-click a slot to empty it; right-click a build's tile to open or delete it.
 
+If your character prepares spells, the build window is wider and carries a column for them: a set of
+slots sized to exactly how many that class can prepare, with a running count. Drag spells in the same
+way you drag gear. Multiclass casters get one block per class, since each prepares its own number.
+Cantrips and your spell slots are shown beside the list for reference -- cantrips are always available
+so there is nothing to choose, and a prepared spell is not tied to a particular slot, so neither is
+something you fill in. Classes that know spells rather than preparing them get no such column.
+
 Magic items glow in their slot, coloured by rarity, and anything needing attunement carries a gem --
 lit if it is attuned, warm and hollow if it is not, which means it would do nothing if you wore this
 set. The foot of the window totals the attunement the build would spend against what your character
 has, so you can see at a glance whether the set actually fits.
+
+Most slots will take anything you could wear or carry -- a helm, a cloak, a belt and a pair of boots
+look identical to the game, so Squire does not pretend to tell them apart. The ones it *can* check, it
+does: the ring slots take rings, the ammo slots take ammunition, Both Hands takes a weapon, and nothing
+that is not a physical object -- a spell, a feat, a class feature -- goes anywhere. If a slot turns
+something down it says what it was expecting.
 
 **A build is a plan, not a state.** Nothing in it changes what your character is actually wearing --
 it is somewhere to work out a set of gear, not a switch that puts it on. Only items already on your

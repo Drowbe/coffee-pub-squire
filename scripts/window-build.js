@@ -3,7 +3,9 @@ import { PanelManager } from './manager-panel.js';
 import { renderTemplate } from './helpers.js';
 import {
     BUILD_BODY_SLOTS, BUILD_WEAPON_SLOTS, BUILD_SLOT_KEYS,
-    getBuild, renameBuild, setBuildSlot, resolveSlots, attunementSummary
+    getBuild, renameBuild, setBuildSlot, resolveSlots, attunementSummary,
+    getPreparingClasses, getSpellSlots, getCantrips, resolvePreparedSpells, setBuildSpell,
+    refuseSlotDrop
 } from './utility-builds.js';
 
 /**
@@ -32,7 +34,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             classes: ['squire-tool-window', 'squire-build-window'],
             position: { width: 520, height: 'auto' },
             window: { title: 'Gear Build', resizable: false, minimizable: true },
-            windowSizeConstraints: { minWidth: 460, maxWidth: 720 },
+            windowSizeConstraints: { minWidth: 460, maxWidth: 980 },
             toolTitlebar: 'full',
             rememberPosition: false
         }
@@ -67,7 +69,10 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             return existing;
         }
 
-        const win = new BuildWindow({ id, actor, buildId });
+        // A caster needs the second column; everyone else would get 300px of
+        // empty. Set at construction because options are frozen afterwards.
+        const width = getPreparingClasses(actor).length ? 840 : 520;
+        const win = new BuildWindow({ id, actor, buildId, position: { width, height: 'auto' } });
         await win.render({ force: true });
         return win;
     }
@@ -111,6 +116,18 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // and a sword is as capable of demanding attunement as an amulet.
         const attunement = attunementSummary(this.actor, [...bodySlots, ...weaponSlots]);
 
+        // One section per class that prepares. `used` counts what this BUILD has
+        // slotted, not what the sheet currently has prepared — the window is
+        // asking whether the plan fits, not reporting today's state.
+        const casters = getPreparingClasses(this.actor).map(casterClass => {
+            const slots = resolvePreparedSpells(this.actor, build, casterClass);
+            return {
+                ...casterClass,
+                slots,
+                used: slots.filter(slot => slot.filled).length
+            };
+        });
+
         return {
             appId: this.id,
             bodyContent: await renderTemplate(TEMPLATES.WINDOW_BUILD, {
@@ -119,7 +136,10 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 actorImg: this.actor?.img ?? 'icons/svg/mystery-man.svg',
                 bodySlots,
                 weaponSlots,
-                attunement: { ...attunement, over: attunement.used > attunement.max }
+                attunement: { ...attunement, over: attunement.used > attunement.max },
+                casters,
+                cantrips: casters.length ? getCantrips(this.actor) : [],
+                spellSlots: casters.length ? getSpellSlots(this.actor) : []
             })
         };
     }
@@ -160,7 +180,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             });
         }
 
-        root.querySelectorAll('.squire-build-slot').forEach(slot => {
+        root.querySelectorAll('.squire-build-slot, .squire-build-spell-slot').forEach(slot => {
             // dragover must preventDefault or the browser refuses the drop. The
             // class is added here rather than on dragenter because dragenter
             // fires again for every child element crossed, and a slot with an
@@ -185,12 +205,25 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             slot.addEventListener('contextmenu', async (event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                const slotKey = slot.dataset.slot;
-                if (!this.build?.slots?.[slotKey]) return;
-                await setBuildSlot(this.actor, this.buildId, slotKey, null);
-                await this._refresh();
+                await this._clearSlot(slot);
             });
         });
+    }
+
+    /** Empty whichever kind of slot this is — gear by key, spell by class and index. */
+    async _clearSlot(slot) {
+        const { slot: slotKey, spellClass, spellIndex } = slot.dataset;
+
+        if (spellClass !== undefined) {
+            const list = this.build?.spells?.[spellClass] ?? [];
+            if (!list[Number(spellIndex)]) return;
+            await setBuildSpell(this.actor, this.buildId, spellClass, spellIndex, null);
+        } else {
+            if (!this.build?.slots?.[slotKey]) return;
+            await setBuildSlot(this.actor, this.buildId, slotKey, null);
+        }
+
+        await this._refresh();
     }
 
     /**
@@ -207,8 +240,10 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         event.stopPropagation();
         slot.classList.remove('is-drop-target');
 
-        const slotKey = slot.dataset.slot;
-        if (!BUILD_SLOT_KEYS.includes(slotKey) || !this.build) return;
+        const { slot: slotKey, spellClass, spellIndex } = slot.dataset;
+        const isSpellSlot = spellClass !== undefined;
+        if (!this.build) return;
+        if (!isSpellSlot && !BUILD_SLOT_KEYS.includes(slotKey)) return;
 
         let data;
         try {
@@ -229,7 +264,37 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             return;
         }
 
-        await setBuildSlot(this.actor, this.buildId, slotKey, item.id);
+        if (!isSpellSlot) {
+            // Enforced only where dnd5e has a field to answer with — nothing
+            // non-physical anywhere, plus rings, ammo, and hands. See
+            // SLOT_RULES. A refusal always says what the slot wanted, because
+            // "nothing happened" is the least useful answer to a failed drag.
+            const refusal = refuseSlotDrop(slotKey, item);
+            if (refusal) {
+                ui.notifications.warn(refusal);
+                return;
+            }
+
+            await setBuildSlot(this.actor, this.buildId, slotKey, item.id);
+            await this._refresh();
+            return;
+        }
+
+        if (item.type !== 'spell') {
+            ui.notifications.warn(`${item.name} is not a spell, so it cannot be prepared.`);
+            return;
+        }
+
+        // A cantrip is always available and never counts against the limit, so
+        // putting one in a prepared slot spends a slot on nothing. Refused
+        // rather than allowed-and-ignored: silently accepting it would make the
+        // count wrong in the one place the count is the point.
+        if (item.system?.level === 0) {
+            ui.notifications.warn(`${item.name} is a cantrip — it is always available and does not need preparing.`);
+            return;
+        }
+
+        await setBuildSpell(this.actor, this.buildId, spellClass, spellIndex, item.id);
         await this._refresh();
     }
 }

@@ -279,6 +279,171 @@
     border-radius: 0;
 }
 
+/* ---------------- THE TWO COLUMNS ----------------
+
+   The doll on the left, the caster's page on the right. A non-caster's window is
+   built narrower and never renders the second column, so this collapses to one
+   without a rule saying so. */
+.squire-build-columns {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.squire-build-doll {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    /* The weapons row lost its separation when this wrapper arrived: the body
+       and the weapons became plain block siblings with nothing between them.
+       Wider than the 6px inside each grid, because this is the break between
+       what is worn and what is held. */
+    gap: 14px;
+    min-width: 0;
+}
+
+.squire-build-spells {
+    flex: 0 0 290px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+/* One block per preparing class. A Cleric 5 / Wizard 3 gets two, because the
+   limits are independent and a combined figure would be wrong. */
+.squire-build-caster-header {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid var(--blacksmith-tool-divider);
+}
+
+.squire-build-caster-name {
+    color: var(--blacksmith-tool-accent);
+    font-size: 0.82em;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.squire-build-caster-count {
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.7em;
+    white-space: nowrap;
+}
+
+/* Four across, square, same treatment as the gear slots — a prepared spell is a
+   chosen thing in a limited set, which is what a slot means everywhere else in
+   this window. */
+.squire-build-spell-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+}
+
+.squire-build-spell-slot {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 1px dashed var(--blacksmith-tool-divider);
+    border-radius: 4px;
+    background: var(--blacksmith-tool-surface-sunken);
+    transition: all 0.15s ease;
+}
+
+.squire-build-spell-slot.is-filled {
+    border-style: solid;
+    border-color: var(--blacksmith-tool-border);
+    background: rgba(8, 6, 4, 0.9);
+}
+
+.squire-build-spell-slot.is-missing {
+    border-style: solid;
+    border-color: rgba(240, 142, 120, 0.5);
+}
+
+.squire-build-spell-slot.is-drop-target {
+    border-style: solid;
+    border-color: var(--blacksmith-color-brand-accent, var(--blacksmith-tool-accent));
+    background: var(--blacksmith-tool-surface-selected);
+}
+
+/* A spell tile is small, so the caption only appears on hover — at this size a
+   permanent one would be two clipped characters over most of the artwork. The
+   tooltip carries the name the rest of the time. */
+.squire-build-spell-slot .squire-build-slot-name {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.squire-build-spell-slot:hover .squire-build-slot-name {
+    opacity: 1;
+}
+
+/* ---------------- READOUTS ----------------
+
+   Cantrips and the slot pyramid. Neither is a drop target: cantrips are always
+   available so there is nothing to choose, and a prepared spell is not assigned
+   to a slot in this game — the pyramid is what tells you whether the list above
+   is castable, not a set of containers. */
+.squire-build-readout {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.squire-build-readout-label {
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.62em;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.squire-build-cantrips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.squire-build-cantrip {
+    width: 24px;
+    height: 24px;
+    object-fit: cover;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-radius: 3px;
+}
+
+.squire-build-slot-ranks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.squire-build-rank {
+    display: flex;
+    gap: 4px;
+    align-items: baseline;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--blacksmith-tool-surface-sunken);
+    font-size: 0.66em;
+}
+
+.squire-build-rank-label {
+    color: var(--blacksmith-tool-text-muted);
+}
+
+.squire-build-rank-pips {
+    color: var(--blacksmith-tool-text);
+    font-weight: 700;
+}
+
 /* ---------------- RARITY ----------------
 
    `data-rarity` carries the dnd5e key, and only magic items have one — a rope
@@ -317,6 +482,51 @@
 .squire-build-slot[data-rarity="artifact"].is-filled {
     border-color: #d4553a;
     box-shadow: 0 0 11px rgba(212, 85, 58, 0.6);
+}
+
+/* The slot's own glyph, kept once the artwork has taken the label's place.
+   Small and faint on purpose — it is a reminder of which hole this is, not a
+   thing to look at, and it must not compete with the item it sits on. */
+.squire-build-slot-hint {
+    position: absolute;
+    top: 3px;
+    right: 4px;
+    z-index: 2;
+    color: rgba(241, 231, 214, 0.5);
+    font-size: 0.58em;
+    text-shadow: 0 1px 3px rgba(8, 6, 4, 0.95);
+}
+
+/* A spell's level, in the corner a gear slot uses for its glyph — both answer
+   "what kind of thing is this". */
+.squire-build-spell-level {
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    z-index: 2;
+    min-width: 12px;
+    padding: 0 3px;
+    border-radius: 3px;
+    background: rgba(8, 6, 4, 0.8);
+    color: #f4e7cd;
+    font-size: 0.56em;
+    font-weight: 700;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* Concentration, in the corner a gear slot uses for attunement — both are a
+   thing the spell or item asks of you while it is in play. Marked and never
+   counted: preparing six concentration spells is legal, you just cannot run two
+   at once, so a total would imply a limit the game does not have. */
+.squire-build-concentration {
+    position: absolute;
+    top: 2px;
+    left: 3px;
+    z-index: 2;
+    color: #d9b85c;
+    font-size: 0.62em;
+    text-shadow: 0 1px 3px rgba(8, 6, 4, 0.95);
 }
 
 /* ---------------- ATTUNEMENT ----------------
