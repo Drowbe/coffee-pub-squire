@@ -85,7 +85,15 @@
    unfavouriting and drag-to-handle working with no second template to keep in
    step. That is why this file is all positioning and no new elements. */
 
-.squire-tray .favorites-list.favorites-layout-tiles {
+/* The GROUP holds the grid, not the list. The list is a plain column of
+   headings and grids.
+
+   The heading used to be a grid item itself, which meant `grid-auto-rows`
+   stretched it to a tile's height — a section title in a 116px slab. Nothing
+   fixes that from inside the grid: `align-self: start` shrinks the element but
+   leaves the row, and the row height is exactly what the tiles need. So the
+   headings step outside it. */
+.squire-tray .favorites-layout-tiles .favorites-group-items {
     display: grid;
     /* Three across at the tray's 400px floor; `auto-fill` rather than
        `repeat(3, ...)` so a widened tray gets a fourth column instead of three
@@ -102,29 +110,24 @@
     grid-auto-rows: 116px;
     /* Backfills the hole a 2x2 leaves beside a column of 1x1s. Nothing computes
        placement here — every favourite is equally a thing you reach for, so
-       there is no packing to protect and the browser can simply fill. */
+       there is no packing to protect and the browser can simply fill.
+
+       Safe under headings now, which it was not when one grid held everything:
+       dense lets a later tile fill an earlier hole, and with the headings inside
+       the grid an earlier hole could be ABOVE the heading that tile belonged
+       under. A grid per group makes that unreachable — there is no hole on the
+       far side of a heading to fall into, because the heading is not in here. */
     grid-auto-flow: dense;
     gap: 6px;
     padding: 2px;
 }
 
-/* Dense packing has to go when the list is grouped. `dense` lets a later item
-   fill an earlier hole, and an earlier hole may be ABOVE the heading that item
-   belongs under — so a small weapon would quietly climb into a gap left in the
-   spells. The headings are the promise here and the packing is the convenience,
-   so the packing yields. */
-.squire-tray .favorites-list.favorites-layout-tiles.favorites-grouped {
-    grid-auto-flow: row;
-}
-
-/* A heading owns its whole row, which is also what forces the next item to
-   start a fresh one. Without the full span it would sit in a single cell with
-   tiles beside it, reading as a label for the tile to its right rather than for
-   everything below it. */
+/* Natural height, like the headings in every other panel — which is the whole
+   point of them living outside the grid. The bottom margin is smaller than the
+   shared rule's 8px because the grid below carries 2px of padding of its own. */
 .squire-tray .favorites-layout-tiles .favorites-category-header {
-    grid-column: 1 / -1;
-    margin-top: 4px;
-    margin-bottom: 0;
+    margin-top: 10px;
+    margin-bottom: 4px;
 }
 
 /* The first heading has the panel header directly above it, so its top margin

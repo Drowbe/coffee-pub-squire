@@ -880,7 +880,6 @@ export class FavoritesPanel {
             hasFavorites: this.favorites.length > 0,
             layout: FavoritesPanel.getLayout(),
             groups: FavoritesPanel._groupFavorites(this.favorites, FavoritesPanel.getSort()),
-            grouped: FavoritesPanel.getSort() === 'category',
             // The icon IS the state — the header shows which sort is on rather
             // than a generic sort glyph you have to open a menu to interrogate.
             sortIcon: SORT_ICONS[FavoritesPanel.getSort()],

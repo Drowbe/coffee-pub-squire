@@ -41,12 +41,15 @@
     {{!-- Always groups, even when there is only one and it has no name. One
           copy of the row markup rather than a flat branch and a grouped branch
           that would have to be kept identical by hand. --}}
-    <div class="favorites-list favorites-layout-{{layout}}{{#if grouped}} favorites-grouped{{/if}}">
+    <div class="favorites-list favorites-layout-{{layout}}">
         {{#if favorites}}
         {{#each groups}}
         {{#if this.label}}
         <div class="category-header favorites-category-header">{{this.label}}</div>
         {{/if}}
+        {{!-- Each group carries its OWN grid, so a heading is never a grid item
+              and never inherits the fixed row height the tiles need. --}}
+        <div class="favorites-group-items">
         {{#each this.items}}
         <div draggable="true" class="panel-item" 
              data-item-id="{{this.id}}" data-item-type="{{this.type}}"
@@ -99,6 +102,7 @@
             </div>
         </div>
         {{/each}}
+        </div>
         {{/each}}
         {{else}}
         <div class="tray-title-small" style="text-align: center; padding: 10px;">No favorites available</div>
