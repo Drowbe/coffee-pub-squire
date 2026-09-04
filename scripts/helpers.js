@@ -1,5 +1,5 @@
 import { MODULE } from './const.js';
-import { getHandleBuilds, getHandleBuildWeapons } from './utility-builds.js';
+import { getHandleBuilds, getHandleBuildActions } from './utility-builds.js';
 
 /**
  * True when this user is the GM or the current party leader.
@@ -963,14 +963,14 @@ export const registerHelpers = function() {
         }
     });
 
-    // The worn build's weapons. Derived per render, so editing a build changes
-    // the strip without anything having to be told.
-    Handlebars.registerHelper('getHandleBuildWeapons', function(actor) {
+    // The worn build's weapons and quick-cast spells. Derived per render, so
+    // editing a build changes the strip without anything having to be told.
+    Handlebars.registerHelper('getHandleBuildActions', function(actor) {
         if (typeof actor?.getFlag !== 'function') return [];
         try {
-            return getHandleBuildWeapons(actor);
+            return getHandleBuildActions(actor);
         } catch (error) {
-            console.error('Coffee Pub Squire | Failed to read the handle build weapons:', error);
+            console.error('Coffee Pub Squire | Failed to read the handle build actions:', error);
             return [];
         }
     });

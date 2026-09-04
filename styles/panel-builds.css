@@ -739,6 +739,29 @@
     border-color: var(--blacksmith-tool-border);
 }
 
+/* "unset" over the bottom of the circle. The dashed border was carrying this on
+   its own and it was too quiet: an unset slot shows the character's current
+   artwork, so it looks chosen, and a build writes only the images it actually
+   sets — an unset portrait changes nothing on apply and looked like it should. */
+.squire-build-image-unset {
+    position: absolute;
+    right: 0;
+    bottom: 4px;
+    left: 0;
+    z-index: 2;
+    color: rgba(244, 231, 205, 0.85);
+    font-size: 0.52em;
+    letter-spacing: 0.05em;
+    text-align: center;
+    text-transform: uppercase;
+    text-shadow: 0 1px 3px rgba(8, 6, 4, 0.95);
+    pointer-events: none;
+}
+
+.squire-build-image-slot.is-set .squire-build-image-unset {
+    display: none;
+}
+
 /* The glyph stays legible over the picture underneath it, which unlike an item
    icon is a face and may be pale. */
 .squire-build-image-slot .squire-build-slot-hint {

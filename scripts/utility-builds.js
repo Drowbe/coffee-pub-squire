@@ -71,6 +71,13 @@ const SLOT_RULES = {
         test: item => item.type === 'weapon',
         refusal: item => `${item.name} is not a weapon.`
     },
+    // The doll's two quick-cast slots. A cantrip is welcome here, unlike in a
+    // prepared slot: this asks "what do you reach for", and a cantrip is the
+    // most reachable thing a caster owns.
+    spell: {
+        test: item => item.type === 'spell',
+        refusal: item => `${item.name} is not a spell.`
+    },
     // Main Hand and Off Hand have NO rule of their own beyond the physical one.
     // "Weapon or shield" was the first attempt and it refused a torch — one of
     // the most ordinary things a hand holds, along with a holy symbol, a wand, a
@@ -122,8 +129,19 @@ export const BUILD_BODY_SLOTS = [
     // it feeds. Two rather than one per weapon: a quiver is a thing you carry,
     // not a thing each hand carries, and three would have implied that Both
     // Hands needs its own supply separate from the bow in it.
-    { key: 'ammo1', label: 'Ammo',  icon: 'fa-bow-arrow',         row: 6, column: 1, round: true, accepts: 'ammo' },
-    { key: 'ammo2', label: 'Ammo',  icon: 'fa-bow-arrow',         row: 6, column: 5, round: true, accepts: 'ammo' }
+    // The Feet row, filled out: spells at the rails, ammunition beside the
+    // boots, feet in the middle. Everything added to this row is something a
+    // character USES rather than wears, which is why all four are round — the
+    // same distinction the ammo slots were already drawing on their own.
+    //
+    // Two spells, not a list. This is the pair reached for without thinking —
+    // the caster's equivalent of a main and an off hand — where the prepared
+    // column on the right is the whole daily choice. Two is what fits on a
+    // handle beside three weapons, which is where these are going.
+    { key: 'spell1', label: 'Primary',   icon: 'fa-wand-magic-sparkles', row: 6, column: 1, round: true, accepts: 'spell' },
+    { key: 'ammo1',  label: 'Ammo',      icon: 'fa-bow-arrow',           row: 6, column: 2, round: true, accepts: 'ammo' },
+    { key: 'ammo2',  label: 'Ammo',      icon: 'fa-bow-arrow',           row: 6, column: 4, round: true, accepts: 'ammo' },
+    { key: 'spell2', label: 'Secondary', icon: 'fa-wand-magic-sparkles', row: 6, column: 5, round: true, accepts: 'spell' }
 ];
 
 /**
@@ -353,6 +371,25 @@ export async function setBuildMode(actor, buildId, mode) {
 
     await saveBuilds(actor, getBuilds(actor).map(build =>
         build.id === buildId ? { ...build, mode: next } : build));
+}
+
+/**
+ * Move a build one place up or down the rail.
+ *
+ * `delta` rather than a target index: the two callers are an up arrow and a down
+ * arrow, and making them each work out a destination would be two chances to get
+ * the same arithmetic wrong. Out-of-range moves are a no-op rather than a clamp,
+ * so the menu can simply not offer the entry at the ends and the two agree.
+ */
+export async function moveBuild(actor, buildId, delta) {
+    const builds = getBuilds(actor);
+    const from = builds.findIndex(build => build.id === buildId);
+    const to = from + delta;
+    if (from === -1 || to < 0 || to >= builds.length) return;
+
+    const [moved] = builds.splice(from, 1);
+    builds.splice(to, 0, moved);
+    await saveBuilds(actor, builds);
 }
 
 export async function deleteBuild(actor, buildId) {
@@ -856,10 +893,30 @@ export async function applyBuild(actor, build) {
     // updates would each re-render the sheet and every panel watching it.
     if (updates.length) await actor.updateEmbeddedDocuments('Item', updates);
 
-    const actorUpdate = {};
-    if (build.images?.portrait) actorUpdate.img = build.images.portrait;
-    if (build.images?.token) actorUpdate['prototypeToken.texture.src'] = build.images.token;
-    if (Object.keys(actorUpdate).length) await actor.update(actorUpdate);
+    // Portrait and token are written SEPARATELY, and the result of each is read
+    // back rather than assumed.
+    //
+    // They were one `actor.update()` carrying both keys, and when the portrait
+    // stopped changing there was no way to tell from the outside whether the
+    // write had been rejected, whether the path was empty, or whether the update
+    // had run at all — the canvas token repaints through its own call below, so
+    // a silent failure here still looked half-successful. Two writes and a
+    // verified read cost one extra round trip and make the failure legible.
+    const images = { portrait: false, token: false };
+
+    if (build.images?.portrait && build.images.portrait !== actor.img) {
+        await actor.update({ img: build.images.portrait });
+        images.portrait = actor.img === build.images.portrait;
+        if (!images.portrait) {
+            console.error('Coffee Pub Squire | The portrait did not take:',
+                { wanted: build.images.portrait, actual: actor.img });
+        }
+    }
+
+    if (build.images?.token && build.images.token !== actor.prototypeToken?.texture?.src) {
+        await actor.update({ 'prototypeToken.texture.src': build.images.token });
+        images.token = actor.prototypeToken?.texture?.src === build.images.token;
+    }
 
     const tokensChanged = build.images?.token
         ? await applyTokenArtwork(actor, build.images.token)
@@ -870,7 +927,8 @@ export async function applyBuild(actor, build) {
         unequipped,
         prepared,
         unprepared,
-        imagesChanged: Object.keys(actorUpdate).length,
+        imagesChanged: (images.portrait ? 1 : 0) + (images.token ? 1 : 0),
+        images,
         tokensChanged,
         undo
     };
@@ -1052,24 +1110,24 @@ export async function setActiveBuildId(actor, buildId) {
 }
 
 /**
- * The weapons the applied build puts on the handle.
+ * What the applied build puts on the handle.
  *
- * The three weapon slots and nothing else. The handle is for things you CLICK
- * TO USE, and armour, rings and a belt would be five icons that do nothing when
- * pressed. Ammunition and spells are each their own conversation and are
- * deliberately not swept in here.
+ * The three weapon slots and the two quick-cast spells — everything on the doll
+ * you CLICK TO USE. Armour, rings and a belt are not here, because they would be
+ * icons that do nothing when pressed; ammunition is not either, because it is
+ * spent by the weapon that fires it rather than used on its own.
  *
  * DERIVED, never stored. The alternative is a second list that has to be kept in
  * step with the build, and would go stale the moment somebody edited the build
- * it was copied from. Recomputing costs three map lookups.
+ * it was copied from. Recomputing costs five map lookups.
  */
-export function getHandleBuildWeapons(actor) {
+export function getHandleBuildActions(actor) {
     if (!game.settings.get(MODULE.ID, 'buildsUpdateHandle')) return [];
 
     const build = getBuild(actor, getActiveBuildId(actor));
     if (!build || build.mode === 'costume') return [];
 
-    return BUILD_WEAPON_SLOTS
+    return [...BUILD_WEAPON_SLOTS, ...BUILD_BODY_SLOTS.filter(slot => slot.accepts === 'spell')]
         .map(slot => actor?.items?.get(build.slots?.[slot.key]))
         .filter(Boolean)
         .map(item => ({ id: item.id, name: item.name, img: item.img }));

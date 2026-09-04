@@ -35,9 +35,9 @@
 
       Three slots only — Main, Both and Off Hand. The handle is for things you
       click to use, and a belt would be an icon that does nothing when pressed. --}}
-{{#if (getHandleBuildWeapons actor)}}
+{{#if (getHandleBuildActions actor)}}
 <div class="handle-build-weapons">
-    {{#each (getHandleBuildWeapons actor)}}
+    {{#each (getHandleBuildActions actor)}}
         <div class="squire-handle-control handle-favorite-icon handle-build-weapon"
              data-item-id="{{this.id}}"
              data-tooltip="<strong>{{this.name}}</strong><br><em>From the build you are wearing</em>">

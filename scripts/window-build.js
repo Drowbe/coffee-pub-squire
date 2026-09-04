@@ -8,7 +8,7 @@ import {
     getPreparingClasses, getSpellSlots, getCantrips, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
     estimateArmorClass, previewSlotChange, setBuildMode, revertBuild, damageLabel,
-    setActiveBuildId, getActiveBuildId, ensureDefaultCostume
+    setActiveBuildId, getActiveBuildId, ensureDefaultCostume, moveBuild
 } from './utility-builds.js';
 
 /**
@@ -120,6 +120,18 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         await detached.applySelected(buildId);
     }
 
+    /**
+     * Move a build up or down the rail.
+     *
+     * Deliberately does NOT change which build is selected: reordering is about
+     * the list, and having the doll jump to whatever you just nudged would make
+     * a tidy-up feel like a navigation.
+     */
+    async moveAndKeep(buildId, delta) {
+        await moveBuild(this.actor, buildId, delta);
+        await this._refresh();
+    }
+
     /** Show a different build. */
     async selectBuild(buildId) {
         if (!buildId || buildId === this.buildId) return;
@@ -215,7 +227,8 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         if (result.unequipped) changes.push(`unequipped ${result.unequipped}`);
         if (result.prepared) changes.push(`prepared ${result.prepared}`);
         if (result.unprepared) changes.push(`unprepared ${result.unprepared}`);
-        if (result.imagesChanged) changes.push('changed artwork');
+        if (result.images?.portrait) changes.push('changed portrait');
+        if (result.images?.token) changes.push('changed token');
 
         // Undo is the toast's single click, not a pair of buttons: Blacksmith's
         // toast has one `onClick` and no button row, so "keep" is what happens
@@ -420,6 +433,28 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 event.stopPropagation();
 
                 const buildId = entry.dataset.buildId;
+
+                // Blacksmith's menu has no `condition` hook, so an entry that
+                // cannot apply is simply not pushed — the build at the top has
+                // no Move Up, rather than a dead one that looks clickable.
+                const builds = getBuilds(this.actor);
+                const index = builds.findIndex(build => build.id === buildId);
+                const moves = [];
+                if (index > 0) {
+                    moves.push({
+                        name: 'Move Up',
+                        icon: 'fa-solid fa-angle-up',
+                        callback: () => this.moveAndKeep(buildId, -1)
+                    });
+                }
+                if (index > -1 && index < builds.length - 1) {
+                    moves.push({
+                        name: 'Move Down',
+                        icon: 'fa-solid fa-angle-down',
+                        callback: () => this.moveAndKeep(buildId, 1)
+                    });
+                }
+
                 getBlacksmith().uiContextMenu.show({
                     id: 'squire-build-rail-menu',
                     x: event.clientX,
@@ -429,6 +464,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                           callback: () => this.applySelected(buildId) },
                         { name: 'Duplicate', icon: 'fa-solid fa-clone',
                           callback: () => this.duplicateSelected(buildId) },
+                        ...(moves.length ? [{ separator: true }, ...moves] : []),
                         { separator: true },
                         { name: 'Delete Build', icon: 'fa-solid fa-trash',
                           callback: () => this.deleteSelected(buildId) }
