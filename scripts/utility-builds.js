@@ -226,6 +226,12 @@ export function getBuilds(actor) {
             const value = build.slots?.[key];
             return [key, typeof value === 'string' ? value : null];
         })),
+        // 'gear' or 'costume'. A costume changes only how the character LOOKS —
+        // portrait and token — and touches no equipment or spells. Worth being a
+        // mode rather than "a build with empty slots", because an empty gear
+        // build applied would strip the character of everything it owns, and
+        // that is the opposite of what somebody dressing up wants.
+        mode: build.mode === 'costume' ? 'costume' : 'gear',
         // Portrait and token, as paths. Validated to strings so a malformed flag
         // costs one slot rather than the panel.
         images: Object.fromEntries(BUILD_IMAGE_KEYS.map(key => {
@@ -264,6 +270,7 @@ export async function createBuild(actor, name = 'New Build') {
     const build = {
         id: foundry.utils.randomID(),
         name,
+        mode: 'gear',
         slots: Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null])),
         images: Object.fromEntries(BUILD_IMAGE_KEYS.map(key => [key, null])),
         spells: {}
@@ -291,6 +298,7 @@ export async function duplicateBuild(actor, buildId) {
     const copy = {
         id: foundry.utils.randomID(),
         name: `${source.name} (Copy)`,
+        mode: source.mode,
         slots: { ...source.slots },
         images: { ...source.images },
         // Each class's list copied rather than shared, or editing one build's
@@ -337,6 +345,14 @@ export function gearWeight(actor, build) {
 
     // Two decimals at most, and no trailing zeroes: "12.5 lb", not "12.50 lb".
     return counted ? Number(total.toFixed(2)) : null;
+}
+
+/** Switch a build between dressing the character and equipping it. */
+export async function setBuildMode(actor, buildId, mode) {
+    const next = mode === 'costume' ? 'costume' : 'gear';
+
+    await saveBuilds(actor, getBuilds(actor).map(build =>
+        build.id === buildId ? { ...build, mode: next } : build));
 }
 
 export async function deleteBuild(actor, buildId) {
@@ -786,6 +802,20 @@ export function buildSummary(actor, build) {
 export async function applyBuild(actor, build) {
     if (!actor || !build) return null;
 
+    // Everything needed to put it back, captured before the first write. Held by
+    // the caller in memory rather than in a flag: undo is a right-now offer on a
+    // toast, not a history the world should carry around.
+    const undo = {
+        items: [],
+        img: actor.img,
+        token: actor.prototypeToken?.texture?.src ?? null
+    };
+
+    // A costume changes only how the character looks. Its gear slots are left
+    // strictly alone — not applied as "equip nothing", which would strip the
+    // character bare, and is the opposite of what dressing up means.
+    const costume = build.mode === 'costume';
+
     const gearIds = new Set(Object.values(build.slots ?? {}).filter(Boolean));
     const spellIds = new Set(
         Object.values(build.spells ?? {}).flat().filter(Boolean)
@@ -797,13 +827,14 @@ export async function applyBuild(actor, build) {
     let prepared = 0;
     let unprepared = 0;
 
-    for (const item of actor.items) {
+    for (const item of costume ? [] : actor.items) {
         // Equippable is "has an equipped flag at all" — that is dnd5e's own way
         // of saying the question applies to this item.
         if (item.system?.equipped !== undefined) {
             const shouldEquip = gearIds.has(item.id);
             if (!!item.system.equipped !== shouldEquip) {
                 updates.push({ _id: item.id, 'system.equipped': shouldEquip });
+                undo.items.push({ _id: item.id, 'system.equipped': !!item.system.equipped });
                 shouldEquip ? equipped++ : unequipped++;
             }
         }
@@ -815,6 +846,7 @@ export async function applyBuild(actor, build) {
             const isPrepared = Number(item.system.prepared) > 0;
             if (isPrepared !== shouldPrepare) {
                 updates.push({ _id: item.id, 'system.prepared': shouldPrepare ? 1 : 0 });
+                undo.items.push({ _id: item.id, 'system.prepared': Number(item.system.prepared) || 0 });
                 shouldPrepare ? prepared++ : unprepared++;
             }
         }
@@ -829,13 +861,66 @@ export async function applyBuild(actor, build) {
     if (build.images?.token) actorUpdate['prototypeToken.texture.src'] = build.images.token;
     if (Object.keys(actorUpdate).length) await actor.update(actorUpdate);
 
+    const tokensChanged = build.images?.token
+        ? await applyTokenArtwork(actor, build.images.token)
+        : 0;
+
     return {
         equipped,
         unequipped,
         prepared,
         unprepared,
-        imagesChanged: Object.keys(actorUpdate).length
+        imagesChanged: Object.keys(actorUpdate).length,
+        tokensChanged,
+        undo
     };
+}
+
+/**
+ * Repaint this actor's tokens already on the canvas.
+ *
+ * `prototypeToken` is the stamp for tokens made LATER; it does nothing to the
+ * ones already standing on the map, which is where everyone is looking. Without
+ * this, applying a build changed the portrait and the sidebar and left the
+ * figure on the table wearing the old face.
+ *
+ * Matched on the actor's UUID rather than its id: an unlinked token's synthetic
+ * actor shares the base actor's id, so an id check would repaint every token
+ * made from the same prototype — a room of identical guards would all change
+ * because one of them did.
+ */
+async function applyTokenArtwork(actor, src) {
+    const updates = (canvas?.tokens?.placeables ?? [])
+        .filter(token => token.actor?.uuid === actor.uuid
+            && token.document?.texture?.src !== src)
+        .map(token => ({ _id: token.id, 'texture.src': src }));
+
+    if (!updates.length) return 0;
+
+    await canvas.scene.updateEmbeddedDocuments('Token', updates);
+    return updates.length;
+}
+
+/**
+ * Put back what applyBuild changed.
+ *
+ * Takes the record applyBuild handed out rather than recomputing anything: the
+ * only correct "before" is the one measured before the writes, and a second
+ * derivation would be a guess about a state that no longer exists.
+ */
+export async function revertBuild(actor, undo) {
+    if (!actor || !undo) return;
+
+    if (undo.items?.length) await actor.updateEmbeddedDocuments('Item', undo.items);
+
+    const actorUpdate = {};
+    if (undo.img && undo.img !== actor.img) actorUpdate.img = undo.img;
+    if (undo.token && undo.token !== actor.prototypeToken?.texture?.src) {
+        actorUpdate['prototypeToken.texture.src'] = undo.token;
+    }
+    if (Object.keys(actorUpdate).length) await actor.update(actorUpdate);
+
+    if (undo.token) await applyTokenArtwork(actor, undo.token);
 }
 
 /**
@@ -927,4 +1012,92 @@ export async function addBuildToHandle(actor, buildId, beforeId = null) {
 export async function removeBuildFromHandle(actor, buildId) {
     await actor.setFlag(MODULE.ID, HANDLE_BUILDS_FLAG,
         getHandleBuildIds(actor).filter(id => id !== buildId));
+}
+
+/**
+ * A weapon's damage as a readable string, or null for anything that has none.
+ *
+ * `damage.base.formula` is dnd5e's own getter — it already resolves the custom
+ * formula when one is set and otherwise assembles number/denomination/bonus, so
+ * this never rebuilds a dice expression by hand. Types come from the same field
+ * and are joined rather than picked, because a weapon that deals two kinds deals
+ * both.
+ */
+export function damageLabel(item) {
+    const base = item?.system?.damage?.base;
+    const formula = base?.formula;
+    if (!formula) return null;
+
+    const types = [...(base.types ?? [])]
+        .map(type => CONFIG.DND5E?.damageTypes?.[type]?.label ?? type)
+        .join('/');
+
+    return types ? `${formula} ${types.toLowerCase()}` : formula;
+}
+
+/* ==========================================================================
+   WHAT IS CURRENTLY WORN
+   ========================================================================== */
+
+const ACTIVE_BUILD_FLAG = 'activeBuild';
+
+/** The build last applied, or null. */
+export function getActiveBuildId(actor) {
+    const id = actor?.getFlag(MODULE.ID, ACTIVE_BUILD_FLAG);
+    return typeof id === 'string' && getBuilds(actor).some(b => b.id === id) ? id : null;
+}
+
+export async function setActiveBuildId(actor, buildId) {
+    await actor?.setFlag(MODULE.ID, ACTIVE_BUILD_FLAG, buildId ?? null);
+}
+
+/**
+ * The weapons the applied build puts on the handle.
+ *
+ * The three weapon slots and nothing else. The handle is for things you CLICK
+ * TO USE, and armour, rings and a belt would be five icons that do nothing when
+ * pressed. Ammunition and spells are each their own conversation and are
+ * deliberately not swept in here.
+ *
+ * DERIVED, never stored. The alternative is a second list that has to be kept in
+ * step with the build, and would go stale the moment somebody edited the build
+ * it was copied from. Recomputing costs three map lookups.
+ */
+export function getHandleBuildWeapons(actor) {
+    if (!game.settings.get(MODULE.ID, 'buildsUpdateHandle')) return [];
+
+    const build = getBuild(actor, getActiveBuildId(actor));
+    if (!build || build.mode === 'costume') return [];
+
+    return BUILD_WEAPON_SLOTS
+        .map(slot => actor?.items?.get(build.slots?.[slot.key]))
+        .filter(Boolean)
+        .map(item => ({ id: item.id, name: item.name, img: item.img }));
+}
+
+/**
+ * Give a character a Default Costume the first time their builds are opened.
+ *
+ * Their own face, recorded as something they can put back on. Every other build
+ * can change the portrait and the token, and without this the only way back to
+ * how the character actually looks would be a flag nobody can see — the
+ * defaults captured by captureDefaultImages are a safety net, not something a
+ * player can point at and click.
+ *
+ * A costume, not a build: applying it must change how they look and nothing
+ * else. Created once and never re-created, so deleting it is allowed to mean
+ * deleting it.
+ */
+export async function ensureDefaultCostume(actor) {
+    if (!actor || actor.getFlag(MODULE.ID, 'defaultCostumeMade')) return;
+
+    const defaults = getDefaultImages(actor);
+    await actor.setFlag(MODULE.ID, 'defaultCostumeMade', true);
+    if (!defaults.portrait && !defaults.token) return;
+
+    const build = await createBuild(actor, 'Default Costume');
+    await saveBuilds(actor, getBuilds(actor).map(entry =>
+        entry.id === build.id
+            ? { ...entry, mode: 'costume', images: { portrait: defaults.portrait, token: defaults.token } }
+            : entry));
 }

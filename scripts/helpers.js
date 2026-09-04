@@ -1,5 +1,5 @@
 import { MODULE } from './const.js';
-import { getHandleBuilds } from './utility-builds.js';
+import { getHandleBuilds, getHandleBuildWeapons } from './utility-builds.js';
 
 /**
  * True when this user is the GM or the current party leader.
@@ -199,6 +199,11 @@ export function showSquireToast(title, options = {}) {
     color: options.color,
     backgroundColor: options.backgroundColor,
     stackKey: options.stackKey,
+    // Forwarded so a toast can carry an action — undo after applying a build is
+    // the first caller. Blacksmith's toast has one click target and no button
+    // row, so an actionable toast has to say what the click does in its own
+    // subtitle; there is no second button to label.
+    onClick: typeof options.onClick === 'function' ? options.onClick : null,
     moduleId: MODULE.ID
   });
 }
@@ -954,6 +959,18 @@ export const registerHelpers = function() {
             return getHandleBuilds(actor);
         } catch (error) {
             console.error('Coffee Pub Squire | Failed to read handle builds:', error);
+            return [];
+        }
+    });
+
+    // The worn build's weapons. Derived per render, so editing a build changes
+    // the strip without anything having to be told.
+    Handlebars.registerHelper('getHandleBuildWeapons', function(actor) {
+        if (typeof actor?.getFlag !== 'function') return [];
+        try {
+            return getHandleBuildWeapons(actor);
+        } catch (error) {
+            console.error('Coffee Pub Squire | Failed to read the handle build weapons:', error);
             return [];
         }
     });

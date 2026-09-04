@@ -679,16 +679,32 @@ export class ControlPanel {
         // every render, the root is not.
         this._activateCleanupListener(html);
 
-        // Builds opens its own window. Delegated on the panel because the icon
-        // is replaced on every render.
-        controlPanel.addEventListener('click', async (event) => {
-            if (!event.target.closest('.control-builds')) return;
-            event.preventDefault();
-            event.stopPropagation();
-            if (!this.actor) return;
-            const { BuildWindow } = await import('./window-build.js');
-            await BuildWindow.open(this.actor);
-        });
+        // Builds opens its own window.
+        //
+        // Bound ONCE to the container, guarded by a dataset flag. The container
+        // outlives its own innerHTML — that is the whole reason to delegate from
+        // it — which also means an unguarded listener here would be added again
+        // on every render and stack up silently. The cleanup launcher above
+        // solved the same problem the same way.
+        if (controlPanel.dataset.buildsBound !== 'true') {
+            controlPanel.dataset.buildsBound = 'true';
+            controlPanel.addEventListener('click', async (event) => {
+                if (!event.target.closest('.control-builds')) return;
+                event.preventDefault();
+                event.stopPropagation();
+                if (!this.actor) return;
+
+                try {
+                    const { BuildWindow } = await import('./window-build.js');
+                    await BuildWindow.open(this.actor);
+                } catch (error) {
+                    // An async click handler swallows its own rejection, so a
+                    // failure here is an icon that silently does nothing.
+                    console.error('Coffee Pub Squire | Failed to open the builds window:', error);
+                    ui.notifications.error('The builds window could not be opened. See the console for details.');
+                }
+            });
+        }
 
         // The section tabs. Delegated on the strip rather than bound per tab,
         // for the same reason the filter bar is.

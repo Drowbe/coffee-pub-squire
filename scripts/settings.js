@@ -709,6 +709,19 @@ export const registerSettings = function() {
         default: 'list'
     });
 
+    // Whether applying a build puts its weapons on the tray handle.
+    //
+    // A workflow preference rather than a property of a build: nobody wants it
+    // on for their combat kit and off for their travelling clothes, and a
+    // per-build flag would be one more thing to set correctly on every build to
+    // express something decided once.
+    game.settings.register(MODULE.ID, 'buildsUpdateHandle', {
+        scope: 'user',
+        config: false,
+        type: Boolean,
+        default: true
+    });
+
     // How the favourites list is ordered: 'manual', 'alpha' or 'category'.
     // One of FAVORITE_SORTS in panel-favorites.js.
     //

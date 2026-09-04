@@ -10,6 +10,7 @@
 | Pressure-test the transfer flow end to end after the chat card migration (player → GM approval → receiver accept) | **Critical** | S | Open |
 | `executeItemTransfer` socket takes actor/item ids from any client and moves items as GM without checking the caller is entitled | High | M | Open |
 | Migrate chat cards to the Blacksmith Chat Cards API | High | L | Done (unreleased) |
+| Applying a build should be able to ask the GM first -- swapping gear costs an action and swapping spells needs a rest, so a player re-kitting mid-combat is a table decision. Needs the socket handler, an approve/deny chat card and a GM-side apply, mirroring `executeItemTransfer` and the transfer cards. Deliberately not half-built: a permission check that looks like a control and is not one is worse than none | High | L | Open |
 | Let the handle filter which statuses it shows (`showHandleConditions` is all-or-nothing) | Low | M | Open |
 | Unified tray filter bar | High | L | Done (unreleased) -- superseded by section tabs; 14 chips are now 5 tabs, 5 action chips and 2 toggles, with favourites in a view of its own |
 | Watch: AC/movement re-render branch went live in 13.3.14 (was dead) — real cost in combat | High | S | Open |

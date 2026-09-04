@@ -9,17 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
-## [13.10.0]
-
-### Fixed
-- **The favourites right-click menu never opened on a tile.** Foundry's `ContextMenu` injects its markup *into* the row it was opened on and positions it there. A tile is `overflow: hidden` — it has to be, to keep the artwork inside its rounded corners — so the menu was rendering and being clipped to nothing, while the same menu kept working in the list layout.
-  - The fix is Blacksmith's `uiContextMenu`, which appends to `document.body` at the pointer and so cannot be clipped by any ancestor. It also brings flyouts, zones and separators, and is addressed by id rather than held as an object, which collapsed three teardown sites into one `close()`. Foundry's `getContextMenu()` helper had no other caller and is deleted with it.
-
-### Changed
-- **Builds moved out of the tray entirely.** The section above Favorites is gone, along with `panel-builds.js` and its template: it gave a lot of a narrow column to something touched rarely, and it split one feature across two places — a build was edited in its window and applied from the tray. A **shirt icon in the Character Sheet strip** opens the builder instead, sitting with the broom on the launcher side of the separator, because both open windows rather than changing what the column shows.
-  - **The builder is now one window per actor with a rail down its left**, listing every build with its armour class, gear count and first few item pictures. Selecting one shows it on the doll; the rail also creates, duplicates, deletes and equips. It was one window per build, which made the second window a second copy of the same list — and the two would disagree the moment either created or deleted anything.
-  - Applying lives in one place, `applySelected()`, reached by the rail, the handle and an open window alike. The handle borrows it through a detached instance that never renders, so the confirmation, the rules and the receipt cannot drift between the routes that trigger them.
-
 ### Added
 - **The worn build's weapons appear on the handle**, in a zone of their own above the hand-placed favourites. Main Hand, Both Hands and Off Hand only — the handle is for things you click to use, and a belt would be an icon that does nothing when pressed; ammunition and spells are each their own conversation. **Derived from whichever build is worn, never stored**: a second list would go stale the moment somebody edited the build it was copied from. The separate zone is the load-bearing part — without it, applying a build would have to guess which icons were its to remove, and the only honest answer to "who put this here" is to have recorded it. Items dragged onto the handle by hand are never touched.
   - That needs one new fact: `activeBuild`, the build last applied, set on apply and restored on undo. It earns its keep twice, because the rail can now mark which build is **worn** as distinct from which is *selected* — two different things the window had no way to show.
@@ -97,6 +86,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Right-click a slot to empty it, right-click a tile to open or delete. Deleting asks first, the way clearing all favourites does — a build is a lot of drags to rebuild.
   - The panel re-queries its container *after* awaiting its template rather than reusing the node it found before. `PanelManager` builds a new tray element, appends it and reassigns `PanelManager.element`, and it fires every panel's render without awaiting any of them — so a tray rebuilt mid-fetch leaves the earlier node detached and the markup lands in a fragment nobody is looking at. Favourites never exposed this because six other call sites re-render it afterwards; a panel with one call site renders perfectly into nothing.
   - Stored slots are rebuilt from the current slot list on every read, so a key that is no longer a slot is dropped rather than carried forever, and a slot added later arrives as empty on every existing build with no migration.
+
+### Changed
+- **Builds moved out of the tray entirely.** The section above Favorites is gone, along with `panel-builds.js` and its template: it gave a lot of a narrow column to something touched rarely, and it split one feature across two places — a build was edited in its window and applied from the tray. A **shirt icon in the Character Sheet strip** opens the builder instead, sitting with the broom on the launcher side of the separator, because both open windows rather than changing what the column shows.
+  - **The builder is now one window per actor with a rail down its left**, listing every build with its armour class, gear count and first few item pictures. Selecting one shows it on the doll; the rail also creates, duplicates, deletes and equips. It was one window per build, which made the second window a second copy of the same list — and the two would disagree the moment either created or deleted anything.
+  - Applying lives in one place, `applySelected()`, reached by the rail, the handle and an open window alike. The handle borrows it through a detached instance that never renders, so the confirmation, the rules and the receipt cannot drift between the routes that trigger them.
+
+## [13.10.0]
+
+### Fixed
+- **The favourites right-click menu never opened on a tile.** Foundry's `ContextMenu` injects its markup *into* the row it was opened on and positions it there. A tile is `overflow: hidden` — it has to be, to keep the artwork inside its rounded corners — so the menu was rendering and being clipped to nothing, while the same menu kept working in the list layout.
+  - The fix is Blacksmith's `uiContextMenu`, which appends to `document.body` at the pointer and so cannot be clipped by any ancestor. It also brings flyouts, zones and separators, and is addressed by id rather than held as an object, which collapsed three teardown sites into one `close()`. Foundry's `getContextMenu()` helper had no other caller and is deleted with it.
+
+### Added
 
 - **Favourites can be sorted: manual, alphabetical, or by category.** The icon at the right of the Favorites header *is* the current sort, and clicking it opens the three choices with the one you are on shown but not clickable. Category runs in the tray's own panel order — weapons, spells, feats, then the inventory kinds — with names alphabetised inside each block, so a sorted list reads down in the same sequence as the section tabs. An item type Squire does not know about gets a block of its own at the end rather than scattering through the weapons.
   - **Category-sorted lists carry headings**, in the same `.category-header` style the weapons and inventory panels use for Simple Melee Weapons and the rest, so a grouped favourites list looks like every other grouped list in the tray. They are cut from the already-sorted rows rather than bucketed separately, so a heading can only ever appear in the order the sort put its rows in.

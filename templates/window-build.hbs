@@ -35,8 +35,20 @@
                     {{/each}}
                 </div>
                 <div class="squire-build-rail-stats">
+                    {{#unless this.costume}}
                     <span><i class="fa-solid fa-shield"></i> {{this.armorClass}}</span>
                     <span><i class="fa-solid fa-shirt"></i> {{this.gearCount}}</span>
+                    {{else}}
+                    <span><i class="fa-solid fa-masks-theater"></i> Costume</span>
+                    {{/unless}}
+                    {{#if this.worn}}
+                    {{!-- Selected is what this window is showing; WORN is what
+                          the character actually has on. The rail is the only
+                          place both facts are visible at once. --}}
+                    <span class="squire-build-rail-worn" data-tooltip="This is what the character is currently wearing">
+                        <i class="fa-solid fa-check"></i> Worn
+                    </span>
+                    {{/if}}
                 </div>
             </div>
             {{/each}}
@@ -45,6 +57,23 @@
         <button type="button" class="squire-build-rail-new">
             <i class="fa-solid fa-plus"></i> New Build
         </button>
+
+        {{!-- Options that belong to BUILDS, not to any one build. The rail is
+              where they go for the same reason the list is: it is the part of
+              this window that is about the whole feature rather than the thing
+              currently on the doll. --}}
+        <div class="squire-build-rail-global">
+            <div class="squire-build-rail-global-label">Options</div>
+            <div class="blacksmith-toggle-row squire-build-rail-option"
+                 data-tooltip="Equipping a build also puts its Main Hand, Both Hands and Off Hand weapons on the tray handle, replacing whatever the last build put there. Items you dragged onto the handle yourself are never touched.">
+                <span class="blacksmith-toggle-label">Weapons on handle</span>
+                <label class="blacksmith-toggle">
+                    <input type="checkbox" class="blacksmith-toggle-input squire-build-handle-input"
+                           {{#if updatesHandle}}checked{{/if}}>
+                    <span class="blacksmith-toggle-slider"></span>
+                </label>
+            </div>
+        </div>
     </div>
 
     <div class="squire-build-workspace">
@@ -52,8 +81,27 @@
     {{!-- The name reads as a heading and edits as a field. It was a full-width
           boxed input, which made the least important thing in the window the
           biggest — it only needs to be reachable, not announced. --}}
-    <input type="text" class="squire-build-name" value="{{build.name}}"
-           maxlength="60" spellcheck="false" aria-label="Build name">
+    <div class="squire-build-title-row">
+        <input type="text" class="squire-build-name" value="{{build.name}}"
+               maxlength="60" spellcheck="false" aria-label="Build name">
+
+        {{!-- Build or Costume. A costume changes only the portrait and token and
+              leaves gear and spells alone — which is not the same as a build
+              with empty slots, because applying THAT would strip the character
+              bare. Two labelled halves rather than a checkbox: this decides what
+              a apply does, and "what will this do" should never be a state you
+              read off a tick. --}}
+        <div class="blacksmith-toggle-row squire-build-mode"
+             data-tooltip="<strong>Build</strong> equips the gear and prepares the spells.<br><strong>Costume</strong> changes only the portrait and token and leaves gear and spells alone.">
+            <span class="blacksmith-toggle-label{{#unless (eq build.mode 'costume')}} is-active{{/unless}}">Build</span>
+            <label class="blacksmith-toggle">
+                <input type="checkbox" class="blacksmith-toggle-input squire-build-mode-input"
+                       {{#if (eq build.mode 'costume')}}checked{{/if}}>
+                <span class="blacksmith-toggle-slider"></span>
+            </label>
+            <span class="blacksmith-toggle-label{{#if (eq build.mode 'costume')}} is-active{{/if}}">Costume</span>
+        </div>
+    </div>
 
     <div class="squire-build-columns">
     <div class="squire-build-doll">
@@ -128,9 +176,33 @@
                  data-tooltip="Estimated from this build's armour, shield and Dexterity.<br>Class features, fighting styles and active effects are <strong>not</strong> counted, so this is for comparing builds rather than for your sheet.">
                 <i class="fa-solid fa-shield squire-build-ac-badge-shield"></i>
                 <span class="squire-build-ac-badge-value">{{armorClass.value}}</span>
-                <span class="squire-build-ac-badge-label">AC est.</span>
+                <span class="squire-build-ac-badge-label">AC</span>
                 <span class="squire-build-ac-badge-delta" hidden></span>
             </div>
+
+            {{!-- The totals, as plates on the portrait rather than a line of text
+                  under everything. They describe the figure, so they belong on
+                  it — and the armour class was already proving that the corners
+                  of a portrait are the most readable place in this window. --}}
+            <div class="squire-build-plate squire-build-plate-attunement{{#if attunement.over}} is-over{{/if}}"
+                 data-tooltip="Attunement slots this build would use, out of what this character has.{{#if attunement.over}}<br><strong>This build needs more than they have.</strong>{{/if}}">
+                <i class="fa-solid fa-gem"></i>
+                <span>{{attunement.used}}/{{attunement.max}}</span>
+            </div>
+
+            <div class="squire-build-plate squire-build-plate-weight"
+                 data-tooltip="What this build's gear weighs. Prepared spells are not counted, and a slotted stack counts once.">
+                <i class="fa-solid fa-weight-hanging"></i>
+                <span class="squire-build-weight-value">{{#if weight}}{{weight}}{{else}}0{{/if}}</span>
+            </div>
+
+            {{#if attunement.unattuned}}
+            <div class="squire-build-plate squire-build-plate-warning"
+                 data-tooltip="{{attunement.unattuned}} item{{#unless (eq attunement.unattuned 1)}}s{{/unless}} in this build require attunement and have not got it, so they would do nothing.">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>{{attunement.unattuned}}</span>
+            </div>
+            {{/if}}
         </div>
     </div>
 
@@ -247,24 +319,6 @@
     {{/if}}
     </div>
 
-    {{!-- The one number this window can give you that counting by hand would not:
-          attunement is the constraint that makes a build a puzzle rather than a
-          list, and it is invisible on the sheet until you total it up. --}}
-    <div class="squire-build-summary">
-        <span class="squire-build-attunement-count{{#if attunement.over}} is-over{{/if}}"
-              data-tooltip="Attunement slots this build would use{{#if attunement.over}}<br><strong>More than this character has</strong>{{/if}}">
-            <i class="fa-solid fa-gem"></i> {{attunement.used}} / {{attunement.max}} attuned
-        </span>
-        <span class="squire-build-weight" data-tooltip="What the gear in this build weighs. Prepared spells are not included, and a slotted stack counts once.">
-            <i class="fa-solid fa-weight-hanging"></i> <span class="squire-build-weight-value">{{#if weight}}{{weight}}{{else}}0{{/if}}</span> lb
-        </span>
-        {{#if attunement.unattuned}}
-        <span class="squire-build-attunement-warning"
-              data-tooltip="These items require attunement and have not got it, so they would do nothing.">
-            <i class="fa-solid fa-triangle-exclamation"></i> {{attunement.unattuned}} needs attunement
-        </span>
-        {{/if}}
-    </div>
     {{else}}
     <div class="squire-empty-message squire-build-empty">
         <p>- No Builds Yet -</p>
@@ -272,12 +326,5 @@
     </div>
     {{/if}}
 
-    {{!-- Says what this window is FOR, because nothing else in it does. A grid of
-          slots beside a portrait invites the reading that these ARE the
-          character's current gear, and editing here still changes nothing until
-          the build is equipped from its tile. --}}
-    <p class="squire-build-note">
-        A plan. Nothing changes on the sheet until you equip it.
-    </p>
     </div>
 </div>

@@ -22,3 +22,28 @@
         </div>
     {{/each}}
 </div>
+
+{{!-- WEAPONS FROM THE APPLIED BUILD
+
+      Derived from whichever build is currently worn, never stored — a second
+      list would go stale the moment somebody edited the build it was copied
+      from. Its own zone, separate from the favourites below, because those were
+      dragged there by hand and a build must never remove them: without the
+      separation, applying a build would have to guess which icons were its to
+      take, and the only honest answer to "who put this here" is to have
+      recorded it.
+
+      Three slots only — Main, Both and Off Hand. The handle is for things you
+      click to use, and a belt would be an icon that does nothing when pressed. --}}
+{{#if (getHandleBuildWeapons actor)}}
+<div class="handle-build-weapons">
+    {{#each (getHandleBuildWeapons actor)}}
+        <div class="squire-handle-control handle-favorite-icon handle-build-weapon"
+             data-item-id="{{this.id}}"
+             data-tooltip="<strong>{{this.name}}</strong><br><em>From the build you are wearing</em>">
+            <img draggable="false" src="{{this.img}}" alt="{{this.name}}"/>
+            <i class="fa-solid fa-dice-d20 squire-roll-overlay handle-favorite-roll-overlay"></i>
+        </div>
+    {{/each}}
+</div>
+{{/if}}

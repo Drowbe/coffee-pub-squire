@@ -143,11 +143,17 @@ does: the ammo slots take ammunition, Both Hands takes a weapon, and nothing tha
 object -- a spell, a feat, a class feature -- goes anywhere. If a slot turns
 something down it says what it was expecting.
 
+Beside a build's name is a **Build / Costume** switch. A **Costume** changes only your portrait and
+token when applied and leaves your gear and spells completely alone -- useful for a disguise, a
+wild shape, or a change of clothes. A **Build** does the lot.
+
 Each entry in the rail shows its estimated armour class and how many slots are filled. The **runner**
 button equips it: everything in the build goes on, everything else comes off,
 its spells are prepared and anything else that counts against a preparation limit is unprepared. It
 asks first and tells you exactly what it will do. Attunement is never changed for you -- that is a
-decision for your table.
+decision for your table. Tokens already on the map are repainted too, not just the portrait. If you
+change your mind, the toast that appears afterwards can be clicked to undo the whole thing; ignore it
+and the change stays.
 
 The AC is marked **est.** because it is worked out from the build's armour, shield and your Dexterity
 alone. It cannot see Unarmoured Defence, a fighting style, or a bonus from an effect, so use it to

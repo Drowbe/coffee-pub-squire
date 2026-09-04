@@ -1,12 +1,14 @@
-import { TEMPLATES } from './const.js';
+import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { renderTemplate, showSquireToast } from './helpers.js';
+import { renderTemplate, showSquireToast, getBlacksmith } from './helpers.js';
 import {
     BUILD_BODY_SLOTS, BUILD_WEAPON_SLOTS, BUILD_SLOT_KEYS,
-    getBuild, renameBuild, setBuildSlot, resolveSlots, attunementSummary,
+    getBuilds, getBuild, createBuild, deleteBuild, duplicateBuild, applyBuild, buildSummary,
+    renameBuild, setBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, getCantrips, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
-    estimateArmorClass, previewSlotChange
+    estimateArmorClass, previewSlotChange, setBuildMode, revertBuild, damageLabel,
+    setActiveBuildId, getActiveBuildId, ensureDefaultCostume
 } from './utility-builds.js';
 
 /**
@@ -15,19 +17,18 @@ import {
  */
 import { BlacksmithToolWindowBaseV2 } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 
-/**
- * One gear build: a paper doll you drag items onto.
- *
- * Reads the actor and writes only its own flag. Nothing in here touches
- * `system.equipped` — a build records what you would wear, and making it
- * actually wear things is a separate feature with its own questions to answer
- * (what gets unequipped, what about attunement, what about items you no longer
- * own). The note at the foot of the window says so, because a ring of slots
- * around a portrait otherwise reads as a statement about the character now.
- */
 /** How much width the build rail takes. Mirrored in panel-builds.css. */
 const RAIL_WIDTH = 180;
 
+/**
+ * One actor's gear builds: a rail listing them, and a paper doll for the one
+ * selected.
+ *
+ * Editing writes only to Squire's own flag. Applying — `applySelected()` — is
+ * the single place anything reaches the character, and it asks first. Every
+ * other route to equipping a build, including the tray handle, goes through it
+ * rather than repeating the rules.
+ */
 export class BuildWindow extends BlacksmithToolWindowBaseV2 {
 
     static DEFAULT_OPTIONS = foundry.utils.mergeObject(
@@ -51,24 +52,24 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
     }
 
     /**
-     * Open the window for one build, or focus it if it is already open.
+     * Open this actor's builds, optionally on a particular one.
      *
-     * Keyed on the BUILD, not the actor: two builds open side by side is the
-     * point of having more than one, and keying on the actor would make the
-     * second click steal the first window. The id carries both, so a repeat
-     * click on the same build finds the same application instead of stacking a
-     * duplicate on top of it.
+     * Keyed on the ACTOR. The rail down the left is the whole list, so a second
+     * window would be a second copy of that list, and the two would disagree the
+     * moment either created or deleted anything. A repeat call selects the build
+     * asked for in the window already open.
      *
      * Uses `foundry.applications.instances` rather than the base class's
-     * per-target registry, because that registry keys on a document and a build
-     * is a flag entry rather than one.
+     * per-target registry, because that registry keys on a document and this is
+     * keyed on one actor's flag.
      */
-    static async open(actor, buildId) {
-        if (!actor || !buildId) return null;
+    static async open(actor, buildId = null) {
+        if (!actor) return null;
 
-        const id = `squire-build-${actor.id}-${buildId}`;
+        const id = `squire-builds-${actor.id}`;
         const existing = foundry.applications.instances.get(id);
         if (existing) {
+            if (buildId) await existing.selectBuild(buildId);
             existing.bringToFront?.();
             return existing;
         }
@@ -84,6 +85,10 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // first moment a build is in play at all. Idempotent, so opening a
         // second window cannot overwrite what the first one captured.
         await captureDefaultImages(actor);
+        // Their own face, as something they can put back on. The captured
+        // defaults are a safety net nobody can see or click; this is the
+        // clickable one.
+        await ensureDefaultCostume(actor);
 
         // Whichever build was asked for, else the first there is. Opening on
         // nothing would make the common case — one build — need a click before
@@ -165,41 +170,78 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const build = getBuild(this.actor, buildId);
         if (!build) return;
 
+        const costume = build.mode === 'costume';
         const summary = buildSummary(this.actor, build);
-        const spellLine = summary.spellCount
-            ? `<li>Prepare its ${summary.spellCount} spell${summary.spellCount === 1 ? '' : 's'}, and unprepare everything else that counts against a limit.</li>`
-            : '';
-        const imageLine = (build.images?.portrait || build.images?.token)
-            ? '<li>Change the portrait or token artwork.</li>'
-            : '';
+        const name = foundry.utils.escapeHTML(build.name);
+        const who = foundry.utils.escapeHTML(this.actor.name);
+
+        // A costume promises far less, and the confirmation has to say so — the
+        // wording is most of what stops somebody applying a wardrobe change and
+        // finding their armour on the floor.
+        const lines = costume
+            ? ['<li>Change the portrait and token artwork, and nothing else.</li>']
+            : [
+                `<li>Equip the ${summary.gearCount} item${summary.gearCount === 1 ? '' : 's'} in this build, and unequip everything else.</li>`,
+                summary.spellCount
+                    ? `<li>Prepare its ${summary.spellCount} spell${summary.spellCount === 1 ? '' : 's'}, and unprepare everything else that counts against a limit.</li>`
+                    : '',
+                (build.images?.portrait || build.images?.token)
+                    ? '<li>Change the portrait or token artwork.</li>' : ''
+            ];
+
+        // Captured before applying, so undo can put the previous build back as
+        // the worn one rather than simply forgetting there was one.
+        const previousActive = getActiveBuildId(this.actor);
 
         const confirmed = await getBlacksmith().dialog.confirm({
-            title: 'Equip Build',
-            content: `<p>Equip <strong>${foundry.utils.escapeHTML(build.name)}</strong> on `
-                + `<strong>${foundry.utils.escapeHTML(this.actor.name)}</strong>?</p>`
-                + '<p>This will:</p><ul>'
-                + `<li>Equip the ${summary.gearCount} item${summary.gearCount === 1 ? '' : 's'} in this build, and unequip everything else.</li>`
-                + spellLine + imageLine
-                + '</ul><p>Attunement is not changed.</p>',
-            confirmLabel: 'Equip Build',
-            confirmIcon: 'fa-solid fa-person-running'
+            title: costume ? 'Wear Costume' : 'Equip Build',
+            content: `<p>${costume ? 'Dress' : 'Equip'} <strong>${who}</strong> as <strong>${name}</strong>?</p>`
+                + '<p>This will:</p><ul>' + lines.join('') + '</ul>'
+                + (costume ? '' : '<p>Attunement is not changed.</p>'),
+            confirmLabel: costume ? 'Wear Costume' : 'Equip Build',
+            confirmIcon: costume ? 'fa-solid fa-masks-theater' : 'fa-solid fa-person-running'
         });
         if (!confirmed) return;
 
         const result = await applyBuild(this.actor, build);
         if (!result) return;
 
+        // A costume does not change what the character is WEARING, so it is not
+        // what the handle's weapon strip should follow.
+        if (!costume) await setActiveBuildId(this.actor, build.id);
+
         const changes = [];
         if (result.equipped) changes.push(`equipped ${result.equipped}`);
         if (result.unequipped) changes.push(`unequipped ${result.unequipped}`);
         if (result.prepared) changes.push(`prepared ${result.prepared}`);
         if (result.unprepared) changes.push(`unprepared ${result.unprepared}`);
+        if (result.imagesChanged) changes.push('changed artwork');
 
+        // Undo is the toast's single click, not a pair of buttons: Blacksmith's
+        // toast has one `onClick` and no button row, so "keep" is what happens
+        // when you do nothing — which is the right default for the common case
+        // anyway. The subtitle has to say so, since an actionable toast that
+        // does not announce its action is just a toast that eats a click.
+        const undoable = changes.length > 0;
         showSquireToast(
-            changes.length ? build.name : `${build.name} was already equipped`,
+            undoable ? build.name : `${build.name} was already on`,
             {
-                subtitle: changes.length ? `${changes.join(', ')}.` : undefined,
-                icon: 'fa-solid fa-person-running'
+                subtitle: undoable
+                    ? `${changes.join(', ')}. Click to undo.`
+                    : undefined,
+                icon: costume ? 'fa-solid fa-masks-theater' : 'fa-solid fa-person-running',
+                duration: undoable ? 12 : 6,
+                onClick: undoable
+                    ? async () => {
+                        await revertBuild(this.actor, result.undo);
+                        // Undo undoes everything it set, the handle's weapon
+                        // strip included — it is derived from this flag, so
+                        // clearing it empties the strip without a second write.
+                        if (!costume) await setActiveBuildId(this.actor, previousActive);
+                        showSquireToast(`${build.name} undone`, { icon: 'fa-solid fa-rotate-left' });
+                        await this._refresh();
+                    }
+                    : undefined
             }
         );
 
@@ -228,12 +270,18 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const build = this.build;
 
         const builds = getBuilds(this.actor);
+        const activeId = getActiveBuildId(this.actor);
         const rail = builds.map(entry => {
             const summary = buildSummary(this.actor, entry);
             return {
                 id: entry.id,
                 name: entry.name,
                 active: entry.id === this.buildId,
+                // Selected is "what this window is showing"; worn is "what the
+                // character actually has on". Two different facts, and the rail
+                // is the only place both can be seen at once.
+                worn: entry.id === activeId,
+                costume: entry.mode === 'costume',
                 armorClass: summary.armorClass.value,
                 gearCount: summary.gearCount,
                 preview: summary.preview.slice(0, 3)
@@ -268,6 +316,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             bodyContent: await renderTemplate(TEMPLATES.WINDOW_BUILD, {
                 rail,
                 hasBuilds: builds.length > 0,
+                updatesHandle: game.settings.get(MODULE.ID, 'buildsUpdateHandle'),
                 build,
                 actorName: this.actor?.name ?? '',
                 actorImg: this.actor?.img ?? 'icons/svg/mystery-man.svg',
@@ -407,6 +456,18 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 `<section class="loading" data-uuid="${uuid}"><i class="fas fa-spinner fa-spin-pulse"></i></section>`;
             element.dataset.tooltipClass = 'dnd5e2 dnd5e-tooltip item-tooltip themed theme-light';
             element.dataset.tooltipDirection ??= 'LEFT';
+        });
+
+        // Build / Costume, on Blacksmith's own switch. Checked is costume.
+        root.querySelector('.squire-build-mode-input')?.addEventListener('change', async (event) => {
+            await setBuildMode(this.actor, this.buildId, event.currentTarget.checked ? 'costume' : 'gear');
+            await this._refresh();
+        });
+
+        // A global option, so it writes a setting rather than the build.
+        root.querySelector('.squire-build-handle-input')?.addEventListener('change', async (event) => {
+            await game.settings.set(MODULE.ID, 'buildsUpdateHandle', event.currentTarget.checked);
+            await this._refresh();
         });
 
         root.querySelectorAll('.squire-build-image-slot').forEach(slot => {
@@ -568,6 +629,14 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         };
 
         const parts = [];
+
+        // Weapons first, because for a weapon it is the only thing that moved.
+        const wasDamage = damageLabel(before.replaced);
+        const nowDamage = damageLabel(item);
+        if (nowDamage && nowDamage !== wasDamage) {
+            parts.push(wasDamage ? `${wasDamage} → ${nowDamage}` : nowDamage);
+        }
+
         if (after.ac !== before.ac) {
             const delta = after.ac - before.ac;
             parts.push(`AC ${before.ac} → ${after.ac} (${delta > 0 ? '+' : ''}${delta})`);
@@ -651,7 +720,11 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             // invented score, just the two numbers that actually changed.
             const before = {
                 ac: estimateArmorClass(this.actor, this.build).value,
-                weight: gearWeight(this.actor, this.build) ?? 0
+                weight: gearWeight(this.actor, this.build) ?? 0,
+                // What is being replaced, captured before it is gone. Damage is
+                // the whole comparison for a weapon, and a weapon swap moves
+                // neither armour class nor — usually — weight worth mentioning.
+                replaced: this.actor?.items?.get(this.build.slots?.[slotKey]) ?? null
             };
 
             await setBuildSlot(this.actor, this.buildId, slotKey, item.id);

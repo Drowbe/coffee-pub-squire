@@ -77,6 +77,20 @@
     pointer-events: none;
 }
 
+/* The worn build's weapons, in a zone of their own above the hand-placed
+   favourites. Fenced with a hairline because the two lists answer different
+   questions — "what my build gave me" and "what I put here" — and a build
+   replaces the first wholesale while never touching the second. */
+.squire-tray .handle-build-weapons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(159, 146, 117, 0.25);
+}
+
 /* ---------------- THE PAPER DOLL ---------------- */
 
 /* No background image here, deliberately.
@@ -294,9 +308,15 @@
     opacity: 1;
 }
 
-/* The portrait is the badge's anchor, so it has to be one. */
+/* The portrait is the badge's anchor, so it has to be one.
+   
+   `overflow` is deliberately VISIBLE. It used to be hidden, to clip the artwork
+   to the rounded corners — and it clipped the armour class badge along with it,
+   cutting the shield in half at the portrait's hem. The image rounds its own
+   corners now, which is the only thing the clip was ever for. */
 .squire-build-portrait {
     position: relative;
+    overflow: visible;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -311,7 +331,8 @@
     height: 100%;
     object-fit: cover;
     border: 0;
-    border-radius: 0;
+    /* Its own clip, so the container does not need one — see above. */
+    border-radius: 4px;
 }
 
 /* ---------------- THE BUILD RAIL ----------------
@@ -434,6 +455,40 @@
     color: var(--blacksmith-tool-text-muted);
     font-size: 0.72em;
     transition: all 0.15s ease;
+}
+
+/* Options that belong to builds as a feature rather than to any one build. */
+.squire-build-rail-global {
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid var(--blacksmith-tool-divider);
+}
+
+.squire-build-rail-global-label {
+    margin-bottom: 5px;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.6em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.squire-build-rail-option {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.squire-build-rail-option .blacksmith-toggle-label {
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.66em;
+    line-height: 1.2;
+}
+
+/* Worn is not selected. The rail marks both, and they are often different. */
+.squire-build-rail-worn {
+    color: #7fd97f;
+    font-weight: 700;
 }
 
 .squire-build-rail-new:hover {
@@ -812,8 +867,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 62px;
-    height: 62px;
+    width: 66px;
+    height: 66px;
     transform: translateX(-50%);
 }
 
@@ -832,24 +887,33 @@
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
 }
 
+/* The number alone, as big as the shield will hold. The "AC est." caption under
+   it is gone: the tooltip carries the disclaimer, and a permanent apology under
+   a number is a lot of pixels spent saying something almost nobody needed to
+   read twice. */
 .squire-build-ac-badge-value {
     position: relative;
     z-index: 1;
-    margin-top: -4px;
+    margin-top: -2px;
     color: #f4e7cd;
-    font-size: 1.5em;
+    font-size: 1.75em;
     font-weight: 800;
     line-height: 1;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 }
 
+/* "AC" under the number. The disclaimer went to the tooltip; this is the label,
+   which is a different thing and still earns its two characters — a bare number
+   on a shield is not self-evidently an armour class. */
 .squire-build-ac-badge-label {
     position: relative;
     z-index: 1;
-    color: rgba(244, 231, 205, 0.6);
-    font-size: 0.5em;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    margin-top: -3px;
+    color: rgba(244, 231, 205, 0.7);
+    font-size: 0.52em;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 /* The badge outlines while a hovering item would change it, so the number being
@@ -880,6 +944,107 @@
 .squire-build-ac-badge-delta.is-worse {
     color: #f08e78;
     box-shadow: 0 0 6px rgba(240, 142, 120, 0.4);
+}
+
+/* ---------------- THE PORTRAIT PLATES ----------------
+
+   Attunement, weight and the unattuned warning, on the portrait's corners. They
+   were a line of text under the whole window, which is where things go when
+   nobody has decided where they belong — and the armour class badge had already
+   proved that a portrait's corners are the most readable surface here. They
+   describe the figure, so they sit on it. */
+.squire-build-plate {
+    position: absolute;
+    z-index: 2;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: rgba(8, 6, 4, 0.85);
+    color: #f4e7cd;
+    font-size: 0.66em;
+    font-weight: 700;
+    line-height: 1.5;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.squire-build-plate i {
+    font-weight: 400;
+    opacity: 0.9;
+}
+
+/* Top left, matching where a slot puts its attunement gem. */
+.squire-build-plate-attunement {
+    top: 5px;
+    left: 5px;
+}
+
+.squire-build-plate-attunement i {
+    color: #6fd3f2;
+}
+
+.squire-build-plate-attunement.is-over,
+.squire-build-plate-attunement.is-over i {
+    color: #f08e78;
+}
+
+/* Top right, matching where a slot puts its type glyph. */
+.squire-build-plate-weight {
+    top: 5px;
+    right: 5px;
+}
+
+/* Bottom left, opposite the shield's centre so the two never collide. */
+.squire-build-plate-warning {
+    bottom: 5px;
+    left: 5px;
+    color: #f08e78;
+}
+
+/* ---------------- BUILD / COSTUME ---------------- */
+
+.squire-build-title-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.squire-build-title-row .squire-build-name {
+    flex: 1 1 auto;
+    text-align: left;
+}
+
+/* Two labelled halves, not a tick. This decides what applying DOES, and "will
+   this strip my armour off" should never be a state you have to read off a
+   checkbox. */
+/* Blacksmith's own switch — `.blacksmith-toggle` from window-form-controls.css,
+   which the tool-window base already loads. A hand-rolled pair of buttons was
+   here first; the suite has one switch and this is not the place to invent a
+   second.
+
+   Labelled on both sides rather than one, because neither state is "off": a
+   costume is as deliberate a choice as a build, and an unlabelled slider would
+   make one of them the absence of the other. */
+.squire-build-mode {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 7px;
+    align-items: center;
+}
+
+.squire-build-mode .blacksmith-toggle-label {
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.72em;
+    white-space: nowrap;
+    transition: color 0.15s ease;
+}
+
+.squire-build-mode .blacksmith-toggle-label.is-active {
+    color: var(--blacksmith-tool-text);
+    font-weight: 700;
 }
 
 /* Says what the window is for. A ring of slots around a portrait otherwise reads
