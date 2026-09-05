@@ -417,6 +417,9 @@
        top: name at the head, the marks in the middle, the figures on the hem,
        which is the same arrangement the doll's portrait uses. */
     aspect-ratio: 1;
+    /* Two groups: the words at the top, the pictures on the hem. Everything
+       between them is space, which is what makes the tile read as a card rather
+       than as a stack of rows. */
     justify-content: space-between;
     gap: 5px;
     padding: 7px 8px;
@@ -439,6 +442,15 @@
 .squire-build-rail-entry.is-active {
     border-left-color: var(--blacksmith-tool-accent);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+/* Name, then what it is, then whether it is on — three lines, each a different
+   kind of fact, in decreasing order of how often you need it. */
+.squire-build-rail-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
 }
 
 .squire-build-rail-head {
@@ -493,37 +505,36 @@
     box-shadow: none;
 }
 
+/* On the hem, which is why the entry is `space-between`. */
 .squire-build-rail-preview {
     display: flex;
-    gap: 4px;
-    align-items: center;
+    flex: 0 0 auto;
+    gap: 6px;
+    align-items: flex-end;
     justify-content: center;
     overflow: hidden;
 }
 
 /* The portrait and the token — what wearing this would make you look like,
    which is the one thing the doll does not show. Round, because that is what
-   they are on the doll and in the costume view. */
+   they are on the doll and in the costume view.
+
+   They divide the tile's width between them rather than sitting at a fixed
+   38px. This is the question the tile is answering, and at thumbnail size two
+   faces are indistinguishable from two smudges. */
 .squire-build-rail-preview img {
-    flex: 0 0 auto;
-    /* Bigger now the tile is square and they sit in the middle of it rather
-       than in a band. */
-    width: 38px;
-    height: 38px;
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    aspect-ratio: 1;
     object-fit: cover;
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 50%;
 }
 
-/* The weapon is square, because it is an ITEM and every item picture in this
-   window is square. Two circles and a square also says which of the three marks
-   is a different kind of thing without spending a label on it. */
-.squire-build-rail-preview img.is-gear {
-    border-radius: 3px;
-}
-
 .squire-build-rail-stats {
     display: flex;
+    flex: 0 0 auto;
     gap: 8px;
     color: rgba(244, 231, 205, 0.75);
     font-size: 0.62em;
@@ -583,9 +594,17 @@
 }
 
 /* Worn is not selected. The rail marks both, and they are often different. */
+/* Its own line under the counts. It was a third chip in the stats row, which put
+   a fact about the CHARACTER in among two facts about the build. */
 .squire-build-rail-worn {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 4px;
+    align-items: center;
     color: #7fd97f;
+    font-size: 0.62em;
     font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 .squire-build-rail-new:hover {
@@ -1090,8 +1109,8 @@
    three slots of a fresh costume and none on the one worth noticing. Mark what
    acts — the same argument that settled the token controls beside it.
 
-   Amber, and the same triangle as every other "this will act on the character"
-   warning in this window, so one glyph means one thing throughout. */
+   The same amber dot those controls use, and for the same reason it is not a
+   triangle: this is a setting that is ON, not a problem to be solved. */
 .squire-build-image-change {
     position: absolute;
     top: 4px;
@@ -1402,20 +1421,29 @@
    A control is marked ONLY when it will change something. The first version
    marked the opposite: every untouched control wore a "no change" tag, which put
    three notices on the commonest state and none on the one worth noticing. */
+/* Directly under the portrait and token circles, above the costume's own
+   picture. These describe how the TOKEN is drawn, and the token is the circle
+   two rows up — under the main picture they read as settings for that, which is
+   the one image in this view they have nothing to do with. */
 .squire-build-token-settings {
     display: flex;
     flex: 0 0 auto;
     flex-direction: column;
     gap: 5px;
     width: 100%;
-    padding-top: 8px;
-    border-top: 1px solid var(--blacksmith-tool-divider);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--blacksmith-tool-divider);
 }
 
+/* Top-aligned, and every control row the same height, so the three captions sit
+   on one line. Bottom-aligned they hung off whichever control happened to be
+   tallest — a range input is shorter than a text box, so the scale's caption
+   floated a few pixels clear of the other two with a gap under it that looked
+   like padding nobody asked for. */
 .squire-build-token-row {
     display: flex;
     gap: 12px;
-    align-items: flex-end;
+    align-items: flex-start;
 }
 
 /* Each field as wide as the control in it, and the slider takes what is left.
@@ -1440,27 +1468,35 @@
 .squire-build-token-label {
     display: flex;
     gap: 4px;
-    align-items: center;
+    align-items: baseline;
+    height: 12px;
     color: var(--blacksmith-tool-text-muted);
     font-size: 0.66em;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
 
-/* Hidden until the control is set. This is the whole marking scheme: nothing is
-   said about a control that changes nothing, and the one that will gets a mark
-   the same amber as every other "this will act on the character" warning in the
-   window.
+/* Hidden until the control is set: nothing is said about a control that changes
+   nothing, and the one that will gets a mark.
 
-   It is also the CONTROL for putting the setting back — click it and the field
+   A DOT, not a caution triangle. The triangle was wrong twice over — nothing
+   here is an error, and the triangle is already how this window says a real
+   problem (a slot whose item is not equipped, a build the character has drifted
+   from). A dot says "active"; a triangle says "wrong"; they must not be the same
+   glyph. Amber either way, because amber is how this window says "look here".
+
+   It is also the CONTROL for switching the setting off — click it and the field
    goes back to changing nothing. That was a right-click on the row, which nobody
-   would guess at and nothing announced; a visible thing you click is the obvious
-   reading of a mark that says "this will act". */
+   would guess at and nothing announced. */
 .squire-build-token-change {
     display: none;
     cursor: pointer;
     color: #e0a52e;
-    font-size: 0.9em;
+    /* Matched to the caption it sits in rather than set larger. At 0.9em of a
+       0.66em label it was bigger than the words beside it and sat off their
+       baseline, which reads as a mark that has landed in the wrong place. */
+    font-size: 1em;
+    line-height: 1;
     transition: color 0.15s ease;
 }
 
@@ -1476,10 +1512,12 @@
     color: var(--blacksmith-tool-text);
 }
 
+/* A stated height, so a slider and a text box occupy the same band. */
 .squire-build-token-control {
     display: flex;
     gap: 5px;
     align-items: center;
+    height: 22px;
     min-width: 0;
 }
 
@@ -1519,7 +1557,9 @@
 
 .squire-build-token-range {
     flex: 1 1 0;
+    width: 100%;
     min-width: 0;
+    margin: 0;
 }
 
 /* Fixed, so the slider beside it does not jump every time the number gains or
@@ -1595,12 +1635,6 @@
 
 /* ---------------- BUILD / COSTUME ---------------- */
 
-/* The switch is a fixed width and comes first; the name takes the rest of the
-   band however long the switch's labels are. */
-.squire-build-title-row .squire-build-mode {
-    flex: 0 0 auto;
-}
-
 .squire-build-title-row .squire-build-name {
     flex: 1 1 auto;
     /* `width: auto`, undoing the `width: 100%` the field carries for the costume
@@ -1616,33 +1650,6 @@
 /* Two labelled halves, not a tick. This decides what applying DOES, and "will
    this strip my armour off" should never be a state you have to read off a
    checkbox. */
-/* Blacksmith's own switch — `.blacksmith-toggle` from window-form-controls.css,
-   which the tool-window base already loads. A hand-rolled pair of buttons was
-   here first; the suite has one switch and this is not the place to invent a
-   second.
-
-   Labelled on both sides rather than one, because neither state is "off": a
-   costume is as deliberate a choice as a build, and an unlabelled slider would
-   make one of them the absence of the other. */
-.squire-build-mode {
-    display: flex;
-    flex: 0 0 auto;
-    gap: 7px;
-    align-items: center;
-}
-
-.squire-build-mode .blacksmith-toggle-label {
-    color: var(--blacksmith-tool-text-muted);
-    font-size: 0.72em;
-    white-space: nowrap;
-    transition: color 0.15s ease;
-}
-
-.squire-build-mode .blacksmith-toggle-label.is-active {
-    color: var(--blacksmith-tool-text);
-    font-weight: 700;
-}
-
 /* Says what the window is for. A ring of slots around a portrait otherwise reads
    as a statement about what the character is wearing right now. */
 .squire-build-note {

@@ -586,6 +586,38 @@ export function gearWeight(actor, build) {
     return counted ? Number(total.toFixed(2)) : null;
 }
 
+/**
+ * Convert a build to a costume or back, DISCARDING what the other mode holds.
+ *
+ * The gear and the prepared list are cleared on the way to a costume, and there
+ * is nothing to bring back on the way out. Keeping them was the obvious thing to
+ * do — convert by mistake, convert back, no harm — and it is what produced the
+ * ghosts: a costume goes on carrying invisible gear, its tile drew a weapon
+ * nobody could see the source of, and converting back handed you a build full of
+ * whatever happened to be in it weeks ago.
+ *
+ * What conversion is actually worth is the NAME and the PICTURES, which are the
+ * part that took work. The slots were always a few drags. So it keeps the half
+ * that is expensive to recreate and drops the half that is not, and the result
+ * is the same whichever direction you came from — which is the property the
+ * ghosts destroyed.
+ */
+export async function convertBuildMode(actor, buildId, mode) {
+    const next = mode === 'costume' ? 'costume' : 'gear';
+
+    await saveBuilds(actor, getBuilds(actor).map(build => build.id === buildId
+        ? {
+            ...build,
+            mode: next,
+            slots: Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null])),
+            spells: [],
+            // A costume's token geometry is as much a costume thing as its
+            // pictures are, and means nothing on a build.
+            token: next === 'costume' ? build.token : normaliseTokenSettings(null)
+        }
+        : build));
+}
+
 /** Switch a build between dressing the character and equipping it. */
 export async function setBuildMode(actor, buildId, mode) {
     const next = mode === 'costume' ? 'costume' : 'gear';
@@ -1400,6 +1432,9 @@ export function getHandleBuilds(actor) {
             id,
             name: build.name,
             img: resolveMainImage(actor, build).path,
+            // A costume on the handle is a costume, and the strip should say so
+            // with the same two glyphs the rail and the buttons use.
+            costume: build.mode === 'costume',
             armorClass: summary.armorClass.value,
             gearCount: summary.gearCount
         };

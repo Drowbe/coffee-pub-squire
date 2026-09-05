@@ -19,70 +19,81 @@
     <div class="squire-build-rail">
         <div class="squire-build-rail-list">
             {{#each rail}}
-            {{!-- A tile, not a row: the build's own picture is its face, the way
-                  a favourite's artwork is. The gear thumbnails that used to sit
-                  here said what was IN the build, which the doll shows in full
-                  the moment it is selected — and five item icons at 20px is a
-                  row of smudges rather than a summary. The portrait and token
-                  are the marks instead: what wearing it would make you look
-                  like, which is the thing the doll does NOT show. --}}
+            {{!-- A tile, not a row.
+
+                  Its face is what most distinguishes this entry from the one
+                  above it: for a costume its own picture, which is the whole of
+                  what a costume is; for a build the character's headline choice,
+                  the spell a caster leads with or the weapon anybody else does.
+
+                  The marks under it are the portrait and the token — what
+                  wearing this would make you LOOK like, which is the one thing
+                  the doll does not show. A weapon thumbnail used to sit among
+                  them and appeared on costumes too: switching a build to a
+                  costume leaves its gear slots filled on purpose, so that
+                  switching back restores them, and the tile was reading that
+                  slot without asking what kind of thing it was drawing. --}}
             <div class="squire-build-rail-entry{{#if this.active}} is-active{{/if}}"
                  draggable="true" data-build-id="{{this.id}}"
-                 style="background-image: linear-gradient(rgba(8,6,4,.55), rgba(8,6,4,.88)), url('{{this.mainImage}}');"
+                 style="background-image: linear-gradient(rgba(8,6,4,.55), rgba(8,6,4,.88)), url('{{this.tileImage}}');"
                  data-tooltip="{{this.name}}<br><em>Drag onto the tray handle to keep it to hand</em><br><em>Right-click for more</em>">
-                <div class="squire-build-rail-head">
-                    <span class="squire-build-rail-name">{{this.name}}</span>
-                    {{!-- Blacksmith's own primary-button class carries the
-                          colour, so the green here is the green every other
-                          action button in the suite uses and cannot drift from
-                          it. Squire only overrides the SHAPE. --}}
-                    <button type="button" class="squire-build-rail-apply blacksmith-window-btn-primary"
-                            data-build-id="{{this.id}}"
-                            data-tooltip="{{#if this.costume}}Wear this costume{{else}}Equip this build{{/if}}">
-                        {{!-- The icon says which of the two this tile is, and
-                              matches the button that made it: the masks on the
-                              New Costume button, the shirt on the launcher that
-                              opens builds at all. --}}
-                        <i class="fa-solid {{#if this.costume}}fa-masks-theater{{else}}fa-shirt{{/if}}"></i>
-                    </button>
-                </div>
-                <div class="squire-build-rail-preview">
-                    {{#if this.portrait}}<img src="{{this.portrait}}" alt="Portrait" data-image-kind="portrait" data-tooltip="Portrait">{{/if}}
-                    {{#if this.token}}<img src="{{this.token}}" alt="Token" data-image-kind="token" data-tooltip="Token">{{/if}}
-                    {{#if this.mainHand}}<img class="is-gear" src="{{this.mainHand}}" alt="{{this.mainHandName}}" data-tooltip="{{this.mainHandName}}">{{/if}}
-                </div>
-                <div class="squire-build-rail-stats">
-                    {{#unless this.costume}}
-                    <span><i class="fa-solid fa-shield"></i> {{this.armorClass}}</span>
-                    <span><i class="fa-solid fa-shirt"></i> {{this.gearCount}}</span>
-                    {{else}}
-                    <span><i class="fa-solid fa-masks-theater"></i> Costume</span>
-                    {{/unless}}
+                <div class="squire-build-rail-text">
+                    <div class="squire-build-rail-head">
+                        <span class="squire-build-rail-name">{{this.name}}</span>
+                        {{!-- Blacksmith's own primary-button class carries the
+                              colour, so the green here is the green every other
+                              action button in the suite uses and cannot drift
+                              from it. Squire only overrides the SHAPE. --}}
+                        <button type="button" class="squire-build-rail-apply blacksmith-window-btn-primary"
+                                data-build-id="{{this.id}}"
+                                data-tooltip="{{#if this.costume}}Wear this costume{{else}}Equip this build{{/if}}">
+                            {{!-- The icon says which of the two this tile is, and
+                                  matches the button that made it: the masks on
+                                  the New Costume button, the shirt on the
+                                  launcher that opens builds at all. --}}
+                            <i class="fa-solid {{#if this.costume}}fa-masks-theater{{else}}fa-shirt{{/if}}"></i>
+                        </button>
+                    </div>
+
+                    {{!-- Directly under the name, where a subtitle goes: what
+                          this entry IS, in the fewest marks that say it. --}}
+                    <div class="squire-build-rail-stats">
+                        {{#unless this.costume}}
+                        <span data-tooltip="Estimated armour class"><i class="fa-solid fa-shield"></i> {{this.armorClass}}</span>
+                        <span data-tooltip="Items in this build"><i class="fa-solid fa-shirt"></i> {{this.gearCount}}</span>
+                        {{else}}
+                        <span><i class="fa-solid fa-masks-theater"></i> Costume</span>
+                        {{/unless}}
+                    </div>
+
                     {{#if this.worn}}
-                    {{!-- Selected is what this window is showing; WORN is what
-                          the character actually has on. The rail is the only
-                          place both facts are visible at once.
+                    {{!-- Its own line under the counts, because it is a different
+                          KIND of fact from them. Selected is what this window is
+                          showing; WORN is what the character actually has on, and
+                          the rail is the only place both are visible at once.
 
-                          LAST WORN is the third fact: this is still the plan in
-                          play, and the character has since parted company with
-                          it. Not "modified", which was the first wording and
-                          claimed something the check cannot see — the plan and
-                          the character disagree, and nothing here knows which of
-                          the two moved. "Last worn" says only what is certain:
-                          this was the most recent one applied.
-
-                          The full "Worn" is kept for the case that passes,
-                          because there the character genuinely IS wearing it and
-                          a label should be as strong as its evidence. --}}
-                    <span class="squire-build-rail-worn{{#if this.drifted}} is-drifted{{/if}}"
-                          data-tooltip="{{#if this.drifted}}The last build applied, but the character no longer matches it &mdash; {{this.driftCount}} difference{{#unless (eq this.driftCount 1)}}s{{/unless}}.<br><em>Equip it again to put it back</em>{{else}}This is what the character is currently wearing{{/if}}">
+                          LAST WORN is the third fact: still the plan in play, and
+                          the character has since parted company with it. Not
+                          "modified", which claimed something the check cannot
+                          see — the plan and the character disagree, and nothing
+                          here knows which of the two moved. --}}
+                    <div class="squire-build-rail-worn{{#if this.drifted}} is-drifted{{/if}}"
+                         data-tooltip="{{#if this.drifted}}The last build applied, but the character no longer matches it &mdash; {{this.driftCount}} difference{{#unless (eq this.driftCount 1)}}s{{/unless}}.<br><em>Equip it again to put it back</em>{{else}}This is what the character is currently wearing{{/if}}">
                         {{#if this.drifted}}
                         <i class="fa-solid fa-triangle-exclamation"></i> Last worn
                         {{else}}
                         <i class="fa-solid fa-check"></i> Worn
                         {{/if}}
-                    </span>
+                    </div>
                     {{/if}}
+                </div>
+
+                {{!-- On the hem, and as wide as the tile allows. They are the
+                      answer to "what would I look like", which wants to be
+                      looked at rather than glanced past at 26px. --}}
+                <div class="squire-build-rail-preview">
+                    {{#if this.portrait}}<img src="{{this.portrait}}" alt="Portrait" data-image-kind="portrait" data-tooltip="Portrait">{{/if}}
+                    {{#if this.token}}<img src="{{this.token}}" alt="Token" data-image-kind="token" data-tooltip="Token">{{/if}}
                 </div>
             </div>
             {{/each}}
@@ -131,28 +142,6 @@
     <div class="squire-build-columns{{#if isCaster}}{{#unless isCostume}} has-pack{{/unless}}{{/if}}">
 
     <div class="squire-build-title-row">
-        {{!-- Build or Costume. A costume changes only the portrait and token and
-              leaves gear and spells alone — which is not the same as a build
-              with empty slots, because applying THAT would strip the character
-              bare. Two labelled halves rather than a checkbox: this decides what
-              applying does, and "what will this do" should never be a state you
-              read off a tick.
-
-              FIRST, ahead of the name. It is the more consequential of the two —
-              renaming is cosmetic and this decides what wearing the thing does —
-              and it is a fixed width, so leading with it gives the name the rest
-              of the row however long the switch's labels are. --}}
-        <div class="blacksmith-toggle-row squire-build-mode"
-             data-tooltip="<strong>Build</strong> equips the gear and prepares the spells.<br><strong>Costume</strong> changes only the portrait and token and leaves gear and spells alone.">
-            <span class="blacksmith-toggle-label{{#unless (eq build.mode 'costume')}} is-active{{/unless}}">Build</span>
-            <label class="blacksmith-toggle">
-                <input type="checkbox" class="blacksmith-toggle-input squire-build-mode-input"
-                       {{#if (eq build.mode 'costume')}}checked{{/if}}>
-                <span class="blacksmith-toggle-slider"></span>
-            </label>
-            <span class="blacksmith-toggle-label{{#if (eq build.mode 'costume')}} is-active{{/if}}">Costume</span>
-        </div>
-
         {{!-- The name reads as a heading and edits as a field. It was a
               full-width boxed input, which made the least important thing in the
               window the biggest — it only needs to be reachable, not
@@ -205,8 +194,8 @@
                     {{/if}}
                     <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
                     {{#unless this.isDefault}}
-                    <i class="fa-solid fa-triangle-exclamation squire-build-image-change"
-                       data-tooltip="Wearing this sets the character's {{this.label}}"></i>
+                    <i class="fa-solid fa-circle-dot squire-build-image-change"
+                       data-tooltip="<strong>On.</strong> Wearing this sets the character's {{this.label}}.<br>Right-click the picture to switch it off, and the character keeps their own."></i>
                     {{/unless}}
                 </div>
                 <span class="squire-build-costume-label">{{this.label}}</span>
@@ -222,8 +211,8 @@
                     {{/if}}
                     <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
                     {{#unless this.isDefault}}
-                    <i class="fa-solid fa-triangle-exclamation squire-build-image-change"
-                       data-tooltip="Wearing this sets the character's {{this.label}}"></i>
+                    <i class="fa-solid fa-circle-dot squire-build-image-change"
+                       data-tooltip="<strong>On.</strong> Wearing this sets the character's {{this.label}}.<br>Right-click the picture to switch it off, and the character keeps their own."></i>
                     {{/unless}}
                 </div>
                 <span class="squire-build-costume-label">{{this.label}}</span>
@@ -231,23 +220,6 @@
             {{/with}}
         </div>
 
-        <div class="squire-build-costume-main squire-build-image-slot{{#unless mainImage.isDefault}} is-set{{/unless}}"
-             data-image="main"
-             data-tooltip="{{#if mainImage.isDefault}}This costume has no picture of its own<br><em>Click to choose one</em>{{else}}Costume image<br><em>Click to change, right-click to reset</em>{{/if}}">
-            <img src="{{mainImage.path}}" alt="{{build.name}}" data-image-kind="portrait">
-        </div>
-
-        {{!-- How the token is DRAWN, under the picture it is drawn with.
-
-              A costume changes what a character looks like, and the artwork is
-              only half of that: a giant in disguise is not the same size on the
-              map, and a portrait cropped tall wants a different fit from one
-              cropped square to sit right in the same box.
-
-              Every control here can be UNSET, which is what "no change" means —
-              it leaves the token exactly as it is, the same way an unset picture
-              does. Right-click any of them to put it back to that. Applying a
-              gear build never touches any of it. --}}
         <div class="squire-build-token-settings">
             {{!-- All three on one row: they are one decision. How big the token
                   is, how the picture is fitted into that, and how large it is
@@ -266,17 +238,25 @@
                       takes what is left, since a slider is the one control here
                       that is genuinely better long.
 
-                      The warning follows the label rather than leading it. In
-                      front, it pushed the words sideways the moment a control
-                      was set, so the three captions stopped lining up with each
-                      other exactly when one of them started mattering. --}}
+                      The mark after each caption says the control is ON — this
+                      costume sets that thing. It was a caution triangle, which
+                      was wrong twice over: nothing here is an error, and the
+                      triangle is already how this window says a real problem
+                      (a slot whose item is not equipped, a build the character
+                      has drifted from). A dot says "active"; a triangle says
+                      "wrong". They should not be the same glyph.
+
+                      It follows the label rather than leading it. In front, it
+                      pushed the words sideways the moment a control was set, so
+                      the three captions stopped lining up with each other
+                      exactly when one of them began to matter. --}}
                 <div class="squire-build-token-field is-dimensions{{#unless tokenSettings.width.isDefault}} is-set{{/unless}}{{#unless tokenSettings.height.isDefault}} is-set{{/unless}}"
                      data-token-row="dimensions"
                      data-tooltip="How many grid spaces this token covers on the map.">
                     <span class="squire-build-token-label">
                         Dimensions
-                        <i class="fa-solid fa-triangle-exclamation squire-build-token-change"
-                           data-tooltip="Wearing this costume will resize the token to <strong>{{tokenSettings.width.value}} &times; {{tokenSettings.height.value}}</strong> grid space(s).<br><em>Click here to leave the size alone instead</em>"></i>
+                        <i class="fa-solid fa-circle-dot squire-build-token-change"
+                           data-tooltip="<strong>On.</strong> Wearing this costume resizes the token to {{tokenSettings.width.value}} &times; {{tokenSettings.height.value}} grid space(s).<br>Click to switch it off, and the token keeps whatever size it already has."></i>
                     </span>
                     <div class="squire-build-token-control">
                         <input type="number" class="squire-build-token-input" data-token="width"
@@ -289,11 +269,11 @@
 
                 <div class="squire-build-token-field is-fit{{#unless tokenSettings.fit.isDefault}} is-set{{/unless}}"
                      data-token-row="fit"
-                     data-tooltip="How the picture is fitted into the token's box.<br>{{tokenSettings.fit.help}}">
+                     data-tooltip="How the picture is fitted into the token's box.{{#each tokenSettings.fit.options}}<br><strong>{{this.label}}</strong> &mdash; {{this.help}}{{/each}}">
                     <span class="squire-build-token-label">
                         Image Fit
-                        <i class="fa-solid fa-triangle-exclamation squire-build-token-change"
-                           data-tooltip="Wearing this costume will set the image fit to <strong>{{tokenSettings.fit.label}}</strong>.<br><em>Click here to leave the fit alone instead</em>"></i>
+                        <i class="fa-solid fa-circle-dot squire-build-token-change"
+                           data-tooltip="<strong>On.</strong> Wearing this costume sets the image fit to {{tokenSettings.fit.label}}.<br>Click to switch it off, and the token keeps whatever fit it already has."></i>
                     </span>
                     <div class="squire-build-token-control">
                         <select class="squire-build-token-select" data-token="fit" aria-label="Image fit mode">
@@ -309,8 +289,8 @@
                      data-tooltip="How large the picture is drawn inside that box.">
                     <span class="squire-build-token-label">
                         Scale
-                        <i class="fa-solid fa-triangle-exclamation squire-build-token-change"
-                           data-tooltip="Wearing this costume will set the token scale to <strong>{{tokenSettings.scale.value}}</strong>.<br><em>Click here to leave the scale alone instead</em>"></i>
+                        <i class="fa-solid fa-circle-dot squire-build-token-change"
+                           data-tooltip="<strong>On.</strong> Wearing this costume sets the token scale to {{tokenSettings.scale.value}}.<br>Click to switch it off, and the token keeps whatever scale it already has."></i>
                     </span>
                     <div class="squire-build-token-control">
                         <input type="range" class="squire-build-token-range" data-token="scale"
@@ -319,6 +299,24 @@
                     </div>
                 </div>
             </div>
+
+        <div class="squire-build-costume-main squire-build-image-slot{{#unless mainImage.isDefault}} is-set{{/unless}}"
+             data-image="main"
+             data-tooltip="{{#if mainImage.isDefault}}This costume has no picture of its own<br><em>Click to choose one</em>{{else}}Costume image<br><em>Click to change, right-click to reset</em>{{/if}}">
+            <img src="{{mainImage.path}}" alt="{{build.name}}" data-image-kind="portrait">
+        </div>
+
+        {{!-- How the token is DRAWN, under the picture it is drawn with.
+
+              A costume changes what a character looks like, and the artwork is
+              only half of that: a giant in disguise is not the same size on the
+              map, and a portrait cropped tall wants a different fit from one
+              cropped square to sit right in the same box.
+
+              Every control here can be UNSET, which is what "no change" means —
+              it leaves the token exactly as it is, the same way an unset picture
+              does. Right-click any of them to put it back to that. Applying a
+              gear build never touches any of it. --}}
 
         </div>
     </div>
@@ -388,8 +386,8 @@
                   nothing on apply. The dashed border said that already; this
                   says it in a word. --}}
             {{#unless this.isDefault}}
-            <i class="fa-solid fa-triangle-exclamation squire-build-image-change"
-               data-tooltip="Wearing this sets the character's {{this.label}}"></i>
+            <i class="fa-solid fa-circle-dot squire-build-image-change"
+               data-tooltip="<strong>On.</strong> Wearing this sets the character's {{this.label}}.<br>Right-click the picture to switch it off, and the character keeps their own."></i>
             {{/unless}}
         </div>
         {{/each}}

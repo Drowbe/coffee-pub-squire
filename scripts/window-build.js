@@ -8,7 +8,7 @@ import {
     getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
     resolveTokenSettings, setBuildTokenSetting,
-    estimateArmorClass, previewSlotChange, setBuildMode, revertBuild, damageLabel,
+    estimateArmorClass, previewSlotChange, setBuildMode, convertBuildMode, revertBuild, damageLabel,
     setActiveBuildId, getActiveBuildId, ensureDefaultCostume, moveBuild, resolveMainImage,
     equippedState, buildDrift, recaptureDefaultImages
 } from './utility-builds.js';
@@ -248,6 +248,50 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         await this._refresh();
     }
 
+    /**
+     * Turn a build into a costume or back.
+     *
+     * A menu entry rather than a switch beside the name. The switch was in the
+     * most prominent place in the window for an operation nobody does twice, and
+     * putting it there implied the two modes were a setting on one thing —
+     * whereas New Build and New Costume make the choice up front, which is when
+     * it is actually made.
+     *
+     * It DISCARDS the other mode's contents, and says so before it does. Keeping
+     * them was the obvious thing and it is what produced the ghosts: a costume
+     * carrying invisible gear, a tile drawing a weapon nobody could see the
+     * source of, and a converted-back build full of whatever was in it weeks
+     * ago. What conversion is worth is the name and the pictures; the slots were
+     * always a few drags, and a result that depends on which direction you came
+     * from is worse than one that does not.
+     */
+    async convertSelected(buildId, mode) {
+        const build = getBuild(this.actor, buildId);
+        if (!build || build.mode === mode) return;
+
+        const costume = mode === 'costume';
+        const summary = buildSummary(this.actor, build);
+        const losing = costume ? summary.gearCount + summary.spellCount : 0;
+
+        const confirmed = await getBlacksmith().dialog.confirm({
+            title: costume ? 'Convert to Costume' : 'Convert to Build',
+            content: `<p>Turn <strong>${foundry.utils.escapeHTML(build.name)}</strong> into a ${costume ? 'costume' : 'build'}?</p>`
+                + `<p>It keeps its name and its pictures. ${costume
+                    ? 'A costume changes only how the character looks, so it holds no gear or spells'
+                    : 'A build equips gear and prepares spells, so it starts with every slot empty'}.</p>`
+                + (losing
+                    ? `<p><strong>The ${losing} thing${losing === 1 ? '' : 's'} in it will be cleared, and converting back will not bring ${losing === 1 ? 'it' : 'them'} back.</strong></p>`
+                    : ''),
+            confirmLabel: costume ? 'Convert to Costume' : 'Convert to Build',
+            confirmIcon: costume ? 'fa-solid fa-masks-theater' : 'fa-solid fa-shirt',
+            destructive: losing > 0
+        });
+        if (!confirmed) return;
+
+        await convertBuildMode(this.actor, buildId, mode);
+        await this._refresh();
+    }
+
     async duplicateSelected(buildId) {
         const copy = await duplicateBuild(this.actor, buildId);
         if (copy) this.buildId = copy.id;
@@ -327,7 +371,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 + '<p>This will:</p><ul>' + lines.join('') + '</ul>'
                 + (costume ? '' : '<p>Attunement is not changed.</p>'),
             confirmLabel: costume ? 'Wear Costume' : 'Equip Build',
-            confirmIcon: costume ? 'fa-solid fa-masks-theater' : 'fa-solid fa-person-running'
+            confirmIcon: costume ? 'fa-solid fa-masks-theater' : 'fa-solid fa-shirt'
         });
         if (!confirmed) return;
 
@@ -358,7 +402,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 subtitle: undoable
                     ? `${changes.join(', ')}. Click to undo.`
                     : undefined,
-                icon: costume ? 'fa-solid fa-masks-theater' : 'fa-solid fa-person-running',
+                icon: costume ? 'fa-solid fa-masks-theater' : 'fa-solid fa-shirt',
                 duration: undoable ? 12 : 6,
                 onClick: undoable
                     ? async () => {
@@ -481,17 +525,30 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             // full the moment you select it — and five item icons at 20px is a
             // row of smudges, not a summary.
             const images = resolveImageSlots(this.actor, entry);
-            const mainHand = this.actor?.items?.get(entry.slots?.mainhand);
+
+            // The face of the tile: the thing that most distinguishes this entry
+            // from the one above it.
+            //
+            // For a COSTUME that is its own picture, which is the entire content
+            // of a costume. For a build it is the character's headline choice —
+            // the spell a caster leads with, the weapon anybody else does — and
+            // it falls back to the build's picture when that slot is empty.
+            //
+            // A weapon thumbnail used to sit among the marks below instead, and
+            // it appeared on costumes too: switching a build to a costume leaves
+            // its gear slots filled, deliberately, so that switching back
+            // restores them. The tile read that slot without asking what kind of
+            // thing it was drawing, and showed a sword on a wardrobe change.
+            const caster = getDollLayout(this.actor).caster;
+            const headline = entry.mode === 'costume'
+                ? null
+                : this.actor?.items?.get(entry.slots?.[caster ? 'spell1' : 'mainhand']);
+
             return {
                 mainImage: resolveMainImage(this.actor, entry).path,
+                tileImage: headline?.img ?? resolveMainImage(this.actor, entry).path,
                 portrait: images.find(slot => slot.key === 'portrait')?.path,
                 token: images.find(slot => slot.key === 'token')?.path,
-                // Three marks: how you look, how you look on the map, and what
-                // you are holding. The main hand is the one piece of gear worth
-                // a mark of its own — it is what most distinguishes two builds
-                // that dress the same.
-                mainHand: mainHand?.img ?? null,
-                mainHandName: mainHand?.name ?? null,
                 id: entry.id,
                 name: entry.name,
                 active: entry.id === this.buildId,
@@ -731,12 +788,20 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                     x: event.clientX,
                     y: event.clientY,
                     zones: [
-                        { name: 'Equip This Build', icon: 'fa-solid fa-person-running',
-                          callback: () => this.applySelected(buildId) },
+                        ...(getBuild(this.actor, buildId)?.mode === 'costume'
+                            ? [{ name: 'Wear This Costume', icon: 'fa-solid fa-masks-theater',
+                                 callback: () => this.applySelected(buildId) }]
+                            : [{ name: 'Equip This Build', icon: 'fa-solid fa-shirt',
+                                 callback: () => this.applySelected(buildId) }]),
                         { name: 'Duplicate', icon: 'fa-solid fa-clone',
                           callback: () => this.duplicateSelected(buildId) },
                         ...(moves.length ? [{ separator: true }, ...moves] : []),
                         { separator: true },
+                        ...(getBuild(this.actor, buildId)?.mode === 'costume'
+                            ? [{ name: 'Convert to Build', icon: 'fa-solid fa-shirt',
+                                 callback: () => this.convertSelected(buildId, 'gear') }]
+                            : [{ name: 'Convert to Costume', icon: 'fa-solid fa-masks-theater',
+                                 callback: () => this.convertSelected(buildId, 'costume') }]),
                         { name: 'Set Artwork as Default', icon: 'fa-solid fa-camera',
                           callback: () => this.recaptureDefaults() },
                         { separator: true },
@@ -766,12 +831,6 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 `<section class="loading" data-uuid="${uuid}"><i class="fas fa-spinner fa-spin-pulse"></i></section>`;
             element.dataset.tooltipClass = 'dnd5e2 dnd5e-tooltip item-tooltip themed theme-light';
             element.dataset.tooltipDirection ??= 'LEFT';
-        });
-
-        // Build / Costume, on Blacksmith's own switch. Checked is costume.
-        root.querySelector('.squire-build-mode-input')?.addEventListener('change', async (event) => {
-            await setBuildMode(this.actor, this.buildId, event.currentTarget.checked ? 'costume' : 'gear');
-            await this._refresh();
         });
 
         // A global option, so it writes a setting rather than the build.

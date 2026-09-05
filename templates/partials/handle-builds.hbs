@@ -12,13 +12,18 @@
         <div draggable="true"
              class="squire-handle-control handle-build-icon"
              data-build-id="{{this.id}}"
-             data-tooltip="<strong>{{this.name}}</strong><br>AC {{this.armorClass}} · {{this.gearCount}} items<br><em>Click to equip</em><br><em>Right-click to take off the handle</em>">
+             data-tooltip="<strong>{{this.name}}</strong><br>{{#if this.costume}}Costume &mdash; changes the portrait and token only<br><em>Click to wear</em>{{else}}AC {{this.armorClass}} · {{this.gearCount}} items<br><em>Click to equip</em>{{/if}}<br><em>Right-click to take off the handle</em>">
             {{#if this.img}}
             <img draggable="false" src="{{this.img}}" alt="{{this.name}}"/>
             {{else}}
-            <i class="fa-solid fa-shirt handle-build-blank"></i>
+            <i class="fa-solid {{#if this.costume}}fa-masks-theater{{else}}fa-shirt{{/if}} handle-build-blank"></i>
             {{/if}}
-            <i class="fa-solid fa-person-running handle-build-overlay"></i>
+            {{!-- The same two glyphs the rail's tiles and the New buttons use, so
+                  one mark means one kind of thing wherever it appears. It was
+                  the runner on everything, which named the ACTION rather than
+                  the thing — and named it wrongly on a costume, which is worn
+                  rather than equipped. --}}
+            <i class="fa-solid {{#if this.costume}}fa-masks-theater{{else}}fa-shirt{{/if}} handle-build-overlay"></i>
         </div>
     {{/each}}
 </div>
