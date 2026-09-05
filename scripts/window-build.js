@@ -352,8 +352,24 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
      *
      * Written to `position` rather than to CSS: the frame is Foundry's, and a
      * stylesheet reaching into it would be a rule this window could not see.
+     *
+     * DEFERRED A FRAME, and that is not a nicety. ApplicationV2 applies the
+     * position it was constructed with AFTER `_onRender` returns, so a width
+     * written inline here was immediately overwritten by the opening guess on
+     * the first render and only on the first render — which is why every window
+     * opened at the wrong size and then snapped right the moment anything caused
+     * it to render again. Measuring on the next frame puts this after the
+     * position pass rather than before it, on every render alike.
      */
     _syncWidth() {
+        requestAnimationFrame(() => {
+            // The window can be closed between the render and the frame.
+            if (this.rendered) this._measureWidth();
+        });
+    }
+
+    /** The measurement itself. See _syncWidth() for why it runs a frame later. */
+    _measureWidth() {
         const content = this.element?.querySelector('.squire-build');
         const rail = content?.querySelector('.squire-build-rail');
         const workspace = content?.querySelector('.squire-build-workspace');
