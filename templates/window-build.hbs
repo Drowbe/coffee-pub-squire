@@ -110,35 +110,55 @@
           make — and the plates, the armour class and the spell column all
           describe equipment this view has nothing to do with. --}}
     <div class="squire-build-costume">
-        <div class="squire-build-costume-main squire-build-image-slot{{#unless mainImage.isDefault}} is-set{{/unless}}"
-             data-image="main"
-             data-tooltip="{{#if mainImage.isDefault}}This costume has no picture of its own<br><em>Click to choose one</em>{{else}}Costume image<br><em>Click to change, right-click to reset</em>{{/if}}">
-            <img src="{{mainImage.path}}" alt="{{build.name}}">
-            {{#if mainImage.isDefault}}
-            <span class="squire-build-image-unset">unset</span>
-            {{/if}}
-        </div>
+        {{!-- The two images this costume WRITES, side by side at the top, and the
+              costume's own picture filling everything under them.
 
-        {{!-- The two that actually get written when this is worn. Labelled here,
-              where there is room for a word — on the doll they are circles
-              beside a head and have to earn their space with a glyph. --}}
+              They were stacked around the picture, one above and one below, and
+              that spent the column's height on three rows so all three had to be
+              small. Together on one row they cost a single row between them and
+              the square below gets the rest. --}}
         <div class="squire-build-costume-pair">
-            {{#each imageSlots}}
+            {{#with portraitSlot}}
             <div class="squire-build-costume-image">
                 <div class="squire-build-slot is-round squire-build-image-slot{{#unless this.isDefault}} is-set{{/unless}}"
                      data-image="{{this.key}}"
-                     data-tooltip="{{#if this.isDefault}}Not set — wearing this costume leaves the {{this.label}} alone<br><em>Click to choose an image</em>{{else}}<em>Click to change, right-click to reset</em>{{/if}}">
+                     data-tooltip="{{#if this.isDefault}}This costume does not change the {{this.label}} — wearing it leaves the character's own alone<br><em>Click to choose an image</em>{{else}}Wearing this costume sets the {{this.label}}<br><em>Click to change, right-click to reset</em>{{/if}}">
                     {{#if this.path}}
                     <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}">
                     {{/if}}
                     <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
                     {{#if this.isDefault}}
-                    <span class="squire-build-image-unset">unset</span>
+                    <span class="squire-build-image-unset">no change</span>
                     {{/if}}
                 </div>
                 <span class="squire-build-costume-label">{{this.label}}</span>
             </div>
-            {{/each}}
+            {{/with}}
+            {{#with tokenSlot}}
+            <div class="squire-build-costume-image">
+                <div class="squire-build-slot is-round squire-build-image-slot{{#unless this.isDefault}} is-set{{/unless}}"
+                     data-image="{{this.key}}"
+                     data-tooltip="{{#if this.isDefault}}This costume does not change the {{this.label}} — wearing it leaves the character's own alone<br><em>Click to choose an image</em>{{else}}Wearing this costume sets the {{this.label}}<br><em>Click to change, right-click to reset</em>{{/if}}">
+                    {{#if this.path}}
+                    <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}">
+                    {{/if}}
+                    <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
+                    {{#if this.isDefault}}
+                    <span class="squire-build-image-unset">no change</span>
+                    {{/if}}
+                </div>
+                <span class="squire-build-costume-label">{{this.label}}</span>
+            </div>
+            {{/with}}
+        </div>
+
+        <div class="squire-build-costume-main squire-build-image-slot{{#unless mainImage.isDefault}} is-set{{/unless}}"
+             data-image="main"
+             data-tooltip="{{#if mainImage.isDefault}}This costume has no picture of its own<br><em>Click to choose one</em>{{else}}Costume image<br><em>Click to change, right-click to reset</em>{{/if}}">
+            <img src="{{mainImage.path}}" alt="{{build.name}}">
+            {{#if mainImage.isDefault}}
+            <span class="squire-build-image-unset">no change</span>
+            {{/if}}
         </div>
     </div>
     {{else}}
@@ -189,7 +209,7 @@
         <div class="squire-build-slot is-round squire-build-image-slot{{#unless this.isDefault}} is-set{{/unless}}"
              style="grid-row: {{this.row}}; grid-column: {{this.column}};"
              data-image="{{this.key}}"
-             data-tooltip="{{this.label}}{{#if this.isDefault}} — currently the character's own<br><em>Click to choose an image</em>{{else}}<br><em>Click to change, right-click to reset</em>{{/if}}">
+             data-tooltip="{{this.label}}{{#if this.isDefault}} — this build does not change it, so the character's own stays<br><em>Click to choose an image</em>{{else}} — this build sets it when applied<br><em>Click to change, right-click to reset</em>{{/if}}">
             {{#if this.path}}
             <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}">
             {{/if}}
@@ -200,7 +220,7 @@
                   nothing on apply. The dashed border said that already; this
                   says it in a word. --}}
             {{#if this.isDefault}}
-            <span class="squire-build-image-unset">unset</span>
+            <span class="squire-build-image-unset">no change</span>
             {{/if}}
         </div>
         {{/each}}
@@ -220,7 +240,7 @@
              data-tooltip="{{#if mainImage.isDefault}}This build has no picture of its own<br><em>Click to choose one</em>{{else}}Build image<br><em>Click to change, right-click to reset</em>{{/if}}">
             <img src="{{mainImage.path}}" alt="{{actorName}}">
             {{#if mainImage.isDefault}}
-            <span class="squire-build-image-unset">unset</span>
+            <span class="squire-build-image-unset">no change</span>
             {{/if}}
 
             {{!-- The armour class, big, on the portrait's hem — where Baldur's

@@ -762,10 +762,15 @@
     display: none;
 }
 
-/* "unset" over the bottom of the circle. The dashed border was carrying this on
-   its own and it was too quiet: an unset slot shows the character's current
-   artwork, so it looks chosen, and a build writes only the images it actually
-   sets — an unset portrait changes nothing on apply and looked like it should. */
+/* "no change" over the bottom of the circle.
+   
+   It read "unset" first, which named the state rather than the consequence — and
+   the consequence is what anybody needs: a slot with no image of its own shows
+   the character's CURRENT artwork, so it looks chosen, and applying writes only
+   the images a build actually set. An unset portrait therefore leaves the
+   character's portrait exactly as it is, which is precisely the case where one
+   image changed on apply and the other did not. The dashed border was carrying
+   that alone and was far too quiet. */
 .squire-build-image-unset {
     position: absolute;
     right: 0;
@@ -996,19 +1001,40 @@
 
    Three pictures and a name. The doll is absent rather than hidden: a costume
    never touches gear or spells, so sixteen slots that could only sit empty would
-   be a promise the mode does not make. */
+   be a promise the mode does not make.
+
+   The WINDOW does not change size for it. An earlier version resized on the
+   mode switch and it was the wrong trade — a window that moves under the cursor
+   costs more than the empty space it recovers. The column below fills that space
+   instead.
+
+   The two circles share one row at the top, with the square filling everything
+   under them. They were stacked around it — one above, one below — and that
+   spent the column's height on three rows, so all three had to be small. On one
+   row they cost a single row between them and the square takes the rest. */
 .squire-build-costume {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
     align-items: center;
+    min-height: 0;
 }
 
-/* The big one, in the proportion a portrait is usually painted. */
+/* The two the costume actually writes, side by side. */
+.squire-build-costume-pair {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 28px;
+    justify-content: center;
+}
+
+/* Square, and as big as what is left allows. `min()` against the viewport height
+   keeps it from growing past the room under the circles — the three still have
+   to fit together, and this is the one with room to give. */
 .squire-build-costume-main {
     position: relative;
-    width: 100%;
-    aspect-ratio: 3 / 4;
+    width: min(100%, 68vh);
+    aspect-ratio: 1;
     overflow: hidden;
     cursor: pointer;
     border: 1px solid var(--blacksmith-tool-divider);
@@ -1029,29 +1055,25 @@
     border-radius: 4px;
 }
 
-/* The two that actually get written when this is worn. Labelled, because there
-   is room for a word here — on the doll they are circles beside a head and have
-   to earn their space with a glyph instead. */
-.squire-build-costume-pair {
-    display: flex;
-    gap: 22px;
-    justify-content: center;
-}
-
+/* Labelled, because there is room for a word here — on the doll they are
+   circles beside a head and have to earn their space with a glyph instead. */
 .squire-build-costume-image {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
     align-items: center;
 }
 
+/* Big enough to judge a face by. They are 60px on the doll, where they are two
+   of sixteen; here they are two of three, and sharing a row rather than each
+   taking one of their own is what buys the extra size. */
 .squire-build-costume-image .squire-build-slot {
-    width: 78px;
+    width: 140px;
 }
 
 .squire-build-costume-label {
     color: var(--blacksmith-tool-text-muted);
-    font-size: 0.66em;
+    font-size: 0.62em;
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }

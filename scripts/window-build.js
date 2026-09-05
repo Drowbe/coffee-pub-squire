@@ -20,8 +20,6 @@ import { BlacksmithToolWindowBaseV2 } from '/modules/coffee-pub-blacksmith/api/b
 /** How much width the build rail takes. Mirrored in panel-builds.css. */
 const RAIL_WIDTH = 180;
 
-/** A costume is three pictures, and needs a fraction of a doll's width. */
-const COSTUME_WIDTH = 380;
 
 /**
  * One actor's gear builds: a rail listing them, and a paper doll for the one
@@ -79,8 +77,11 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
 
         // A caster needs the second column; everyone else would get 300px of
         // empty. Set at construction because options are frozen afterwards.
-        // A first guess only: _onRender sizes it properly once it knows which
-        // build is selected and whether that build is a costume.
+        // Set once, here, and never changed afterwards. A costume needs less
+        // room than a doll, and an earlier version resized the window when the
+        // mode switched — which is a bad trade: a window that moves and resizes
+        // under the cursor costs more than the empty space it recovers. The
+        // costume view fills the width instead.
         const width = (getPreparingClasses(actor).length ? 840 : 520) + RAIL_WIDTH;
         // Before the window is even drawn. Applying a build will one day
         // overwrite the actor's portrait and token, and once it has, the
@@ -100,18 +101,6 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const win = new BuildWindow({ id, actor, buildId: selected, position: { width, height: 'auto' } });
         await win.render({ force: true });
         return win;
-    }
-
-    /**
-     * How wide this window should be for what it is currently showing.
-     *
-     * Shared with `open()` so the first render and every later one agree — the
-     * alternative is a window that opens one size and jumps the moment anything
-     * re-renders it.
-     */
-    _widthForMode() {
-        if (this.build?.mode === 'costume') return COSTUME_WIDTH + RAIL_WIDTH;
-        return (getPreparingClasses(this.actor).length ? 840 : 520) + RAIL_WIDTH;
     }
 
     /** The build this window is showing, re-read every time rather than cached. */
@@ -326,6 +315,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // Counted across BOTH grids: a build's attunement cost is the whole set,
         // and a sword is as capable of demanding attunement as an amulet.
         const attunement = attunementSummary(this.actor, [...bodySlots, ...weaponSlots]);
+        const imageSlots = resolveImageSlots(this.actor, build);
 
         // One section per class that prepares. `used` counts what this BUILD has
         // slotted, not what the sheet currently has prepared — the window is
@@ -345,6 +335,12 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 rail,
                 hasBuilds: builds.length > 0,
                 isCostume: build?.mode === 'costume',
+                // Named rather than left as an array the costume view would have
+                // to index: it stacks them around the main picture — portrait
+                // above, token below — so their ORDER there is not the order
+                // BUILD_IMAGE_SLOTS holds them in for the doll's ring.
+                portraitSlot: imageSlots.find(slot => slot.key === 'portrait'),
+                tokenSlot: imageSlots.find(slot => slot.key === 'token'),
                 updatesHandle: game.settings.get(MODULE.ID, 'buildsUpdateHandle'),
                 build,
                 actorName: this.actor?.name ?? '',
@@ -357,7 +353,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 attunement: { ...attunement, over: attunement.used > attunement.max },
                 weight: gearWeight(this.actor, build),
                 armorClass: estimateArmorClass(this.actor, build),
-                imageSlots: resolveImageSlots(this.actor, build),
+                imageSlots,
                 casters,
                 cantrips: casters.length ? getCantrips(this.actor) : [],
                 spellSlots: casters.length ? getSpellSlots(this.actor) : []
@@ -372,13 +368,6 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
      */
     async _onRender(context, options) {
         await super._onRender?.(context, options);
-
-        // Sized to what is on screen. A costume is three pictures, and leaving
-        // it in a window built for a doll and a spell column would be several
-        // hundred pixels of nothing. `position` is frozen after construction —
-        // this is the supported way to change it, and it is this module's own
-        // geometry rather than the shell's.
-        this.setPosition({ width: this._widthForMode(), height: 'auto' });
 
         const root = this.element;
         if (!root) return;
