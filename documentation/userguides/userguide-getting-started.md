@@ -128,9 +128,10 @@ build is made of. **The picture in the middle is the build's own.** Click it to 
 If your character prepares spells, the build window is wider and carries a column for them: a set of
 slots sized to exactly how many that class can prepare, with a running count. Drag spells in the same
 way you drag gear. Multiclass casters get one block per class, since each prepares its own number.
-Cantrips and your spell slots are shown beside the list for reference -- cantrips are always available
-so there is nothing to choose, and a prepared spell is not tied to a particular slot, so neither is
-something you fill in. Classes that know spells rather than preparing them get no such column.
+Your spell slots are listed at the top for reference -- a prepared spell is not tied to a particular
+slot in this game, so they are something to read rather than something to fill in. Cantrips are not
+shown at all: they are always available and never prepared, so there is nothing to decide about them.
+Classes that know spells rather than preparing them get no such column.
 
 Magic items glow in their slot, coloured by rarity, and anything needing attunement carries a gem --
 lit if it is attuned, warm and hollow if it is not, which means it would do nothing if you wore this

@@ -5,7 +5,7 @@ import {
     BUILD_BODY_SLOTS, BUILD_WEAPON_SLOTS, BUILD_SLOT_KEYS,
     getBuilds, getBuild, createBuild, deleteBuild, duplicateBuild, applyBuild, buildSummary,
     renameBuild, setBuildSlot, resolveSlots, attunementSummary,
-    getPreparingClasses, getSpellSlots, getCantrips, resolvePreparedSpells, setBuildSpell,
+    getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
     estimateArmorClass, previewSlotChange, setBuildMode, revertBuild, damageLabel,
     setActiveBuildId, getActiveBuildId, ensureDefaultCostume, moveBuild, resolveMainImage
@@ -340,7 +340,14 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             return {
                 ...casterClass,
                 slots,
-                used: slots.filter(slot => slot.filled).length
+                used: slots.filter(slot => slot.filled).length,
+                // Two columns, and however many rows that needs. The most any
+                // class prepares is 25, so a fixed grid would be 13 rows tall
+                // and mostly empty for the cleric who prepares nine — this is
+                // the same two columns at whatever height the class actually
+                // uses. The template writes it as an inline `grid-template-rows`
+                // because only the data knows the number.
+                rows: Math.max(1, Math.ceil(casterClass.max / 2))
             };
         });
 
@@ -370,7 +377,10 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 armorClass: estimateArmorClass(this.actor, build),
                 imageSlots,
                 casters,
-                cantrips: casters.length ? getCantrips(this.actor) : [],
+                // Cantrips are gone from this window. They are always available,
+                // never prepared and never chosen, so there was nothing anybody
+                // could do with the row — it was a strip of pictures that only
+                // took height from the list that matters.
                 spellSlots: casters.length ? getSpellSlots(this.actor) : []
             })
         };

@@ -342,13 +342,34 @@
           has no preparation maximum, so no section appears rather than an empty
           one; their list is not a daily choice. --}}
     <div class="squire-build-spells">
+        {{!-- Slots first, and once. They are the character's, not any one
+              class's — a multiclass caster casts from a single pool — so
+              attaching this to a class block would be wrong the moment there
+              were two. It reads as the header for everything below it, which is
+              what it is: the thing that decides whether the lists are castable. --}}
+        {{#if spellSlots}}
+        <div class="squire-build-slot-ranks">
+            {{#each spellSlots}}
+            <span class="squire-build-rank" data-tooltip="{{this.label}} level: {{this.value}} of {{this.max}} remaining">
+                <span class="squire-build-rank-label">{{this.label}}</span>
+                <span class="squire-build-rank-pips">{{this.max}}</span>
+            </span>
+            {{/each}}
+        </div>
+        {{/if}}
+
         {{#each casters}}
         <div class="squire-build-caster">
             <div class="squire-build-caster-header">
                 <span class="squire-build-caster-name">{{this.name}}</span>
                 <span class="squire-build-caster-count">{{this.used}} / {{this.max}} prepared</span>
             </div>
-            <div class="squire-build-spell-grid">
+            {{!-- Two columns, filled downward. Twenty-five is the most any class
+                  prepares, so a fixed grid would be thirteen rows and mostly
+                  empty for the cleric who prepares nine; the row count comes
+                  from the data instead. --}}
+            <div class="squire-build-spell-grid"
+                 style="grid-template-rows: repeat({{this.rows}}, minmax(0, 1fr));">
                 {{#each this.slots}}
                 <div class="squire-build-spell-slot{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
                      data-spell-class="{{../id}}" data-spell-index="{{this.index}}"{{#if this.uuid}} data-item-uuid="{{this.uuid}}"{{/if}}
@@ -371,37 +392,6 @@
             </div>
         </div>
         {{/each}}
-
-        {{!-- Cantrips are a READOUT, not slots. They are always available, so
-              they are not part of a daily plan and there is nothing to choose;
-              showing them beside the prepared list says what else is on hand. --}}
-        {{#if cantrips}}
-        <div class="squire-build-readout">
-            <div class="squire-build-readout-label">Cantrips</div>
-            <div class="squire-build-cantrips">
-                {{#each cantrips}}
-                <img class="squire-build-cantrip" src="{{this.img}}" alt="{{this.name}}" data-tooltip="{{this.name}}">
-                {{/each}}
-            </div>
-        </div>
-        {{/if}}
-
-        {{!-- The slot pyramid, also a readout. It is what tells you whether a
-              prepared list is castable; it is not a set of containers, because
-              a prepared spell is not assigned to a slot in this game. --}}
-        {{#if spellSlots}}
-        <div class="squire-build-readout">
-            <div class="squire-build-readout-label">Slots</div>
-            <div class="squire-build-slot-ranks">
-                {{#each spellSlots}}
-                <span class="squire-build-rank" data-tooltip="{{this.label}} level: {{this.value}} of {{this.max}} remaining">
-                    <span class="squire-build-rank-label">{{this.label}}</span>
-                    <span class="squire-build-rank-pips">{{this.max}}</span>
-                </span>
-                {{/each}}
-            </div>
-        </div>
-        {{/if}}
     </div>
     {{/if}}
     </div>

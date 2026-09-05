@@ -601,14 +601,6 @@ export function resolvePreparedSpells(actor, build, casterClass) {
     });
 }
 
-/** The cantrips this character knows. Always available, so a readout, not slots. */
-export function getCantrips(actor) {
-    return (actor?.items ?? [])
-        .filter(item => item.type === 'spell' && item.system?.level === 0)
-        .map(item => ({ id: item.id, name: item.name, img: item.img }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-}
-
 /** Put a spell in one prepared slot, or empty it with a null itemId. */
 export async function setBuildSpell(actor, buildId, classId, index, itemId) {
     const position = Number(index);

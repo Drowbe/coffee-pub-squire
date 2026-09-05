@@ -550,7 +550,10 @@
 .squire-build-columns {
     display: flex;
     gap: 12px;
-    align-items: flex-start;
+    /* Stretched, not top-aligned: the spell lists divide the doll's height into
+       their own rows, which is what lines the two halves up. Top-aligned they
+       ended wherever the count happened to put them. */
+    align-items: stretch;
 }
 
 .squire-build-doll {
@@ -566,11 +569,20 @@
 }
 
 .squire-build-spells {
-    flex: 0 0 290px;
+    flex: 0 0 250px;
     display: flex;
     flex-direction: column;
     gap: 10px;
     min-width: 0;
+}
+
+/* One class fills the column. Two share it, each taking the height its own list
+   needs — which is what `flex` on the grid below resolves. */
+.squire-build-caster {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
 }
 
 /* One block per preparing class. A Cleric 5 / Wizard 3 gets two, because the
@@ -598,13 +610,21 @@
     white-space: nowrap;
 }
 
-/* Four across, square, same treatment as the gear slots — a prepared spell is a
-   chosen thing in a limited set, which is what a slot means everywhere else in
-   this window. */
+/* TWO columns, filled downward, dividing whatever height the section has.
+   
+   It was four across and square, which put a wizard's seventeen into five ragged
+   rows that lined up with nothing. Two columns of however many rows the class
+   actually prepares reads as a list — which is what a prepared list is — and
+   shares its height with the doll beside it, so the two halves of the window
+   end level. The row count is written inline by the template, because only the
+   data knows it. */
 .squire-build-spell-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 5px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: column;
+    flex: 1 1 auto;
+    gap: 4px;
+    min-height: 0;
 }
 
 .squire-build-spell-slot {
@@ -612,7 +632,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    aspect-ratio: 1;
+    /* No aspect ratio: the row height comes from the grid dividing the column,
+       so a slot is as tall as its share and as wide as half the column. Forcing
+       it square would put the list's height back in the slot's hands and undo
+       the alignment. */
+    min-height: 0;
     overflow: hidden;
     border: 1px dashed var(--blacksmith-tool-divider);
     border-radius: 4px;
@@ -649,43 +673,27 @@
     opacity: 1;
 }
 
-/* ---------------- READOUTS ----------------
+/* ---------------- THE SLOT READOUT ----------------
 
-   Cantrips and the slot pyramid. Neither is a drop target: cantrips are always
-   available so there is nothing to choose, and a prepared spell is not assigned
-   to a slot in this game — the pyramid is what tells you whether the list above
-   is castable, not a set of containers. */
-.squire-build-readout {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
+   What the character can actually cast, at the head of the spell column. Not a
+   drop target and never was: in 5e you prepare a LIST and cast any prepared
+   spell with any slot of sufficient level, so there is nothing to put in these.
+   They are what tells you whether the lists below are castable.
 
-.squire-build-readout-label {
-    color: var(--blacksmith-tool-text-muted);
-    font-size: 0.62em;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-}
+   Once, not per class — a multiclass caster casts from one pool, so a copy
+   inside each class block would be the same numbers claiming to be different
+   ones.
 
-.squire-build-cantrips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-}
-
-.squire-build-cantrip {
-    width: 24px;
-    height: 24px;
-    object-fit: cover;
-    border: 1px solid var(--blacksmith-tool-divider);
-    border-radius: 3px;
-}
-
+   The cantrip strip that used to sit beside this is gone. Cantrips are always
+   available, never prepared and never chosen, so it was a row of pictures
+   nobody could act on taking height from the list that matters. */
 .squire-build-slot-ranks {
     display: flex;
+    flex: 0 0 auto;
     flex-wrap: wrap;
     gap: 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--blacksmith-tool-divider);
 }
 
 .squire-build-rank {
