@@ -132,7 +132,7 @@
     </div>
 
     <div class="squire-build-workspace">
-    {{#if hasBuilds}}
+    {{#if build}}
     {{!-- ONE grid for the whole workspace, in both modes and for both kinds of
           character. The title is a row of it rather than a band above it, so it
           stops where the doll stops and the rule beside it runs the full height
@@ -148,6 +148,36 @@
               announced. --}}
         <input type="text" class="squire-build-name" value="{{build.name}}"
                maxlength="60" spellcheck="false" aria-label="Build name">
+
+        {{#unless isCostume}}
+        {{!-- Fill this build from what the character is wearing NOW. The answer
+              to having set a kit up on the sheet before finding this window, and
+              to the commoner case of changing something there and wanting the
+              build to catch up. --}}
+        <button type="button" class="squire-build-pull"
+                data-tooltip="Fill this build from what the character has equipped and prepared right now">
+            <i class="fa-solid fa-download"></i>
+        </button>
+        {{/unless}}
+
+        {{#if canPrepare}}
+        {{!-- Prepared spells in or out, per build.
+
+              OFF by default, and that is the point: gear and preparation are two
+              decisions on two rhythms, and a build that silently unprepared a
+              caster's whole list because it was written before they picked one
+              is this module overreaching. Off, the column is not drawn and
+              applying does not touch a single spell. --}}
+        <div class="blacksmith-toggle-row squire-build-prep"
+             data-tooltip="<strong>On</strong> &mdash; this build plans prepared spells, and equipping it prepares them and unprepares the rest.<br><strong>Off</strong> &mdash; it plans gear only and leaves the character's prepared list exactly as it is.">
+            <span class="blacksmith-toggle-label">Prep</span>
+            <label class="blacksmith-toggle">
+                <input type="checkbox" class="blacksmith-toggle-input squire-build-prep-input"
+                       {{#if includesPrepared}}checked{{/if}}>
+                <span class="blacksmith-toggle-slider"></span>
+            </label>
+        </div>
+        {{/if}}
     </div>
 
     {{#if isCaster}}{{#unless isCostume}}
@@ -611,10 +641,19 @@
     {{/unless}}
 
     </div>
+    {{else if hasBuilds}}
+    {{!-- Builds exist and none is chosen, which happens when the character is
+          not wearing one: the window opens on what is WORN, and picking the
+          first in the list instead would be inventing an answer out of where a
+          tile happens to sit. --}}
+    <div class="squire-empty-message squire-build-empty">
+        <p>- Nothing Selected -</p>
+        <p>Choose a build or costume from the left</p>
+    </div>
     {{else}}
     <div class="squire-empty-message squire-build-empty">
         <p>- No Builds Yet -</p>
-        <p>Use New Build to start one</p>
+        <p>Use Build or Costume below to start one</p>
     </div>
     {{/if}}
 

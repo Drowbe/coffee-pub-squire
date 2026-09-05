@@ -7,9 +7,10 @@ import {
     renameBuild, setBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
-    resolveTokenSettings, setBuildTokenSetting,
+    resolveTokenSettings, setBuildTokenSetting, setBuildPreparation, pullFromSheet,
     estimateArmorClass, previewSlotChange, setBuildMode, convertBuildMode, revertBuild, damageLabel,
     setActiveBuildId, getActiveBuildId, ensureDefaultCostume, moveBuild, resolveMainImage,
+    resolveTileImage,
     equippedState, buildDrift, recaptureDefaultImages
 } from './utility-builds.js';
 
@@ -54,8 +55,11 @@ const CHROME = RAIL_WIDTH + 10 + 1 + 10 + 16 + 22;
  * costume has no prepared column, so switching to one takes the window back
  * down rather than leaving it stretched around empty space.
  */
-function widthFor(actor, mode) {
-    const needsPack = getDollLayout(actor).caster && mode !== 'costume';
+function widthFor(actor, build) {
+    const needsPack = getDollLayout(actor).caster
+        && build?.mode !== 'costume'
+        && !!build?.includesPrepared;
+
     return CHROME + DOLL_WIDTH + (needsPack ? PACK_WIDTH : 0);
 }
 
@@ -137,10 +141,18 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // clickable one.
         await ensureDefaultCostume(actor);
 
-        // Whichever build was asked for, else the first there is. Opening on
-        // nothing would make the common case — one build — need a click before
-        // it showed anything.
-        const selected = buildId ?? getBuilds(actor)[0]?.id ?? null;
+        // Whichever build was asked for, else the one the character is WEARING.
+        //
+        // It used to fall through to the first in the list, which is a build
+        // chosen by nothing except where it happens to sit — so the window
+        // opened showing a plan the character was not on, and the doll's slots
+        // described gear they were not wearing. What is worn is the one build
+        // that is a fact rather than a guess.
+        //
+        // And if nothing is worn, nothing is selected: the workspace says so and
+        // asks. Picking one for the player would only be inventing an answer
+        // where there is not one.
+        const selected = buildId ?? getActiveBuildId(actor);
 
         // Opened at the size the mode it opens IN actually needs, rather than at
         // a build's size that a costume would then have to shrink out of.
@@ -150,7 +162,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // as tall as a build and both are the same for every character. Auto
         // over a hard figure means this window cannot be the one that clips
         // itself when a theme's chrome changes.
-        const width = widthFor(actor, getBuild(actor, selected)?.mode);
+        const width = widthFor(actor, selected ? getBuild(actor, selected) : null);
         const win = new BuildWindow({ id, actor, buildId: selected, position: { width, height: 'auto' } });
         await win.render({ force: true });
         return win;
@@ -289,6 +301,69 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         if (!confirmed) return;
 
         await convertBuildMode(this.actor, buildId, mode);
+        await this._refresh();
+    }
+
+    /**
+     * Fill this build from what the character has on right now.
+     *
+     * The answer to having set a kit up on the sheet before discovering this
+     * window, and to the commoner case of having changed something there and
+     * wanting the build to catch up.
+     *
+     * Two checkboxes rather than one action, because gear and preparation are
+     * two decisions on two rhythms — the same reason the preparation switch
+     * exists at all. Both default on when the build already plans both.
+     */
+    async pullSelectedFromSheet() {
+        const build = this.build;
+        if (!build || build.mode === 'costume') return;
+
+        const state = equippedState(this.actor);
+        const caster = getDollLayout(this.actor).caster;
+
+        const form = `
+            <p>Fill <strong>${foundry.utils.escapeHTML(build.name)}</strong> from what
+               <strong>${foundry.utils.escapeHTML(this.actor.name)}</strong> is wearing now.</p>
+            <label class="squire-build-pull-option">
+                <input type="checkbox" name="gear" checked>
+                <span>Equipment &mdash; ${state.gear.size} item${state.gear.size === 1 ? '' : 's'} currently equipped</span>
+            </label>
+            ${caster ? `
+            <label class="squire-build-pull-option">
+                <input type="checkbox" name="prepared" ${build.includesPrepared ? 'checked' : ''}>
+                <span>Prepared spells &mdash; ${state.spells.size} currently prepared</span>
+            </label>` : ''}
+            <p>Whatever is in those parts of the build now is replaced.</p>`;
+
+        // `prompt`, not `confirm`: this asks for two answers rather than one,
+        // and `getValue` reads them off the submit button's own form.
+        const { action, value: picked } = await getBlacksmith().dialog.prompt({
+            title: 'Pull From Sheet',
+            content: form,
+            getValue: (root) => ({
+                gear: !!root?.elements?.gear?.checked,
+                prepared: !!root?.elements?.prepared?.checked
+            }),
+            submitLabel: 'Fill From Sheet',
+            submitIcon: 'fa-solid fa-download'
+        });
+        if (action !== 'submit' || !picked || (!picked.gear && !picked.prepared)) return;
+
+        const result = await pullFromSheet(this.actor, this.buildId, {
+            gear: !!picked.gear,
+            prepared: !!picked.prepared
+        });
+        if (!result) return;
+
+        const parts = [];
+        if (picked.gear) parts.push(`${result.gearCount} item${result.gearCount === 1 ? '' : 's'}`);
+        if (picked.prepared) parts.push(`${result.spellCount} spell${result.spellCount === 1 ? '' : 's'}`);
+
+        showSquireToast(build.name, {
+            subtitle: parts.length ? `Filled with ${parts.join(' and ')}` : 'Nothing to take',
+            icon: 'fa-solid fa-download'
+        });
         await this._refresh();
     }
 
@@ -526,27 +601,10 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             // row of smudges, not a summary.
             const images = resolveImageSlots(this.actor, entry);
 
-            // The face of the tile: the thing that most distinguishes this entry
-            // from the one above it.
-            //
-            // For a COSTUME that is its own picture, which is the entire content
-            // of a costume. For a build it is the character's headline choice —
-            // the spell a caster leads with, the weapon anybody else does — and
-            // it falls back to the build's picture when that slot is empty.
-            //
-            // A weapon thumbnail used to sit among the marks below instead, and
-            // it appeared on costumes too: switching a build to a costume leaves
-            // its gear slots filled, deliberately, so that switching back
-            // restores them. The tile read that slot without asking what kind of
-            // thing it was drawing, and showed a sword on a wardrobe change.
-            const caster = getDollLayout(this.actor).caster;
-            const headline = entry.mode === 'costume'
-                ? null
-                : this.actor?.items?.get(entry.slots?.[caster ? 'spell1' : 'mainhand']);
-
             return {
                 mainImage: resolveMainImage(this.actor, entry).path,
-                tileImage: headline?.img ?? resolveMainImage(this.actor, entry).path,
+                // The same face the tray handle gives it — see resolveTileImage.
+                tileImage: resolveTileImage(this.actor, entry),
                 portrait: images.find(slot => slot.key === 'portrait')?.path,
                 token: images.find(slot => slot.key === 'token')?.path,
                 id: entry.id,
@@ -594,7 +652,12 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // heading and no count: the cells say what they hold, a cleric knows
         // they are a cleric, and a label above the grid would push every cell
         // out of line with the doll — which is the one thing it is built to do.
-        const pack = layout.caster ? resolvePreparedSpells(this.actor, build, shownDrift) : null;
+        // Only when this build actually plans preparation. A caster who is
+        // planning gear alone has no use for twenty-six cells they did not ask
+        // for, and drawing them would imply applying touches spells when it does
+        // not.
+        const plansPrepared = layout.caster && !!build?.includesPrepared;
+        const pack = plansPrepared ? resolvePreparedSpells(this.actor, build, shownDrift) : null;
 
         return {
             appId: this.id,
@@ -631,12 +694,16 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 armorClass: estimateArmorClass(this.actor, build),
                 imageSlots,
                 pack,
-                isCaster: layout.caster,
+                isCaster: plansPrepared,
+                // The switch shows for a caster whether or not it is on; the
+                // column is what the switch controls.
+                canPrepare: layout.caster,
+                includesPrepared: !!build?.includesPrepared,
                 // Cantrips are gone from this window. They are always available,
                 // never prepared and never chosen, so there was nothing anybody
                 // could do with the row — it was a strip of pictures that only
                 // took height from the list that matters.
-                spellSlots: layout.caster ? getSpellSlots(this.actor) : []
+                spellSlots: plansPrepared ? getSpellSlots(this.actor) : []
             })
         };
     }
@@ -833,6 +900,18 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             element.dataset.tooltipDirection ??= 'LEFT';
         });
 
+        // Prepared spells in or out, per build. Writes the build rather than a
+        // setting: one character plans their spells with their kit and another
+        // never does, and both are right.
+        root.querySelector('.squire-build-prep-input')?.addEventListener('change', async (event) => {
+            await setBuildPreparation(this.actor, this.buildId, event.currentTarget.checked);
+            await this._refresh();
+        });
+
+        root.querySelector('.squire-build-pull')?.addEventListener('click', async () => {
+            await this.pullSelectedFromSheet();
+        });
+
         // A global option, so it writes a setting rather than the build.
         root.querySelector('.squire-build-handle-input')?.addEventListener('change', async (event) => {
             await game.settings.set(MODULE.ID, 'buildsUpdateHandle', event.currentTarget.checked);
@@ -844,6 +923,19 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // tray's tile, and doing that per keystroke — or per pixel of a dragged
         // slider — would fight the control being used.
         root.querySelectorAll('[data-token]').forEach(control => {
+            // The slider's readout follows the thumb as it moves. This writes
+            // nothing — `input` fires for every pixel of a drag, and a flag
+            // write per pixel would re-render the window out from under the
+            // control being dragged. It only keeps the number honest while you
+            // are choosing it, which is the whole job of a number beside a
+            // slider.
+            if (control.type === 'range') {
+                control.addEventListener('input', () => {
+                    const readout = control.parentElement?.querySelector('.squire-build-token-value');
+                    if (readout) readout.textContent = control.value;
+                });
+            }
+
             control.addEventListener('change', async () => {
                 const key = control.dataset.token;
                 const value = control.type === 'number' || control.type === 'range'

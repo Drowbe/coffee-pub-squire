@@ -425,7 +425,6 @@
     padding: 7px 8px;
     cursor: pointer;
     border: 1px solid var(--blacksmith-tool-divider);
-    border-left: 3px solid transparent;
     border-radius: 4px;
     background-color: var(--blacksmith-tool-surface-sunken);
     background-position: center 25%;
@@ -433,15 +432,24 @@
     transition: all 0.15s ease;
 }
 
+/* Hover and selected are the party roster's, because a card you click to choose
+   is a card you click to choose wherever it lives, and a rail with private
+   conventions makes the same gesture look like a different one.
+
+   The open build was marked on its leading edge instead, on the grounds that the
+   tile is a picture and a coloured wash over one is unreadable. That is true of a
+   wash; it is not true of a green border and a dark ground, which is what the
+   roster uses and what the artwork here already sits behind. */
 .squire-build-rail-entry:hover {
-    border-color: var(--blacksmith-color-brand-accent, var(--blacksmith-tool-accent));
+    background-color: rgba(0, 0, 0, 0.8);
+    border-color: rgba(255, 100, 0, 0.9);
 }
 
-/* The open build is marked on its leading edge rather than by fill: the entry is
-   already a picture, and a coloured wash over one is unreadable. */
 .squire-build-rail-entry.is-active {
-    border-left-color: var(--blacksmith-tool-accent);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+    border-color: #48a000;
+    border-left-color: #48a000;
+    background-color: rgba(62, 81, 28, 0.4);
+    box-shadow: 0 0 3px rgba(159, 146, 117, 0.2);
 }
 
 /* Name, then what it is, then whether it is on — three lines, each a different
@@ -1633,7 +1641,52 @@
     color: #f08e78;
 }
 
-/* ---------------- BUILD / COSTUME ---------------- */
+/* ---------------- THE TITLE BAND'S CONTROLS ----------------
+
+   Both fixed; the name takes whatever is left between them. */
+.squire-build-title-row .squire-build-prep {
+    flex: 0 0 auto;
+}
+
+.squire-build-title-row .squire-build-prep .blacksmith-toggle-label {
+    font-size: 0.66em;
+    letter-spacing: 0.04em;
+}
+
+/* Square and quiet. Filling a build from the sheet is a useful thing to reach
+   for and not one anybody presses twice in a session, so it does not take the
+   primary colour the rail's apply buttons carry. */
+.squire-build-pull {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-radius: 3px;
+    background: var(--blacksmith-tool-surface-sunken);
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.78em;
+    transition: all 0.15s ease;
+}
+
+.squire-build-pull:hover {
+    border-color: var(--blacksmith-color-brand-accent, var(--blacksmith-tool-accent));
+    color: var(--blacksmith-tool-text);
+}
+
+/* Its dialog's two checkboxes. */
+.squire-build-pull-option {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 4px 0;
+    cursor: pointer;
+}
 
 .squire-build-title-row .squire-build-name {
     flex: 1 1 auto;

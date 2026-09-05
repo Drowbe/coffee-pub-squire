@@ -324,6 +324,19 @@ export function getBuilds(actor) {
         // game does not have. Read tolerantly, because the earlier shape is
         // still sitting in flags.
         spells: flattenSpellList(build.spells),
+        // Whether this build has an opinion about PREPARED SPELLS at all.
+        //
+        // Off by default, and that is the point of it: most people plan gear and
+        // prepare spells as two separate acts on two different rhythms, and a
+        // build that silently unprepared a caster's whole list because it was
+        // written before they picked one is the module overreaching. Off, the
+        // column is not drawn and applying does not touch a single spell.
+        //
+        // A build that already HAS a prepared list defaults to on, so nothing
+        // built before this existed quietly stops working.
+        includesPrepared: typeof build.includesPrepared === 'boolean'
+            ? build.includesPrepared
+            : flattenSpellList(build.spells).some(Boolean),
         // How the token is DRAWN, as opposed to what it is drawn with. Only a
         // costume sets these — a build is gear, and gear does not change how big
         // a character's token is on the map. Every one of them is nullable and
@@ -513,6 +526,7 @@ export async function createBuild(actor, name = 'New Build') {
         slots: Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null])),
         images: Object.fromEntries(BUILD_IMAGE_KEYS.map(key => [key, null])),
         spells: [],
+        includesPrepared: false,
         token: normaliseTokenSettings(null)
     };
     await saveBuilds(actor, [...getBuilds(actor), build]);
@@ -544,6 +558,7 @@ export async function duplicateBuild(actor, buildId) {
         // Copied rather than shared, or editing one build's list would edit
         // the other's.
         spells: [...(source.spells ?? [])],
+        includesPrepared: !!source.includesPrepared,
         token: { ...(source.token ?? {}) }
     };
 
@@ -615,6 +630,13 @@ export async function convertBuildMode(actor, buildId, mode) {
             // pictures are, and means nothing on a build.
             token: next === 'costume' ? build.token : normaliseTokenSettings(null)
         }
+        : build));
+}
+
+/** Whether this build plans prepared spells as well as gear. */
+export async function setBuildPreparation(actor, buildId, included) {
+    await saveBuilds(actor, getBuilds(actor).map(build => build.id === buildId
+        ? { ...build, includesPrepared: !!included }
         : build));
 }
 
@@ -1217,6 +1239,11 @@ export async function applyBuild(actor, build) {
     const gearIds = new Set(Object.values(build.slots ?? {}).filter(Boolean));
     const spellIds = new Set((build.spells ?? []).filter(Boolean));
 
+    // A build that does not plan preparation leaves every spell alone — not
+    // "prepares an empty list", which would unprepare the character's whole
+    // list on the way past.
+    const touchesSpells = !costume && build.includesPrepared;
+
     const updates = [];
     let equipped = 0;
     let unequipped = 0;
@@ -1235,7 +1262,7 @@ export async function applyBuild(actor, build) {
             }
         }
 
-        if (item.type === 'spell' && item.system?.countsPrepared) {
+        if (touchesSpells && item.type === 'spell' && item.system?.countsPrepared) {
             const shouldPrepare = spellIds.has(item.id);
             // dnd5e models `prepared` as a number: 0 unprepared, 1 prepared,
             // 2 always prepared. Only 0 and 1 are ours to set.
@@ -1422,6 +1449,103 @@ export function getHandleBuildIds(actor) {
  * character's own artwork, so there is always a face rather than a row of
  * identical shirts, which was the point of the borrowing in the first place.
  */
+/**
+ * Fill a build from what the character has on RIGHT NOW.
+ *
+ * The reverse of applying, and the answer to having spent an hour getting a kit
+ * right on the sheet before discovering this window. Either half can be taken on
+ * its own, because they are separate decisions — see the preparation switch.
+ *
+ * WHICH SLOT each item lands in is cosmetic, and deliberately so. Applying
+ * equips exactly the set the build names and unequips everything else, so any
+ * arrangement of the same items reproduces the same character; the placement
+ * only has to look sensible. It is a light heuristic for that reason and not a
+ * classification system — the data cannot tell a hat from a boot, which is why
+ * the body slots accept anything in the first place.
+ *
+ * Anything that does not fit a guess goes in the next free body slot rather than
+ * being dropped. A build missing the item you were looking at is worse than a
+ * build with a lantern in the neck slot, and the second is one drag from fixed.
+ */
+export async function pullFromSheet(actor, buildId, { gear = false, prepared = false } = {}) {
+    const build = getBuild(actor, buildId);
+    if (!build || (!gear && !prepared)) return null;
+
+    const layout = getDollLayout(actor);
+    const next = { ...build };
+    let gearCount = 0;
+    let spellCount = 0;
+
+    if (gear) {
+        const slots = Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null]));
+        const equipped = (actor?.items ?? []).filter(item => item.system?.equipped);
+
+        // The slots a guess can name, in the order a guess should try them.
+        const place = (key, item) => {
+            if (!key || slots[key] || !layout.body.concat(layout.big).some(slot => slot.key === key)) return false;
+            slots[key] = item.id;
+            return true;
+        };
+
+        const bodyKeys = layout.body.filter(slot => !slot.accepts || slot.accepts === 'gear').map(slot => slot.key);
+
+        for (const item of equipped) {
+            const kind = item.system?.type?.value;
+            const guesses = item.type === 'weapon'
+                ? ['mainhand', 'bothhands', 'offhand', 'sheath']
+                : kind === 'shield' ? ['offhand']
+                : kind === 'ring' ? ['ring1', 'ring2']
+                : item.system?.armor?.value ? ['chest']
+                : [];
+
+            const placed = guesses.some(key => place(key, item));
+            if (!placed) bodyKeys.some(key => place(key, item));
+            gearCount++;
+        }
+
+        next.slots = slots;
+    }
+
+    if (prepared) {
+        const list = (actor?.items ?? [])
+            .filter(item => item.type === 'spell' && item.system?.countsPrepared
+                && Number(item.system.prepared) > 0)
+            .slice(0, PACK_GRID_SIZE)
+            .map(item => item.id);
+
+        next.spells = list;
+        // Taking the character's prepared list is a statement that this build
+        // has one, so the switch follows rather than leaving the list invisible.
+        next.includesPrepared = true;
+        spellCount = list.length;
+    }
+
+    await saveBuilds(actor, getBuilds(actor).map(entry => entry.id === buildId ? next : entry));
+    return { gearCount, spellCount };
+}
+
+/**
+ * The picture that stands for a build wherever one is shown small.
+ *
+ * For a COSTUME its own image, which is the entire content of a costume. For a
+ * build the character's headline choice — the spell a caster leads with, the
+ * weapon anybody else does — falling back to the build's picture when that slot
+ * is empty.
+ *
+ * Here rather than in the window, because the rail's tiles and the tray handle
+ * both need it and two copies of this would be two answers to "what does this
+ * build look like" that drift apart the first time either is edited.
+ */
+export function resolveTileImage(actor, build) {
+    if (!build) return null;
+
+    const headline = build.mode === 'costume'
+        ? null
+        : actor?.items?.get(build.slots?.[getDollLayout(actor).caster ? 'spell1' : 'mainhand']);
+
+    return headline?.img ?? resolveMainImage(actor, build).path;
+}
+
 export function getHandleBuilds(actor) {
     const byId = new Map(getBuilds(actor).map(build => [build.id, build]));
 
@@ -1431,7 +1555,7 @@ export function getHandleBuilds(actor) {
         return {
             id,
             name: build.name,
-            img: resolveMainImage(actor, build).path,
+            img: resolveTileImage(actor, build),
             // A costume on the handle is a costume, and the strip should say so
             // with the same two glyphs the rail and the buttons use.
             costume: build.mode === 'costume',
@@ -1538,16 +1662,21 @@ export function buildDrift(actor, build, state = null) {
     const { gear, spells } = state ?? equippedState(actor);
 
     const wantGear = new Set(Object.values(build?.slots ?? {}).filter(Boolean));
-    const wantSpells = new Set((build?.spells ?? []).filter(Boolean));
+    // Only if the build claims to plan them. One that does not has no opinion
+    // about the character's prepared list, so there is nothing to have drifted
+    // from and every prepared spell would otherwise count as an extra.
+    const wantSpells = build?.includesPrepared
+        ? new Set((build?.spells ?? []).filter(Boolean))
+        : null;
 
     // Slotted, but not on the character: either taken off, or gone from the
     // sheet entirely. Both mean the plan is not being met.
     const notEquipped = [...wantGear].filter(id => !gear.has(id));
-    const notPrepared = [...wantSpells].filter(id => !spells.has(id));
+    const notPrepared = wantSpells ? [...wantSpells].filter(id => !spells.has(id)) : [];
     // On the character, but not in the plan. These have no slot to be marked in,
     // so they are counted rather than located.
     const extraGear = [...gear].filter(id => !wantGear.has(id));
-    const extraSpells = [...spells].filter(id => !wantSpells.has(id));
+    const extraSpells = wantSpells ? [...spells].filter(id => !wantSpells.has(id)) : [];
 
     return {
         notEquipped: new Set(notEquipped),
