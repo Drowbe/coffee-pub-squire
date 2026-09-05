@@ -634,7 +634,7 @@ export const PACK_GRID_SIZE = 26;
  * does not have, which is the same mistake as making Both Hands lock Main and
  * Off.
  */
-export function preparedLimit(actor) {
+function preparedLimit(actor) {
     return getPreparingClasses(actor).reduce((total, cls) => total + cls.max, 0);
 }
 

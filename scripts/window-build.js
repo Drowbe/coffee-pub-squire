@@ -6,7 +6,7 @@ import {
     getBuilds, getBuild, createBuild, deleteBuild, duplicateBuild, applyBuild, buildSummary,
     renameBuild, setBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
-    preparedLimit, resolveConsumables, setBuildConsumable,
+    resolveConsumables, setBuildConsumable,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
     estimateArmorClass, previewSlotChange, setBuildMode, revertBuild, damageLabel,
     setActiveBuildId, getActiveBuildId, ensureDefaultCostume, moveBuild, resolveMainImage
@@ -347,16 +347,13 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // carry, so the two layouts are the same window with a different column
         // rather than two windows.
         //
-        // `used` counts what this BUILD has slotted, not what the sheet has
-        // prepared right now: the question is whether the plan fits, not what
-        // today looks like.
+        // It carries no heading and no count. The cells say what they hold, the
+        // person filling them knows which class they are, and a label above the
+        // grid would push every cell out of line with the doll — which is the
+        // one thing this column is built to do.
         const pack = layout.caster
             ? resolvePreparedSpells(this.actor, build)
             : resolveConsumables(this.actor, build);
-
-        const packLabel = layout.caster
-            ? getPreparingClasses(this.actor).map(cls => cls.name).join(' / ')
-            : 'Carried';
 
         return {
             appId: this.id,
@@ -384,12 +381,6 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 armorClass: estimateArmorClass(this.actor, build),
                 imageSlots,
                 pack,
-                packLabel,
-                packUsed: pack.filter(cell => cell.filled).length,
-                // A caster's limit is a real number they can exceed; a pack has
-                // no limit at all, so the caption says how many are in it rather
-                // than inventing a ceiling nobody has.
-                packMax: layout.caster ? preparedLimit(this.actor) : null,
                 // Cantrips are gone from this window. They are always available,
                 // never prepared and never chosen, so there was nothing anybody
                 // could do with the row — it was a strip of pictures that only

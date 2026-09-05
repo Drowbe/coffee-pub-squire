@@ -347,6 +347,33 @@
           are cells this character does not have YET, and drawing them is how the
           column says what levelling up will buy. --}}
     <div class="squire-build-pack">
+        {{!-- The head of the column: exactly one body row tall, which is what
+              drops the grid below it level with the top of the NECK slot rather
+              than with the portrait circles above it. The spell slots live in
+              that square, since it is the one place in the window they can go
+              without pushing a cell out of true.
+
+              A martial gets the same square holding nothing. It is not spare
+              space, it is the offset — remove it and their column stops lining
+              up with their doll. --}}
+        <div class="squire-build-pack-head">
+            {{#if spellSlots}}
+            {{!-- A readout, never a drop target: in 5e you prepare a LIST and
+                  cast any prepared spell with a slot of sufficient level, so
+                  there is nothing to put in these. They say whether the column
+                  below is castable. Once for the character, not once per class,
+                  because a multiclass caster casts from one pool. --}}
+            <div class="squire-build-slot-ranks">
+                {{#each spellSlots}}
+                <span class="squire-build-rank" data-tooltip="{{this.label}} level: {{this.value}} of {{this.max}} remaining">
+                    <span class="squire-build-rank-label">{{this.label}}</span>
+                    <span class="squire-build-rank-pips">{{this.max}}</span>
+                </span>
+                {{/each}}
+            </div>
+            {{/if}}
+        </div>
+
         <div class="squire-build-pack-grid">
             {{#each pack}}
             <div class="squire-build-pack-cell{{#if this.beyond}} is-beyond{{/if}}{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
@@ -372,31 +399,6 @@
             </div>
             {{/each}}
         </div>
-
-        {{!-- Under the grid, not over it. The column's top edge has to line up
-              with the body's, and a heading above it would push every cell half
-              a row out of true — which is the one thing this column is for. --}}
-        <div class="squire-build-pack-caption">
-            <span class="squire-build-pack-name">{{packLabel}}</span>
-            <span class="squire-build-pack-count">{{#if packMax}}{{packUsed}} / {{packMax}} prepared{{else}}{{packUsed}} carried{{/if}}</span>
-        </div>
-
-        {{#if spellSlots}}
-        {{!-- What the character can actually cast, once. A prepared spell is not
-              tied to a particular slot in this game, so these are a readout
-              rather than containers — they say whether the list above is
-              castable. Once and not per class: a multiclass caster casts from
-              one pool, and a copy for each would be the same numbers claiming to
-              be different ones. --}}
-        <div class="squire-build-slot-ranks">
-            {{#each spellSlots}}
-            <span class="squire-build-rank" data-tooltip="{{this.label}} level: {{this.value}} of {{this.max}} remaining">
-                <span class="squire-build-rank-label">{{this.label}}</span>
-                <span class="squire-build-rank-pips">{{this.max}}</span>
-            </span>
-            {{/each}}
-        </div>
-        {{/if}}
     </div>
 
     </div>

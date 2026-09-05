@@ -586,10 +586,12 @@
    two layouts are the same window with different contents, so a fighter's and a
    wizard's are the same size and the same shape.
 
-   Nothing here sets a cell size. The column is one track wide, the two cells
-   divide it, and `aspect-ratio` makes them as tall as they are wide — which is
-   how two of them come to exactly one body row without a magic number
-   anywhere. */
+   Nothing here sets a cell size. The column is one track wide, two cells divide
+   it, and the gap between them is the body's own 6px — so a cell is exactly half
+   a gear slot minus half a gap, and FOUR of them in a two-by-two come to exactly
+   one gear slot. You could drop the four into the neck box and they would fit
+   it. Two of them stack into one body row, so the column keeps the doll's
+   horizontal lines the whole way down. */
 .squire-build-pack {
     grid-column: 6;
     display: flex;
@@ -598,10 +600,27 @@
     min-width: 0;
 }
 
+/* One body row tall, and that is its entire job.
+
+   The doll's first row is the head and the two image circles; the pack has
+   nothing to put beside them, and starting the grid up there put every cell half
+   a row above the slot it should line up with. A square at the top of the column
+   drops the first cell to exactly the top of the NECK slot — one row plus one
+   gap down — without a hard-coded offset, because a square one track wide is one
+   track tall. */
+.squire-build-pack-head {
+    display: flex;
+    align-items: center;
+    aspect-ratio: 1;
+    overflow: hidden;
+}
+
 .squire-build-pack-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px;
+    /* The body's gap, not a smaller one. This is what makes four cells equal one
+       slot rather than merely close to it. */
+    gap: 6px;
 }
 
 .squire-build-pack-cell {
@@ -672,31 +691,6 @@
     line-height: 1.5;
 }
 
-/* The column's own label, UNDER the grid. Above it, a heading would push every
-   cell half a row down and cost the alignment the column exists for. */
-.squire-build-pack-caption {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    padding-top: 4px;
-    border-top: 1px solid var(--blacksmith-tool-divider);
-}
-
-.squire-build-pack-name {
-    overflow: hidden;
-    color: var(--blacksmith-tool-accent);
-    font-size: 0.68em;
-    font-weight: 700;
-    text-overflow: ellipsis;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.squire-build-pack-count {
-    color: var(--blacksmith-tool-text-muted);
-    font-size: 0.62em;
-}
-
 /* ---------------- THE SLOT READOUT ----------------
 
    What the character can actually cast, at the head of the spell column. Not a
@@ -715,19 +709,23 @@
    available, never prepared and never chosen, so it was a row of pictures
    nobody could act on taking height from the list that matters. */
 .squire-build-slot-ranks {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 3px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+    width: 100%;
 }
 
 .squire-build-rank {
     display: flex;
-    gap: 4px;
+    gap: 3px;
     align-items: baseline;
-    padding: 2px 6px;
-    border-radius: 3px;
+    justify-content: center;
+    overflow: hidden;
+    padding: 1px 2px;
+    border-radius: 2px;
     background: var(--blacksmith-tool-surface-sunken);
-    font-size: 0.66em;
+    font-size: 0.58em;
+    white-space: nowrap;
 }
 
 .squire-build-rank-label {
