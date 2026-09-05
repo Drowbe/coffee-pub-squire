@@ -160,7 +160,7 @@
         </button>
         {{/unless}}
 
-        {{#if canPrepare}}
+        {{#if canPrepare}}{{#unless isCostume}}
         {{!-- Prepared spells in or out, per build.
 
               OFF by default, and that is the point: gear and preparation are two
@@ -177,7 +177,7 @@
                 <span class="blacksmith-toggle-slider"></span>
             </label>
         </div>
-        {{/if}}
+        {{/unless}}{{/if}}
     </div>
 
     {{#if isCaster}}{{#unless isCostume}}
@@ -641,19 +641,55 @@
     {{/unless}}
 
     </div>
-    {{else if hasBuilds}}
-    {{!-- Builds exist and none is chosen, which happens when the character is
-          not wearing one: the window opens on what is WORN, and picking the
-          first in the list instead would be inventing an answer out of where a
-          tile happens to sit. --}}
-    <div class="squire-empty-message squire-build-empty">
-        <p>- Nothing Selected -</p>
-        <p>Choose a build or costume from the left</p>
-    </div>
     {{else}}
-    <div class="squire-empty-message squire-build-empty">
-        <p>- No Builds Yet -</p>
-        <p>Use Build or Costume below to start one</p>
+    {{!-- Nothing on the doll, for one of two reasons, and the page says which.
+
+          It fills the window rather than collapsing it. A short panel was not
+          only ugly: the rail beside it is a flex child that takes the height it
+          is given, so a collapsed window squeezed the build list to nothing and
+          the window claimed there was nothing to choose while holding a list of
+          things to choose from.
+
+          And it is the one screen anybody reads before they know what this
+          window is, so it says what the two kinds of thing are. --}}
+    <div class="squire-build-empty">
+        <i class="fa-solid {{#if hasBuilds}}fa-hand-pointer{{else}}fa-shirt{{/if}} squire-build-empty-glyph"></i>
+
+        {{#if hasBuilds}}
+        <h3>Nothing selected</h3>
+        <p>Choose a build or costume from the list on the left, or start another one.</p>
+        {{else}}
+        <h3>No builds yet</h3>
+        <p>A place to plan what this character wears and carries, and to put it all on at once.</p>
+        {{/if}}
+
+        <dl class="squire-build-empty-kinds">
+            <div>
+                <dt><i class="fa-solid fa-shirt"></i> Build</dt>
+                <dd>A set of gear. Drag items onto the figure to say what it is made of; equipping it
+                    puts exactly those on and takes everything else off. It can plan prepared spells
+                    too, if you switch that on.</dd>
+            </div>
+            <div>
+                <dt><i class="fa-solid fa-masks-theater"></i> Costume</dt>
+                <dd>A portrait and a token, and how big that token is drawn. It changes only how the
+                    character looks &mdash; never their gear or their spells.</dd>
+            </div>
+        </dl>
+
+        <div class="squire-build-empty-actions">
+            <button type="button" class="squire-build-rail-new" data-mode="gear"
+                    data-tooltip="A set of gear to equip">
+                <i class="fa-solid fa-shirt"></i> New Build
+            </button>
+            <button type="button" class="squire-build-rail-new" data-mode="costume"
+                    data-tooltip="A portrait and token to wear. Changes how the character LOOKS and touches no gear.">
+                <i class="fa-solid fa-masks-theater"></i> New Costume
+            </button>
+        </div>
+
+        <p class="squire-build-empty-note">Nothing is applied to the character until you press the
+            green button on a tile, and it asks first.</p>
     </div>
     {{/if}}
 

@@ -9,7 +9,8 @@ import {
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
     resolveTokenSettings, setBuildTokenSetting, setBuildPreparation, pullFromSheet,
     estimateArmorClass, previewSlotChange, setBuildMode, convertBuildMode, revertBuild, damageLabel,
-    setActiveBuildId, getActiveBuildId, ensureDefaultCostume, moveBuild, resolveMainImage,
+    setActiveBuildId, getActiveBuildId, ensureDefaultCostume, ensureDefaultBuild,
+    moveBuild, resolveMainImage,
     resolveTileImage,
     equippedState, buildDrift, recaptureDefaultImages
 } from './utility-builds.js';
@@ -136,6 +137,11 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // first moment a build is in play at all. Idempotent, so opening a
         // second window cannot overwrite what the first one captured.
         await captureDefaultImages(actor);
+        // Their gear as it stands, as something they can get back to. Before the
+        // costume, so it sits first in the rail — it is the thing this window is
+        // mostly for, and the one that protects them from learning what applying
+        // does the hard way.
+        await ensureDefaultBuild(actor);
         // Their own face, as something they can put back on. The captured
         // defaults are a safety net nobody can see or click; this is the
         // clickable one.
@@ -775,6 +781,15 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 }
             });
         }
+
+        // The empty page offers the same two buttons the rail does, and they are
+        // not inside the rail — so the create handler is delegated from the root
+        // rather than from the strip. One binding, either place.
+        root.addEventListener('click', async (event) => {
+            const create = event.target.closest('.squire-build-rail-new');
+            if (!create || create.closest('.squire-build-rail')) return;
+            await this.createAndSelect(create.dataset.mode);
+        });
 
         // The rail. Delegated on the strip, because its rows are rebuilt on every
         // selection and per-row listeners would die with them.

@@ -119,6 +119,13 @@ Click the heart on a row. Click it again to remove it.
 
 ### Plan a set of gear
 
+The **shirt** in the Character Sheet strip opens the builder. The first time you open it for a
+character, Squire makes two things for you: **Original Gear**, a build holding whatever they have
+equipped right now, and a **Default Costume** holding their own portrait and token. Between them you
+can always get back to where you started -- which matters, because equipping a build takes off
+everything the build does not name. Neither is made again after that, and you can delete or rename
+either.
+
 The **shirt** in the Character Sheet strip opens the builder. Down its left is every build you have --
 click one to work on it -- the list scrolls when it outgrows the space rather than stretching the
 window. **New Build** and **New Costume** start another of either kind, and right-click a tile for

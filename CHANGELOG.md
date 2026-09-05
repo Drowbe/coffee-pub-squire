@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 
 ### Added
+- **A build of the character's own gear is made the first time the builder opens**, filled from whatever they have equipped — the same courtesy the Default Costume pays their face. Without it, the first thing anybody does here is make a build, drag twelve things into it, equip it, and discover that equipping unequips everything it does not name: the correct rule, learned the worst possible way. With it there is always a way back to what they had.
+  - **It does not plan prepared spells.** Preparation is opt-in per build for good reasons, and a snapshot taken automatically is the last place to start overriding that — a caster's list is theirs and this has no business claiming an opinion about it.
+  - It becomes the **worn** build, because it is: the character is wearing exactly what it names. That also means the window opens on their gear rather than on the empty page.
+  - Made once and never again, and a character with nothing equipped gets nothing — an empty snapshot protects nobody from anything.
+
+- **The empty window explains the tool.** It is the one screen anybody reads before they know what this window is, so instead of a line of grey text it now says what a **Build** and a **Costume** each are, carries a New button for both, and notes that nothing reaches the character until the green button on a tile is pressed — which it asks about first. It says which of the two empty cases you are in: no builds at all, or none chosen.
+
 - **Prepared spells are opt-in, per build**, on a switch in the title band. **Off by default**: gear and preparation are two decisions on two rhythms, and a build that silently unprepared a caster's whole list because it was written before they picked one is this module overreaching. Off, the column is not drawn, the window is narrower by it, and applying does not touch a single spell — which is not the same as "prepares an empty list", the thing that would have wiped the list on the way past.
   - A build that already holds a prepared list defaults to **on**, so nothing built before this existed quietly stops working.
   - Drift ignores preparation on a build that does not plan it. Otherwise every spell the character had prepared would count as an extra against a build that never had an opinion about them.
@@ -31,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The tile is laid out as a card**: name and apply button, then what it is, then whether it is on, then the portrait and token across the hem, as wide as the tile allows. Those two are the question the tile exists to answer — what wearing this would make you look like, the one thing the doll does not show — and at 38px they were two smudges. **Worn** moved onto its own line rather than sitting as a third chip among the counts, because it is a fact about the *character* and they are facts about the *build*.
 
 ### Fixed
+- **The empty window no longer collapses, and no longer contradicts itself.** With no build on the doll the workspace shrank to the height of its message — and the rail beside it is a flex child taking whatever height the row has, so the build list was squeezed to nothing and the window announced *Nothing Selected* while holding a list of things to select. It now holds the window open at the height a build would have taken.
+- **The preparation switch no longer appears on a costume.** A costume has no spells to plan, so it has no switch for planning them.
+
 - **A costume on the handle looked like a build.** The strip drew a runner on every entry — the glyph for the *action*, not the thing, and the wrong action for a costume, which is worn rather than equipped. It uses the shirt and the masks now, the same two glyphs the rail's tiles and the New buttons use, and its tooltip says what the entry is (a costume names itself and offers "click to wear" instead of quoting an armour class it does not have). The rail's own "Equip This Build" menu entry, the confirmation and the toast were the same mismatch and now match too: the costume side already named the thing, so only the build side was still naming the action.
 
 - **A costume no longer shows a weapon.** Switching a build to a costume leaves its gear slots filled, deliberately, so that switching back restores them — and the tile was reading the main-hand slot without asking what kind of thing it was drawing, so a wardrobe change came out holding a sword. The weapon thumbnail is gone from the marks entirely; where a build's gear belongs is the tile's face, and only when it is a build.

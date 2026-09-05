@@ -1736,6 +1736,43 @@ export function getHandleBuildActions(actor) {
  * else. Created once and never re-created, so deleting it is allowed to mean
  * deleting it.
  */
+/**
+ * The character's gear as it stood the first time this window was opened, as a
+ * build, made once and never again.
+ *
+ * The Default Costume is their own face offered back to them; this is the same
+ * courtesy for their kit. Without it the first thing anybody does here is make a
+ * build, drag twelve things into it, equip it — and discover that equipping
+ * unequips everything it does not name, which is the correct rule and a terrible
+ * way to learn it. With it there is always a way back to what they had.
+ *
+ * It does NOT plan prepared spells. Preparation is opt-in per build for good
+ * reasons, and a snapshot taken automatically is the last place to start
+ * overriding that; a caster's list is theirs and this has no business claiming
+ * an opinion about it.
+ *
+ * It becomes the WORN build, because it is: the character is wearing exactly
+ * what it names, and saying otherwise would be false the moment it was written.
+ * That also means the window opens on their gear rather than on an empty page.
+ *
+ * A character with nothing equipped gets nothing. An empty snapshot protects
+ * nobody from anything.
+ */
+export async function ensureDefaultBuild(actor) {
+    if (!actor || actor.getFlag(MODULE.ID, 'defaultBuildMade')) return;
+
+    // Set before the work, not after: a failure halfway through should leave one
+    // half-built build behind rather than try again on every open forever.
+    await actor.setFlag(MODULE.ID, 'defaultBuildMade', true);
+
+    const equipped = (actor.items ?? []).filter(item => item.system?.equipped);
+    if (!equipped.length) return;
+
+    const build = await createBuild(actor, 'Original Gear');
+    await pullFromSheet(actor, build.id, { gear: true, prepared: false });
+    await setActiveBuildId(actor, build.id);
+}
+
 export async function ensureDefaultCostume(actor) {
     if (!actor || actor.getFlag(MODULE.ID, 'defaultCostumeMade')) return;
 

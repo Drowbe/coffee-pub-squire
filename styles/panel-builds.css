@@ -643,11 +643,100 @@
     padding-left: 10px;
 }
 
-/* The workspace shrink-wraps its contents, so without this the window would
-   collapse to the width of the sentence when a character has no builds yet. */
+/* The page shown when there is no doll: no builds at all, or none chosen.
+
+   It holds the window OPEN at the size a build would have taken. That is not
+   vanity — the workspace shrink-wraps its contents and the rail beside it is a
+   flex child taking whatever height the row has, so a short page squeezed the
+   build list to nothing and the window announced there was nothing to choose
+   while holding a list of things to choose from.
+
+   The height is the grid's two rows: the title band, its gap, and the doll. */
 .squire-build-empty {
+    display: flex;
     flex: 1 1 auto;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
     min-width: var(--squire-doll-width);
+    min-height: calc(var(--squire-doll-height) + 36px);
+    padding: 0 24px;
+    text-align: center;
+}
+
+.squire-build-empty-glyph {
+    color: var(--blacksmith-tool-accent);
+    font-size: 2.4em;
+    opacity: 0.5;
+}
+
+.squire-build-empty h3 {
+    margin: 0;
+    border: none;
+    color: var(--blacksmith-tool-accent);
+    font-size: 1.05em;
+    font-weight: 700;
+}
+
+.squire-build-empty p {
+    max-width: 42ch;
+    margin: 0;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.78em;
+    line-height: 1.5;
+}
+
+/* What the two kinds of thing ARE. This is the one screen anybody reads before
+   they know what this window does, so it is the only place worth spending words
+   on the distinction — everywhere else the doll is self-evident. */
+.squire-build-empty-kinds {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 46ch;
+    margin: 4px 0 0;
+    text-align: left;
+}
+
+.squire-build-empty-kinds dt {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 2px;
+    color: var(--blacksmith-tool-text);
+    font-size: 0.8em;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.squire-build-empty-kinds dd {
+    margin: 0;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.76em;
+    line-height: 1.5;
+}
+
+.squire-build-empty-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+/* The same buttons the rail carries, given room to say their full names here. */
+.squire-build-empty-actions .squire-build-rail-new {
+    flex: 0 0 auto;
+    padding: 6px 14px;
+    font-size: 0.8em;
+}
+
+.squire-build-empty-note {
+    max-width: 42ch;
+    font-size: 0.7em !important;
+    font-style: italic;
+    opacity: 0.8;
 }
 
 /* ---------------- THE TWO COLUMNS ----------------
