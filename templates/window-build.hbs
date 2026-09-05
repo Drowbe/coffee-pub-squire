@@ -47,8 +47,8 @@
                     </button>
                 </div>
                 <div class="squire-build-rail-preview">
-                    {{#if this.portrait}}<img src="{{this.portrait}}" alt="Portrait" data-tooltip="Portrait">{{/if}}
-                    {{#if this.token}}<img src="{{this.token}}" alt="Token" data-tooltip="Token">{{/if}}
+                    {{#if this.portrait}}<img src="{{this.portrait}}" alt="Portrait" data-image-kind="portrait" data-tooltip="Portrait">{{/if}}
+                    {{#if this.token}}<img src="{{this.token}}" alt="Token" data-image-kind="token" data-tooltip="Token">{{/if}}
                     {{#if this.mainHand}}<img class="is-gear" src="{{this.mainHand}}" alt="{{this.mainHandName}}" data-tooltip="{{this.mainHandName}}">{{/if}}
                 </div>
                 <div class="squire-build-rail-stats">
@@ -130,19 +130,18 @@
           stops toggling between them resizing the window. --}}
     <div class="squire-build-columns{{#if isCaster}}{{#unless isCostume}} has-pack{{/unless}}{{/if}}">
 
-    {{!-- The name reads as a heading and edits as a field. It was a full-width
-          boxed input, which made the least important thing in the window the
-          biggest — it only needs to be reachable, not announced. --}}
     <div class="squire-build-title-row">
-        <input type="text" class="squire-build-name" value="{{build.name}}"
-               maxlength="60" spellcheck="false" aria-label="Build name">
-
         {{!-- Build or Costume. A costume changes only the portrait and token and
               leaves gear and spells alone — which is not the same as a build
               with empty slots, because applying THAT would strip the character
               bare. Two labelled halves rather than a checkbox: this decides what
-              a apply does, and "what will this do" should never be a state you
-              read off a tick. --}}
+              applying does, and "what will this do" should never be a state you
+              read off a tick.
+
+              FIRST, ahead of the name. It is the more consequential of the two —
+              renaming is cosmetic and this decides what wearing the thing does —
+              and it is a fixed width, so leading with it gives the name the rest
+              of the row however long the switch's labels are. --}}
         <div class="blacksmith-toggle-row squire-build-mode"
              data-tooltip="<strong>Build</strong> equips the gear and prepares the spells.<br><strong>Costume</strong> changes only the portrait and token and leaves gear and spells alone.">
             <span class="blacksmith-toggle-label{{#unless (eq build.mode 'costume')}} is-active{{/unless}}">Build</span>
@@ -153,6 +152,13 @@
             </label>
             <span class="blacksmith-toggle-label{{#if (eq build.mode 'costume')}} is-active{{/if}}">Costume</span>
         </div>
+
+        {{!-- The name reads as a heading and edits as a field. It was a
+              full-width boxed input, which made the least important thing in the
+              window the biggest — it only needs to be reachable, not
+              announced. --}}
+        <input type="text" class="squire-build-name" value="{{build.name}}"
+               maxlength="60" spellcheck="false" aria-label="Build name">
     </div>
 
     {{#if isCaster}}{{#unless isCostume}}
@@ -165,6 +171,13 @@
           Not in costume mode: there is no second column there to divide, and a
           rule with nothing on the far side of it is just a line. --}}
     <div class="squire-build-divider"></div>
+
+    {{!-- The column's heading, in the header row beside the build's name rather
+          than inside the column: above the cells it would push every one of them
+          half a row out of line with the doll, which is the one thing this
+          column is built not to do. Names both halves of what is under it — the
+          nine ranks you can cast with, and the list you cast from. --}}
+    <div class="squire-build-pack-title">Preparation</div>
     {{/unless}}{{/if}}
 
     {{#if isCostume}}
@@ -188,7 +201,7 @@
                      data-image="{{this.key}}"
                      data-tooltip="{{#if this.isDefault}}This costume does not change the {{this.label}} — wearing it leaves the character's own alone<br><em>Click to choose an image</em>{{else}}Wearing this costume sets the {{this.label}}<br><em>Click to change, right-click to reset</em>{{/if}}">
                     {{#if this.path}}
-                    <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}">
+                    <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}" data-image-kind="{{this.key}}">
                     {{/if}}
                     <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
                     {{#unless this.isDefault}}
@@ -205,7 +218,7 @@
                      data-image="{{this.key}}"
                      data-tooltip="{{#if this.isDefault}}This costume does not change the {{this.label}} — wearing it leaves the character's own alone<br><em>Click to choose an image</em>{{else}}Wearing this costume sets the {{this.label}}<br><em>Click to change, right-click to reset</em>{{/if}}">
                     {{#if this.path}}
-                    <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}">
+                    <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}" data-image-kind="{{this.key}}">
                     {{/if}}
                     <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
                     {{#unless this.isDefault}}
@@ -221,7 +234,7 @@
         <div class="squire-build-costume-main squire-build-image-slot{{#unless mainImage.isDefault}} is-set{{/unless}}"
              data-image="main"
              data-tooltip="{{#if mainImage.isDefault}}This costume has no picture of its own<br><em>Click to choose one</em>{{else}}Costume image<br><em>Click to change, right-click to reset</em>{{/if}}">
-            <img src="{{mainImage.path}}" alt="{{build.name}}">
+            <img src="{{mainImage.path}}" alt="{{build.name}}" data-image-kind="portrait">
         </div>
 
         {{!-- How the token is DRAWN, under the picture it is drawn with.
@@ -356,7 +369,7 @@
              data-image="{{this.key}}"
              data-tooltip="{{this.label}}{{#if this.isDefault}} — this build does not change it, so the character's own stays<br><em>Click to choose an image</em>{{else}} — this build sets it when applied<br><em>Click to change, right-click to reset</em>{{/if}}">
             {{#if this.path}}
-            <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}">
+            <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}" data-image-kind="{{this.key}}">
             {{/if}}
             <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
             {{!-- An unset slot shows the character's CURRENT artwork, which made
@@ -384,7 +397,7 @@
              style="grid-row: 2 / 5; grid-column: 2 / 5;"
              data-image="main"
              data-tooltip="{{#if mainImage.isDefault}}This build has no picture of its own<br><em>Click to choose one</em>{{else}}Build image<br><em>Click to change, right-click to reset</em>{{/if}}">
-            <img src="{{mainImage.path}}" alt="{{actorName}}">
+            <img src="{{mainImage.path}}" alt="{{actorName}}" data-image-kind="portrait">
 
             {{!-- The armour class, big, on the portrait's hem — where Baldur's
                   Gate puts it, and for the same reason: it is the number you are
@@ -568,18 +581,17 @@
                 {{else if this.missing}}
                 <i class="fa-solid fa-triangle-exclamation squire-build-slot-icon is-warning"></i>
                 {{else}}
-                {{!-- The glyph marks an OPEN slot — it is the thing that makes
-                      the available cells read as available at a glance, which a
-                      row of empty boxes does not. Only on the cells that can
-                      actually take a spell: on a dimmed one it would be an
-                      invitation the character has not earned yet. --}}
-                {{#unless this.beyond}}
-                <i class="fa-solid fa-sparkles squire-build-slot-icon"></i>
-                {{/unless}}
-                {{!-- Numbered while empty and gone once filled. Until there is a
-                      picture in it a cell has nothing to say for itself, and
-                      "this is your eleventh of seventeen" is the context that
-                      makes the column legible; afterwards the spell is the
+                {{!-- The number, alone and centred. It shared the cell with a
+                      sparkles glyph marking it as open, which two things then
+                      fought over thirty-nine pixels — and the glyph was saying
+                      what the cell's own dashed border and full brightness
+                      already say next to a dimmed one. One mark, big enough to
+                      read.
+
+                      Numbered while empty and gone once filled: until there is a
+                      picture in it a cell has nothing else to say for itself,
+                      and "this is your eleventh of seventeen" is the context
+                      that makes the column legible. Afterwards the spell is the
                       label and the number is noise. --}}
                 <span class="squire-build-pack-number">{{this.position}}</span>
                 {{/if}}

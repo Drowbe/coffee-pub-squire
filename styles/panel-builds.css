@@ -661,9 +661,43 @@
     grid-template-columns: repeat(5, var(--squire-track)) var(--squire-gutter) var(--squire-track);
 }
 
+/* A HEADER BAND, not two labels floating over the grid. Both halves of row one
+   carry the same ground and the same height, so the divider between them reads
+   as splitting one bar rather than as a rule that happens to pass two captions.
+   The row is otherwise the emptiest part of the window and the doll below it is
+   dense; a band gives the top edge something to be. */
+.squire-build-title-row,
+.squire-build-pack-title {
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-radius: 4px;
+    background: var(--blacksmith-tool-surface-raised);
+}
+
 .squire-build-title-row {
     grid-column: 1 / 6;
-    grid-row: 1;
+    gap: 10px;
+    justify-content: space-between;
+}
+
+/* Names both halves of what is under it: the nine ranks you cast WITH, and the
+   list you cast FROM. */
+.squire-build-pack-title {
+    grid-column: 7;
+    justify-content: center;
+    overflow: hidden;
+    color: var(--blacksmith-tool-accent);
+    font-size: 0.58em;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    line-height: 1.2;
+    text-align: center;
+    text-transform: uppercase;
+    white-space: normal;
 }
 
 /* The rule in the gutter, mirroring the one between the rail and the workspace.
@@ -729,6 +763,15 @@
     overflow: hidden;
 }
 
+/* Thirteen rows of SQUARE cells, sized by the column's width and nothing else.
+
+   It was made to stretch to the column's full height once, so the bottom edge
+   would end level with the doll. That traded a fifteen-pixel gap at the foot for
+   a fifteen-pixel error spread through the middle: the cells came out 40.2 tall
+   against 39 wide, so every row drifted a pixel further from the body row beside
+   it and only the first one still lined up. The gap at the bottom is the honest
+   remainder of a grid that matches the doll exactly, and it is worth far more
+   than the space it costs. */
 .squire-build-pack-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -742,6 +785,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Square, which is what makes two of them stack into exactly one body row
+       and keeps the column on the doll's horizontal lines the whole way down. */
     aspect-ratio: 1;
     overflow: hidden;
     border: 1px dashed var(--blacksmith-tool-divider);
@@ -791,27 +836,19 @@
 
 /* The number of an empty cell, and only an empty one: the eleventh of seventeen
    says something while there is nothing in the box, and says nothing once there
-   is a picture and a name. Centred under the glyph rather than cornered, because
-   at this size a corner number and a centred icon fight for the same pixels. */
-.squire-build-pack-number {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 2;
-    color: var(--blacksmith-tool-text-muted);
-    font-size: 0.5em;
-    line-height: 1.4;
-    text-align: center;
-}
+   is a picture and a name.
 
-/* The glyph that marks a cell as open. Lifted off centre by the number under
-   it, so the two read as one mark rather than as a collision. */
-.squire-build-pack-cell .squire-build-slot-icon {
-    margin-bottom: 6px;
+   It is now the ONLY thing in an empty cell, so it takes the middle and the size
+   that goes with being the only thing there. It used to sit under a sparkles
+   glyph marking the cell as open, and the two spent thirty-nine pixels arguing:
+   the glyph said what the cell's own dashed border and full brightness already
+   say beside a dimmed one, and the number was pushed to a strip along the bottom
+   where it was too small to read at a glance. */
+.squire-build-pack-number {
     color: var(--blacksmith-tool-text-muted);
-    font-size: 0.85em;
-    opacity: 0.65;
+    font-size: 0.86em;
+    font-weight: 700;
+    line-height: 1;
 }
 
 /* A spell's level, in the corner a gear slot uses for its glyph — both answer
@@ -874,23 +911,37 @@
     justify-content: center;
     gap: 0;
     overflow: hidden;
-    padding: 1px 0;
+    /* No padding: the caption band runs edge to edge, so the cell's border is
+       the only inset it needs. */
+    padding: 0;
     border: 1px solid var(--blacksmith-tool-divider);
     border-radius: 3px;
     background: var(--blacksmith-tool-surface-sunken);
     line-height: 1.1;
 }
 
+/* Its own ground, edge to edge across the top of the cell. Two lines of bare
+   text in a twenty-six pixel box read as one smudge; a band under the caption
+   separates the label from the figure without spending a border or a pixel of
+   gap on it, and gives the cell a top edge to sit against. */
 .squire-build-rank-label {
+    width: 100%;
+    padding: 1px 0;
+    background: rgba(255, 255, 255, 0.07);
     color: var(--blacksmith-tool-text-muted);
     font-size: 0.5em;
     letter-spacing: 0.02em;
+    text-align: center;
     text-transform: uppercase;
 }
 
 .squire-build-rank-value {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
     color: var(--blacksmith-tool-text);
-    font-size: 0.72em;
+    font-size: 0.78em;
     font-weight: 700;
 }
 
@@ -1532,15 +1583,21 @@
 
 /* ---------------- BUILD / COSTUME ---------------- */
 
-.squire-build-title-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: space-between;
+/* The switch is a fixed width and comes first; the name takes the rest of the
+   band however long the switch's labels are. */
+.squire-build-title-row .squire-build-mode {
+    flex: 0 0 auto;
 }
 
 .squire-build-title-row .squire-build-name {
     flex: 1 1 auto;
+    /* `width: auto`, undoing the `width: 100%` the field carries for the costume
+       view. Inside a flex row that percentage resolves against the WHOLE band
+       rather than against the space left beside the switch, so the field grew to
+       the band's full width and pushed itself out through the right edge. */
+    width: auto;
+    min-width: 0;
+    height: 22px;
     text-align: left;
 }
 

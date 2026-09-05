@@ -10,14 +10,14 @@ import {
     resolveTokenSettings, setBuildTokenSetting,
     estimateArmorClass, previewSlotChange, setBuildMode, revertBuild, damageLabel,
     setActiveBuildId, getActiveBuildId, ensureDefaultCostume, moveBuild, resolveMainImage,
-    equippedState, buildDrift
+    equippedState, buildDrift, recaptureDefaultImages
 } from './utility-builds.js';
 
 /**
  * The base class comes from Blacksmith's bridge module, not from `module.api` —
  * see the note in window-cleanup.js for why `extends` cannot wait for `game`.
  */
-import { BlacksmithToolWindowBaseV2 } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
+import { BlacksmithToolWindowBaseV2, BLACKSMITH_TOOL_THEMES } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 
 /** How much width the build rail takes. Mirrored in panel-builds.css. */
 const RAIL_WIDTH = 180;
@@ -81,6 +81,18 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             window: { title: 'Gear Build', resizable: false, minimizable: true },
             windowSizeConstraints: { minWidth: 460, maxWidth: 980 },
             toolTitlebar: 'full',
+            // DARK by default, where the base class defaults to light. This
+            // window is a wall of artwork — portraits, tokens, item pictures at
+            // every size — and dark is the ground that lets them be the bright
+            // thing in it. Glass works too; light is legible but the pictures
+            // stop carrying the window.
+            //
+            // A default, not a lock: the titlebar's own theme control still
+            // works, and the base saves whatever the player picks. Named rather
+            // than left to the class-name fallback so that a rename cannot
+            // silently orphan somebody's choice.
+            toolTheme: BLACKSMITH_TOOL_THEMES.DARK,
+            toolThemePreferenceKey: 'squire-builds-theme',
             rememberPosition: false
         }
     );
@@ -199,6 +211,40 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         if (costume) await setBuildMode(this.actor, build.id, 'costume');
 
         this.buildId = build.id;
+        await this._refresh();
+    }
+
+    /**
+     * Record what the character looks like NOW as their default artwork.
+     *
+     * The defaults are captured once, the first time this window opens, and then
+     * trusted forever — correct for what they are for, since a costume
+     * overwrites `actor.img` and a record that followed it would stop being a
+     * record. What they cannot survive is the file moving: the flag then names a
+     * path to nothing, every unset image slot falls back to it, and the
+     * character appears to have a broken portrait nobody chose.
+     *
+     * It asks first, and the confirmation names the hazard rather than the
+     * action: this reads the character's CURRENT artwork, so pressing it while a
+     * costume is on records the costume as the original, which is the one thing
+     * the defaults exist to prevent.
+     */
+    async recaptureDefaults() {
+        const confirmed = await getBlacksmith().dialog.confirm({
+            title: 'Set Artwork as Default',
+            content: `<p>Record <strong>${foundry.utils.escapeHTML(this.actor.name)}</strong>'s current portrait and token as their default artwork?</p>`
+                + '<p>Every build and costume that does not set its own image falls back to these, and undoing a costume returns to them.</p>'
+                + '<p><strong>Make sure they are wearing their own face.</strong> This reads what they look like right now, so doing it while a costume is on would record the costume as the original.</p>',
+            confirmLabel: 'Set as Default',
+            confirmIcon: 'fa-solid fa-camera'
+        });
+        if (!confirmed) return;
+
+        const captured = await recaptureDefaultImages(this.actor);
+        showSquireToast('Default artwork updated', {
+            subtitle: captured?.portrait ? 'Portrait and token recorded' : 'Recorded',
+            icon: 'fa-solid fa-camera'
+        });
         await this._refresh();
     }
 
@@ -551,6 +597,36 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
 
         this._syncWidth();
 
+        // An image path that no longer resolves. The captured defaults are
+        // trusted forever and files move, so a slot can end up pointing at
+        // nothing — and every unset slot falls back to the same dead path, which
+        // makes one renamed file look like a broken window.
+        //
+        // The browser's error event is the only cheap way to learn this: knowing
+        // whether a path resolves otherwise means an async browse per render.
+        // What it does NOT do is heal the flag. A transient failure would then
+        // overwrite a good default with whatever the character has on, and if
+        // that were a costume it would record the costume as the original — the
+        // exact thing the defaults exist to prevent. The repair is deliberate,
+        // from the rail's menu.
+        root.querySelectorAll('img[data-image-kind]').forEach(img => {
+            img.addEventListener('error', () => {
+                const live = img.dataset.imageKind === 'token'
+                    ? this.actor?.prototypeToken?.texture?.src
+                    : this.actor?.img;
+
+                // One attempt at the live artwork, then give up and get out of
+                // the way — a hidden image leaves the slot's own glyph showing,
+                // which is a better answer than a broken-picture box.
+                if (live && !img.dataset.fellBack) {
+                    img.dataset.fellBack = 'true';
+                    img.src = live;
+                    return;
+                }
+                img.hidden = true;
+            });
+        });
+
         // Rename on blur and on Enter, not on every keystroke: each write is an
         // actor flag update that re-renders the builds panel, and doing that per
         // character typed would fight the caret.
@@ -660,6 +736,9 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                         { name: 'Duplicate', icon: 'fa-solid fa-clone',
                           callback: () => this.duplicateSelected(buildId) },
                         ...(moves.length ? [{ separator: true }, ...moves] : []),
+                        { separator: true },
+                        { name: 'Set Artwork as Default', icon: 'fa-solid fa-camera',
+                          callback: () => this.recaptureDefaults() },
                         { separator: true },
                         { name: 'Delete Build', icon: 'fa-solid fa-trash',
                           callback: () => this.deleteSelected(buildId) }

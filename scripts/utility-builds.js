@@ -920,6 +920,37 @@ const DEFAULT_IMAGES_FLAG = 'defaultImages';
  *
  * A module flag, so nothing on the sheet itself is touched.
  */
+/**
+ * Write the character's CURRENT artwork over the captured defaults.
+ *
+ * The capture above happens once and is then trusted forever, which is right for
+ * what it is for — a costume overwrites `actor.img`, and a record that followed
+ * it would stop being a record of anything. What it cannot survive is the file
+ * moving: the flag then holds a path to nothing, every unset image slot falls
+ * back to it, and the character appears to have a broken portrait they never
+ * chose.
+ *
+ * There is no cheap way to notice that from here — knowing whether a path still
+ * resolves means an async browse per render — so the repair is a deliberate one
+ * the player asks for, from the rail's menu.
+ *
+ * It reads what the character has on RIGHT NOW, so it is only correct while they
+ * are wearing their own face. The confirmation says so, because the one way to
+ * get this wrong is to press it in the middle of a costume and record the
+ * costume as the original.
+ */
+export async function recaptureDefaultImages(actor) {
+    if (!actor) return null;
+
+    const captured = {
+        portrait: actor.img ?? null,
+        token: actor.prototypeToken?.texture?.src ?? null
+    };
+
+    await actor.setFlag(MODULE.ID, DEFAULT_IMAGES_FLAG, captured);
+    return captured;
+}
+
 export async function captureDefaultImages(actor) {
     if (!actor || actor.getFlag(MODULE.ID, DEFAULT_IMAGES_FLAG)) return;
 
