@@ -67,16 +67,6 @@ const SLOT_RULES = {
         test: item => item.type === 'consumable' && item.system?.type?.value === 'ammo',
         refusal: item => `${item.name} is not ammunition.`
     },
-    // Anything physical, deliberately — NOT `type === 'consumable'`. A scroll is
-    // often `loot`, a flask of acid is often a thrown `weapon`, and a bag of
-    // caltrops is whichever the compendium author felt like. Twice already a
-    // rule written from CONFIG rather than from content has refused something
-    // obviously correct; the grid's name is the guidance, and the player decides
-    // what counts as spendable.
-    consumable: {
-        test: item => PHYSICAL_ITEM_TYPES.includes(item.type),
-        refusal: item => `${item.name} is not something a character can carry.`
-    },
     weapon: {
         test: item => item.type === 'weapon',
         refusal: item => `${item.name} is not a weapon.`
@@ -308,12 +298,7 @@ export function getBuilds(actor) {
         // existed to draw one grid per class, and two grids implied a rule the
         // game does not have. Read tolerantly, because the earlier shape is
         // still sitting in flags.
-        spells: flattenSpellList(build.spells),
-        // The martial half of the same idea, in the same column: a fixed strip
-        // of what this build carries to spend.
-        consumables: Array.isArray(build.consumables)
-            ? build.consumables.map(entry => typeof entry === 'string' ? entry : null)
-            : []
+        spells: flattenSpellList(build.spells)
     }));
 }
 
@@ -354,8 +339,7 @@ export async function createBuild(actor, name = 'New Build') {
         mode: 'gear',
         slots: Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null])),
         images: Object.fromEntries(BUILD_IMAGE_KEYS.map(key => [key, null])),
-        spells: [],
-        consumables: []
+        spells: []
     };
     await saveBuilds(actor, [...getBuilds(actor), build]);
     return build;
@@ -385,8 +369,7 @@ export async function duplicateBuild(actor, buildId) {
         images: { ...source.images },
         // Copied rather than shared, or editing one build's list would edit
         // the other's.
-        spells: [...(source.spells ?? [])],
-        consumables: [...(source.consumables ?? [])]
+        spells: [...(source.spells ?? [])]
     };
 
     await saveBuilds(actor, [...builds.slice(0, index + 1), copy, ...builds.slice(index + 1)]);
@@ -408,12 +391,7 @@ export function gearWeight(actor, build) {
     let total = 0;
     let counted = 0;
 
-    // Slotted gear AND carried consumables: a build's potions are on the
-    // character's back the same as its armour is, and leaving them out would
-    // report a weight the plan does not actually come to.
-    const carried = [...Object.values(build?.slots ?? {}), ...(build?.consumables ?? [])];
-
-    for (const itemId of carried) {
+    for (const itemId of Object.values(build?.slots ?? {})) {
         const item = itemId ? actor?.items?.get(itemId) : null;
         if (!item) continue;
 
@@ -612,7 +590,7 @@ export function getSpellSlots(actor) {
 const ORDINALS = { 1: 'st', 2: 'nd', 3: 'rd', 4: 'th', 5: 'th', 6: 'th', 7: 'th', 8: 'th', 9: 'th' };
 
 /**
- * THE PACK COLUMN: twenty-six cells, two across, down the side of the doll.
+ * THE PREPARED COLUMN: twenty-six cells, two across, down the side of the doll.
  *
  * The one number both halves of this window are built from, and its shape came
  * from the layout rather than from taste. A cell is half a gear slot, so two of
@@ -620,8 +598,10 @@ const ORDINALS = { 1: 'st', 2: 'nd', 3: 'rd', 4: 'th', 5: 'th', 6: 'th', 7: 'th'
  * gridlines all the way down; thirteen rows is what that leaves beside a
  * six-row body and the weapons under it. Hence 26, and not a rounder number.
  *
- * Casters fill it with prepared spells, everybody else with what they carry.
- * Same column, same cells, same rhythm.
+ * A caster's, and only a caster's. It briefly held carried consumables for
+ * everybody else, which was the one thing in this window that applying could
+ * not enforce — dnd5e has no carried state to set, so those cells looked exactly
+ * like the ones around them and did nothing. A martial's build is the doll.
  */
 export const PACK_GRID_SIZE = 26;
 
@@ -656,6 +636,10 @@ export function resolvePreparedSpells(actor, build) {
 
         return {
             index,
+            // What a person counts from. `index` addresses the cell and this is
+            // the same cell said out loud — the two are never interchangeable
+            // and keeping both is cheaper than remembering which is which.
+            position: index + 1,
             itemId,
             beyond: index >= limit,
             filled: !!item,
@@ -689,63 +673,6 @@ export async function setBuildSpell(actor, buildId, index, itemId) {
         list[position] = itemId ?? null;
 
         return { ...build, spells: list };
-    }));
-}
-
-/**
- * The martial's answer to the prepared grid: what this build carries to SPEND.
- *
- * A fighter has no daily preparation, so the space a caster spends on spells was
- * empty on their doll. Potions, scrolls, poisons and oils are the closest thing
- * they have to one — chosen before the day starts, gone by the end of it — and a
- * plan that says which longsword to hold but not which potions to carry is only
- * describing half the decision.
- *
- * The same twenty-six cells in the same column a caster's spells occupy —
- * PACK_GRID_SIZE, deliberately not a number of its own. The column belongs to
- * the layout, and two grids of different lengths in the same place would make
- * the window a different shape for a fighter than for a wizard.
- */
-export function resolveConsumables(actor, build) {
-    const stored = Array.isArray(build?.consumables) ? build.consumables : [];
-
-    return Array.from({ length: PACK_GRID_SIZE }, (_, index) => {
-        const itemId = typeof stored[index] === 'string' ? stored[index] : null;
-        const item = itemId ? actor?.items?.get(itemId) : null;
-
-        // Quantity is SHOWN here although it is ignored everywhere else in this
-        // file. A slotted longsword means "the longsword"; a slotted potion
-        // means "the potions", and how many there are is the whole point of
-        // packing them.
-        const quantity = Number(item?.system?.quantity ?? 0);
-
-        return {
-            index,
-            itemId,
-            filled: !!item,
-            missing: !!itemId && !item,
-            name: item?.name ?? null,
-            img: item?.img ?? null,
-            rarity: item?.system?.rarity ?? null,
-            quantity: Number.isFinite(quantity) && quantity > 1 ? quantity : null
-        };
-    });
-}
-
-/** Put a consumable in one carry slot, or empty it with a null itemId. */
-export async function setBuildConsumable(actor, buildId, index, itemId) {
-    const position = Number(index);
-    if (!Number.isInteger(position) || position < 0) return;
-    if (position >= PACK_GRID_SIZE) return;
-
-    await saveBuilds(actor, getBuilds(actor).map(build => {
-        if (build.id !== buildId) return build;
-
-        const list = [...(build.consumables ?? [])];
-        while (list.length <= position) list.push(null);
-        list[position] = itemId ?? null;
-
-        return { ...build, consumables: list };
     }));
 }
 
@@ -954,7 +881,6 @@ export function buildSummary(actor, build) {
 
     const spellCount = (build?.spells ?? []).filter(Boolean).length;
 
-    const consumableCount = (build?.consumables ?? []).filter(Boolean).length;
 
     return {
         armorClass: estimateArmorClass(actor, build),
@@ -963,8 +889,7 @@ export function buildSummary(actor, build) {
         gearCount: slots.filter(slot => slot.filled).length,
         gearMax: BUILD_SLOT_KEYS.length,
         missingCount: slots.filter(slot => slot.missing).length,
-        spellCount,
-        consumableCount
+        spellCount
     };
 }
 

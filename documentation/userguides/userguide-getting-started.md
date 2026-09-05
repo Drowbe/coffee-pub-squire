@@ -120,7 +120,9 @@ Click the heart on a row. Click it again to remove it.
 ### Plan a set of gear
 
 The **shirt** in the Character Sheet strip opens the builder. Down its left is every build you have --
-click one to work on it, **New Build** to start another, right-click for duplicate and delete. The rest
+click one to work on it -- the list scrolls when it outgrows the space rather than stretching the
+window. **New Build** and **New Costume** start another of either kind, and right-click a tile for
+duplicate and delete. The rest
 of the window is that build: a figure of your character surrounded by slots -- head, face, neck, back, chest, arms, hands, rings, hips, waist, feet,
 and the three big slots along the bottom. Drag items from the tray into the slots to say what this
 build is made of. **What those big three hold depends on your character.** If you do not prepare
@@ -129,23 +131,20 @@ slot at each end, a **sheath** for the dagger or hand axe you draw without think
 ammunition. If you do prepare spells the emphasis flips: the big three become quick-cast slots for the
 spell or feature you reach for first, second and third, and your weapons move up into the smaller row. **The picture in the middle is the build's own.** Click it to choose one, right-click to reset. Until you set one it borrows the build's portrait, or your character's own face -- and once set it stays put no matter what outfit you put on, because it belongs to the build rather than the character. The two circles beside the head hold a **portrait** and a **token** image. Click either to pick a picture, right-click to reset it. Until you set one, each shows what your character already uses. Right-click a gear slot to empty it; right-click a build's tile to open, duplicate or delete it. Duplicating is the quick way to try a variant -- the same set with one thing swapped -- without building it again from nothing. The foot of the window totals what the gear weighs.
 
-Down the right of the doll is a column of twenty-six small squares, two across, starting level with
-the top of the neck slot. **What it holds depends on your character.** If you prepare spells it is
-your prepared list -- drag spells into it the same way you drag gear. All twenty-six squares are
-always drawn, and the ones past what you can prepare are dimmed and will not take a spell; they are
-there to show what levelling up will buy rather than to be filled in now. A multiclass caster gets one
-list, not one per class, because preparing a spell in this game is a fact about the spell rather than
-about the class that taught it. Your spell slots sit in the square at the top of the column, for
-reference -- a prepared spell is not tied to a particular slot, so they are something to read rather
-than something to fill in. Cantrips are not shown at all: they are always available and never
+**If your character prepares spells**, a column of twenty-six small squares runs down the right of the
+doll, past a dividing rule, starting level with the top of the neck slot. That is your prepared list
+-- drag spells into it the same way you drag gear. An empty square shows a glyph and its number, so
+you can see at a glance which are open and how far down the list you are; both go once there is a
+spell in it. All twenty-six squares are always drawn, and the ones past what you can prepare are
+dimmed and will not take a spell -- they are there to show what levelling up will buy. A multiclass
+caster gets one list rather than one per class, because preparing a spell in this game is a fact about
+the spell rather than about the class that taught it. Your spell slots sit in the square at the top of
+the column, for reference: a prepared spell is not tied to a particular slot, so they are something to
+read rather than something to fill in. Cantrips are not shown at all, being always available and never
 prepared.
 
-If you do *not* prepare spells, the same column holds what you **carry**: potions, scrolls, poisons,
-oils -- the things you choose before the day starts and spend during it. It takes anything you can
-pick up rather than only things marked consumable, because half the scrolls in the game are not, and
-this is your call rather than the module's. It is the one place in the window that shows a quantity,
-since with potions how many you have is the whole point. What you carry counts towards the build's
-weight.
+A character who prepares nothing has no such column, and their window is narrower by exactly that
+much. Their build is the doll.
 
 The column is sized off the doll rather than chosen: four of its squares, with the gaps between them,
 come to exactly one gear slot -- you could drop them into the neck box and they would fit it. That is

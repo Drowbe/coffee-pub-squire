@@ -346,16 +346,30 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    /* Both zeroes are load-bearing. The rail is as tall as the workspace beside
+       it, and without them a long list would make it taller — growing the whole
+       window instead of scrolling, which is exactly what a list of arbitrary
+       length must never do. */
     min-width: 0;
+    min-height: 0;
     padding-right: 10px;
     border-right: 1px solid var(--blacksmith-tool-divider);
 }
 
+/* The only part of the rail that scrolls. The buttons and the options stay
+   put — a New Build button you have to scroll to find is a New Build button
+   nobody presses. */
 .squire-build-rail-list {
+    flex: 1 1 0;
     display: flex;
     flex-direction: column;
     gap: 5px;
     min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    /* Room for the scrollbar, so a tile's right edge does not move when the
+       list becomes long enough to need one. */
+    padding-right: 2px;
 }
 
 /* A tile carrying the build's own picture, the way a favourite tile carries its
@@ -480,10 +494,21 @@
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
+/* Side by side and equal: neither is the main one. A costume is as deliberate a
+   thing to set out to make as a build. */
+.squire-build-rail-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 5px;
+}
+
 .squire-build-rail-new {
-    width: 100%;
+    flex: 1 1 0;
+    min-width: 0;
     margin: 0;
-    padding: 4px;
+    padding: 4px 2px;
+    overflow: hidden;
+    white-space: nowrap;
     cursor: pointer;
     border: 1px dashed var(--blacksmith-tool-divider);
     border-radius: 4px;
@@ -557,26 +582,43 @@
 
 /* ---------------- THE TWO COLUMNS ----------------
 
-   SIX tracks, not two boxes side by side, and this is the whole trick of the
-   layout: the doll spans five of them and the pack column takes the sixth, with
-   the same 6px gap the body grid uses inside itself.
+   FIVE equal tracks for the doll, and for a caster a sixth for the prepared
+   column with a gutter between them. This is the whole trick of the layout.
 
-   That makes the arithmetic come out exactly. The doll's width is five tracks
-   plus the four gaps between them, so its own five columns divide back to
-   exactly one track each — a gear slot IS a track. The pack column is one track
-   wide, and two of its cells plus their 4px gap come to exactly one track tall,
-   so two pack cells stack into one body row and the two grids share every
-   horizontal line down the window. Sized as a flex box with a chosen width it
-   was a near miss at every window size, which reads worse than an obvious
-   difference. */
+   The arithmetic comes out exactly. The doll's width is five tracks plus the
+   four 6px gaps between them, so its own five columns divide back to one track
+   each — a gear slot IS a track. The prepared column is one more track, and two
+   of its cells plus their 6px gap come to exactly one track, so four of them fit
+   the neck box and two stack into one body row. The two grids share every
+   horizontal line down the window.
+
+   The gutter is a track of its own rather than padding or a border on either
+   column, because either of those would eat into a column whose width the rest
+   of the layout is measured against. A martial has neither, and their window is
+   narrower by exactly this much. */
 .squire-build-columns {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 6px;
-    /* Top-aligned. The pack is a fixed number of square cells rather than a list
-       that divides the height it is given, so stretching it would make the cells
-       rectangles — which is the one thing this column must not be. */
+    /* Top-aligned. The prepared column is a fixed number of square cells rather
+       than a list that divides the height it is given, so stretching it would
+       make the cells rectangles — the one thing they must not be. */
     align-items: start;
+}
+
+.squire-build-columns.has-pack {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) 21px minmax(0, 1fr);
+}
+
+/* The rule in the gutter, mirroring the one between the rail and the workspace.
+   Stretched to the row rather than given a height: the row is as tall as the
+   doll, which is what the rule should be as tall as. */
+.squire-build-divider {
+    grid-column: 6;
+    align-self: stretch;
+    width: 1px;
+    margin: 0 auto;
+    background: var(--blacksmith-tool-divider);
 }
 
 .squire-build-doll {
@@ -593,11 +635,11 @@
 
 /* ---------------- THE PACK COLUMN ----------------
 
-   Twenty-six cells in the sixth track, two across and thirteen down. A caster
-   fills it with prepared spells and everybody else with what they carry, and it
-   is deliberately ONE column rather than a spell column and a carry column: the
-   two layouts are the same window with different contents, so a fighter's and a
-   wizard's are the same size and the same shape.
+   Twenty-six cells in the last track, two across and thirteen down, holding what
+   this character has prepared. A caster's, and only a caster's: it briefly held
+   carried potions for everybody else, which was the one thing in this window
+   that applying could not enforce — the system has no carried state to set, so
+   those cells looked exactly like the ones around them and did nothing.
 
    Nothing here sets a cell size. The column is one track wide, two cells divide
    it, and the gap between them is the body's own 6px — so a cell is exactly half
@@ -606,7 +648,7 @@
    it. Two of them stack into one body row, so the column keeps the doll's
    horizontal lines the whole way down. */
 .squire-build-pack {
-    grid-column: 6;
+    grid-column: 7;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -688,8 +730,33 @@
     object-fit: cover;
 }
 
-/* A spell's level or a stack's count, in the corner a gear slot uses for its
-   glyph — all three answer "what kind of thing is this". */
+/* The number of an empty cell, and only an empty one: the eleventh of seventeen
+   says something while there is nothing in the box, and says nothing once there
+   is a picture and a name. Centred under the glyph rather than cornered, because
+   at this size a corner number and a centred icon fight for the same pixels. */
+.squire-build-pack-number {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.5em;
+    line-height: 1.4;
+    text-align: center;
+}
+
+/* The glyph that marks a cell as open. Lifted off centre by the number under
+   it, so the two read as one mark rather than as a collision. */
+.squire-build-pack-cell .squire-build-slot-icon {
+    margin-bottom: 6px;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.85em;
+    opacity: 0.65;
+}
+
+/* A spell's level, in the corner a gear slot uses for its glyph — both answer
+   "what kind of thing is this". */
 .squire-build-pack-mark {
     position: absolute;
     right: 1px;
@@ -756,46 +823,36 @@
    stays plain, which is the point: the colour means something because most of
    what a character owns does not have it.
 
-   Carried consumables get it too: a potion of superior healing is uncommon and
-   worth telling apart from the ordinary ones at a glance, which is the same
-   argument as for the gear above it.
-
    The border and a soft outer glow, nothing else. Tinting the artwork would
    fight whatever the item's own picture is doing, and tinting the caption would
    put coloured text on a dark gradient at 0.6em, which is where legibility goes
    to die. The glow is what makes a wall of gear read at a glance. */
-.squire-build-slot[data-rarity="common"].is-filled,
-.squire-build-pack-cell[data-rarity="common"].is-filled {
+.squire-build-slot[data-rarity="common"].is-filled {
     border-color: rgba(190, 190, 190, 0.55);
 }
 
-.squire-build-slot[data-rarity="uncommon"].is-filled,
-.squire-build-pack-cell[data-rarity="uncommon"].is-filled {
+.squire-build-slot[data-rarity="uncommon"].is-filled {
     border-color: #4fa64f;
     box-shadow: 0 0 7px rgba(79, 166, 79, 0.45);
 }
 
-.squire-build-slot[data-rarity="rare"].is-filled,
-.squire-build-pack-cell[data-rarity="rare"].is-filled {
+.squire-build-slot[data-rarity="rare"].is-filled {
     border-color: #4a90d9;
     box-shadow: 0 0 7px rgba(74, 144, 217, 0.45);
 }
 
-.squire-build-slot[data-rarity="veryRare"].is-filled,
-.squire-build-pack-cell[data-rarity="veryRare"].is-filled {
+.squire-build-slot[data-rarity="veryRare"].is-filled {
     border-color: #9a5cd0;
     box-shadow: 0 0 8px rgba(154, 92, 208, 0.5);
 }
 
-.squire-build-slot[data-rarity="legendary"].is-filled,
-.squire-build-pack-cell[data-rarity="legendary"].is-filled {
+.squire-build-slot[data-rarity="legendary"].is-filled {
     border-color: #e0a52e;
     box-shadow: 0 0 9px rgba(224, 165, 46, 0.55);
 }
 
 /* The one that gets to be loud. An artifact should stop the eye. */
-.squire-build-slot[data-rarity="artifact"].is-filled,
-.squire-build-pack-cell[data-rarity="artifact"].is-filled {
+.squire-build-slot[data-rarity="artifact"].is-filled {
     border-color: #d4553a;
     box-shadow: 0 0 11px rgba(212, 85, 58, 0.6);
 }

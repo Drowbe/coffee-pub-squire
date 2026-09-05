@@ -62,9 +62,19 @@
             {{/each}}
         </div>
 
-        <button type="button" class="squire-build-rail-new">
-            <i class="fa-solid fa-plus"></i> New Build
-        </button>
+        {{!-- Two buttons, not one and a switch. You know which of the two you
+              are setting out to make before you start; the switch beside the
+              name is for changing your mind afterwards. --}}
+        <div class="squire-build-rail-actions">
+            <button type="button" class="squire-build-rail-new" data-mode="gear"
+                    data-tooltip="A set of gear to equip">
+                <i class="fa-solid fa-plus"></i> Build
+            </button>
+            <button type="button" class="squire-build-rail-new" data-mode="costume"
+                    data-tooltip="A portrait and token to wear. Changes how the character LOOKS and touches no gear.">
+                <i class="fa-solid fa-masks-theater"></i> Costume
+            </button>
+        </div>
 
         {{!-- Options that belong to BUILDS, not to any one build. The rail is
               where they go for the same reason the list is: it is the part of
@@ -170,7 +180,7 @@
         </div>
     </div>
     {{else}}
-    <div class="squire-build-columns">
+    <div class="squire-build-columns{{#if isCaster}} has-pack{{/if}}">
     <div class="squire-build-doll">
     <div class="squire-build-body">
         {{#each bodySlots}}
@@ -332,7 +342,14 @@
 
     </div>
 
-    {{!-- THE PACK COLUMN.
+    {{#if isCaster}}
+    {{!-- The rule between the doll and the column, mirroring the one between the
+          rail and the workspace. Its own track rather than a border on either
+          side: a border would eat into whichever column carried it, and the
+          whole layout rests on those two being exact multiples of each other. --}}
+    <div class="squire-build-divider"></div>
+
+    {{!-- THE PREPARED COLUMN.
 
           Twenty-six cells, two across, down the side of the doll — and its size
           is not a choice. A cell is half a gear slot, so two of them stack into
@@ -340,12 +357,16 @@
           whole way down; thirteen rows is what fits beside the body and the
           weapons under it.
 
-          One column for everybody. A caster fills it with prepared spells,
-          everybody else with what they carry, which makes the two layouts the
-          same window with a different column rather than two windows. Cells past
-          a caster's limit are dimmed and refuse drops: they are not empty, they
-          are cells this character does not have YET, and drawing them is how the
-          column says what levelling up will buy. --}}
+          A caster's, and only a caster's. It briefly held carried potions for
+          everybody else, which was the one thing in this window that applying
+          could not enforce — there is no carried state in the system to set, so
+          those cells looked exactly like the ones around them and did nothing.
+          A martial's build is the doll, and their window is narrower by this
+          column rather than padded out with it.
+
+          Cells past the limit are dimmed and refuse drops: they are not empty,
+          they are cells this character does not have YET, and drawing them is
+          how the column says what levelling up will buy. --}}
     <div class="squire-build-pack">
         {{!-- The head of the column: exactly one body row tall, which is what
               drops the grid below it level with the top of the NECK slot rather
@@ -377,29 +398,41 @@
         <div class="squire-build-pack-grid">
             {{#each pack}}
             <div class="squire-build-pack-cell{{#if this.beyond}} is-beyond{{/if}}{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
-                 data-rarity="{{this.rarity}}" data-pack-index="{{this.index}}"{{#if this.itemId}} data-item-id="{{this.itemId}}"{{/if}}
-                 data-tooltip="{{#if this.beyond}}Not prepared at this level yet{{else if this.filled}}{{this.name}}{{#if this.quantity}} (x{{this.quantity}}){{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This is no longer on the sheet<br><em>Right-click to clear</em>{{else}}Drag something here{{/if}}">
+                 data-pack-index="{{this.index}}"{{#if this.itemId}} data-item-id="{{this.itemId}}"{{/if}}
+                 data-tooltip="{{#if this.beyond}}Not prepared at this level yet{{else if this.filled}}{{this.name}}<br><em>Right-click to clear</em>{{else if this.missing}}This is no longer on the sheet<br><em>Right-click to clear</em>{{else}}Drag something here{{/if}}">
                 {{#if this.filled}}
                 <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
                 {{#if this.concentration}}
                 <i class="fa-solid fa-circle-c squire-build-concentration" data-tooltip="Concentration"></i>
                 {{/if}}
-                {{!-- A level for a spell, a count for a stack. Never both, since
-                      one of the two grids is showing at a time — and the count
-                      is the one number this window shows anywhere, because a
-                      slotted potion means the potions rather than the kind. --}}
+                {{!-- The spell's level, in the corner a gear slot uses for its
+                      glyph: both answer "what kind of thing is this". --}}
                 {{#if this.level}}
                 <span class="squire-build-pack-mark">{{this.level}}</span>
-                {{else if this.quantity}}
-                <span class="squire-build-pack-mark">{{this.quantity}}</span>
                 {{/if}}
                 {{else if this.missing}}
                 <i class="fa-solid fa-triangle-exclamation squire-build-slot-icon is-warning"></i>
+                {{else}}
+                {{!-- The glyph marks an OPEN slot — it is the thing that makes
+                      the available cells read as available at a glance, which a
+                      row of empty boxes does not. Only on the cells that can
+                      actually take a spell: on a dimmed one it would be an
+                      invitation the character has not earned yet. --}}
+                {{#unless this.beyond}}
+                <i class="fa-solid fa-sparkles squire-build-slot-icon"></i>
+                {{/unless}}
+                {{!-- Numbered while empty and gone once filled. Until there is a
+                      picture in it a cell has nothing to say for itself, and
+                      "this is your eleventh of seventeen" is the context that
+                      makes the column legible; afterwards the spell is the
+                      label and the number is noise. --}}
+                <span class="squire-build-pack-number">{{this.position}}</span>
                 {{/if}}
             </div>
             {{/each}}
         </div>
     </div>
+    {{/if}}
 
     </div>
     {{/if}}
