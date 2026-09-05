@@ -71,12 +71,16 @@ const SLOT_RULES = {
         test: item => item.type === 'weapon',
         refusal: item => `${item.name} is not a weapon.`
     },
-    // The doll's two quick-cast slots. A cantrip is welcome here, unlike in a
-    // prepared slot: this asks "what do you reach for", and a cantrip is the
-    // most reachable thing a caster owns.
-    spell: {
-        test: item => item.type === 'spell',
-        refusal: item => `${item.name} is not a spell.`
+    // The doll's two quick-use slots. A spell OR a feature: the question they
+    // ask is "what do you reach for", and for half the party the answer is Rage
+    // or Second Wind rather than anything from a spell list. Restricting them to
+    // spells made two slots that a barbarian could never fill.
+    //
+    // A cantrip is welcome here, unlike in a prepared slot — it is the most
+    // reachable thing a caster owns.
+    ability: {
+        test: item => item.type === 'spell' || item.type === 'feat',
+        refusal: item => `${item.name} is not a spell or a feature.`
     },
     // Main Hand and Off Hand have NO rule of their own beyond the physical one.
     // "Weapon or shield" was the first attempt and it refused a torch — one of
@@ -134,14 +138,18 @@ export const BUILD_BODY_SLOTS = [
     // character USES rather than wears, which is why all four are round — the
     // same distinction the ammo slots were already drawing on their own.
     //
-    // Two spells, not a list. This is the pair reached for without thinking —
-    // the caster's equivalent of a main and an off hand — where the prepared
-    // column on the right is the whole daily choice. Two is what fits on a
-    // handle beside three weapons, which is where these are going.
-    { key: 'spell1', label: 'Primary',   icon: 'fa-wand-magic-sparkles', row: 6, column: 1, round: true, accepts: 'spell' },
+    // Two of them, not a list. This is the pair reached for without thinking —
+    // the equivalent of a main and an off hand — where the prepared column on
+    // the right is a caster's whole daily choice. Two is what fits on a handle
+    // beside three weapons, which is where these are going.
+    //
+    // They take a spell OR a feature. `spell1`/`spell2` are the stored keys and
+    // stay that way: renaming them would strip the slot on every build that has
+    // one, and a key is not a label.
+    { key: 'spell1', label: 'Primary',   icon: 'fa-bolt',      row: 6, column: 1, round: true, accepts: 'ability' },
     { key: 'ammo1',  label: 'Ammo',      icon: 'fa-bow-arrow',           row: 6, column: 2, round: true, accepts: 'ammo' },
     { key: 'ammo2',  label: 'Ammo',      icon: 'fa-bow-arrow',           row: 6, column: 4, round: true, accepts: 'ammo' },
-    { key: 'spell2', label: 'Secondary', icon: 'fa-wand-magic-sparkles', row: 6, column: 5, round: true, accepts: 'spell' }
+    { key: 'spell2', label: 'Secondary', icon: 'fa-bolt',      row: 6, column: 5, round: true, accepts: 'ability' }
 ];
 
 /**
@@ -1147,7 +1155,7 @@ export async function setActiveBuildId(actor, buildId) {
 /**
  * What the applied build puts on the handle.
  *
- * The three weapon slots and the two quick-cast spells — everything on the doll
+ * The three weapon slots and the two quick-use slots — everything on the doll
  * you CLICK TO USE. Armour, rings and a belt are not here, because they would be
  * icons that do nothing when pressed; ammunition is not either, because it is
  * spent by the weapon that fires it rather than used on its own.
@@ -1162,7 +1170,7 @@ export function getHandleBuildActions(actor) {
     const build = getBuild(actor, getActiveBuildId(actor));
     if (!build || build.mode === 'costume') return [];
 
-    return [...BUILD_WEAPON_SLOTS, ...BUILD_BODY_SLOTS.filter(slot => slot.accepts === 'spell')]
+    return [...BUILD_WEAPON_SLOTS, ...BUILD_BODY_SLOTS.filter(slot => slot.accepts === 'ability')]
         .map(slot => actor?.items?.get(build.slots?.[slot.key]))
         .filter(Boolean)
         .map(item => ({ id: item.id, name: item.name, img: item.img }));
