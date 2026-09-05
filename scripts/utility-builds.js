@@ -133,10 +133,14 @@ export const BUILD_BODY_SLOTS = [
     // it feeds. Two rather than one per weapon: a quiver is a thing you carry,
     // not a thing each hand carries, and three would have implied that Both
     // Hands needs its own supply separate from the bow in it.
-    // The Feet row, filled out: spells at the rails, ammunition beside the
-    // boots, feet in the middle. Everything added to this row is something a
-    // character USES rather than wears, which is why all four are round — the
-    // same distinction the ammo slots were already drawing on their own.
+    // The Feet row, filled out: the quick-use pair at the rails, ammunition
+    // beside the boots, feet in the middle.
+    //
+    // Only the AMMO slots are round. They were all four for a while, on the
+    // grounds that none of them is worn — but Rage and Fire Bolt are things you
+    // USE, exactly like the weapons below, and a square says that. Ammunition is
+    // the odd one: it is not used, it is spent by the weapon that fires it, and
+    // it keeps the circle to say so.
     //
     // Two of them, not a list. This is the pair reached for without thinking —
     // the equivalent of a main and an off hand — where the prepared column on
@@ -146,10 +150,10 @@ export const BUILD_BODY_SLOTS = [
     // They take a spell OR a feature. `spell1`/`spell2` are the stored keys and
     // stay that way: renaming them would strip the slot on every build that has
     // one, and a key is not a label.
-    { key: 'spell1', label: 'Primary',   icon: 'fa-bolt',      row: 6, column: 1, round: true, accepts: 'ability' },
+    { key: 'spell1', label: 'Primary',   icon: 'fa-bolt',      row: 6, column: 1, accepts: 'ability' },
     { key: 'ammo1',  label: 'Ammo',      icon: 'fa-bow-arrow',           row: 6, column: 2, round: true, accepts: 'ammo' },
     { key: 'ammo2',  label: 'Ammo',      icon: 'fa-bow-arrow',           row: 6, column: 4, round: true, accepts: 'ammo' },
-    { key: 'spell2', label: 'Secondary', icon: 'fa-bolt',      row: 6, column: 5, round: true, accepts: 'ability' }
+    { key: 'spell2', label: 'Secondary', icon: 'fa-bolt',      row: 6, column: 5, accepts: 'ability' }
 ];
 
 /**
@@ -834,13 +838,7 @@ export function buildSummary(actor, build) {
         gearCount: slots.filter(slot => slot.filled).length,
         gearMax: BUILD_SLOT_KEYS.length,
         missingCount: slots.filter(slot => slot.missing).length,
-        spellCount,
-        // The first few item pictures, for the tile to show instead of a generic
-        // shirt. A build's identity is the things in it.
-        preview: slots.filter(slot => slot.filled).slice(0, 5).map(slot => ({
-            img: slot.img,
-            name: slot.name
-        }))
+        spellCount
     };
 }
 
@@ -1071,9 +1069,11 @@ export function getHandleBuildIds(actor) {
 /**
  * The handle's builds, resolved for display.
  *
- * Each carries the first item picture in the build as its face, because a build
- * has no artwork of its own and a row of identical shirts would defeat the
- * purpose of putting them somewhere glanceable.
+ * Each wears its own picture. It used to borrow the first item in the build,
+ * because a build had no artwork of its own — it does now, so the reason is
+ * gone. `resolveMainImage` falls back through the build's portrait to the
+ * character's own artwork, so there is always a face rather than a row of
+ * identical shirts, which was the point of the borrowing in the first place.
  */
 export function getHandleBuilds(actor) {
     const byId = new Map(getBuilds(actor).map(build => [build.id, build]));
@@ -1084,7 +1084,7 @@ export function getHandleBuilds(actor) {
         return {
             id,
             name: build.name,
-            img: summary.preview[0]?.img ?? null,
+            img: resolveMainImage(actor, build).path,
             armorClass: summary.armorClass.value,
             gearCount: summary.gearCount
         };

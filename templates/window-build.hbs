@@ -19,8 +19,16 @@
     <div class="squire-build-rail">
         <div class="squire-build-rail-list">
             {{#each rail}}
+            {{!-- A tile, not a row: the build's own picture is its face, the way
+                  a favourite's artwork is. The gear thumbnails that used to sit
+                  here said what was IN the build, which the doll shows in full
+                  the moment it is selected — and five item icons at 20px is a
+                  row of smudges rather than a summary. The portrait and token
+                  are the marks instead: what wearing it would make you look
+                  like, which is the thing the doll does NOT show. --}}
             <div class="squire-build-rail-entry{{#if this.active}} is-active{{/if}}"
                  draggable="true" data-build-id="{{this.id}}"
+                 style="background-image: linear-gradient(rgba(8,6,4,.55), rgba(8,6,4,.88)), url('{{this.mainImage}}');"
                  data-tooltip="{{this.name}}<br><em>Drag onto the tray handle to keep it to hand</em><br><em>Right-click for more</em>">
                 <div class="squire-build-rail-head">
                     <span class="squire-build-rail-name">{{this.name}}</span>
@@ -30,9 +38,9 @@
                     </button>
                 </div>
                 <div class="squire-build-rail-preview">
-                    {{#each this.preview}}
-                    <img src="{{this.img}}" alt="{{this.name}}">
-                    {{/each}}
+                    {{#if this.portrait}}<img src="{{this.portrait}}" alt="Portrait" data-tooltip="Portrait">{{/if}}
+                    {{#if this.token}}<img src="{{this.token}}" alt="Token" data-tooltip="Token">{{/if}}
+                    {{#if this.mainHand}}<img class="is-gear" src="{{this.mainHand}}" alt="{{this.mainHandName}}" data-tooltip="{{this.mainHandName}}">{{/if}}
                 </div>
                 <div class="squire-build-rail-stats">
                     {{#unless this.costume}}

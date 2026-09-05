@@ -290,7 +290,23 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const activeId = getActiveBuildId(this.actor);
         const rail = builds.map(entry => {
             const summary = buildSummary(this.actor, entry);
+            // Its own picture as the tile's face, and the two images wearing it
+            // would produce as the marks on it. The gear thumbnails that were
+            // here said what was IN the build, which the doll already shows in
+            // full the moment you select it — and five item icons at 20px is a
+            // row of smudges, not a summary.
+            const images = resolveImageSlots(this.actor, entry);
+            const mainHand = this.actor?.items?.get(entry.slots?.mainhand);
             return {
+                mainImage: resolveMainImage(this.actor, entry).path,
+                portrait: images.find(slot => slot.key === 'portrait')?.path,
+                token: images.find(slot => slot.key === 'token')?.path,
+                // Three marks: how you look, how you look on the map, and what
+                // you are holding. The main hand is the one piece of gear worth
+                // a mark of its own — it is what most distinguishes two builds
+                // that dress the same.
+                mainHand: mainHand?.img ?? null,
+                mainHandName: mainHand?.name ?? null,
                 id: entry.id,
                 name: entry.name,
                 active: entry.id === this.buildId,
@@ -300,8 +316,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 worn: entry.id === activeId,
                 costume: entry.mode === 'costume',
                 armorClass: summary.armorClass.value,
-                gearCount: summary.gearCount,
-                preview: summary.preview.slice(0, 3)
+                gearCount: summary.gearCount
             };
         });
 

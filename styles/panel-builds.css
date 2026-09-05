@@ -358,28 +358,35 @@
     min-width: 0;
 }
 
+/* A tile carrying the build's own picture, the way a favourite tile carries its
+   item's. The image comes in as an inline `background-image` with a gradient in
+   front of it — the scrim is not decoration: a name and two stat figures in pale
+   text have to stay readable over whatever picture somebody chose, and a picture
+   nobody picked for the purpose is exactly the case a flat panel fails at. */
 .squire-build-rail-entry {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 6px 7px;
+    gap: 5px;
+    padding: 7px 8px;
     cursor: pointer;
     border: 1px solid var(--blacksmith-tool-divider);
     border-left: 3px solid transparent;
     border-radius: 4px;
-    background: var(--blacksmith-tool-surface-sunken);
+    background-color: var(--blacksmith-tool-surface-sunken);
+    background-position: center 25%;
+    background-size: cover;
     transition: all 0.15s ease;
 }
 
 .squire-build-rail-entry:hover {
-    background: var(--blacksmith-tool-surface-hover);
+    border-color: var(--blacksmith-color-brand-accent, var(--blacksmith-tool-accent));
 }
 
-/* The open build is marked on its leading edge rather than by fill: the entries
-   carry item pictures, and a filled background behind them muddies both. */
+/* The open build is marked on its leading edge rather than by fill: the entry is
+   already a picture, and a coloured wash over one is unreadable. */
 .squire-build-rail-entry.is-active {
     border-left-color: var(--blacksmith-tool-accent);
-    background: var(--blacksmith-tool-surface-selected);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
 
 .squire-build-rail-head {
@@ -391,7 +398,12 @@
 
 .squire-build-rail-name {
     overflow: hidden;
-    color: var(--blacksmith-tool-text);
+    /* Fixed light, not the theme's text colour: this sits on artwork under a
+       dark scrim, not on the window's own surface, so a theme colour would be a
+       coin flip and comes up dark ink on a dark picture in the light theme. The
+       merchant tiles fix their caption colour for the same reason. */
+    color: #f4e7cd;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
     font-size: 0.78em;
     font-weight: 700;
     white-space: nowrap;
@@ -428,20 +440,31 @@
     overflow: hidden;
 }
 
+/* The portrait and the token — what wearing this would make you look like,
+   which is the one thing the doll does not show. Round, because that is what
+   they are on the doll and in the costume view. */
 .squire-build-rail-preview img {
     flex: 0 0 auto;
-    width: 20px;
-    height: 20px;
+    width: 26px;
+    height: 26px;
     object-fit: cover;
-    border: 1px solid var(--blacksmith-tool-divider);
-    border-radius: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+}
+
+/* The weapon is square, because it is an ITEM and every item picture in this
+   window is square. Two circles and a square also says which of the three marks
+   is a different kind of thing without spending a label on it. */
+.squire-build-rail-preview img.is-gear {
+    border-radius: 3px;
 }
 
 .squire-build-rail-stats {
     display: flex;
     gap: 8px;
-    color: var(--blacksmith-tool-text-muted);
+    color: rgba(244, 231, 205, 0.75);
     font-size: 0.62em;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 .squire-build-rail-new {
