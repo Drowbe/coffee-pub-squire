@@ -464,25 +464,32 @@
 
 /* Apply is its own target inside the entry, never the entry itself. Selecting a
    build to look at it must not re-equip the character. */
+/* Square, and SHAPE ONLY. The colour comes from Blacksmith's
+   `.blacksmith-window-btn-primary`, carried on the same element — the green here
+   is then the green every other action button in the suite uses, and it cannot
+   drift from it the way a copied literal would. What that class does not know is
+   that this one is an icon in a corner rather than a labelled button in a
+   footer, so the padding and the width are taken back here. */
 .squire-build-rail-apply {
+    display: flex;
     flex: 0 0 auto;
-    width: auto;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
     min-width: 0;
     margin: 0;
-    padding: 1px 6px;
-    line-height: 1.4;
+    padding: 0;
+    line-height: 1;
     cursor: pointer;
-    border: 1px solid var(--blacksmith-tool-divider);
     border-radius: 3px;
-    background: var(--blacksmith-tool-surface-raised);
-    color: var(--blacksmith-tool-text-muted);
-    font-size: 0.7em;
+    font-size: 0.72em;
     transition: all 0.15s ease;
 }
 
+/* The hover is Blacksmith's too — the suite's orange. Only the shadow this
+   window's other buttons carry is removed. */
 .squire-build-rail-apply:hover {
-    border-color: var(--blacksmith-color-brand-accent, var(--blacksmith-tool-accent));
-    color: var(--blacksmith-tool-text);
     box-shadow: none;
 }
 
@@ -874,6 +881,57 @@
     opacity: 0.4;
 }
 
+/* ---------------- DRIFT ----------------
+
+   The build in play and the character no longer agree: something was equipped or
+   unequipped from the sheet, or the build itself was edited after it was put on.
+
+   The tile says "Last worn" rather than "Worn" for it, and deliberately not
+   "modified": the plan and the character disagree, and nothing here can see
+   which of the two moved.
+
+   Three marks, because the answer has three parts. The rail tile says THAT it
+   has happened. A slot says WHERE, on the exact item that is no longer
+   on the character. The plate says HOW MUCH is loose that the plan never named —
+   there is no box on the doll for an item the build does not mention, so that
+   part can only be counted.
+
+   Amber rather than red throughout. Drifting from a plan is a normal thing to
+   do — you picked up a torch — and a red window would be crying about a
+   character behaving perfectly reasonably. */
+.squire-build-rail-worn.is-drifted {
+    color: #e0a52e;
+}
+
+/* On the slot's picture, opposite the attunement gem: the two never appear
+   together on a corner because they answer different questions, and this is the
+   more urgent one. */
+.squire-build-slot-drift {
+    position: absolute;
+    top: 2px;
+    left: 3px;
+    z-index: 3;
+    color: #e0a52e;
+    font-size: 0.7em;
+    text-shadow: 0 1px 3px rgba(8, 6, 4, 0.95);
+}
+
+/* A dashed amber edge on the slot itself. The slot keeps its artwork and its
+   border weight — the plan still says this item — and the colour is what says
+   the plan is not being met here. */
+.squire-build-slot.is-drifted.is-filled,
+.squire-build-pack-cell.is-drifted.is-filled {
+    border-style: dashed;
+    border-color: #e0a52e;
+    box-shadow: 0 0 7px rgba(224, 165, 46, 0.35);
+}
+
+/* Rarity draws the same border, and an uncommon sword that is not equipped is
+   more urgently not-equipped than it is uncommon. */
+.squire-build-slot[data-rarity].is-drifted.is-filled {
+    border-color: #e0a52e;
+}
+
 /* ---------------- RARITY ----------------
 
    `data-rarity` carries the dnd5e key, and only magic items have one — a rope
@@ -1212,9 +1270,17 @@
 /* Square, and as big as what is left allows. `min()` against the viewport height
    keeps it from growing past the room under the circles — the three still have
    to fit together, and this is the one with room to give. */
+/* Takes whatever height the controls below it leave, and stays square by
+   following it. It was sized off the viewport, which was fine while it was the
+   only thing under the two circles — with a settings block beneath it that would
+   have pushed the costume taller than the doll and broken the one rule this
+   layout has, that a costume and a build are the same size. */
 .squire-build-costume-main {
     position: relative;
-    width: min(100%, 68vh);
+    flex: 1 1 auto;
+    width: auto;
+    max-width: 100%;
+    min-height: 0;
     aspect-ratio: 1;
     overflow: hidden;
     cursor: pointer;
@@ -1257,6 +1323,107 @@
     font-size: 0.62em;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+}
+
+/* ---------------- HOW THE TOKEN IS DRAWN ----------------
+
+   Three rows under the costume's picture: the size it stands in, how the picture
+   is fitted into that, and how large it is drawn inside it. Foundry's own token
+   config in the only three parts a costume has any business setting.
+
+   Each row can be UNSET, and `is-default` is that state — the control shows the
+   token's current value, so without the marker a control that will change
+   nothing looks exactly like one that will. Right-click a row to get back to
+   it. */
+.squire-build-token-settings {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    padding-top: 8px;
+    border-top: 1px solid var(--blacksmith-tool-divider);
+}
+
+.squire-build-token-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.squire-build-token-label {
+    flex: 0 0 auto;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.68em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* An unset row is showing the token's own value rather than a chosen one, and
+   applying it would change nothing. Faded rather than hidden, because the number
+   it is showing is still the answer to "what is it now". */
+.squire-build-token-row.is-default .squire-build-token-label::after {
+    content: ' · no change';
+    opacity: 0.7;
+    text-transform: none;
+}
+
+.squire-build-token-row.is-default .squire-build-token-control {
+    opacity: 0.55;
+}
+
+.squire-build-token-control {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 6px;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 0;
+}
+
+.squire-build-token-input {
+    width: 52px;
+    height: 22px;
+    padding: 0 4px;
+    text-align: center;
+    border: 1px solid var(--blacksmith-tool-border);
+    border-radius: 3px;
+    background: var(--blacksmith-tool-surface-sunken);
+    color: var(--blacksmith-tool-text);
+    font-size: 0.72em;
+}
+
+.squire-build-token-by {
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.7em;
+}
+
+.squire-build-token-select {
+    flex: 0 1 auto;
+    max-width: 140px;
+    height: 22px;
+    padding: 0 4px;
+    border: 1px solid var(--blacksmith-tool-border);
+    border-radius: 3px;
+    background: var(--blacksmith-tool-surface-sunken);
+    color: var(--blacksmith-tool-text);
+    font-size: 0.72em;
+}
+
+.squire-build-token-range {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 150px;
+}
+
+/* Fixed width, so the slider beside it does not jump every time the number
+   gains or loses a digit. */
+.squire-build-token-value {
+    flex: 0 0 34px;
+    color: var(--blacksmith-tool-text);
+    font-size: 0.72em;
+    text-align: right;
 }
 
 /* ---------------- THE PORTRAIT PLATES ----------------
@@ -1310,6 +1477,11 @@
 }
 
 /* Bottom left, opposite the shield's centre so the two never collide. */
+.squire-build-plate-drift {
+    color: #e0a52e;
+    border-color: rgba(224, 165, 46, 0.45);
+}
+
 .squire-build-plate-warning {
     bottom: 5px;
     left: 5px;

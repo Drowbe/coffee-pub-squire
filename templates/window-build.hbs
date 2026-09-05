@@ -32,9 +32,18 @@
                  data-tooltip="{{this.name}}<br><em>Drag onto the tray handle to keep it to hand</em><br><em>Right-click for more</em>">
                 <div class="squire-build-rail-head">
                     <span class="squire-build-rail-name">{{this.name}}</span>
-                    <button type="button" class="squire-build-rail-apply" data-build-id="{{this.id}}"
-                            data-tooltip="Equip this build">
-                        <i class="fa-solid fa-person-running"></i>
+                    {{!-- Blacksmith's own primary-button class carries the
+                          colour, so the green here is the green every other
+                          action button in the suite uses and cannot drift from
+                          it. Squire only overrides the SHAPE. --}}
+                    <button type="button" class="squire-build-rail-apply blacksmith-window-btn-primary"
+                            data-build-id="{{this.id}}"
+                            data-tooltip="{{#if this.costume}}Wear this costume{{else}}Equip this build{{/if}}">
+                        {{!-- The icon says which of the two this tile is, and
+                              matches the button that made it: the masks on the
+                              New Costume button, the shirt on the launcher that
+                              opens builds at all. --}}
+                        <i class="fa-solid {{#if this.costume}}fa-masks-theater{{else}}fa-shirt{{/if}}"></i>
                     </button>
                 </div>
                 <div class="squire-build-rail-preview">
@@ -52,9 +61,26 @@
                     {{#if this.worn}}
                     {{!-- Selected is what this window is showing; WORN is what
                           the character actually has on. The rail is the only
-                          place both facts are visible at once. --}}
-                    <span class="squire-build-rail-worn" data-tooltip="This is what the character is currently wearing">
+                          place both facts are visible at once.
+
+                          LAST WORN is the third fact: this is still the plan in
+                          play, and the character has since parted company with
+                          it. Not "modified", which was the first wording and
+                          claimed something the check cannot see — the plan and
+                          the character disagree, and nothing here knows which of
+                          the two moved. "Last worn" says only what is certain:
+                          this was the most recent one applied.
+
+                          The full "Worn" is kept for the case that passes,
+                          because there the character genuinely IS wearing it and
+                          a label should be as strong as its evidence. --}}
+                    <span class="squire-build-rail-worn{{#if this.drifted}} is-drifted{{/if}}"
+                          data-tooltip="{{#if this.drifted}}The last build applied, but the character no longer matches it &mdash; {{this.driftCount}} difference{{#unless (eq this.driftCount 1)}}s{{/unless}}.<br><em>Equip it again to put it back</em>{{else}}This is what the character is currently wearing{{/if}}">
+                        {{#if this.drifted}}
+                        <i class="fa-solid fa-triangle-exclamation"></i> Last worn
+                        {{else}}
                         <i class="fa-solid fa-check"></i> Worn
+                        {{/if}}
                     </span>
                     {{/if}}
                 </div>
@@ -198,17 +224,67 @@
             <span class="squire-build-image-unset">no change</span>
             {{/if}}
         </div>
+
+        {{!-- How the token is DRAWN, under the picture it is drawn with.
+
+              A costume changes what a character looks like, and the artwork is
+              only half of that: a giant in disguise is not the same size on the
+              map, and a portrait cropped tall wants a different fit from one
+              cropped square to sit right in the same box.
+
+              Every control here can be UNSET, which is what "no change" means —
+              it leaves the token exactly as it is, the same way an unset picture
+              does. Right-click any of them to put it back to that. Applying a
+              gear build never touches any of it. --}}
+        <div class="squire-build-token-settings">
+            <div class="squire-build-token-row{{#if tokenSettings.width.isDefault}} is-default{{/if}}"
+                 data-token-row="dimensions"
+                 data-tooltip="How many grid spaces the token covers.<br><em>Right-click for no change</em>">
+                <span class="squire-build-token-label">Dimensions</span>
+                <div class="squire-build-token-control">
+                    <input type="number" class="squire-build-token-input" data-token="width"
+                           min="0.5" step="0.5" value="{{tokenSettings.width.value}}" aria-label="Token width">
+                    <span class="squire-build-token-by">&times;</span>
+                    <input type="number" class="squire-build-token-input" data-token="height"
+                           min="0.5" step="0.5" value="{{tokenSettings.height.value}}" aria-label="Token height">
+                </div>
+            </div>
+
+            <div class="squire-build-token-row{{#if tokenSettings.fit.isDefault}} is-default{{/if}}"
+                 data-token-row="fit"
+                 data-tooltip="How the picture is fitted into the token's box.<br><em>Right-click for no change</em>">
+                <span class="squire-build-token-label">Image Fit</span>
+                <div class="squire-build-token-control">
+                    <select class="squire-build-token-select" data-token="fit" aria-label="Image fit mode">
+                        {{#each tokenSettings.fit.options}}
+                        <option value="{{this.key}}"{{#if this.selected}} selected{{/if}}>{{this.label}}</option>
+                        {{/each}}
+                    </select>
+                </div>
+            </div>
+
+            <div class="squire-build-token-row{{#if tokenSettings.scale.isDefault}} is-default{{/if}}"
+                 data-token-row="scale"
+                 data-tooltip="How large the picture is drawn inside that box.<br><em>Right-click for no change</em>">
+                <span class="squire-build-token-label">Scale</span>
+                <div class="squire-build-token-control">
+                    <input type="range" class="squire-build-token-range" data-token="scale"
+                           min="0.2" max="3" step="0.05" value="{{tokenSettings.scale.value}}" aria-label="Token scale">
+                    <span class="squire-build-token-value">{{tokenSettings.scale.value}}</span>
+                </div>
+            </div>
+        </div>
     </div>
     {{/if}}
     {{#unless isCostume}}
     <div class="squire-build-doll">
     <div class="squire-build-body">
         {{#each bodySlots}}
-        <div class="squire-build-slot{{#if this.round}} is-round{{/if}}{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
+        <div class="squire-build-slot{{#if this.round}} is-round{{/if}}{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}{{#if this.drifted}} is-drifted{{/if}}"
              data-rarity="{{this.rarity}}"
              style="grid-row: {{this.row}}; grid-column: {{this.column}};"
              data-slot="{{this.key}}"{{#if this.uuid}} data-item-uuid="{{this.uuid}}"{{/if}}
-             data-tooltip="{{#if this.filled}}{{this.name}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}{{this.label}} — drag an item here{{/if}}">
+             data-tooltip="{{#if this.filled}}{{this.name}}{{#if this.drifted}}<br><strong>Not equipped</strong>{{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}{{this.label}} — drag an item here{{/if}}">
             {{#if this.filled}}
             {{!-- Drawn like a favourites tile: the artwork IS the slot, with the
                   name over the bottom of it under a gradient. Same reasoning as
@@ -219,6 +295,13 @@
                   covered the label. A full doll is otherwise sixteen pictures
                   with no way to tell which hole each one is filling. --}}
             <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
+            {{!-- This build is worn and this item is NOT on the character. The
+                  slot keeps its picture — the plan still says this — and the
+                  mark says the plan is not being met here. --}}
+            {{#if this.drifted}}
+            <i class="fa-solid fa-triangle-exclamation squire-build-slot-drift"
+               data-tooltip="{{this.name}} is not equipped, though this build is being worn"></i>
+            {{/if}}
             {{!-- Attunement, as a gem in the corner. Lit when attuned, hollow and
                   warned when the item requires it and has not got it — the
                   second is the one worth seeing, because that item will do
@@ -313,7 +396,18 @@
                 <span class="squire-build-weight-value">{{#if weight}}{{weight}}{{else}}0{{/if}}</span>
             </div>
 
-            {{#if attunement.unattuned}}
+            {{!-- What the character has on that this build never mentioned. There
+              is no box on the doll for an item the plan does not name, so it is
+              counted here rather than located. --}}
+        {{#if drift}}
+        <div class="squire-build-plate squire-build-plate-drift"
+             data-tooltip="This build is being worn, but the character has drifted from it.{{#if drift.extraGear}}<br>{{drift.extraGear}} item{{#unless (eq drift.extraGear 1)}}s{{/unless}} equipped that this build does not include.{{/if}}{{#if drift.extraSpells}}<br>{{drift.extraSpells}} spell{{#unless (eq drift.extraSpells 1)}}s{{/unless}} prepared that this build does not include.{{/if}}<br><em>Equip the build again to put it back</em>">
+            <i class="fa-solid fa-person-circle-exclamation"></i>
+            <span>{{drift.count}}</span>
+        </div>
+        {{/if}}
+
+        {{#if attunement.unattuned}}
             <div class="squire-build-plate squire-build-plate-warning"
                  data-tooltip="{{attunement.unattuned}} item{{#unless (eq attunement.unattuned 1)}}s{{/unless}} in this build require attunement and have not got it, so they would do nothing.">
                 <i class="fa-solid fa-triangle-exclamation"></i>
@@ -325,10 +419,10 @@
 
     <div class="squire-build-weapons">
         {{#each weaponSlots}}
-        <div class="squire-build-slot{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
+        <div class="squire-build-slot{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}{{#if this.drifted}} is-drifted{{/if}}"
              data-rarity="{{this.rarity}}"
              data-slot="{{this.key}}"{{#if this.uuid}} data-item-uuid="{{this.uuid}}"{{/if}}
-             data-tooltip="{{#if this.filled}}{{this.name}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}{{this.label}} — drag an item here{{/if}}">
+             data-tooltip="{{#if this.filled}}{{this.name}}{{#if this.drifted}}<br><strong>Not equipped</strong>{{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}{{this.label}} — drag an item here{{/if}}">
             {{#if this.filled}}
             {{!-- Drawn like a favourites tile: the artwork IS the slot, with the
                   name over the bottom of it under a gradient. Same reasoning as
@@ -339,6 +433,13 @@
                   covered the label. A full doll is otherwise sixteen pictures
                   with no way to tell which hole each one is filling. --}}
             <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
+            {{!-- This build is worn and this item is NOT on the character. The
+                  slot keeps its picture — the plan still says this — and the
+                  mark says the plan is not being met here. --}}
+            {{#if this.drifted}}
+            <i class="fa-solid fa-triangle-exclamation squire-build-slot-drift"
+               data-tooltip="{{this.name}} is not equipped, though this build is being worn"></i>
+            {{/if}}
             {{!-- Attunement, as a gem in the corner. Lit when attuned, hollow and
                   warned when the item requires it and has not got it — the
                   second is the one worth seeing, because that item will do
@@ -418,12 +519,15 @@
 
         <div class="squire-build-pack-grid">
             {{#each pack}}
-            <div class="squire-build-pack-cell{{#if this.beyond}} is-beyond{{/if}}{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
+            <div class="squire-build-pack-cell{{#if this.beyond}} is-beyond{{/if}}{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}{{#if this.drifted}} is-drifted{{/if}}"
                  data-pack-index="{{this.index}}"{{#if this.itemId}} data-item-id="{{this.itemId}}"{{/if}}
-                 data-tooltip="{{#if this.beyond}}Not prepared at this level yet{{else if this.filled}}{{this.name}}<br><em>Right-click to clear</em>{{else if this.missing}}This is no longer on the sheet<br><em>Right-click to clear</em>{{else}}Drag something here{{/if}}">
+                 data-tooltip="{{#if this.beyond}}Not prepared at this level yet{{else if this.filled}}{{this.name}}{{#if this.drifted}}<br><strong>Not prepared</strong>{{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This is no longer on the sheet<br><em>Right-click to clear</em>{{else}}Drag something here{{/if}}">
                 {{#if this.filled}}
                 <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
-                {{#if this.concentration}}
+                {{#if this.drifted}}
+                <i class="fa-solid fa-triangle-exclamation squire-build-slot-drift"
+                   data-tooltip="{{this.name}} is not prepared, though this build is being worn"></i>
+                {{else if this.concentration}}
                 <i class="fa-solid fa-circle-c squire-build-concentration" data-tooltip="Concentration"></i>
                 {{/if}}
                 {{!-- The spell's level, in the corner a gear slot uses for its

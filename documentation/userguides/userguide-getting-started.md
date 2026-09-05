@@ -163,6 +163,13 @@ does: the ammo slots take ammunition, Both Hands takes a weapon, and nothing tha
 object -- a spell, a feat, a class feature -- goes anywhere. If a slot turns
 something down it says what it was expecting.
 
+Under a costume's picture are three settings for how the token is **drawn**: its **dimensions** in grid
+spaces, the **image fit** mode, and the **scale**. A costume changes what your character looks like, and
+the picture is only half of that -- a giant in disguise is not the same size on the map. Each one can be
+left alone: an unset control shows what your token uses now and is marked *no change*, and right-clicking
+a row puts it back to that. Equipping a gear build never touches any of it. Your **Default Costume**
+records your token's own size and framing when it is made, so it is the one that puts everything back.
+
 Beside a build's name is a **Build / Costume** switch. A **Costume** changes only your portrait and
 token when applied and leaves your gear and spells completely alone -- useful for a disguise, a
 wild shape, or a change of clothes. Switch to it and the window changes with it: no slots, no spells,
@@ -187,6 +194,14 @@ anything already in a slot for its full item card.
 **Drag a build from the rail onto the tray handle** to keep it within reach. It joins a strip above your
 favourites, and clicking it there equips it -- so you can switch your whole kit with the tray shut.
 Right-click takes it back off.
+
+The build you last equipped is marked **Worn** in the rail. If you then change something outside the
+builder -- unequipping a sword from your sheet, or editing the build after putting it on -- the mark
+drops to **Last worn** and tells you how many things differ. The slots holding items you are not
+actually wearing get an amber warning, and a badge on the portrait counts anything you have equipped
+that the build never mentioned. Equipping the build again puts it all back. None of this is an error:
+picking up a torch is a perfectly reasonable thing to do, and the marks are only there so the window
+never claims you are wearing something you are not.
 
 **Until you equip it, a build is a plan, not a state.** Nothing in it changes what your character is actually wearing --
 it is somewhere to work out a set of gear, not a switch that puts it on. Only items already on your

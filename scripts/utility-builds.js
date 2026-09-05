@@ -298,8 +298,126 @@ export function getBuilds(actor) {
         // existed to draw one grid per class, and two grids implied a rule the
         // game does not have. Read tolerantly, because the earlier shape is
         // still sitting in flags.
-        spells: flattenSpellList(build.spells)
+        spells: flattenSpellList(build.spells),
+        // How the token is DRAWN, as opposed to what it is drawn with. Only a
+        // costume sets these — a build is gear, and gear does not change how big
+        // a character's token is on the map. Every one of them is nullable and
+        // null means "no change", exactly as an unset image does.
+        token: normaliseTokenSettings(build.token)
     }));
+}
+
+/* ==========================================================================
+   HOW THE TOKEN IS DRAWN
+
+   A costume changes what a character LOOKS like, and the picture is only half of
+   that. A giant in disguise is not the same size on the map; a portrait cropped
+   square and a portrait cropped tall want different fit modes to sit right in
+   the same square. These are the three settings Foundry's own token config
+   exposes for it, carried by the costume that needs them.
+
+   Deliberately NOT on a build. A build is gear, and equipping a breastplate does
+   not change how many squares you stand in — a build that reset your token's
+   size would be making a decision that belongs to the character rather than to
+   the kit. Applying one leaves all of this exactly as the token already had it.
+   ========================================================================== */
+
+/**
+ * Foundry's own fit modes, read from Foundry rather than listed here.
+ *
+ * The keys are core's to change and a hardcoded list would be a guess that fails
+ * silently — a mode nobody could select, or one written into a flag that the
+ * token document then rejects. The labels are ours only because core does not
+ * expose them separately from its own config sheet.
+ */
+const TOKEN_FIT_LABELS = {
+    fill: 'Fill',
+    contain: 'Contain',
+    cover: 'Cover',
+    width: 'Full Width',
+    height: 'Full Height'
+};
+
+export function tokenFitModes() {
+    const keys = CONST?.TEXTURE_DATA_FIT_MODES ?? Object.keys(TOKEN_FIT_LABELS);
+    return keys.map(key => ({ key, label: TOKEN_FIT_LABELS[key] ?? key }));
+}
+
+/** Grid spaces and a ratio, or null for each one the costume does not set. */
+function normaliseTokenSettings(stored) {
+    const size = value => {
+        const number = Number(value);
+        return Number.isFinite(number) && number > 0 ? number : null;
+    };
+
+    const fit = typeof stored?.fit === 'string'
+        && tokenFitModes().some(mode => mode.key === stored.fit)
+        ? stored.fit
+        : null;
+
+    return { width: size(stored?.width), height: size(stored?.height), fit, scale: size(stored?.scale) };
+}
+
+/**
+ * What the controls should show: the costume's value where it has one, and the
+ * token's own where it does not.
+ *
+ * `isDefault` is the difference between the two, and it is the whole point —
+ * a control showing the character's current size looks exactly like a control
+ * that has been set to it, and only one of those will change anything.
+ */
+export function resolveTokenSettings(actor, build) {
+    const proto = actor?.prototypeToken;
+    const stored = normaliseTokenSettings(build?.token);
+
+    const field = (value, fallback) => ({
+        value: value ?? fallback ?? null,
+        isDefault: value === null || value === undefined
+    });
+
+    return {
+        width: field(stored.width, Number(proto?.width) || 1),
+        height: field(stored.height, Number(proto?.height) || 1),
+        scale: field(stored.scale, Number(proto?.texture?.scaleX) || 1),
+        fit: {
+            ...field(stored.fit, proto?.texture?.fit ?? 'contain'),
+            options: tokenFitModes().map(mode => ({
+                ...mode,
+                selected: mode.key === (stored.fit ?? proto?.texture?.fit ?? 'contain')
+            }))
+        }
+    };
+}
+
+/** Set one of them, or clear it back to "no change" with null. */
+export async function setBuildTokenSetting(actor, buildId, key, value) {
+    if (!['width', 'height', 'fit', 'scale'].includes(key)) return;
+
+    await saveBuilds(actor, getBuilds(actor).map(build => build.id === buildId
+        ? { ...build, token: normaliseTokenSettings({ ...build.token, [key]: value }) }
+        : build));
+}
+
+/**
+ * The token document keys for whatever this costume actually sets.
+ *
+ * Scale is one control and two fields: Foundry stores the axes separately and
+ * its own config writes both from one slider, because a token scaled on one axis
+ * is a squashed picture rather than a bigger one.
+ */
+function tokenGeometryUpdate(build) {
+    const settings = normaliseTokenSettings(build?.token);
+    const update = {};
+
+    if (settings.width !== null) update.width = settings.width;
+    if (settings.height !== null) update.height = settings.height;
+    if (settings.fit !== null) update['texture.fit'] = settings.fit;
+    if (settings.scale !== null) {
+        update['texture.scaleX'] = settings.scale;
+        update['texture.scaleY'] = settings.scale;
+    }
+
+    return update;
 }
 
 /**
@@ -339,7 +457,8 @@ export async function createBuild(actor, name = 'New Build') {
         mode: 'gear',
         slots: Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null])),
         images: Object.fromEntries(BUILD_IMAGE_KEYS.map(key => [key, null])),
-        spells: []
+        spells: [],
+        token: normaliseTokenSettings(null)
     };
     await saveBuilds(actor, [...getBuilds(actor), build]);
     return build;
@@ -369,7 +488,8 @@ export async function duplicateBuild(actor, buildId) {
         images: { ...source.images },
         // Copied rather than shared, or editing one build's list would edit
         // the other's.
-        spells: [...(source.spells ?? [])]
+        spells: [...(source.spells ?? [])],
+        token: { ...(source.token ?? {}) }
     };
 
     await saveBuilds(actor, [...builds.slice(0, index + 1), copy, ...builds.slice(index + 1)]);
@@ -478,7 +598,7 @@ export async function setBuildSlot(actor, buildId, slotKey, itemId) {
  * in the flag too, so re-importing the item restores the slot rather than
  * needing it dragged back.
  */
-export function resolveSlots(actor, build, slotDefinitions) {
+export function resolveSlots(actor, build, slotDefinitions, drift = null) {
     return slotDefinitions.map(definition => {
         const itemId = build?.slots?.[definition.key] ?? null;
         const item = itemId ? actor?.items?.get(itemId) : null;
@@ -500,7 +620,12 @@ export function resolveSlots(actor, build, slotDefinitions) {
             // requiring item that is NOT attuned is the interesting case, because
             // it is the one that will not work when the build is worn.
             attuned: !!item?.system?.attuned,
-            needsAttunement: item?.system?.attunement === 'required'
+            needsAttunement: item?.system?.attunement === 'required',
+            // This build is the one being worn and THIS item is not on the
+            // character. Passed in rather than looked up, because the marking is
+            // only meaningful for the worn build — every slot of every other
+            // build would be "not equipped" and the mark would mean nothing.
+            drifted: !!itemId && !!drift?.notEquipped?.has(itemId)
         };
     });
 }
@@ -641,7 +766,7 @@ function preparedLimit(actor) {
  * showing them is how the column says what levelling up will buy. An id that no
  * longer resolves is reported `missing`, exactly as a gear slot is.
  */
-export function resolvePreparedSpells(actor, build) {
+export function resolvePreparedSpells(actor, build, drift = null) {
     const stored = Array.isArray(build?.spells) ? build.spells : [];
     const limit = preparedLimit(actor);
 
@@ -651,6 +776,8 @@ export function resolvePreparedSpells(actor, build) {
 
         return {
             index,
+            // Slotted here, but not prepared on the sheet. See resolveSlots().
+            drifted: !!itemId && !!drift?.notPrepared?.has(itemId),
             // What a person counts from. `index` addresses the cell and this is
             // the same cell said out loud — the two are never interchangeable
             // and keeping both is cheaper than remembering which is which.
@@ -952,7 +1079,16 @@ export async function applyBuild(actor, build) {
     const undo = {
         items: [],
         img: actor.img,
-        token: actor.prototypeToken?.texture?.src ?? null
+        token: actor.prototypeToken?.texture?.src ?? null,
+        // Read whether or not this build touches them, because undo has to be
+        // able to put back what was there and cannot know that until after.
+        geometry: {
+            width: actor.prototypeToken?.width ?? null,
+            height: actor.prototypeToken?.height ?? null,
+            'texture.fit': actor.prototypeToken?.texture?.fit ?? null,
+            'texture.scaleX': actor.prototypeToken?.texture?.scaleX ?? null,
+            'texture.scaleY': actor.prototypeToken?.texture?.scaleY ?? null
+        }
     };
 
     // A costume changes only how the character looks. Its gear slots are left
@@ -1023,11 +1159,23 @@ export async function applyBuild(actor, build) {
         images.token = actor.prototypeToken?.texture?.src === build.images.token;
     }
 
-    const tokensChanged = build.images?.token
-        ? await applyTokenArtwork(actor, build.images.token)
-        : 0;
+    // How the token is DRAWN, from a costume only. A build is gear, and gear
+    // does not decide how many squares a character stands in.
+    const geometry = costume ? tokenGeometryUpdate(build) : {};
+    if (Object.keys(geometry).length) {
+        await actor.update(Object.fromEntries(
+            Object.entries(geometry).map(([key, value]) => [`prototypeToken.${key}`, value])));
+    }
+
+    // One canvas write carrying the artwork and the geometry together, rather
+    // than one for each: they describe the same token and a player watching it
+    // should see it change once.
+    const canvasChanges = { ...geometry };
+    if (build.images?.token) canvasChanges['texture.src'] = build.images.token;
+    const tokensChanged = await applyTokenChanges(actor, canvasChanges);
 
     return {
+        geometryChanged: Object.keys(geometry).length,
         equipped,
         unequipped,
         prepared,
@@ -1040,7 +1188,7 @@ export async function applyBuild(actor, build) {
 }
 
 /**
- * Repaint this actor's tokens already on the canvas.
+ * Push changes onto this actor's tokens already on the canvas.
  *
  * `prototypeToken` is the stamp for tokens made LATER; it does nothing to the
  * ones already standing on the map, which is where everyone is looking. Without
@@ -1052,11 +1200,19 @@ export async function applyBuild(actor, build) {
  * made from the same prototype — a room of identical guards would all change
  * because one of them did.
  */
-async function applyTokenArtwork(actor, src) {
+async function applyTokenChanges(actor, changes) {
+    if (!changes || !Object.keys(changes).length) return 0;
+
     const updates = (canvas?.tokens?.placeables ?? [])
-        .filter(token => token.actor?.uuid === actor.uuid
-            && token.document?.texture?.src !== src)
-        .map(token => ({ _id: token.id, 'texture.src': src }));
+        .filter(token => token.actor?.uuid === actor.uuid)
+        // Only what actually differs on THIS token, so a token already the right
+        // size is not rewritten and the scene is not touched for nothing.
+        .map(token => {
+            const diff = Object.entries(changes)
+                .filter(([key, value]) => foundry.utils.getProperty(token.document, key) !== value);
+            return diff.length ? { _id: token.id, ...Object.fromEntries(diff) } : null;
+        })
+        .filter(Boolean);
 
     if (!updates.length) return 0;
 
@@ -1081,9 +1237,18 @@ export async function revertBuild(actor, undo) {
     if (undo.token && undo.token !== actor.prototypeToken?.texture?.src) {
         actorUpdate['prototypeToken.texture.src'] = undo.token;
     }
+    // Everything the costume could have changed about how the token is drawn,
+    // put back whether or not it did — undo is cheaper to make unconditional
+    // than to make conditional on a record of what was written.
+    for (const [key, value] of Object.entries(undo.geometry ?? {})) {
+        if (value !== null && value !== undefined) actorUpdate[`prototypeToken.${key}`] = value;
+    }
+
     if (Object.keys(actorUpdate).length) await actor.update(actorUpdate);
 
-    if (undo.token) await applyTokenArtwork(actor, undo.token);
+    const canvasChanges = { ...(undo.geometry ?? {}) };
+    if (undo.token) canvasChanges['texture.src'] = undo.token;
+    await applyTokenChanges(actor, canvasChanges);
 }
 
 /**
@@ -1206,6 +1371,73 @@ export function damageLabel(item) {
 
 const ACTIVE_BUILD_FLAG = 'activeBuild';
 
+/**
+ * What the character actually has on, as two sets of item ids.
+ *
+ * Read once and handed to everything that needs it, rather than each caller
+ * walking the sheet again: the rail asks the same question of every build it
+ * draws, and the doll asks it of every slot.
+ */
+export function equippedState(actor) {
+    const gear = new Set();
+    const spells = new Set();
+
+    for (const item of actor?.items ?? []) {
+        // Equippable is "has an equipped flag at all" — dnd5e's own way of
+        // saying the question applies to this item. The same test applyBuild
+        // uses, so the two can never disagree about what counts.
+        if (item.system?.equipped) gear.add(item.id);
+        if (item.type === 'spell' && item.system?.countsPrepared && Number(item.system.prepared) > 0) {
+            spells.add(item.id);
+        }
+    }
+
+    return { gear, spells };
+}
+
+/**
+ * How far the character has drifted from a build since it was applied.
+ *
+ * The `activeBuild` flag records WHICH plan is in play, and that is a fact about
+ * intention that stays true however the character is edited afterwards. This
+ * answers the other half: whether they still match it. Both are needed — a mark
+ * reading "Worn" on a character who has since taken the armour off is a lie, and
+ * clearing the flag instead would silently empty the handle's weapon strip the
+ * first time somebody picked up a torch.
+ *
+ * Drift comes from either direction and means the same thing: the build changed
+ * after it was worn, or the character did. What is on the character is not this.
+ *
+ * Note what is NOT compared. Portrait and token are artwork rather than
+ * equipment — a costume worn over a build changes them by design and has not
+ * disturbed what the character is wearing. Attunement is not compared either,
+ * because applying never sets it.
+ */
+export function buildDrift(actor, build, state = null) {
+    const { gear, spells } = state ?? equippedState(actor);
+
+    const wantGear = new Set(Object.values(build?.slots ?? {}).filter(Boolean));
+    const wantSpells = new Set((build?.spells ?? []).filter(Boolean));
+
+    // Slotted, but not on the character: either taken off, or gone from the
+    // sheet entirely. Both mean the plan is not being met.
+    const notEquipped = [...wantGear].filter(id => !gear.has(id));
+    const notPrepared = [...wantSpells].filter(id => !spells.has(id));
+    // On the character, but not in the plan. These have no slot to be marked in,
+    // so they are counted rather than located.
+    const extraGear = [...gear].filter(id => !wantGear.has(id));
+    const extraSpells = [...spells].filter(id => !wantSpells.has(id));
+
+    return {
+        notEquipped: new Set(notEquipped),
+        notPrepared: new Set(notPrepared),
+        extraGear: extraGear.length,
+        extraSpells: extraSpells.length,
+        count: notEquipped.length + notPrepared.length + extraGear.length + extraSpells.length,
+        matches: !notEquipped.length && !notPrepared.length && !extraGear.length && !extraSpells.length
+    };
+}
+
 /** The build last applied, or null. */
 export function getActiveBuildId(actor) {
     const id = actor?.getFlag(MODULE.ID, ACTIVE_BUILD_FLAG);
@@ -1264,6 +1496,20 @@ export async function ensureDefaultCostume(actor) {
     const build = await createBuild(actor, 'Default Costume');
     await saveBuilds(actor, getBuilds(actor).map(entry =>
         entry.id === build.id
-            ? { ...entry, mode: 'costume', images: { portrait: defaults.portrait, token: defaults.token } }
+            ? {
+                ...entry,
+                mode: 'costume',
+                images: { portrait: defaults.portrait, token: defaults.token },
+                // Their token's own size and framing, recorded here rather than
+                // left blank. This is the costume that means "back to normal",
+                // and a costume that changes the picture but leaves a previous
+                // costume's dimensions in place would not get them there.
+                token: {
+                    width: Number(actor.prototypeToken?.width) || 1,
+                    height: Number(actor.prototypeToken?.height) || 1,
+                    fit: actor.prototypeToken?.texture?.fit ?? null,
+                    scale: Number(actor.prototypeToken?.texture?.scaleX) || 1
+                }
+            }
             : entry));
 }

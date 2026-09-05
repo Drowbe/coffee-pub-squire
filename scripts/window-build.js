@@ -7,8 +7,10 @@ import {
     renameBuild, setBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
+    resolveTokenSettings, setBuildTokenSetting,
     estimateArmorClass, previewSlotChange, setBuildMode, revertBuild, damageLabel,
-    setActiveBuildId, getActiveBuildId, ensureDefaultCostume, moveBuild, resolveMainImage
+    setActiveBuildId, getActiveBuildId, ensureDefaultCostume, moveBuild, resolveMainImage,
+    equippedState, buildDrift
 } from './utility-builds.js';
 
 /**
@@ -244,8 +246,22 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // A costume promises far less, and the confirmation has to say so — the
         // wording is most of what stops somebody applying a wardrobe change and
         // finding their armour on the floor.
+        // What this costume actually sets about how the token is drawn. Named
+        // rather than folded into "and nothing else", because resizing somebody
+        // on the map is the most visible thing in here and the least expected
+        // from something called a costume.
+        const geometry = costume
+            ? [
+                (build.token?.width || build.token?.height)
+                    ? `<li>Set the token to ${build.token?.width ?? '&mdash;'} &times; ${build.token?.height ?? '&mdash;'} grid space(s).</li>` : '',
+                build.token?.fit ? `<li>Set the image fit to <strong>${build.token.fit}</strong>.</li>` : '',
+                build.token?.scale ? `<li>Set the token scale to <strong>${build.token.scale}</strong>.</li>` : ''
+            ].filter(Boolean)
+            : [];
+
         const lines = costume
-            ? ['<li>Change the portrait and token artwork, and nothing else.</li>']
+            ? ['<li>Change the portrait and token artwork.</li>', ...geometry,
+               geometry.length ? '' : '<li>Leave everything else alone.</li>'].filter(Boolean)
             : [
                 `<li>Equip the ${summary.gearCount} item${summary.gearCount === 1 ? '' : 's'} in this build, and unequip everything else.</li>`,
                 summary.spellCount
@@ -399,6 +415,18 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
 
         const builds = getBuilds(this.actor);
         const activeId = getActiveBuildId(this.actor);
+
+        // Read once for the whole render. The rail asks the same question of
+        // every build it draws and the doll asks it of every slot, and walking
+        // the sheet for each of them would be the same answer computed twenty
+        // times.
+        const state = equippedState(this.actor);
+
+        // Only for the WORN build. Every other build is trivially "not worn",
+        // and marking their slots would make the mark mean nothing.
+        const worn = activeId ? getBuild(this.actor, activeId) : null;
+        const drift = worn && worn.mode !== 'costume' ? buildDrift(this.actor, worn, state) : null;
+
         const rail = builds.map(entry => {
             const summary = buildSummary(this.actor, entry);
             // Its own picture as the tile's face, and the two images wearing it
@@ -425,6 +453,13 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 // character actually has on". Two different facts, and the rail
                 // is the only place both can be seen at once.
                 worn: entry.id === activeId,
+                // The last build applied, but the character no longer matches
+                // it. Called drifted rather than modified because the check
+                // cannot see WHICH of the two moved — the sheet was edited, or
+                // the build was — and a label should not claim more than its
+                // evidence.
+                drifted: entry.id === activeId && !!drift && !drift.matches,
+                driftCount: entry.id === activeId ? (drift?.count ?? 0) : 0,
                 costume: entry.mode === 'costume',
                 armorClass: summary.armorClass.value,
                 gearCount: summary.gearCount
@@ -438,8 +473,14 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // Which doll this character gets — a caster's weapons are small and
         // their spells are the big three, and a martial's are the other way up.
         const layout = getDollLayout(this.actor);
-        const bodySlots = resolveSlots(this.actor, build, layout.body);
-        const weaponSlots = resolveSlots(this.actor, build, layout.big);
+        // The drift marks belong to the build being SHOWN only when that is
+        // also the one being worn. Looking at another build, its slots describe
+        // a plan nobody is wearing, and "not equipped" would be true of all of
+        // them and worth saying about none.
+        const shownDrift = build && build.id === activeId ? drift : null;
+
+        const bodySlots = resolveSlots(this.actor, build, layout.body, shownDrift);
+        const weaponSlots = resolveSlots(this.actor, build, layout.big, shownDrift);
 
         // Counted across BOTH grids: a build's attunement cost is the whole set,
         // and a sword is as capable of demanding attunement as an amulet.
@@ -450,7 +491,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // heading and no count: the cells say what they hold, a cleric knows
         // they are a cleric, and a label above the grid would push every cell
         // out of line with the doll — which is the one thing it is built to do.
-        const pack = layout.caster ? resolvePreparedSpells(this.actor, build) : null;
+        const pack = layout.caster ? resolvePreparedSpells(this.actor, build, shownDrift) : null;
 
         return {
             appId: this.id,
@@ -464,6 +505,10 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 // BUILD_IMAGE_SLOTS holds them in for the doll's ring.
                 portraitSlot: imageSlots.find(slot => slot.key === 'portrait'),
                 tokenSlot: imageSlots.find(slot => slot.key === 'token'),
+                // How the token is drawn, for the costume view's controls. Each
+                // one shows the token's own value until the costume sets it, and
+                // says which of the two it is showing.
+                tokenSettings: resolveTokenSettings(this.actor, build),
                 updatesHandle: game.settings.get(MODULE.ID, 'buildsUpdateHandle'),
                 build,
                 actorName: this.actor?.name ?? '',
@@ -474,6 +519,11 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 bodySlots,
                 weaponSlots,
                 attunement: { ...attunement, over: attunement.used > attunement.max },
+                // What the character has on that this build does not name. These
+                // have no slot to be marked in — there is no box on the doll for
+                // an item the plan never mentioned — so they are counted on a
+                // plate instead of located.
+                drift: shownDrift && !shownDrift.matches ? shownDrift : null,
                 weight: gearWeight(this.actor, build),
                 armorClass: estimateArmorClass(this.actor, build),
                 imageSlots,
@@ -649,6 +699,42 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         root.querySelector('.squire-build-handle-input')?.addEventListener('change', async (event) => {
             await game.settings.set(MODULE.ID, 'buildsUpdateHandle', event.currentTarget.checked);
             await this._refresh();
+        });
+
+        // The costume's token controls. `change` rather than `input`: every
+        // write is an actor flag update that re-renders this window and the
+        // tray's tile, and doing that per keystroke — or per pixel of a dragged
+        // slider — would fight the control being used.
+        root.querySelectorAll('[data-token]').forEach(control => {
+            control.addEventListener('change', async () => {
+                const key = control.dataset.token;
+                const value = control.type === 'number' || control.type === 'range'
+                    ? Number(control.value)
+                    : control.value;
+
+                await setBuildTokenSetting(this.actor, this.buildId, key, value);
+                await this._refresh();
+            });
+        });
+
+        // Right-click a row for "no change", the same gesture that empties a
+        // gear slot or resets a picture. Bound to the ROW rather than the
+        // control, because Dimensions is two inputs saying one thing and
+        // clearing one of them would leave a half-set pair.
+        root.querySelectorAll('[data-token-row]').forEach(row => {
+            row.addEventListener('contextmenu', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const keys = row.dataset.tokenRow === 'dimensions'
+                    ? ['width', 'height']
+                    : [row.dataset.tokenRow];
+
+                for (const key of keys) {
+                    await setBuildTokenSetting(this.actor, this.buildId, key, null);
+                }
+                await this._refresh();
+            });
         });
 
         root.querySelectorAll('.squire-build-image-slot').forEach(slot => {
