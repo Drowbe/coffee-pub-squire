@@ -102,7 +102,7 @@
           the way the rail's does. Its second row is pinned to the doll's height,
           which is what makes a costume and a build the same size — and what
           stops toggling between them resizing the window. --}}
-    <div class="squire-build-columns{{#if isCaster}} has-pack{{/if}}">
+    <div class="squire-build-columns{{#if isCaster}}{{#unless isCostume}} has-pack{{/unless}}{{/if}}">
 
     {{!-- The name reads as a heading and edits as a field. It was a full-width
           boxed input, which made the least important thing in the window the

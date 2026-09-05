@@ -34,12 +34,28 @@ const RAIL_WIDTH = 180;
  */
 const TRACK = 84;
 const GAP = 6;
-const GUTTER = 21;
+const GUTTER = 9;
 const DOLL_WIDTH = 5 * TRACK + 4 * GAP;
 const PACK_WIDTH = GAP + GUTTER + GAP + TRACK;
-/* The rail and its rule, the workspace's inset, the window's own padding, and
-   the frame Foundry draws around all of it. */
+/* The rail and its rule, the workspace's inset, the window's own padding, and a
+   GUESS at the frame Foundry draws around all of it. Only the last term is soft,
+   and _syncWidth() corrects it against the frame that actually turned out to be
+   there — so a theme with different chrome costs a reflow, not a wrong window. */
 const CHROME = RAIL_WIDTH + 10 + 1 + 10 + 16 + 22;
+
+/**
+ * How wide the window has to be to show this mode without slack.
+ *
+ * The base size is the doll and nothing else, and it is the size for everybody:
+ * a martial's build, a martial's costume, and a caster's costume are all exactly
+ * this. Only a caster's BUILD is wider, by exactly the prepared column — a
+ * costume has no prepared column, so switching to one takes the window back
+ * down rather than leaving it stretched around empty space.
+ */
+function widthFor(actor, mode) {
+    const needsPack = getDollLayout(actor).caster && mode !== 'costume';
+    return CHROME + DOLL_WIDTH + (needsPack ? PACK_WIDTH : 0);
+}
 
 
 /**
@@ -96,21 +112,6 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             return existing;
         }
 
-        // A caster needs the second column; everyone else would get 300px of
-        // empty. Set at construction because options are frozen afterwards.
-        // Two widths, and only two: a caster's window carries the prepared
-        // column and a martial's does not, so a martial's is narrower by exactly
-        // that column. This is not the resizing that was taken out before — that
-        // was one window changing size under the cursor when a switch was
-        // thrown. A fighter's window is simply a different window from a
-        // wizard's, and neither ever becomes the other.
-        //
-        // Height is deliberately still `auto`, because the CONTENT is now a
-        // fixed height: the workspace's second row is pinned to the doll, so a
-        // costume is exactly as tall as a build and both are the same for every
-        // character. Auto over a fixed figure means this window cannot be the
-        // one that clips itself if the theme's chrome changes.
-        const width = CHROME + DOLL_WIDTH + (getDollLayout(actor).caster ? PACK_WIDTH : 0);
         // Before the window is even drawn. Applying a build will one day
         // overwrite the actor's portrait and token, and once it has, the
         // character's own artwork exists nowhere — so it is recorded at the
@@ -126,6 +127,16 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // nothing would make the common case — one build — need a click before
         // it showed anything.
         const selected = buildId ?? getBuilds(actor)[0]?.id ?? null;
+
+        // Opened at the size the mode it opens IN actually needs, rather than at
+        // a build's size that a costume would then have to shrink out of.
+        //
+        // Height stays `auto`, because the content is a fixed height: the
+        // workspace's second row is pinned to the doll, so a costume is exactly
+        // as tall as a build and both are the same for every character. Auto
+        // over a hard figure means this window cannot be the one that clips
+        // itself when a theme's chrome changes.
+        const width = widthFor(actor, getBuild(actor, selected)?.mode);
         const win = new BuildWindow({ id, actor, buildId: selected, position: { width, height: 'auto' } });
         await win.render({ force: true });
         return win;
@@ -322,6 +333,51 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         await PanelManager.instance?.handleManager?.updateHandle();
     }
 
+    /**
+     * Take the window to the width the thing it just rendered actually needs.
+     *
+     * Everything inside is laid out in fixed pixels, so the content has one
+     * correct width — but the chrome the theme wraps around it is not this
+     * module's to know, and `widthFor` can only guess at it. So this measures
+     * rather than calculates: what the rail and the workspace came to, against
+     * the room they were given, and the difference handed straight back.
+     *
+     * RELATIVE, and that is the whole of it. An earlier version subtracted the
+     * slack from the width it *wanted* instead of from the width it *had*, which
+     * is correct only when those two are already equal — so a mode change, where
+     * they are furthest apart, over-corrected by the whole width of the prepared
+     * column and then oscillated between too wide and too narrow on alternate
+     * renders. Measured against the current width it converges in one pass from
+     * anywhere, and needs to know nothing about which mode it is in.
+     *
+     * Written to `position` rather than to CSS: the frame is Foundry's, and a
+     * stylesheet reaching into it would be a rule this window could not see.
+     */
+    _syncWidth() {
+        const content = this.element?.querySelector('.squire-build');
+        const rail = content?.querySelector('.squire-build-rail');
+        const workspace = content?.querySelector('.squire-build-workspace');
+        if (!content || !rail || !workspace) return;
+
+        // Nothing has a width while the window is hidden, and measuring then
+        // would read the whole frame as slack and collapse it.
+        if (content.clientWidth < 1 || rail.offsetWidth < 1) return;
+
+        // The padding is read rather than assumed, because it is a stylesheet's
+        // decision and this is the one place that would silently disagree.
+        const style = getComputedStyle(content);
+        const padding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+
+        // Positive means the window is wider than its contents — the strip of
+        // nothing down one side. Negative means they are overflowing it, which
+        // is where the horizontal scrollbar came from.
+        const slack = Math.round(content.clientWidth - padding - rail.offsetWidth - workspace.offsetWidth);
+        if (Math.abs(slack) < 2) return;
+
+        const current = Number(this.position?.width) || content.clientWidth;
+        this.setPosition({ width: current - slack });
+    }
+
     async getData() {
         const build = this.build;
 
@@ -426,6 +482,8 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
 
         const root = this.element;
         if (!root) return;
+
+        this._syncWidth();
 
         // Rename on blur and on Enter, not on every keystroke: each write is an
         // actor flag update that re-renders the builds panel, and doing that per

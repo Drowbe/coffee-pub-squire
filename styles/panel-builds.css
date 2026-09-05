@@ -120,7 +120,11 @@
 .squire-build {
     --squire-track: 84px;
     --squire-gap: 6px;
-    --squire-gutter: 21px;
+    /* The rule's own track. NINE, so that with a gap either side the whole
+       division comes to 21px — the same 10 + rule + 10 the rail's border sits
+       in. It was 21 here, which put 16px on each side of the rule and made the
+       right-hand division half again as wide as the left one. */
+    --squire-gutter: 9px;
     /* Five tracks and the four gaps between them. The doll's own five columns
        divide this back to exactly one track each. */
     --squire-doll-width: calc(5 * var(--squire-track) + 4 * var(--squire-gap));
@@ -592,8 +596,12 @@
     gap: 0;
 }
 
+/* Shrink-wrapped, NOT stretched. The grid inside is a fixed width, so a
+   workspace that filled the window would hide any mismatch between the width
+   asked for and the width actually needed inside the frame — which is exactly
+   what _syncWidth() measures. */
 .squire-build-workspace {
-    flex: 1 1 0;
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -601,8 +609,11 @@
     padding-left: 10px;
 }
 
+/* The workspace shrink-wraps its contents, so without this the window would
+   collapse to the width of the sentence when a character has no builds yet. */
 .squire-build-empty {
     flex: 1 1 auto;
+    min-width: var(--squire-doll-width);
 }
 
 /* ---------------- THE TWO COLUMNS ----------------
@@ -1177,11 +1188,9 @@
    the doll's height, so a costume is exactly as tall as a build and the window
    cannot change size when the switch is thrown. */
 .squire-build-costume {
-    /* Every track, including the prepared column's when there is one. A costume
-       has no second column, so rather than leave a caster's window with a strip
-       of nothing down one side, the pictures take the space. It is the one place
-       a caster's window and a martial's differ in this mode, and the alternative
-       — matching them exactly — costs 117px of dead air on every caster. */
+    /* Every track there is, which in this mode is always the five the doll would
+       have used: the prepared column's track is not laid down at all for a
+       costume, and the window narrows to match. */
     grid-column: 1 / -1;
     grid-row: 2;
     align-self: stretch;
