@@ -544,20 +544,30 @@
 
 /* ---------------- THE TWO COLUMNS ----------------
 
-   The doll on the left, the caster's page on the right. A non-caster's window is
-   built narrower and never renders the second column, so this collapses to one
-   without a rule saying so. */
+   SIX tracks, not two boxes side by side, and this is the whole trick of the
+   layout: the doll spans five of them and the pack column takes the sixth, with
+   the same 6px gap the body grid uses inside itself.
+
+   That makes the arithmetic come out exactly. The doll's width is five tracks
+   plus the four gaps between them, so its own five columns divide back to
+   exactly one track each — a gear slot IS a track. The pack column is one track
+   wide, and two of its cells plus their 4px gap come to exactly one track tall,
+   so two pack cells stack into one body row and the two grids share every
+   horizontal line down the window. Sized as a flex box with a chosen width it
+   was a near miss at every window size, which reads worse than an obvious
+   difference. */
 .squire-build-columns {
-    display: flex;
-    gap: 12px;
-    /* Stretched, not top-aligned: the spell lists divide the doll's height into
-       their own rows, which is what lines the two halves up. Top-aligned they
-       ended wherever the count happened to put them. */
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
+    /* Top-aligned. The pack is a fixed number of square cells rather than a list
+       that divides the height it is given, so stretching it would make the cells
+       rectangles — which is the one thing this column must not be. */
+    align-items: start;
 }
 
 .squire-build-doll {
-    flex: 1 1 0;
+    grid-column: 1 / 6;
     display: flex;
     flex-direction: column;
     /* The weapons row lost its separation when this wrapper arrived: the body
@@ -568,186 +578,123 @@
     min-width: 0;
 }
 
-/* A class's prepared block, inside the doll's column rather than beside it. */
-.squire-build-caster {
+/* ---------------- THE PACK COLUMN ----------------
+
+   Twenty-six cells in the sixth track, two across and thirteen down. A caster
+   fills it with prepared spells and everybody else with what they carry, and it
+   is deliberately ONE column rather than a spell column and a carry column: the
+   two layouts are the same window with different contents, so a fighter's and a
+   wizard's are the same size and the same shape.
+
+   Nothing here sets a cell size. The column is one track wide, the two cells
+   divide it, and `aspect-ratio` makes them as tall as they are wide — which is
+   how two of them come to exactly one body row without a magic number
+   anywhere. */
+.squire-build-pack {
+    grid-column: 6;
     display: flex;
     flex-direction: column;
-    gap: 5px;
-}
-
-/* One block per preparing class. A Cleric 5 / Wizard 3 gets two, because the
-   limits are independent and a combined figure would be wrong. */
-.squire-build-caster-header {
-    display: flex;
-    gap: 8px;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 5px;
-    padding-bottom: 3px;
-    border-bottom: 1px solid var(--blacksmith-tool-divider);
-}
-
-.squire-build-caster-name {
-    color: var(--blacksmith-tool-accent);
-    font-size: 0.82em;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-.squire-build-caster-count {
-    color: var(--blacksmith-tool-text-muted);
-    font-size: 0.7em;
-    white-space: nowrap;
-}
-
-/* FIVE across, twenty-five cells, square — the doll's own column count.
-   
-   That is the whole reason the number is fixed. Twenty-five is the most any
-   class can prepare, and 5x5 sits under the body grid in the same rhythm as the
-   slots above it. Sized to the class it was a different shape for every
-   character and lined up with nothing; beside the doll as a second column it
-   made a caster's window 320px wider than a fighter's. */
-.squire-build-spell-grid {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 6px;
+    min-width: 0;
 }
 
-.squire-build-spell-slot {
+.squire-build-pack-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.squire-build-pack-cell {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Square, like every other slot on this doll. */
     aspect-ratio: 1;
     overflow: hidden;
     border: 1px dashed var(--blacksmith-tool-divider);
-    border-radius: 4px;
+    border-radius: 3px;
     background: var(--blacksmith-tool-surface-sunken);
     transition: all 0.15s ease;
 }
 
-.squire-build-spell-slot.is-filled {
+.squire-build-pack-cell.is-filled {
     border-style: solid;
     border-color: var(--blacksmith-tool-border);
     background: rgba(8, 6, 4, 0.9);
 }
 
-.squire-build-spell-slot.is-missing {
+.squire-build-pack-cell.is-missing {
     border-style: solid;
     border-color: rgba(240, 142, 120, 0.5);
 }
 
-/* Past this class's limit: a slot the character does not have YET, which is not
-   the same as an empty one. Dimmed rather than hidden, because showing them is
-   how the grid says what levelling up will buy — and a 5x5 that lost cells as it
-   filled would stop being a fixed grid. Refuses drops in the window; the drop
-   handler refuses them again, because a cursor is not a permission check. */
-.squire-build-spell-slot.is-beyond {
-    opacity: 0.25;
+/* Past a caster's limit: a cell they do not have YET, which is not the same as
+   an empty one. Dimmed rather than dropped, because a column that lost cells as
+   the character levelled would stop being a fixed shape — and because what the
+   next level buys is worth being able to see. Refuses drops here; the drop
+   handler refuses them again, since a cursor is not a permission check. */
+.squire-build-pack-cell.is-beyond {
+    opacity: 0.22;
     border-style: dotted;
     pointer-events: none;
 }
 
-.squire-build-spell-slot.is-drop-target {
+.squire-build-pack-cell.is-drop-target {
     border-style: solid;
     border-color: var(--blacksmith-color-brand-accent, var(--blacksmith-tool-accent));
     background: var(--blacksmith-tool-surface-selected);
 }
 
-/* A spell tile is small, so the caption only appears on hover — at this size a
-   permanent one would be two clipped characters over most of the artwork. The
-   tooltip carries the name the rest of the time. */
-.squire-build-spell-slot .squire-build-slot-name {
-    opacity: 0;
-    transition: opacity 0.15s ease;
+/* No caption inside a cell at this size — a name would be two clipped
+   characters over the artwork. The picture is the label and the tooltip carries
+   the rest. */
+.squire-build-pack-cell .squire-build-slot-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-.squire-build-spell-slot:hover .squire-build-slot-name {
-    opacity: 1;
+/* A spell's level or a stack's count, in the corner a gear slot uses for its
+   glyph — all three answer "what kind of thing is this". */
+.squire-build-pack-mark {
+    position: absolute;
+    right: 1px;
+    bottom: 0;
+    z-index: 2;
+    padding: 0 2px;
+    border-radius: 2px;
+    background: rgba(8, 6, 4, 0.85);
+    color: #f4e7cd;
+    font-size: 0.52em;
+    font-weight: 700;
+    line-height: 1.5;
 }
 
-/* ---------------- WHAT A MARTIAL CARRIES ----------------
-
-   The other half of the layout swap. A caster gets a prepared grid here; a
-   fighter has no daily preparation, so this space was empty on exactly the
-   characters this module started with. Potions, scrolls, poisons and oils are
-   the thing they DO choose before the day and spend during it, which makes this
-   the same kind of decision drawn the same way.
-
-   Ten cells, two rows of the doll's five columns, square and fixed — the spell
-   grid's shape, deliberately, so the two layouts read as variants of one window
-   rather than as two windows. */
-.squire-build-carry {
+/* The column's own label, UNDER the grid. Above it, a heading would push every
+   cell half a row down and cost the alignment the column exists for. */
+.squire-build-pack-caption {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 1px;
+    padding-top: 4px;
+    border-top: 1px solid var(--blacksmith-tool-divider);
 }
 
-.squire-build-carry-grid {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 6px;
-}
-
-.squire-build-carry-slot {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    aspect-ratio: 1;
+.squire-build-pack-name {
     overflow: hidden;
-    border: 1px dashed var(--blacksmith-tool-divider);
-    border-radius: 4px;
-    background: var(--blacksmith-tool-surface-sunken);
-    transition: all 0.15s ease;
+    color: var(--blacksmith-tool-accent);
+    font-size: 0.68em;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
 }
 
-.squire-build-carry-slot.is-filled {
-    border-style: solid;
-    border-color: var(--blacksmith-tool-border);
-    background: rgba(8, 6, 4, 0.9);
-}
-
-.squire-build-carry-slot.is-missing {
-    border-style: solid;
-    border-color: rgba(240, 142, 120, 0.5);
-}
-
-.squire-build-carry-slot.is-drop-target {
-    border-style: solid;
-    border-color: var(--blacksmith-color-brand-accent, var(--blacksmith-tool-accent));
-    background: var(--blacksmith-tool-surface-selected);
-}
-
-/* The one count shown anywhere in this window. Everywhere else a slotted item
-   names the KIND of thing — one arrow means "arrows" — but a slotted potion
-   means the potions, and how many there are is the whole point of packing
-   them. */
-.squire-build-carry-quantity {
-    position: absolute;
-    top: 2px;
-    right: 3px;
-    z-index: 2;
-    padding: 0 3px;
-    border-radius: 3px;
-    background: rgba(8, 6, 4, 0.85);
-    color: var(--blacksmith-tool-text);
-    font-size: 0.7rem;
-    font-weight: 600;
-    line-height: 1.3;
-}
-
-/* Same as the spell tiles: at this size a permanent caption is two clipped
-   characters over most of the artwork, so the tooltip carries the name until
-   the pointer is actually on it. */
-.squire-build-carry-slot .squire-build-slot-name {
-    opacity: 0;
-    transition: opacity 0.15s ease;
-}
-
-.squire-build-carry-slot:hover .squire-build-slot-name {
-    opacity: 1;
+.squire-build-pack-count {
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.62em;
 }
 
 /* ---------------- THE SLOT READOUT ----------------
@@ -757,9 +704,8 @@
    spell with any slot of sufficient level, so there is nothing to put in these.
    They are what tells you whether the lists below are castable.
 
-   Under the grids rather than above them now that they live in the doll's
-   column: the lists are the thing being built and this is the footnote that says
-   whether they are castable.
+   At the foot of the pack column, under the caption: the list is the thing
+   being built and this is the footnote saying whether it is castable.
 
    Once, not per class — a multiclass caster casts from one pool, so a copy
    inside each class block would be the same numbers claiming to be different
@@ -771,9 +717,7 @@
 .squire-build-slot-ranks {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
-    padding-top: 8px;
-    border-top: 1px solid var(--blacksmith-tool-divider);
+    gap: 3px;
 }
 
 .squire-build-rank {
@@ -810,37 +754,37 @@
    put coloured text on a dark gradient at 0.6em, which is where legibility goes
    to die. The glow is what makes a wall of gear read at a glance. */
 .squire-build-slot[data-rarity="common"].is-filled,
-.squire-build-carry-slot[data-rarity="common"].is-filled {
+.squire-build-pack-cell[data-rarity="common"].is-filled {
     border-color: rgba(190, 190, 190, 0.55);
 }
 
 .squire-build-slot[data-rarity="uncommon"].is-filled,
-.squire-build-carry-slot[data-rarity="uncommon"].is-filled {
+.squire-build-pack-cell[data-rarity="uncommon"].is-filled {
     border-color: #4fa64f;
     box-shadow: 0 0 7px rgba(79, 166, 79, 0.45);
 }
 
 .squire-build-slot[data-rarity="rare"].is-filled,
-.squire-build-carry-slot[data-rarity="rare"].is-filled {
+.squire-build-pack-cell[data-rarity="rare"].is-filled {
     border-color: #4a90d9;
     box-shadow: 0 0 7px rgba(74, 144, 217, 0.45);
 }
 
 .squire-build-slot[data-rarity="veryRare"].is-filled,
-.squire-build-carry-slot[data-rarity="veryRare"].is-filled {
+.squire-build-pack-cell[data-rarity="veryRare"].is-filled {
     border-color: #9a5cd0;
     box-shadow: 0 0 8px rgba(154, 92, 208, 0.5);
 }
 
 .squire-build-slot[data-rarity="legendary"].is-filled,
-.squire-build-carry-slot[data-rarity="legendary"].is-filled {
+.squire-build-pack-cell[data-rarity="legendary"].is-filled {
     border-color: #e0a52e;
     box-shadow: 0 0 9px rgba(224, 165, 46, 0.55);
 }
 
 /* The one that gets to be loud. An artifact should stop the eye. */
 .squire-build-slot[data-rarity="artifact"].is-filled,
-.squire-build-carry-slot[data-rarity="artifact"].is-filled {
+.squire-build-pack-cell[data-rarity="artifact"].is-filled {
     border-color: #d4553a;
     box-shadow: 0 0 11px rgba(212, 85, 58, 0.6);
 }
@@ -929,24 +873,6 @@
     color: rgba(241, 231, 214, 0.5);
     font-size: 0.58em;
     text-shadow: 0 1px 3px rgba(8, 6, 4, 0.95);
-}
-
-/* A spell's level, in the corner a gear slot uses for its glyph — both answer
-   "what kind of thing is this". */
-.squire-build-spell-level {
-    position: absolute;
-    top: 2px;
-    right: 3px;
-    z-index: 2;
-    min-width: 12px;
-    padding: 0 3px;
-    border-radius: 3px;
-    background: rgba(8, 6, 4, 0.8);
-    color: #f4e7cd;
-    font-size: 0.56em;
-    font-weight: 700;
-    line-height: 1.5;
-    text-align: center;
 }
 
 /* Concentration, in the corner a gear slot uses for attunement — both are a

@@ -293,99 +293,6 @@
         </div>
     </div>
 
-    {{#if isCaster}}
-    {{!-- Twenty-five cells, five across, matching the doll's own columns — which
-          is the whole reason for a fixed grid rather than one sized to the
-          class. The cells past the limit are dimmed and refuse drops: they are
-          not empty, they are slots this character does not have yet, and showing
-          them is how the grid says what levelling up will buy.
-
-          One block per class that prepares. A Cleric 5 / Wizard 3 has two
-          independent limits, and one combined number would be flatly wrong. --}}
-    {{#each casters}}
-    <div class="squire-build-caster">
-        <div class="squire-build-caster-header">
-            <span class="squire-build-caster-name">{{this.name}}</span>
-            <span class="squire-build-caster-count">{{this.used}} / {{this.max}} prepared</span>
-        </div>
-        <div class="squire-build-spell-grid">
-            {{#each this.slots}}
-            <div class="squire-build-spell-slot{{#if this.beyond}} is-beyond{{/if}}{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
-                 data-spell-class="{{../id}}" data-spell-index="{{this.index}}"{{#if this.uuid}} data-item-uuid="{{this.uuid}}"{{/if}}
-                 data-tooltip="{{#if this.beyond}}{{../name}} cannot prepare this many yet{{else if this.filled}}{{this.name}}<br><em>Right-click to clear</em>{{else if this.missing}}This spell is no longer on the sheet<br><em>Right-click to clear</em>{{else}}Drag a spell here{{/if}}">
-                {{#if this.filled}}
-                <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
-                {{#if this.concentration}}
-                <i class="fa-solid fa-circle-c squire-build-concentration" data-tooltip="Concentration"></i>
-                {{/if}}
-                <span class="squire-build-spell-level">{{this.level}}</span>
-                <span class="squire-build-slot-name">{{this.name}}</span>
-                {{else if this.missing}}
-                <i class="fa-solid fa-triangle-exclamation squire-build-slot-icon is-warning"></i>
-                {{else}}
-                <i class="fa-solid fa-sparkles squire-build-slot-icon"></i>
-                {{/if}}
-            </div>
-            {{/each}}
-        </div>
-    </div>
-    {{/each}}
-
-    {{!-- What the character can actually cast, once rather than per class: a
-          multiclass caster casts from one pool, so a copy in each block would be
-          the same numbers claiming to be different ones. --}}
-    {{#if spellSlots}}
-    <div class="squire-build-slot-ranks">
-        {{#each spellSlots}}
-        <span class="squire-build-rank" data-tooltip="{{this.label}} level: {{this.value}} of {{this.max}} remaining">
-            <span class="squire-build-rank-label">{{this.label}}</span>
-            <span class="squire-build-rank-pips">{{this.max}}</span>
-        </span>
-        {{/each}}
-    </div>
-    {{/if}}
-    {{/if}}
-
-    {{#unless isCaster}}
-    {{!-- The martial's half of the same space, and the reason the two layouts
-          were swapped rather than one of them left with a hole. A fighter has no
-          daily preparation, so the doll's lower third was empty on exactly the
-          characters this module started with; potions, scrolls, poisons and oils
-          are the thing they DO choose before the day and spend during it.
-
-          Two rows of the doll's five columns, fixed. Same reasoning as the
-          prepared grid: a grid that grows as it fills is not a shape anybody can
-          learn the positions of. --}}
-    <div class="squire-build-carry">
-        <div class="squire-build-caster-header">
-            <span class="squire-build-caster-name">Carried</span>
-            <span class="squire-build-caster-count">Potions, scrolls, poisons</span>
-        </div>
-        <div class="squire-build-carry-grid">
-            {{#each consumables}}
-            <div class="squire-build-carry-slot{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
-                 data-rarity="{{this.rarity}}" data-carry-index="{{this.index}}"{{#if this.itemId}} data-item-id="{{this.itemId}}"{{/if}}
-                 data-tooltip="{{#if this.filled}}{{this.name}}{{#if this.quantity}} (x{{this.quantity}}){{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}Drag something to carry here{{/if}}">
-                {{#if this.filled}}
-                <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
-                {{!-- The one place a quantity is shown. Everywhere else a slotted
-                      item means the KIND of thing; a slotted potion means the
-                      potions, and how many is the whole point of packing them. --}}
-                {{#if this.quantity}}
-                <span class="squire-build-carry-quantity">{{this.quantity}}</span>
-                {{/if}}
-                <span class="squire-build-slot-name">{{this.name}}</span>
-                {{else if this.missing}}
-                <i class="fa-solid fa-triangle-exclamation squire-build-slot-icon is-warning"></i>
-                {{else}}
-                <i class="fa-solid fa-flask squire-build-slot-icon"></i>
-                {{/if}}
-            </div>
-            {{/each}}
-        </div>
-    </div>
-    {{/unless}}
-
     <div class="squire-build-weapons">
         {{#each weaponSlots}}
         <div class="squire-build-slot{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
@@ -424,6 +331,74 @@
     </div>
 
     </div>
+
+    {{!-- THE PACK COLUMN.
+
+          Twenty-six cells, two across, down the side of the doll — and its size
+          is not a choice. A cell is half a gear slot, so two of them stack into
+          exactly one body row and the column keeps the doll's gridlines the
+          whole way down; thirteen rows is what fits beside the body and the
+          weapons under it.
+
+          One column for everybody. A caster fills it with prepared spells,
+          everybody else with what they carry, which makes the two layouts the
+          same window with a different column rather than two windows. Cells past
+          a caster's limit are dimmed and refuse drops: they are not empty, they
+          are cells this character does not have YET, and drawing them is how the
+          column says what levelling up will buy. --}}
+    <div class="squire-build-pack">
+        <div class="squire-build-pack-grid">
+            {{#each pack}}
+            <div class="squire-build-pack-cell{{#if this.beyond}} is-beyond{{/if}}{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}"
+                 data-rarity="{{this.rarity}}" data-pack-index="{{this.index}}"{{#if this.itemId}} data-item-id="{{this.itemId}}"{{/if}}
+                 data-tooltip="{{#if this.beyond}}Not prepared at this level yet{{else if this.filled}}{{this.name}}{{#if this.quantity}} (x{{this.quantity}}){{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This is no longer on the sheet<br><em>Right-click to clear</em>{{else}}Drag something here{{/if}}">
+                {{#if this.filled}}
+                <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
+                {{#if this.concentration}}
+                <i class="fa-solid fa-circle-c squire-build-concentration" data-tooltip="Concentration"></i>
+                {{/if}}
+                {{!-- A level for a spell, a count for a stack. Never both, since
+                      one of the two grids is showing at a time — and the count
+                      is the one number this window shows anywhere, because a
+                      slotted potion means the potions rather than the kind. --}}
+                {{#if this.level}}
+                <span class="squire-build-pack-mark">{{this.level}}</span>
+                {{else if this.quantity}}
+                <span class="squire-build-pack-mark">{{this.quantity}}</span>
+                {{/if}}
+                {{else if this.missing}}
+                <i class="fa-solid fa-triangle-exclamation squire-build-slot-icon is-warning"></i>
+                {{/if}}
+            </div>
+            {{/each}}
+        </div>
+
+        {{!-- Under the grid, not over it. The column's top edge has to line up
+              with the body's, and a heading above it would push every cell half
+              a row out of true — which is the one thing this column is for. --}}
+        <div class="squire-build-pack-caption">
+            <span class="squire-build-pack-name">{{packLabel}}</span>
+            <span class="squire-build-pack-count">{{#if packMax}}{{packUsed}} / {{packMax}} prepared{{else}}{{packUsed}} carried{{/if}}</span>
+        </div>
+
+        {{#if spellSlots}}
+        {{!-- What the character can actually cast, once. A prepared spell is not
+              tied to a particular slot in this game, so these are a readout
+              rather than containers — they say whether the list above is
+              castable. Once and not per class: a multiclass caster casts from
+              one pool, and a copy for each would be the same numbers claiming to
+              be different ones. --}}
+        <div class="squire-build-slot-ranks">
+            {{#each spellSlots}}
+            <span class="squire-build-rank" data-tooltip="{{this.label}} level: {{this.value}} of {{this.max}} remaining">
+                <span class="squire-build-rank-label">{{this.label}}</span>
+                <span class="squire-build-rank-pips">{{this.max}}</span>
+            </span>
+            {{/each}}
+        </div>
+        {{/if}}
+    </div>
+
     </div>
     {{/if}}
     {{else}}

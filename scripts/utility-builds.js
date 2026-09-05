@@ -302,25 +302,36 @@ export function getBuilds(actor) {
             const value = build.images?.[key];
             return [key, typeof value === 'string' && value ? value : null];
         })),
-        // Prepared spells, keyed by class identifier. Unlike the gear slots
-        // these cannot be normalised against a fixed key set — how many a class
-        // prepares depends on the character, so the raw lists are kept here and
-        // sized against the actor by resolvePreparedSpells().
-        spells: Object.fromEntries(
-            Object.entries(build.spells ?? {})
-                .filter(([, list]) => Array.isArray(list))
-                .map(([classId, list]) => [
-                    classId,
-                    list.map(entry => typeof entry === 'string' ? entry : null)
-                ])
-        ),
-        // The martial half of the same idea: a fixed strip of what this build
-        // carries to spend. Sized on read like the spell grid, so the constant
-        // below can change without a migration.
+        // Prepared spells, as one flat list. Not keyed by class: in 5e
+        // preparation is a flag on the SPELL, and a wizard/cleric prepares one
+        // list against one combined limit — the per-class split only ever
+        // existed to draw one grid per class, and two grids implied a rule the
+        // game does not have. Read tolerantly, because the earlier shape is
+        // still sitting in flags.
+        spells: flattenSpellList(build.spells),
+        // The martial half of the same idea, in the same column: a fixed strip
+        // of what this build carries to spend.
         consumables: Array.isArray(build.consumables)
             ? build.consumables.map(entry => typeof entry === 'string' ? entry : null)
             : []
     }));
+}
+
+/**
+ * The stored prepared list, whichever shape it is in.
+ *
+ * It was one array per class while each class drew its own grid. One pooled
+ * column replaced that, and rather than migrate the flag — a write on every read
+ * of every build, to fix something a concatenation fixes for free — the old
+ * shape is flattened here. A build written since is already an array and falls
+ * straight through.
+ */
+function flattenSpellList(stored) {
+    const list = Array.isArray(stored)
+        ? stored
+        : Object.values(stored ?? {}).filter(Array.isArray).flat();
+
+    return list.map(entry => typeof entry === 'string' ? entry : null);
 }
 
 export function getBuild(actor, buildId) {
@@ -343,7 +354,7 @@ export async function createBuild(actor, name = 'New Build') {
         mode: 'gear',
         slots: Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null])),
         images: Object.fromEntries(BUILD_IMAGE_KEYS.map(key => [key, null])),
-        spells: {},
+        spells: [],
         consumables: []
     };
     await saveBuilds(actor, [...getBuilds(actor), build]);
@@ -372,11 +383,9 @@ export async function duplicateBuild(actor, buildId) {
         mode: source.mode,
         slots: { ...source.slots },
         images: { ...source.images },
-        // Each class's list copied rather than shared, or editing one build's
-        // spells would edit the other's.
-        spells: Object.fromEntries(
-            Object.entries(source.spells ?? {}).map(([classId, list]) => [classId, [...list]])
-        ),
+        // Copied rather than shared, or editing one build's list would edit
+        // the other's.
+        spells: [...(source.spells ?? [])],
         consumables: [...(source.consumables ?? [])]
     };
 
@@ -603,34 +612,52 @@ export function getSpellSlots(actor) {
 const ORDINALS = { 1: 'st', 2: 'nd', 3: 'rd', 4: 'th', 5: 'th', 6: 'th', 7: 'th', 8: 'th', 9: 'th' };
 
 /**
- * One class's prepared list, sized to that class's limit.
+ * THE PACK COLUMN: twenty-six cells, two across, down the side of the doll.
  *
- * The stored array is padded or truncated to `max` on every read rather than
- * migrated: levelling up should widen the list without a write, and a class that
- * loses preparations should not keep the overflow alive invisibly. An id that no
- * longer resolves is reported `missing`, exactly as a gear slot does.
+ * The one number both halves of this window are built from, and its shape came
+ * from the layout rather than from taste. A cell is half a gear slot, so two of
+ * them stack into exactly one body row and the column keeps the doll's
+ * gridlines all the way down; thirteen rows is what that leaves beside a
+ * six-row body and the weapons under it. Hence 26, and not a rounder number.
+ *
+ * Casters fill it with prepared spells, everybody else with what they carry.
+ * Same column, same cells, same rhythm.
  */
-export const PREPARED_GRID_SIZE = 25;
+export const PACK_GRID_SIZE = 26;
 
-export function resolvePreparedSpells(actor, build, casterClass) {
-    const stored = Array.isArray(build?.spells?.[casterClass.id]) ? build.spells[casterClass.id] : [];
+/**
+ * How many spells this character may have prepared, across every class at once.
+ *
+ * Summed rather than listed per class, because preparation in 5e is a flag on
+ * the SPELL rather than a property of the class that granted it. A wizard/cleric
+ * prepares one list; two grids with two counts would have drawn a rule the game
+ * does not have, which is the same mistake as making Both Hands lock Main and
+ * Off.
+ */
+export function preparedLimit(actor) {
+    return getPreparingClasses(actor).reduce((total, cls) => total + cls.max, 0);
+}
 
-    // Always 25 cells, whatever the class prepares. Twenty-five is the most any
-    // class can ever reach, and a fixed 5x5 lines up with the doll's five
-    // columns above it — where a grid sized to the class was a different shape
-    // for every character and lined up with nothing.
-    //
-    // The cells past the limit are `beyond`, drawn dimmed and refusing drops:
-    // they are not empty slots, they are slots this character does not have yet,
-    // and showing them is how the grid says what levelling up will buy.
-    return Array.from({ length: PREPARED_GRID_SIZE }, (_, index) => {
+/**
+ * The prepared list, as twenty-six cells.
+ *
+ * The cells past the limit are `beyond`, drawn dimmed and refusing drops: they
+ * are not empty slots, they are slots this character does not have YET, and
+ * showing them is how the column says what levelling up will buy. An id that no
+ * longer resolves is reported `missing`, exactly as a gear slot is.
+ */
+export function resolvePreparedSpells(actor, build) {
+    const stored = Array.isArray(build?.spells) ? build.spells : [];
+    const limit = preparedLimit(actor);
+
+    return Array.from({ length: PACK_GRID_SIZE }, (_, index) => {
         const itemId = typeof stored[index] === 'string' ? stored[index] : null;
         const item = itemId ? actor?.items?.get(itemId) : null;
 
         return {
             index,
             itemId,
-            beyond: index >= casterClass.max,
+            beyond: index >= limit,
             filled: !!item,
             missing: !!itemId && !item,
             name: item?.name ?? null,
@@ -646,22 +673,22 @@ export function resolvePreparedSpells(actor, build, casterClass) {
     });
 }
 
-/** Put a spell in one prepared slot, or empty it with a null itemId. */
-export async function setBuildSpell(actor, buildId, classId, index, itemId) {
+/** Put a spell in one prepared cell, or empty it with a null itemId. */
+export async function setBuildSpell(actor, buildId, index, itemId) {
     const position = Number(index);
-    if (!classId || !Number.isInteger(position) || position < 0) return;
-    if (position >= PREPARED_GRID_SIZE) return;
+    if (!Number.isInteger(position) || position < 0) return;
+    if (position >= PACK_GRID_SIZE) return;
 
     await saveBuilds(actor, getBuilds(actor).map(build => {
         if (build.id !== buildId) return build;
 
-        const list = [...(build.spells?.[classId] ?? [])];
+        const list = [...(build.spells ?? [])];
         // Padded rather than assigned past the end, so the array never comes
         // back with holes that read as `undefined` instead of as empty.
         while (list.length <= position) list.push(null);
         list[position] = itemId ?? null;
 
-        return { ...build, spells: { ...build.spells, [classId]: list } };
+        return { ...build, spells: list };
     }));
 }
 
@@ -674,16 +701,15 @@ export async function setBuildSpell(actor, buildId, classId, index, itemId) {
  * plan that says which longsword to hold but not which potions to carry is only
  * describing half the decision.
  *
- * Ten cells, two rows of the doll's five columns. Fixed rather than grown as it
- * fills, for the same reason as the spell grid: a grid that changes shape is not
- * something you can learn the position of.
+ * The same twenty-six cells in the same column a caster's spells occupy —
+ * PACK_GRID_SIZE, deliberately not a number of its own. The column belongs to
+ * the layout, and two grids of different lengths in the same place would make
+ * the window a different shape for a fighter than for a wizard.
  */
-export const CONSUMABLE_GRID_SIZE = 10;
-
 export function resolveConsumables(actor, build) {
     const stored = Array.isArray(build?.consumables) ? build.consumables : [];
 
-    return Array.from({ length: CONSUMABLE_GRID_SIZE }, (_, index) => {
+    return Array.from({ length: PACK_GRID_SIZE }, (_, index) => {
         const itemId = typeof stored[index] === 'string' ? stored[index] : null;
         const item = itemId ? actor?.items?.get(itemId) : null;
 
@@ -710,7 +736,7 @@ export function resolveConsumables(actor, build) {
 export async function setBuildConsumable(actor, buildId, index, itemId) {
     const position = Number(index);
     if (!Number.isInteger(position) || position < 0) return;
-    if (position >= CONSUMABLE_GRID_SIZE) return;
+    if (position >= PACK_GRID_SIZE) return;
 
     await saveBuilds(actor, getBuilds(actor).map(build => {
         if (build.id !== buildId) return build;
@@ -926,8 +952,7 @@ export function buildSummary(actor, build) {
     // does not show still weighs something and still needs attuning.
     const slots = resolveSlots(actor, build, ALL_SLOT_DEFINITIONS);
 
-    const spellCount = Object.values(build?.spells ?? {})
-        .reduce((total, list) => total + list.filter(Boolean).length, 0);
+    const spellCount = (build?.spells ?? []).filter(Boolean).length;
 
     const consumableCount = (build?.consumables ?? []).filter(Boolean).length;
 
@@ -996,9 +1021,7 @@ export async function applyBuild(actor, build) {
     const costume = build.mode === 'costume';
 
     const gearIds = new Set(Object.values(build.slots ?? {}).filter(Boolean));
-    const spellIds = new Set(
-        Object.values(build.spells ?? {}).flat().filter(Boolean)
-    );
+    const spellIds = new Set((build.spells ?? []).filter(Boolean));
 
     const updates = [];
     let equipped = 0;

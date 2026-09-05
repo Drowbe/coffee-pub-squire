@@ -129,22 +129,25 @@ slot at each end, a **sheath** for the dagger or hand axe you draw without think
 ammunition. If you do prepare spells the emphasis flips: the big three become quick-cast slots for the
 spell or feature you reach for first, second and third, and your weapons move up into the smaller row. **The picture in the middle is the build's own.** Click it to choose one, right-click to reset. Until you set one it borrows the build's portrait, or your character's own face -- and once set it stays put no matter what outfit you put on, because it belongs to the build rather than the character. The two circles beside the head hold a **portrait** and a **token** image. Click either to pick a picture, right-click to reset it. Until you set one, each shows what your character already uses. Right-click a gear slot to empty it; right-click a build's tile to open, duplicate or delete it. Duplicating is the quick way to try a variant -- the same set with one thing swapped -- without building it again from nothing. The foot of the window totals what the gear weighs.
 
-If your character prepares spells, a grid of twenty-five squares sits above those big three. Drag
-spells into it the same way you drag gear, with a running count beside the class's name. **All
-twenty-five are always drawn**, and the ones past what your class can prepare are dimmed and will not
-take a spell -- they are there to show what levelling up will buy rather than to be filled in now.
-Multiclass casters get one grid per class, since each prepares its own number. Your spell slots are
-listed underneath for reference -- a prepared spell is not tied to a particular slot in this game, so
-they are something to read rather than something to fill in. Cantrips are not shown at all: they are
-always available and never prepared, so there is nothing to decide about them. Classes that know
-spells rather than preparing them get no grid.
+Down the right of the doll is a column of twenty-six small squares, two across. **What it holds
+depends on your character.** If you prepare spells it is your prepared list -- drag spells in the same
+way you drag gear, with a running count under it. All twenty-six squares are always drawn, and the
+ones past what you can prepare are dimmed and will not take a spell; they are there to show what
+levelling up will buy rather than to be filled in now. A multiclass caster gets one list, not one per
+class, because preparing a spell in this game is a fact about the spell rather than about the class
+that taught it. Your spell slots are listed under the column for reference -- a prepared spell is not
+tied to a particular slot, so they are something to read rather than something to fill in. Cantrips
+are not shown at all: they are always available and never prepared.
 
-If your character does *not* prepare spells, that space holds ten squares for what you **carry**:
-potions, scrolls, poisons, oils -- the things you choose before the day starts and spend during it.
-It takes anything you can pick up rather than only things marked consumable, because half the scrolls
-in the game are not, and this is your call rather than the module's. It is the one place in the window
-that shows a quantity, since with potions how many you have is the whole point. What you carry counts
-towards the build's weight.
+If you do *not* prepare spells, the same column holds what you **carry**: potions, scrolls, poisons,
+oils -- the things you choose before the day starts and spend during it. It takes anything you can
+pick up rather than only things marked consumable, because half the scrolls in the game are not, and
+this is your call rather than the module's. It is the one place in the window that shows a quantity,
+since with potions how many you have is the whole point. What you carry counts towards the build's
+weight.
+
+The column is sized off the doll rather than chosen: two of its squares stack into exactly one gear
+slot, so everything in the window lines up on the same grid.
 
 Magic items glow in their slot, coloured by rarity, and anything needing attunement carries a gem --
 lit if it is attuned, warm and hollow if it is not, which means it would do nothing if you wore this

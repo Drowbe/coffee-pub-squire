@@ -6,7 +6,7 @@ import {
     getBuilds, getBuild, createBuild, deleteBuild, duplicateBuild, applyBuild, buildSummary,
     renameBuild, setBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
-    resolveConsumables, setBuildConsumable,
+    preparedLimit, resolveConsumables, setBuildConsumable,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
     estimateArmorClass, previewSlotChange, setBuildMode, revertBuild, damageLabel,
     setActiveBuildId, getActiveBuildId, ensureDefaultCostume, moveBuild, resolveMainImage
@@ -78,13 +78,18 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
 
         // A caster needs the second column; everyone else would get 300px of
         // empty. Set at construction because options are frozen afterwards.
-        // One width for everybody. The prepared grid used to be a second column
-        // beside the doll, which made a caster's window 320px wider than a
-        // fighter's; it is a 5x5 inside the doll's own five columns now, so
-        // there is nothing left to widen for. Set once and never changed — a
-        // window that resizes under the cursor costs more than the space it
-        // recovers.
-        const width = 520 + RAIL_WIDTH;
+        // One width for EVERYBODY, and that is the point of it. The pack column
+        // beside the doll is there whether the character prepares spells or
+        // carries potions, so a wizard's window and a fighter's are the same
+        // size — where once the spell column was a caster-only extra that made
+        // their window 320px wider than anybody else's.
+        //
+        // 600 rather than 520 because the doll now shares the workspace with
+        // that column: six tracks instead of five, and holding the old figure
+        // would have paid for the column by shrinking every gear slot. Set once
+        // and never changed after — a window that resizes under the cursor costs
+        // more than the space it recovers.
+        const width = 600 + RAIL_WIDTH;
         // Before the window is even drawn. Applying a build will one day
         // overwrite the actor's portrait and token, and once it has, the
         // character's own artwork exists nowhere — so it is recorded at the
@@ -337,17 +342,21 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const attunement = attunementSummary(this.actor, [...bodySlots, ...weaponSlots]);
         const imageSlots = resolveImageSlots(this.actor, build);
 
-        // One section per class that prepares. `used` counts what this BUILD has
-        // slotted, not what the sheet currently has prepared — the window is
-        // asking whether the plan fits, not reporting today's state.
-        const casters = getPreparingClasses(this.actor).map(casterClass => {
-            const slots = resolvePreparedSpells(this.actor, build, casterClass);
-            return {
-                ...casterClass,
-                slots,
-                used: slots.filter(slot => slot.filled).length
-            };
-        });
+        // ONE pack column, whichever half of the window this character is. A
+        // caster fills it with prepared spells and everybody else with what they
+        // carry, so the two layouts are the same window with a different column
+        // rather than two windows.
+        //
+        // `used` counts what this BUILD has slotted, not what the sheet has
+        // prepared right now: the question is whether the plan fits, not what
+        // today looks like.
+        const pack = layout.caster
+            ? resolvePreparedSpells(this.actor, build)
+            : resolveConsumables(this.actor, build);
+
+        const packLabel = layout.caster
+            ? getPreparingClasses(this.actor).map(cls => cls.name).join(' / ')
+            : 'Carried';
 
         return {
             appId: this.id,
@@ -374,13 +383,13 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 weight: gearWeight(this.actor, build),
                 armorClass: estimateArmorClass(this.actor, build),
                 imageSlots,
-                casters,
-                isCaster: layout.caster,
-                // The martial's half of the same space. A fighter has no daily
-                // preparation, so where a caster gets their prepared grid they
-                // get the other thing chosen before the day starts and gone by
-                // the end of it.
-                consumables: layout.caster ? [] : resolveConsumables(this.actor, build),
+                pack,
+                packLabel,
+                packUsed: pack.filter(cell => cell.filled).length,
+                // A caster's limit is a real number they can exceed; a pack has
+                // no limit at all, so the caption says how many are in it rather
+                // than inventing a ceiling nobody has.
+                packMax: layout.caster ? preparedLimit(this.actor) : null,
                 // Cantrips are gone from this window. They are always available,
                 // never prepared and never chosen, so there was nothing anybody
                 // could do with the row — it was a strip of pictures that only
@@ -561,7 +570,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             });
         });
 
-        root.querySelectorAll('.squire-build-slot:not(.squire-build-image-slot), .squire-build-spell-slot, .squire-build-carry-slot').forEach(slot => {
+        root.querySelectorAll('.squire-build-slot:not(.squire-build-image-slot), .squire-build-pack-cell').forEach(slot => {
             // dragover must preventDefault or the browser refuses the drop. The
             // class is added here rather than on dragenter because dragenter
             // fires again for every child element crossed, and a slot with an
@@ -731,17 +740,22 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         showSquireToast(item.name, { subtitle: parts.join(' · '), icon: 'fa-solid fa-shield' });
     }
 
-    /** Empty whichever kind of slot this is — gear by key, spell by class and index, consumable by index. */
-    async _clearSlot(slot) {
-        const { slot: slotKey, spellClass, spellIndex, carryIndex } = slot.dataset;
+    /** Whether the pack column is holding spells rather than carried gear. */
+    get _packIsSpells() {
+        return getPreparingClasses(this.actor).length > 0;
+    }
 
-        if (spellClass !== undefined) {
-            const list = this.build?.spells?.[spellClass] ?? [];
-            if (!list[Number(spellIndex)]) return;
-            await setBuildSpell(this.actor, this.buildId, spellClass, spellIndex, null);
-        } else if (carryIndex !== undefined) {
-            if (!this.build?.consumables?.[Number(carryIndex)]) return;
-            await setBuildConsumable(this.actor, this.buildId, carryIndex, null);
+    /** Empty whichever kind of slot this is — gear by key, a pack cell by index. */
+    async _clearSlot(slot) {
+        const { slot: slotKey, packIndex } = slot.dataset;
+
+        if (packIndex !== undefined) {
+            const list = (this._packIsSpells ? this.build?.spells : this.build?.consumables) ?? [];
+            if (!list[Number(packIndex)]) return;
+
+            await (this._packIsSpells
+                ? setBuildSpell(this.actor, this.buildId, packIndex, null)
+                : setBuildConsumable(this.actor, this.buildId, packIndex, null));
         } else {
             if (!this.build?.slots?.[slotKey]) return;
             await setBuildSlot(this.actor, this.buildId, slotKey, null);
@@ -764,11 +778,10 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         event.stopPropagation();
         slot.classList.remove('is-drop-target');
 
-        const { slot: slotKey, spellClass, spellIndex, carryIndex } = slot.dataset;
-        const isSpellSlot = spellClass !== undefined;
-        const isCarrySlot = carryIndex !== undefined;
+        const { slot: slotKey, packIndex } = slot.dataset;
+        const isPackCell = packIndex !== undefined;
         if (!this.build) return;
-        if (!isSpellSlot && !isCarrySlot && !BUILD_SLOT_KEYS.includes(slotKey)) return;
+        if (!isPackCell && !BUILD_SLOT_KEYS.includes(slotKey)) return;
 
         let data;
         try {
@@ -789,23 +802,22 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             return;
         }
 
-        if (isCarrySlot) {
-            // The same liberal rule the grid's SLOT_RULES entry carries: any
-            // physical object. What belongs in a carry slot is the player's
-            // judgement, and narrowing it to `type === 'consumable'` would
-            // refuse half the scrolls in the game.
+        if (isPackCell && !this._packIsSpells) {
+            // The liberal rule from SLOT_RULES: any physical object. What counts
+            // as worth carrying is the player's judgement, and narrowing it to
+            // `type === 'consumable'` would refuse half the scrolls in the game.
             const refusal = refuseSlotDrop('consumable', item);
             if (refusal) {
                 ui.notifications.warn(refusal);
                 return;
             }
 
-            await setBuildConsumable(this.actor, this.buildId, carryIndex, item.id);
+            await setBuildConsumable(this.actor, this.buildId, packIndex, item.id);
             await this._refresh();
             return;
         }
 
-        if (!isSpellSlot) {
+        if (!isPackCell) {
             // Enforced only where dnd5e has a field to answer with — nothing
             // non-physical anywhere, plus rings, ammo, and hands. See
             // SLOT_RULES. A refusal always says what the slot wanted, because
@@ -856,7 +868,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             return;
         }
 
-        await setBuildSpell(this.actor, this.buildId, spellClass, spellIndex, item.id);
+        await setBuildSpell(this.actor, this.buildId, packIndex, item.id);
         await this._refresh();
     }
 }
