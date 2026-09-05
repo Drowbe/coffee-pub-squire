@@ -796,20 +796,28 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             });
         });
 
-        // Right-click a row for "no change", the same gesture that empties a
-        // gear slot or resets a picture. Bound to the ROW rather than the
-        // control, because Dimensions is two inputs saying one thing and
-        // clearing one of them would leave a half-set pair.
-        root.querySelectorAll('[data-token-row]').forEach(row => {
-            row.addEventListener('contextmenu', async (event) => {
+        // CLICK the warning mark to put a setting back to changing nothing.
+        //
+        // It was a right-click on the whole field, which nobody would guess at
+        // and nothing announced. The mark is already the thing that says "this
+        // will act on the character", so clicking it to stop that is the obvious
+        // reading — and it is a visible target rather than an invisible gesture
+        // over an area that also contains three live controls.
+        //
+        // Clears the whole FIELD, not the one input under the cursor: Dimensions
+        // is two boxes saying one thing, and clearing half of it would leave a
+        // width with no height.
+        root.querySelectorAll('.squire-build-token-change').forEach(mark => {
+            mark.addEventListener('click', async (event) => {
                 event.preventDefault();
                 event.stopPropagation();
 
-                const keys = row.dataset.tokenRow === 'dimensions'
+                const field = mark.closest('[data-token-row]');
+                const keys = field?.dataset.tokenRow === 'dimensions'
                     ? ['width', 'height']
-                    : [row.dataset.tokenRow];
+                    : [field?.dataset.tokenRow];
 
-                for (const key of keys) {
+                for (const key of keys.filter(Boolean)) {
                     await setBuildTokenSetting(this.actor, this.buildId, key, null);
                 }
                 await this._refresh();

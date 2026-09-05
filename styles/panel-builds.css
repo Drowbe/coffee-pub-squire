@@ -1418,15 +1418,23 @@
     align-items: flex-end;
 }
 
-/* Equal thirds. The three controls are different widths by nature — two boxes, a
-   dropdown, a slider — and letting them size themselves put the row's weight
-   wherever the longest fit-mode name happened to fall. */
+/* Each field as wide as the control in it, and the slider takes what is left.
+
+   They were equal thirds, which stretched two single-digit boxes and a dropdown
+   whose longest entry is "Full Height" across a third of the row each — both
+   then read as fields expecting a sentence, and the scale's caption ended up
+   floating over the middle of nothing. A slider is the one control here that is
+   genuinely better long, so it gets the remainder. */
 .squire-build-token-field {
     display: flex;
-    flex: 1 1 0;
+    flex: 0 0 auto;
     flex-direction: column;
     gap: 3px;
     min-width: 0;
+}
+
+.squire-build-token-field.is-scale {
+    flex: 1 1 auto;
 }
 
 .squire-build-token-label {
@@ -1442,11 +1450,22 @@
 /* Hidden until the control is set. This is the whole marking scheme: nothing is
    said about a control that changes nothing, and the one that will gets a mark
    the same amber as every other "this will act on the character" warning in the
-   window. */
+   window.
+
+   It is also the CONTROL for putting the setting back — click it and the field
+   goes back to changing nothing. That was a right-click on the row, which nobody
+   would guess at and nothing announced; a visible thing you click is the obvious
+   reading of a mark that says "this will act". */
 .squire-build-token-change {
     display: none;
+    cursor: pointer;
     color: #e0a52e;
     font-size: 0.9em;
+    transition: color 0.15s ease;
+}
+
+.squire-build-token-change:hover {
+    color: var(--blacksmith-color-brand-accent, #ff6400);
 }
 
 .squire-build-token-field.is-set .squire-build-token-change {
@@ -1464,10 +1483,11 @@
     min-width: 0;
 }
 
+/* One number each, so one number wide. `1` and `2` are the whole vocabulary
+   here; a Gargantuan token is `4`. */
 .squire-build-token-input {
-    flex: 1 1 0;
-    width: 100%;
-    min-width: 0;
+    flex: 0 0 auto;
+    width: 38px;
     height: 22px;
     padding: 0 3px;
     text-align: center;
@@ -1484,10 +1504,10 @@
     font-size: 0.7em;
 }
 
+/* Sized to its own longest entry rather than to a share of the row. */
 .squire-build-token-select {
-    flex: 1 1 0;
-    width: 100%;
-    min-width: 0;
+    flex: 0 0 auto;
+    width: auto;
     height: 22px;
     padding: 0 4px;
     border: 1px solid var(--blacksmith-tool-border);
@@ -1509,14 +1529,6 @@
     color: var(--blacksmith-tool-text);
     font-size: 0.7em;
     text-align: right;
-}
-
-.squire-build-token-help {
-    margin: 0;
-    color: var(--blacksmith-tool-text-muted);
-    font-size: 0.66em;
-    font-style: italic;
-    line-height: 1.4;
 }
 
 /* ---------------- THE PORTRAIT PLATES ----------------

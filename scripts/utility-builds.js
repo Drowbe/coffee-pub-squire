@@ -435,6 +435,9 @@ export function resolveTokenSettings(actor, build) {
                 // set or merely current, since the slider behaves the same way
                 // either way.
                 help: tokenFitModes().find(mode => mode.key === current)?.help ?? '',
+                // The readable name, so the warning can say what it will DO
+                // rather than only that it will do something.
+                label: tokenFitModes().find(mode => mode.key === current)?.label ?? current,
                 options: tokenFitModes().map(mode => ({ ...mode, selected: mode.key === current }))
             };
         })()

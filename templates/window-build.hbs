@@ -259,12 +259,24 @@
                   wore a "no change" tag, which put three warnings on the
                   commonest state and none on the one worth noticing. --}}
             <div class="squire-build-token-row">
-                <div class="squire-build-token-field{{#unless tokenSettings.width.isDefault}} is-set{{/unless}}{{#unless tokenSettings.height.isDefault}} is-set{{/unless}}"
+                {{!-- Each field is as wide as the control in it, not a third of
+                      the row: two single-digit boxes and a dropdown whose
+                      longest entry is "Full Height" were both stretched across a
+                      third and read as fields expecting a sentence. The scale
+                      takes what is left, since a slider is the one control here
+                      that is genuinely better long.
+
+                      The warning follows the label rather than leading it. In
+                      front, it pushed the words sideways the moment a control
+                      was set, so the three captions stopped lining up with each
+                      other exactly when one of them started mattering. --}}
+                <div class="squire-build-token-field is-dimensions{{#unless tokenSettings.width.isDefault}} is-set{{/unless}}{{#unless tokenSettings.height.isDefault}} is-set{{/unless}}"
                      data-token-row="dimensions"
-                     data-tooltip="How many grid spaces the token covers.<br><em>Right-click to leave it alone</em>">
+                     data-tooltip="How many grid spaces this token covers on the map.">
                     <span class="squire-build-token-label">
-                        <i class="fa-solid fa-triangle-exclamation squire-build-token-change"></i>
                         Dimensions
+                        <i class="fa-solid fa-triangle-exclamation squire-build-token-change"
+                           data-tooltip="Wearing this costume will resize the token to <strong>{{tokenSettings.width.value}} &times; {{tokenSettings.height.value}}</strong> grid space(s).<br><em>Click here to leave the size alone instead</em>"></i>
                     </span>
                     <div class="squire-build-token-control">
                         <input type="number" class="squire-build-token-input" data-token="width"
@@ -275,12 +287,13 @@
                     </div>
                 </div>
 
-                <div class="squire-build-token-field{{#unless tokenSettings.fit.isDefault}} is-set{{/unless}}"
+                <div class="squire-build-token-field is-fit{{#unless tokenSettings.fit.isDefault}} is-set{{/unless}}"
                      data-token-row="fit"
-                     data-tooltip="How the picture is fitted into the token's box.<br><em>Right-click to leave it alone</em>">
+                     data-tooltip="How the picture is fitted into the token's box.<br>{{tokenSettings.fit.help}}">
                     <span class="squire-build-token-label">
-                        <i class="fa-solid fa-triangle-exclamation squire-build-token-change"></i>
                         Image Fit
+                        <i class="fa-solid fa-triangle-exclamation squire-build-token-change"
+                           data-tooltip="Wearing this costume will set the image fit to <strong>{{tokenSettings.fit.label}}</strong>.<br><em>Click here to leave the fit alone instead</em>"></i>
                     </span>
                     <div class="squire-build-token-control">
                         <select class="squire-build-token-select" data-token="fit" aria-label="Image fit mode">
@@ -291,12 +304,13 @@
                     </div>
                 </div>
 
-                <div class="squire-build-token-field{{#unless tokenSettings.scale.isDefault}} is-set{{/unless}}"
+                <div class="squire-build-token-field is-scale{{#unless tokenSettings.scale.isDefault}} is-set{{/unless}}"
                      data-token-row="scale"
-                     data-tooltip="How large the picture is drawn inside that box.<br><em>Right-click to leave it alone</em>">
+                     data-tooltip="How large the picture is drawn inside that box.">
                     <span class="squire-build-token-label">
-                        <i class="fa-solid fa-triangle-exclamation squire-build-token-change"></i>
                         Scale
+                        <i class="fa-solid fa-triangle-exclamation squire-build-token-change"
+                           data-tooltip="Wearing this costume will set the token scale to <strong>{{tokenSettings.scale.value}}</strong>.<br><em>Click here to leave the scale alone instead</em>"></i>
                     </span>
                     <div class="squire-build-token-control">
                         <input type="range" class="squire-build-token-range" data-token="scale"
@@ -306,10 +320,6 @@
                 </div>
             </div>
 
-            {{!-- What the fit mode above does to the scale beside it. The slider
-                  means a different thing under each mode, and a slider whose
-                  meaning changes silently is worse than one with no label. --}}
-            <p class="squire-build-token-help">{{tokenSettings.fit.help}}</p>
         </div>
     </div>
     {{/if}}
