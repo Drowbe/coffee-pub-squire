@@ -122,16 +122,29 @@ Click the heart on a row. Click it again to remove it.
 The **shirt** in the Character Sheet strip opens the builder. Down its left is every build you have --
 click one to work on it, **New Build** to start another, right-click for duplicate and delete. The rest
 of the window is that build: a figure of your character surrounded by slots -- head, face, neck, back, chest, arms, hands, rings, hips, waist, feet,
-and the three weapon slots along the bottom. Drag items from the tray into the slots to say what this
-build is made of. **The picture in the middle is the build's own.** Click it to choose one, right-click to reset. Until you set one it borrows the build's portrait, or your character's own face -- and once set it stays put no matter what outfit you put on, because it belongs to the build rather than the character. The two circles beside the head hold a **portrait** and a **token** image. Click either to pick a picture, right-click to reset it. Until you set one, each shows what your character already uses. Right-click a gear slot to empty it; right-click a build's tile to open, duplicate or delete it. Duplicating is the quick way to try a variant -- the same set with one thing swapped -- without building it again from nothing. The foot of the window totals what the gear weighs.
+and the three big slots along the bottom. Drag items from the tray into the slots to say what this
+build is made of. **What those big three hold depends on your character.** If you do not prepare
+spells they are your main hand, both hands and off hand, and the row above them carries a quick-use
+slot at each end, a **sheath** for the dagger or hand axe you draw without thinking, and your
+ammunition. If you do prepare spells the emphasis flips: the big three become quick-cast slots for the
+spell or feature you reach for first, second and third, and your weapons move up into the smaller row. **The picture in the middle is the build's own.** Click it to choose one, right-click to reset. Until you set one it borrows the build's portrait, or your character's own face -- and once set it stays put no matter what outfit you put on, because it belongs to the build rather than the character. The two circles beside the head hold a **portrait** and a **token** image. Click either to pick a picture, right-click to reset it. Until you set one, each shows what your character already uses. Right-click a gear slot to empty it; right-click a build's tile to open, duplicate or delete it. Duplicating is the quick way to try a variant -- the same set with one thing swapped -- without building it again from nothing. The foot of the window totals what the gear weighs.
 
-If your character prepares spells, the build window is wider and carries a column for them: a set of
-slots sized to exactly how many that class can prepare, with a running count. Drag spells in the same
-way you drag gear. Multiclass casters get one block per class, since each prepares its own number.
-Your spell slots are listed at the top for reference -- a prepared spell is not tied to a particular
-slot in this game, so they are something to read rather than something to fill in. Cantrips are not
-shown at all: they are always available and never prepared, so there is nothing to decide about them.
-Classes that know spells rather than preparing them get no such column.
+If your character prepares spells, a grid of twenty-five squares sits above those big three. Drag
+spells into it the same way you drag gear, with a running count beside the class's name. **All
+twenty-five are always drawn**, and the ones past what your class can prepare are dimmed and will not
+take a spell -- they are there to show what levelling up will buy rather than to be filled in now.
+Multiclass casters get one grid per class, since each prepares its own number. Your spell slots are
+listed underneath for reference -- a prepared spell is not tied to a particular slot in this game, so
+they are something to read rather than something to fill in. Cantrips are not shown at all: they are
+always available and never prepared, so there is nothing to decide about them. Classes that know
+spells rather than preparing them get no grid.
+
+If your character does *not* prepare spells, that space holds ten squares for what you **carry**:
+potions, scrolls, poisons, oils -- the things you choose before the day starts and spend during it.
+It takes anything you can pick up rather than only things marked consumable, because half the scrolls
+in the game are not, and this is your call rather than the module's. It is the one place in the window
+that shows a quantity, since with potions how many you have is the whole point. What you carry counts
+towards the build's weight.
 
 Magic items glow in their slot, coloured by rarity, and anything needing attunement carries a gem --
 lit if it is attuned, warm and hollow if it is not, which means it would do nothing if you wore this

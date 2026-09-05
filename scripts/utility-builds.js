@@ -67,6 +67,16 @@ const SLOT_RULES = {
         test: item => item.type === 'consumable' && item.system?.type?.value === 'ammo',
         refusal: item => `${item.name} is not ammunition.`
     },
+    // Anything physical, deliberately — NOT `type === 'consumable'`. A scroll is
+    // often `loot`, a flask of acid is often a thrown `weapon`, and a bag of
+    // caltrops is whichever the compendium author felt like. Twice already a
+    // rule written from CONFIG rather than from content has refused something
+    // obviously correct; the grid's name is the guidance, and the player decides
+    // what counts as spendable.
+    consumable: {
+        test: item => PHYSICAL_ITEM_TYPES.includes(item.type),
+        refusal: item => `${item.name} is not something a character can carry.`
+    },
     weapon: {
         test: item => item.type === 'weapon',
         refusal: item => `${item.name} is not a weapon.`
@@ -115,7 +125,7 @@ const SLOT_RULES = {
  * strap), and `fa-backpack` for the back, which is at least a thing worn there
  * even when what goes in the slot is a cloak.
  */
-export const BUILD_BODY_SLOTS = [
+export const BUILD_CORE_SLOTS = [
     { key: 'head',  label: 'Head',  icon: 'fa-helmet-battle',     row: 1, column: 3 },
     { key: 'face',  label: 'Face',  icon: 'fa-mask',              row: 2, column: 1 },
     { key: 'neck',  label: 'Neck',  icon: 'fa-gem',               row: 2, column: 5 },
@@ -128,53 +138,45 @@ export const BUILD_BODY_SLOTS = [
     { key: 'waist', label: 'Waist', icon: 'fa-grip-lines',        row: 5, column: 3 },
     { key: 'hip2',  label: 'Hip',   icon: 'fa-sack',              row: 5, column: 4 },
     { key: 'ring2', label: 'Ring',  icon: 'fa-ring',              row: 5, column: 5 },
-    { key: 'feet',  label: 'Feet',  icon: 'fa-boot',              row: 6, column: 3 },
-    // Ammo rides the Feet row, at the outer columns, directly above the weapons
-    // it feeds. Two rather than one per weapon: a quiver is a thing you carry,
-    // not a thing each hand carries, and three would have implied that Both
-    // Hands needs its own supply separate from the bow in it.
-    // The Feet row, filled out: the quick-use pair at the rails, ammunition
-    // beside the boots, feet in the middle.
-    //
-    // Only the AMMO slots are round. They were all four for a while, on the
-    // grounds that none of them is worn — but Rage and Fire Bolt are things you
-    // USE, exactly like the weapons below, and a square says that. Ammunition is
-    // the odd one: it is not used, it is spent by the weapon that fires it, and
-    // it keeps the circle to say so.
-    //
-    // Two of them, not a list. This is the pair reached for without thinking —
-    // the equivalent of a main and an off hand — where the prepared column on
-    // the right is a caster's whole daily choice. Two is what fits on a handle
-    // beside three weapons, which is where these are going.
-    //
-    // They take a spell OR a feature. `spell1`/`spell2` are the stored keys and
-    // stay that way: renaming them would strip the slot on every build that has
-    // one, and a key is not a label.
-    { key: 'spell1', label: 'Primary',   icon: 'fa-bolt',      row: 6, column: 1, accepts: 'ability' },
-    { key: 'ammo1',  label: 'Ammo',      icon: 'fa-bow-arrow',           row: 6, column: 2, round: true, accepts: 'ammo' },
-    { key: 'ammo2',  label: 'Ammo',      icon: 'fa-bow-arrow',           row: 6, column: 4, round: true, accepts: 'ammo' },
-    { key: 'spell2', label: 'Secondary', icon: 'fa-bolt',      row: 6, column: 5, accepts: 'ability' }
+    { key: 'feet',  label: 'Feet',  icon: 'fa-boot',              row: 6, column: 3 }
 ];
 
-/**
- * The weapon slots, in their own row under the doll.
+/*
+ * THE LAST ROW AND THE BIG THREE, WHICH DEPEND ON WHO IS WEARING THE DOLL.
  *
- * Three equal thirds, which makes them the biggest slots in the window — and
- * they should be. Everything above is worn; these are what the character
- * actually swings, and the doll reading with weight at the bottom is most of
- * why it looks like a character rather than a spreadsheet.
+ * The doll used to end in three big weapon slots for everybody, which quietly
+ * said that what a character does is hit things. That is true of half a party.
+ * A wizard's three most important choices are spells, and their weapons are an
+ * afterthought — so the two zones SWAP.
  *
- * They were briefly on the body's five columns, to make them square. That is no
- * longer what squareness costs: `aspect-ratio` on the slot means a third of the
- * width is square at a third of the width, so they can be as big as they deserve.
+ *   MARTIAL   row 6:  Primary  Sheath  Feet  Ammo  Secondary
+ *             big:    Main Hand   Both Hands   Off Hand
  *
- * Both Hands does NOT lock Main and Off. A two-handed weapon occupying all three
- * is a rule the game system knows and this module does not — enforcing it here
- * would mean re-deriving "is this two-handed" from item properties and being
- * wrong about the exceptions, in a window whose whole job is to record what
- * somebody meant.
+ *   CASTER    row 6:  Main  Sheath  Feet  Ammo  Off Hand
+ *             big:    Primary   Secondary   Tertiary
+ *
+ * The keys are the same set in both; only their size and place change. A caster
+ * has no Both Hands slot and a martial has no Tertiary — five columns is five
+ * columns, and the slot each layout drops is the one that layout cares least
+ * about. Nothing is deleted from a build that changes category: the flag keeps
+ * every key, so multiclassing into a caster and back finds the weapons where
+ * they were left.
  */
-export const BUILD_WEAPON_SLOTS = [
+const ROW_SIX_MARTIAL = [
+    { key: 'spell1', label: 'Primary',   icon: 'fa-bolt',       row: 6, column: 1, accepts: 'ability' },
+    { key: 'sheath', label: 'Sheath',    icon: 'fa-dagger',     row: 6, column: 2, accepts: 'weapon' },
+    { key: 'ammo',   label: 'Ammo',      icon: 'fa-bow-arrow',  row: 6, column: 4, round: true, accepts: 'ammo' },
+    { key: 'spell2', label: 'Secondary', icon: 'fa-bolt',       row: 6, column: 5, accepts: 'ability' }
+];
+
+const ROW_SIX_CASTER = [
+    { key: 'mainhand', label: 'Main Hand', icon: 'fa-sword',          row: 6, column: 1 },
+    { key: 'sheath',   label: 'Sheath',    icon: 'fa-dagger',         row: 6, column: 2, accepts: 'weapon' },
+    { key: 'ammo',     label: 'Ammo',      icon: 'fa-bow-arrow',      row: 6, column: 4, round: true, accepts: 'ammo' },
+    { key: 'offhand',  label: 'Off Hand',  icon: 'fa-shield-halved',  row: 6, column: 5 }
+];
+
+const BIG_MARTIAL = [
     { key: 'mainhand',  label: 'Main Hand',  icon: 'fa-sword' },
     // An axe rather than crossed swords: `fa-swords` reads as dual-wielding,
     // which is the opposite of what this slot means.
@@ -182,21 +184,46 @@ export const BUILD_WEAPON_SLOTS = [
     { key: 'offhand',   label: 'Off Hand',   icon: 'fa-shield-halved' }
 ];
 
+const BIG_CASTER = [
+    { key: 'spell1', label: 'Primary',   icon: 'fa-bolt', accepts: 'ability' },
+    { key: 'spell2', label: 'Secondary', icon: 'fa-bolt', accepts: 'ability' },
+    { key: 'spell3', label: 'Tertiary',  icon: 'fa-bolt', accepts: 'ability' }
+];
+
+/**
+ * Which doll this character gets.
+ *
+ * Decided by whether anything about them PREPARES — the same test that decides
+ * whether they get a spell list at all, so the two halves of the window can
+ * never disagree about what kind of character this is.
+ */
+export function getDollLayout(actor) {
+    const caster = getPreparingClasses(actor).length > 0;
+    return {
+        caster,
+        body: [...BUILD_CORE_SLOTS, ...(caster ? ROW_SIX_CASTER : ROW_SIX_MARTIAL)],
+        big: caster ? BIG_CASTER : BIG_MARTIAL
+    };
+}
+
+/** Every slot either layout can show, for validation and for the stored shape. */
+const ALL_SLOT_DEFINITIONS = [
+    ...BUILD_CORE_SLOTS, ...ROW_SIX_MARTIAL, ...ROW_SIX_CASTER, ...BIG_MARTIAL, ...BIG_CASTER
+];
+
+/** Every slot key, for validating what arrives from a dataset or a stored flag. */
+export const BUILD_SLOT_KEYS = [...new Set(ALL_SLOT_DEFINITIONS.map(slot => slot.key))];
+
 /**
  * The two image slots, flanking the head.
  *
  * Not gear. They hold an image PATH rather than an item id, and they are the
- * first piece of a build that describes the character rather than what the
- * character is carrying: applying a build will eventually set the actor's
- * portrait and its token artwork from these. Until then they record the
- * intention, which is the same thing every other slot in this window does.
+ * part of a build that describes the character rather than what the character is
+ * carrying: applying a build sets the actor's portrait and its token artwork
+ * from these.
  *
- * Round, like the ammo slots, and for the same reason — a circle marks "not the
- * same kind of thing as its neighbours" without spending a word on it.
- *
- * `fallback` names where the current image comes from when the build has not set
- * one, so an untouched slot shows the character as they are rather than an empty
- * hole. Read at render time, never written.
+ * Round, like the ammunition slot, and for the same reason — a circle marks "not
+ * the same kind of thing as its neighbours" without spending a word on it.
  */
 export const BUILD_IMAGE_SLOTS = [
     { key: 'portrait', label: 'Portrait', icon: 'fa-image-portrait', row: 1, column: 2 },
@@ -217,12 +244,6 @@ export const BUILD_IMAGE_SLOTS = [
  * that build looks in this window, whatever the character happens to be wearing.
  */
 export const BUILD_IMAGE_KEYS = [...BUILD_IMAGE_SLOTS.map(slot => slot.key), 'main'];
-
-/** Every slot key, for validating what arrives from a dataset or a stored flag. */
-export const BUILD_SLOT_KEYS = [
-    ...BUILD_BODY_SLOTS.map(slot => slot.key),
-    ...BUILD_WEAPON_SLOTS.map(slot => slot.key)
-];
 
 /**
  * Rarity, normalised to a dnd5e key.
@@ -292,7 +313,13 @@ export function getBuilds(actor) {
                     classId,
                     list.map(entry => typeof entry === 'string' ? entry : null)
                 ])
-        )
+        ),
+        // The martial half of the same idea: a fixed strip of what this build
+        // carries to spend. Sized on read like the spell grid, so the constant
+        // below can change without a migration.
+        consumables: Array.isArray(build.consumables)
+            ? build.consumables.map(entry => typeof entry === 'string' ? entry : null)
+            : []
     }));
 }
 
@@ -316,7 +343,8 @@ export async function createBuild(actor, name = 'New Build') {
         mode: 'gear',
         slots: Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null])),
         images: Object.fromEntries(BUILD_IMAGE_KEYS.map(key => [key, null])),
-        spells: {}
+        spells: {},
+        consumables: []
     };
     await saveBuilds(actor, [...getBuilds(actor), build]);
     return build;
@@ -348,7 +376,8 @@ export async function duplicateBuild(actor, buildId) {
         // spells would edit the other's.
         spells: Object.fromEntries(
             Object.entries(source.spells ?? {}).map(([classId, list]) => [classId, [...list]])
-        )
+        ),
+        consumables: [...(source.consumables ?? [])]
     };
 
     await saveBuilds(actor, [...builds.slice(0, index + 1), copy, ...builds.slice(index + 1)]);
@@ -370,7 +399,12 @@ export function gearWeight(actor, build) {
     let total = 0;
     let counted = 0;
 
-    for (const itemId of Object.values(build?.slots ?? {})) {
+    // Slotted gear AND carried consumables: a build's potions are on the
+    // character's back the same as its armour is, and leaving them out would
+    // report a weight the plan does not actually come to.
+    const carried = [...Object.values(build?.slots ?? {}), ...(build?.consumables ?? [])];
+
+    for (const itemId of carried) {
         const item = itemId ? actor?.items?.get(itemId) : null;
         if (!item) continue;
 
@@ -576,16 +610,27 @@ const ORDINALS = { 1: 'st', 2: 'nd', 3: 'rd', 4: 'th', 5: 'th', 6: 'th', 7: 'th'
  * loses preparations should not keep the overflow alive invisibly. An id that no
  * longer resolves is reported `missing`, exactly as a gear slot does.
  */
+export const PREPARED_GRID_SIZE = 25;
+
 export function resolvePreparedSpells(actor, build, casterClass) {
     const stored = Array.isArray(build?.spells?.[casterClass.id]) ? build.spells[casterClass.id] : [];
 
-    return Array.from({ length: casterClass.max }, (_, index) => {
+    // Always 25 cells, whatever the class prepares. Twenty-five is the most any
+    // class can ever reach, and a fixed 5x5 lines up with the doll's five
+    // columns above it — where a grid sized to the class was a different shape
+    // for every character and lined up with nothing.
+    //
+    // The cells past the limit are `beyond`, drawn dimmed and refusing drops:
+    // they are not empty slots, they are slots this character does not have yet,
+    // and showing them is how the grid says what levelling up will buy.
+    return Array.from({ length: PREPARED_GRID_SIZE }, (_, index) => {
         const itemId = typeof stored[index] === 'string' ? stored[index] : null;
         const item = itemId ? actor?.items?.get(itemId) : null;
 
         return {
             index,
             itemId,
+            beyond: index >= casterClass.max,
             filled: !!item,
             missing: !!itemId && !item,
             name: item?.name ?? null,
@@ -605,6 +650,7 @@ export function resolvePreparedSpells(actor, build, casterClass) {
 export async function setBuildSpell(actor, buildId, classId, index, itemId) {
     const position = Number(index);
     if (!classId || !Number.isInteger(position) || position < 0) return;
+    if (position >= PREPARED_GRID_SIZE) return;
 
     await saveBuilds(actor, getBuilds(actor).map(build => {
         if (build.id !== buildId) return build;
@@ -620,6 +666,64 @@ export async function setBuildSpell(actor, buildId, classId, index, itemId) {
 }
 
 /**
+ * The martial's answer to the prepared grid: what this build carries to SPEND.
+ *
+ * A fighter has no daily preparation, so the space a caster spends on spells was
+ * empty on their doll. Potions, scrolls, poisons and oils are the closest thing
+ * they have to one — chosen before the day starts, gone by the end of it — and a
+ * plan that says which longsword to hold but not which potions to carry is only
+ * describing half the decision.
+ *
+ * Ten cells, two rows of the doll's five columns. Fixed rather than grown as it
+ * fills, for the same reason as the spell grid: a grid that changes shape is not
+ * something you can learn the position of.
+ */
+export const CONSUMABLE_GRID_SIZE = 10;
+
+export function resolveConsumables(actor, build) {
+    const stored = Array.isArray(build?.consumables) ? build.consumables : [];
+
+    return Array.from({ length: CONSUMABLE_GRID_SIZE }, (_, index) => {
+        const itemId = typeof stored[index] === 'string' ? stored[index] : null;
+        const item = itemId ? actor?.items?.get(itemId) : null;
+
+        // Quantity is SHOWN here although it is ignored everywhere else in this
+        // file. A slotted longsword means "the longsword"; a slotted potion
+        // means "the potions", and how many there are is the whole point of
+        // packing them.
+        const quantity = Number(item?.system?.quantity ?? 0);
+
+        return {
+            index,
+            itemId,
+            filled: !!item,
+            missing: !!itemId && !item,
+            name: item?.name ?? null,
+            img: item?.img ?? null,
+            rarity: item?.system?.rarity ?? null,
+            quantity: Number.isFinite(quantity) && quantity > 1 ? quantity : null
+        };
+    });
+}
+
+/** Put a consumable in one carry slot, or empty it with a null itemId. */
+export async function setBuildConsumable(actor, buildId, index, itemId) {
+    const position = Number(index);
+    if (!Number.isInteger(position) || position < 0) return;
+    if (position >= CONSUMABLE_GRID_SIZE) return;
+
+    await saveBuilds(actor, getBuilds(actor).map(build => {
+        if (build.id !== buildId) return build;
+
+        const list = [...(build.consumables ?? [])];
+        while (list.length <= position) list.push(null);
+        list[position] = itemId ?? null;
+
+        return { ...build, consumables: list };
+    }));
+}
+
+/**
  * Why this item cannot go in this slot, or null if it can.
  *
  * A slot with no `accepts` falls back to `gear`, so the universal
@@ -629,8 +733,9 @@ export async function setBuildSpell(actor, buildId, classId, index, itemId) {
 export function refuseSlotDrop(slotKey, item) {
     if (!item) return null;
 
-    const definition = [...BUILD_BODY_SLOTS, ...BUILD_WEAPON_SLOTS]
-        .find(slot => slot.key === slotKey);
+    // The first definition wins, and every duplicate key across the two layouts
+    // carries the same rule — a sheath is a sheath in either doll.
+    const definition = ALL_SLOT_DEFINITIONS.find(slot => slot.key === slotKey);
     if (!definition) return null;
 
     const rule = SLOT_RULES[definition.accepts ?? 'gear'];
@@ -816,12 +921,15 @@ export function estimateArmorClass(actor, build) {
  * One pass so the tray tile and the window cannot disagree about the same build.
  */
 export function buildSummary(actor, build) {
-    const bodySlots = resolveSlots(actor, build, BUILD_BODY_SLOTS);
-    const weaponSlots = resolveSlots(actor, build, BUILD_WEAPON_SLOTS);
-    const slots = [...bodySlots, ...weaponSlots];
+    // Every key, not just the ones this character's layout draws: the totals are
+    // about what the build HOLDS, and a weapon parked in a slot the current doll
+    // does not show still weighs something and still needs attuning.
+    const slots = resolveSlots(actor, build, ALL_SLOT_DEFINITIONS);
 
     const spellCount = Object.values(build?.spells ?? {})
         .reduce((total, list) => total + list.filter(Boolean).length, 0);
+
+    const consumableCount = (build?.consumables ?? []).filter(Boolean).length;
 
     return {
         armorClass: estimateArmorClass(actor, build),
@@ -830,7 +938,8 @@ export function buildSummary(actor, build) {
         gearCount: slots.filter(slot => slot.filled).length,
         gearMax: BUILD_SLOT_KEYS.length,
         missingCount: slots.filter(slot => slot.missing).length,
-        spellCount
+        spellCount,
+        consumableCount
     };
 }
 
@@ -1162,7 +1271,8 @@ export function getHandleBuildActions(actor) {
     const build = getBuild(actor, getActiveBuildId(actor));
     if (!build || build.mode === 'costume') return [];
 
-    return [...BUILD_WEAPON_SLOTS, ...BUILD_BODY_SLOTS.filter(slot => slot.accepts === 'ability')]
+    const layout = getDollLayout(actor);
+    return [...layout.big, ...layout.body.filter(slot => slot.accepts === 'ability' || slot.accepts === 'weapon')]
         .map(slot => actor?.items?.get(build.slots?.[slot.key]))
         .filter(Boolean)
         .map(item => ({ id: item.id, name: item.name, img: item.img }));
