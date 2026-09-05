@@ -165,9 +165,10 @@ something down it says what it was expecting.
 
 Under a costume's picture are three settings for how the token is **drawn**: its **dimensions** in grid
 spaces, the **image fit** mode, and the **scale**. A costume changes what your character looks like, and
-the picture is only half of that -- a giant in disguise is not the same size on the map. Each one can be
-left alone: an unset control shows what your token uses now and is marked *no change*, and right-clicking
-a row puts it back to that. Equipping a gear build never touches any of it. Your **Default Costume**
+the picture is only half of that -- a giant in disguise is not the same size on the map. They sit on one row, with a line beneath saying what the fit
+mode you picked does to the scale. Each can be left alone -- an untouched control shows what your token
+uses now, and right-clicking one puts it back to that. **Anything that will actually change something
+carries an amber warning triangle**, so a costume with no mark on it changes nothing but the picture. Equipping a gear build never touches any of it. Your **Default Costume**
 records your token's own size and framing when it is made, so it is the one that puts everything back.
 
 Beside a build's name is a **Build / Costume** switch. A **Costume** changes only your portrait and

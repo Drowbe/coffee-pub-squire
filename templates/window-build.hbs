@@ -94,7 +94,7 @@
         <div class="squire-build-rail-actions">
             <button type="button" class="squire-build-rail-new" data-mode="gear"
                     data-tooltip="A set of gear to equip">
-                <i class="fa-solid fa-plus"></i> Build
+                <i class="fa-solid fa-shirt"></i> Build
             </button>
             <button type="button" class="squire-build-rail-new" data-mode="costume"
                     data-tooltip="A portrait and token to wear. Changes how the character LOOKS and touches no gear.">
@@ -191,9 +191,10 @@
                     <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}">
                     {{/if}}
                     <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
-                    {{#if this.isDefault}}
-                    <span class="squire-build-image-unset">no change</span>
-                    {{/if}}
+                    {{#unless this.isDefault}}
+                    <i class="fa-solid fa-triangle-exclamation squire-build-image-change"
+                       data-tooltip="Wearing this sets the character's {{this.label}}"></i>
+                    {{/unless}}
                 </div>
                 <span class="squire-build-costume-label">{{this.label}}</span>
             </div>
@@ -207,9 +208,10 @@
                     <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}">
                     {{/if}}
                     <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
-                    {{#if this.isDefault}}
-                    <span class="squire-build-image-unset">no change</span>
-                    {{/if}}
+                    {{#unless this.isDefault}}
+                    <i class="fa-solid fa-triangle-exclamation squire-build-image-change"
+                       data-tooltip="Wearing this sets the character's {{this.label}}"></i>
+                    {{/unless}}
                 </div>
                 <span class="squire-build-costume-label">{{this.label}}</span>
             </div>
@@ -220,9 +222,6 @@
              data-image="main"
              data-tooltip="{{#if mainImage.isDefault}}This costume has no picture of its own<br><em>Click to choose one</em>{{else}}Costume image<br><em>Click to change, right-click to reset</em>{{/if}}">
             <img src="{{mainImage.path}}" alt="{{build.name}}">
-            {{#if mainImage.isDefault}}
-            <span class="squire-build-image-unset">no change</span>
-            {{/if}}
         </div>
 
         {{!-- How the token is DRAWN, under the picture it is drawn with.
@@ -237,42 +236,67 @@
               does. Right-click any of them to put it back to that. Applying a
               gear build never touches any of it. --}}
         <div class="squire-build-token-settings">
-            <div class="squire-build-token-row{{#if tokenSettings.width.isDefault}} is-default{{/if}}"
-                 data-token-row="dimensions"
-                 data-tooltip="How many grid spaces the token covers.<br><em>Right-click for no change</em>">
-                <span class="squire-build-token-label">Dimensions</span>
-                <div class="squire-build-token-control">
-                    <input type="number" class="squire-build-token-input" data-token="width"
-                           min="0.5" step="0.5" value="{{tokenSettings.width.value}}" aria-label="Token width">
-                    <span class="squire-build-token-by">&times;</span>
-                    <input type="number" class="squire-build-token-input" data-token="height"
-                           min="0.5" step="0.5" value="{{tokenSettings.height.value}}" aria-label="Token height">
+            {{!-- All three on one row: they are one decision. How big the token
+                  is, how the picture is fitted into that, and how large it is
+                  drawn inside the fit — you set them together or not at all, and
+                  stacked they read as three unrelated settings.
+
+                  A control is marked ONLY when it will change something. The
+                  earlier version marked the opposite — every untouched control
+                  wore a "no change" tag, which put three warnings on the
+                  commonest state and none on the one worth noticing. --}}
+            <div class="squire-build-token-row">
+                <div class="squire-build-token-field{{#unless tokenSettings.width.isDefault}} is-set{{/unless}}{{#unless tokenSettings.height.isDefault}} is-set{{/unless}}"
+                     data-token-row="dimensions"
+                     data-tooltip="How many grid spaces the token covers.<br><em>Right-click to leave it alone</em>">
+                    <span class="squire-build-token-label">
+                        <i class="fa-solid fa-triangle-exclamation squire-build-token-change"></i>
+                        Dimensions
+                    </span>
+                    <div class="squire-build-token-control">
+                        <input type="number" class="squire-build-token-input" data-token="width"
+                               min="0.5" step="0.5" value="{{tokenSettings.width.value}}" aria-label="Token width">
+                        <span class="squire-build-token-by">&times;</span>
+                        <input type="number" class="squire-build-token-input" data-token="height"
+                               min="0.5" step="0.5" value="{{tokenSettings.height.value}}" aria-label="Token height">
+                    </div>
+                </div>
+
+                <div class="squire-build-token-field{{#unless tokenSettings.fit.isDefault}} is-set{{/unless}}"
+                     data-token-row="fit"
+                     data-tooltip="How the picture is fitted into the token's box.<br><em>Right-click to leave it alone</em>">
+                    <span class="squire-build-token-label">
+                        <i class="fa-solid fa-triangle-exclamation squire-build-token-change"></i>
+                        Image Fit
+                    </span>
+                    <div class="squire-build-token-control">
+                        <select class="squire-build-token-select" data-token="fit" aria-label="Image fit mode">
+                            {{#each tokenSettings.fit.options}}
+                            <option value="{{this.key}}"{{#if this.selected}} selected{{/if}}>{{this.label}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="squire-build-token-field{{#unless tokenSettings.scale.isDefault}} is-set{{/unless}}"
+                     data-token-row="scale"
+                     data-tooltip="How large the picture is drawn inside that box.<br><em>Right-click to leave it alone</em>">
+                    <span class="squire-build-token-label">
+                        <i class="fa-solid fa-triangle-exclamation squire-build-token-change"></i>
+                        Scale
+                    </span>
+                    <div class="squire-build-token-control">
+                        <input type="range" class="squire-build-token-range" data-token="scale"
+                               min="0.2" max="3" step="0.05" value="{{tokenSettings.scale.value}}" aria-label="Token scale">
+                        <span class="squire-build-token-value">{{tokenSettings.scale.value}}</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="squire-build-token-row{{#if tokenSettings.fit.isDefault}} is-default{{/if}}"
-                 data-token-row="fit"
-                 data-tooltip="How the picture is fitted into the token's box.<br><em>Right-click for no change</em>">
-                <span class="squire-build-token-label">Image Fit</span>
-                <div class="squire-build-token-control">
-                    <select class="squire-build-token-select" data-token="fit" aria-label="Image fit mode">
-                        {{#each tokenSettings.fit.options}}
-                        <option value="{{this.key}}"{{#if this.selected}} selected{{/if}}>{{this.label}}</option>
-                        {{/each}}
-                    </select>
-                </div>
-            </div>
-
-            <div class="squire-build-token-row{{#if tokenSettings.scale.isDefault}} is-default{{/if}}"
-                 data-token-row="scale"
-                 data-tooltip="How large the picture is drawn inside that box.<br><em>Right-click for no change</em>">
-                <span class="squire-build-token-label">Scale</span>
-                <div class="squire-build-token-control">
-                    <input type="range" class="squire-build-token-range" data-token="scale"
-                           min="0.2" max="3" step="0.05" value="{{tokenSettings.scale.value}}" aria-label="Token scale">
-                    <span class="squire-build-token-value">{{tokenSettings.scale.value}}</span>
-                </div>
-            </div>
+            {{!-- What the fit mode above does to the scale beside it. The slider
+                  means a different thing under each mode, and a slider whose
+                  meaning changes silently is worse than one with no label. --}}
+            <p class="squire-build-token-help">{{tokenSettings.fit.help}}</p>
         </div>
     </div>
     {{/if}}
@@ -284,7 +308,7 @@
              data-rarity="{{this.rarity}}"
              style="grid-row: {{this.row}}; grid-column: {{this.column}};"
              data-slot="{{this.key}}"{{#if this.uuid}} data-item-uuid="{{this.uuid}}"{{/if}}
-             data-tooltip="{{#if this.filled}}{{this.name}}{{#if this.drifted}}<br><strong>Not equipped</strong>{{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}{{this.label}} — drag an item here{{/if}}">
+             data-tooltip="{{#if this.filled}}{{this.name}}{{#if this.drifted}}<br><strong>Not equipped</strong>{{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}<strong>{{this.label}}</strong>{{#if this.hint}}<br>{{this.hint}}{{/if}}<br><em>Drag one in from the Squire tray or your character sheet</em>{{/if}}">
             {{#if this.filled}}
             {{!-- Drawn like a favourites tile: the artwork IS the slot, with the
                   name over the bottom of it under a gradient. Same reasoning as
@@ -340,9 +364,10 @@
                   images it actually sets, so an unset portrait silently changes
                   nothing on apply. The dashed border said that already; this
                   says it in a word. --}}
-            {{#if this.isDefault}}
-            <span class="squire-build-image-unset">no change</span>
-            {{/if}}
+            {{#unless this.isDefault}}
+            <i class="fa-solid fa-triangle-exclamation squire-build-image-change"
+               data-tooltip="Wearing this sets the character's {{this.label}}"></i>
+            {{/unless}}
         </div>
         {{/each}}
 
@@ -360,9 +385,6 @@
              data-image="main"
              data-tooltip="{{#if mainImage.isDefault}}This build has no picture of its own<br><em>Click to choose one</em>{{else}}Build image<br><em>Click to change, right-click to reset</em>{{/if}}">
             <img src="{{mainImage.path}}" alt="{{actorName}}">
-            {{#if mainImage.isDefault}}
-            <span class="squire-build-image-unset">no change</span>
-            {{/if}}
 
             {{!-- The armour class, big, on the portrait's hem — where Baldur's
                   Gate puts it, and for the same reason: it is the number you are
@@ -422,7 +444,7 @@
         <div class="squire-build-slot{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}{{#if this.drifted}} is-drifted{{/if}}"
              data-rarity="{{this.rarity}}"
              data-slot="{{this.key}}"{{#if this.uuid}} data-item-uuid="{{this.uuid}}"{{/if}}
-             data-tooltip="{{#if this.filled}}{{this.name}}{{#if this.drifted}}<br><strong>Not equipped</strong>{{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}{{this.label}} — drag an item here{{/if}}">
+             data-tooltip="{{#if this.filled}}{{this.name}}{{#if this.drifted}}<br><strong>Not equipped</strong>{{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}<strong>{{this.label}}</strong>{{#if this.hint}}<br>{{this.hint}}{{/if}}<br><em>Drag one in from the Squire tray or your character sheet</em>{{/if}}">
             {{#if this.filled}}
             {{!-- Drawn like a favourites tile: the artwork IS the slot, with the
                   name over the bottom of it under a gradient. Same reasoning as
@@ -508,9 +530,17 @@
                   pool. --}}
             <div class="squire-build-slot-ranks">
                 {{#each spellSlots}}
+                {{!-- A cell with a caption, not a bare figure: nine numbers in a
+                      square told you nothing about which was which unless you
+                      already knew the reading order. The caption is abbreviated
+                      because the column is one gear slot wide and each of these
+                      is a third of it — twenty-six pixels, which "Level 1" does
+                      not fit in at a size anybody could read. The tooltip says
+                      it in full. --}}
                 <span class="squire-build-rank{{#unless this.has}} is-empty{{/unless}}"
-                      data-tooltip="{{#if this.has}}{{this.label}} level: {{this.value}} of {{this.max}} remaining{{else}}No {{this.label}} level slots yet{{/if}}">
-                    {{#if this.has}}{{this.max}}{{else}}--{{/if}}
+                      data-tooltip="{{#if this.has}}<strong>Level {{this.label}}</strong><br>{{this.max}} slot{{#unless (eq this.max 1)}}s{{/unless}}, {{this.value}} still unspent{{else}}<strong>Level {{this.label}}</strong><br>No slots at this level yet{{/if}}">
+                    <span class="squire-build-rank-label">Lvl {{this.level}}</span>
+                    <span class="squire-build-rank-value">{{#if this.has}}{{this.max}}{{else}}&ndash;&ndash;{{/if}}</span>
                 </span>
                 {{/each}}
             </div>
@@ -521,7 +551,7 @@
             {{#each pack}}
             <div class="squire-build-pack-cell{{#if this.beyond}} is-beyond{{/if}}{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}{{#if this.drifted}} is-drifted{{/if}}"
                  data-pack-index="{{this.index}}"{{#if this.itemId}} data-item-id="{{this.itemId}}"{{/if}}
-                 data-tooltip="{{#if this.beyond}}Not prepared at this level yet{{else if this.filled}}{{this.name}}{{#if this.drifted}}<br><strong>Not prepared</strong>{{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This is no longer on the sheet<br><em>Right-click to clear</em>{{else}}Drag something here{{/if}}">
+                 data-tooltip="{{#if this.beyond}}<strong>Not yet</strong><br>This character cannot prepare this many spells at their level. The cell is here so you can see what levelling up will buy.{{else if this.filled}}{{this.name}}{{#if this.drifted}}<br><strong>Not prepared</strong>{{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This is no longer on the sheet<br><em>Right-click to clear</em>{{else}}<strong>Prepared spell</strong><br>Any levelled spell this character knows. Cantrips are always available and are not prepared, so they do not go here.<br><em>Drag one in from the Squire tray or your character sheet</em>{{/if}}">
                 {{#if this.filled}}
                 <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
                 {{#if this.drifted}}

@@ -475,15 +475,15 @@
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 30px;
+    height: 30px;
     min-width: 0;
     margin: 0;
     padding: 0;
     line-height: 1;
     cursor: pointer;
-    border-radius: 3px;
-    font-size: 0.72em;
+    border-radius: 4px;
+    font-size: 0.92em;
     transition: all 0.15s ease;
 }
 
@@ -851,24 +851,46 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: repeat(3, minmax(0, 1fr));
-    gap: 3px;
+    gap: 2px;
     width: 100%;
     height: 100%;
 }
 
-/* One cell per rank, holding the count and nothing else. There is no room for a
-   label at this size and no need for one: the cell's POSITION is the rank, first
-   in the corner and ninth in the far one, which is a thing you learn once. The
-   tooltip carries the words. */
+/* One cell per rank: the level above, the number of slots below.
+
+   It was the bare figure, on the argument that a cell's POSITION is its rank —
+   first in the corner, ninth in the far one. True, and useless until you already
+   knew that, which is exactly the wrong way round for a readout. A caption costs
+   six pixels of the cell's height and removes the need to have learned
+   anything.
+
+   The caption is abbreviated to "Lvl". The column is one gear slot wide and each
+   cell is a third of it, twenty-six pixels; the full word does not fit there at
+   a size anybody could read. The tooltip says it in full. */
 .squire-build-rank {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 0;
     overflow: hidden;
-    border-radius: 2px;
+    padding: 1px 0;
+    border: 1px solid var(--blacksmith-tool-divider);
+    border-radius: 3px;
     background: var(--blacksmith-tool-surface-sunken);
+    line-height: 1.1;
+}
+
+.squire-build-rank-label {
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.5em;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.squire-build-rank-value {
     color: var(--blacksmith-tool-text);
-    font-size: 0.66em;
+    font-size: 0.72em;
     font-weight: 700;
 }
 
@@ -876,9 +898,13 @@
    blank — the same statement the dimmed cells below the grid make, and the
    reason all nine are drawn instead of only the ones they have. */
 .squire-build-rank.is-empty {
+    border-style: dashed;
+    opacity: 0.35;
+}
+
+.squire-build-rank.is-empty .squire-build-rank-value {
     color: var(--blacksmith-tool-text-muted);
     font-weight: 400;
-    opacity: 0.4;
 }
 
 /* ---------------- DRIFT ----------------
@@ -994,14 +1020,10 @@
     cursor: pointer;
 }
 
-.squire-build-portrait .squire-build-image-unset {
-    right: auto;
-    bottom: auto;
+.squire-build-portrait .squire-build-image-change {
     top: 5px;
+    right: auto;
     left: 5px;
-    padding: 1px 6px;
-    border-radius: 8px;
-    background: rgba(8, 6, 4, 0.8);
 }
 
 /* Its own hint glyph would be a third thing in an already busy corner, and the
@@ -1010,32 +1032,24 @@
     display: none;
 }
 
-/* "no change" over the bottom of the circle.
-   
-   It read "unset" first, which named the state rather than the consequence — and
-   the consequence is what anybody needs: a slot with no image of its own shows
-   the character's CURRENT artwork, so it looks chosen, and applying writes only
-   the images a build actually set. An unset portrait therefore leaves the
-   character's portrait exactly as it is, which is precisely the case where one
-   image changed on apply and the other did not. The dashed border was carrying
-   that alone and was far too quiet. */
-.squire-build-image-unset {
+/* The mark on an image slot that WILL change the character.
+
+   It was the opposite for a while: a "no change" caption on every untouched
+   slot. Both say the same fact, but marking the common state put a notice on all
+   three slots of a fresh costume and none on the one worth noticing. Mark what
+   acts — the same argument that settled the token controls beside it.
+
+   Amber, and the same triangle as every other "this will act on the character"
+   warning in this window, so one glyph means one thing throughout. */
+.squire-build-image-change {
     position: absolute;
-    right: 0;
-    bottom: 4px;
-    left: 0;
-    z-index: 2;
-    color: rgba(244, 231, 205, 0.85);
-    font-size: 0.52em;
-    letter-spacing: 0.05em;
-    text-align: center;
-    text-transform: uppercase;
+    top: 4px;
+    right: 6px;
+    z-index: 3;
+    color: #e0a52e;
+    font-size: 0.72em;
     text-shadow: 0 1px 3px rgba(8, 6, 4, 0.95);
     pointer-events: none;
-}
-
-.squire-build-image-slot.is-set .squire-build-image-unset {
-    display: none;
 }
 
 /* The glyph stays legible over the picture underneath it, which unlike an item
@@ -1327,19 +1341,21 @@
 
 /* ---------------- HOW THE TOKEN IS DRAWN ----------------
 
-   Three rows under the costume's picture: the size it stands in, how the picture
-   is fitted into that, and how large it is drawn inside it. Foundry's own token
-   config in the only three parts a costume has any business setting.
+   Three controls on ONE row under the costume's picture: the size the token
+   stands in, how the picture is fitted into that, and how large it is drawn
+   inside the fit. They are one decision — you set them together or not at all —
+   and stacked they read as three unrelated settings. A line under them says what
+   the chosen fit does to the scale beside it, because the slider means something
+   different under each mode.
 
-   Each row can be UNSET, and `is-default` is that state — the control shows the
-   token's current value, so without the marker a control that will change
-   nothing looks exactly like one that will. Right-click a row to get back to
-   it. */
+   A control is marked ONLY when it will change something. The first version
+   marked the opposite: every untouched control wore a "no change" tag, which put
+   three notices on the commonest state and none on the one worth noticing. */
 .squire-build-token-settings {
     display: flex;
     flex: 0 0 auto;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
     width: 100%;
     padding-top: 8px;
     border-top: 1px solid var(--blacksmith-tool-divider);
@@ -1347,45 +1363,62 @@
 
 .squire-build-token-row {
     display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+/* Equal thirds. The three controls are different widths by nature — two boxes, a
+   dropdown, a slider — and letting them size themselves put the row's weight
+   wherever the longest fit-mode name happened to fall. */
+.squire-build-token-field {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
 }
 
 .squire-build-token-label {
-    flex: 0 0 auto;
+    display: flex;
+    gap: 4px;
+    align-items: center;
     color: var(--blacksmith-tool-text-muted);
-    font-size: 0.68em;
+    font-size: 0.66em;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
 
-/* An unset row is showing the token's own value rather than a chosen one, and
-   applying it would change nothing. Faded rather than hidden, because the number
-   it is showing is still the answer to "what is it now". */
-.squire-build-token-row.is-default .squire-build-token-label::after {
-    content: ' · no change';
-    opacity: 0.7;
-    text-transform: none;
+/* Hidden until the control is set. This is the whole marking scheme: nothing is
+   said about a control that changes nothing, and the one that will gets a mark
+   the same amber as every other "this will act on the character" warning in the
+   window. */
+.squire-build-token-change {
+    display: none;
+    color: #e0a52e;
+    font-size: 0.9em;
 }
 
-.squire-build-token-row.is-default .squire-build-token-control {
-    opacity: 0.55;
+.squire-build-token-field.is-set .squire-build-token-change {
+    display: inline;
+}
+
+.squire-build-token-field.is-set .squire-build-token-label {
+    color: var(--blacksmith-tool-text);
 }
 
 .squire-build-token-control {
     display: flex;
-    flex: 1 1 auto;
-    gap: 6px;
+    gap: 5px;
     align-items: center;
-    justify-content: flex-end;
     min-width: 0;
 }
 
 .squire-build-token-input {
-    width: 52px;
+    flex: 1 1 0;
+    width: 100%;
+    min-width: 0;
     height: 22px;
-    padding: 0 4px;
+    padding: 0 3px;
     text-align: center;
     border: 1px solid var(--blacksmith-tool-border);
     border-radius: 3px;
@@ -1395,13 +1428,15 @@
 }
 
 .squire-build-token-by {
+    flex: 0 0 auto;
     color: var(--blacksmith-tool-text-muted);
     font-size: 0.7em;
 }
 
 .squire-build-token-select {
-    flex: 0 1 auto;
-    max-width: 140px;
+    flex: 1 1 0;
+    width: 100%;
+    min-width: 0;
     height: 22px;
     padding: 0 4px;
     border: 1px solid var(--blacksmith-tool-border);
@@ -1412,18 +1447,25 @@
 }
 
 .squire-build-token-range {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-width: 0;
-    max-width: 150px;
 }
 
-/* Fixed width, so the slider beside it does not jump every time the number
-   gains or loses a digit. */
+/* Fixed, so the slider beside it does not jump every time the number gains or
+   loses a digit. */
 .squire-build-token-value {
-    flex: 0 0 34px;
+    flex: 0 0 26px;
     color: var(--blacksmith-tool-text);
-    font-size: 0.72em;
+    font-size: 0.7em;
     text-align: right;
+}
+
+.squire-build-token-help {
+    margin: 0;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.66em;
+    font-style: italic;
+    line-height: 1.4;
 }
 
 /* ---------------- THE PORTRAIT PLATES ----------------

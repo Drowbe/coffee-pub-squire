@@ -115,21 +115,41 @@ const SLOT_RULES = {
  * strap), and `fa-backpack` for the back, which is at least a thing worn there
  * even when what goes in the slot is a cloak.
  */
+/*
+ * `hint` is what an EMPTY slot says it is for. Every one of these body slots
+ * accepts any physical object — see SLOT_RULES, and the note above about a pair
+ * of boots being indistinguishable from a hat in the data — so the hint is a
+ * suggestion rather than a rule, and is worded as one. That is honest and it is
+ * also the useful thing to say: nobody is stuck wondering why the slot refused
+ * their bandolier, they just want to know what people normally put there.
+ */
 export const BUILD_CORE_SLOTS = [
-    { key: 'head',  label: 'Head',  icon: 'fa-helmet-battle',     row: 1, column: 3 },
-    { key: 'face',  label: 'Face',  icon: 'fa-mask',              row: 2, column: 1 },
-    { key: 'neck',  label: 'Neck',  icon: 'fa-gem',               row: 2, column: 5 },
-    { key: 'back',  label: 'Back',  icon: 'fa-backpack',          row: 3, column: 1 },
-    { key: 'chest', label: 'Chest', icon: 'fa-vest',              row: 3, column: 5 },
-    { key: 'arms',  label: 'Arms',  icon: 'fa-shirt-long-sleeve', row: 4, column: 1 },
-    { key: 'hands', label: 'Hands', icon: 'fa-mitten',            row: 4, column: 5 },
-    { key: 'ring1', label: 'Ring',  icon: 'fa-ring',              row: 5, column: 1 },
-    { key: 'hip1',  label: 'Hip',   icon: 'fa-sack',              row: 5, column: 2 },
-    { key: 'waist', label: 'Waist', icon: 'fa-grip-lines',        row: 5, column: 3 },
-    { key: 'hip2',  label: 'Hip',   icon: 'fa-sack',              row: 5, column: 4 },
-    { key: 'ring2', label: 'Ring',  icon: 'fa-ring',              row: 5, column: 5 },
-    { key: 'feet',  label: 'Feet',  icon: 'fa-boot',              row: 6, column: 3 }
+    { key: 'head',  label: 'Head',  icon: 'fa-helmet-battle',     row: 1, column: 3, hint: 'Helms, hats, circlets, crowns.' },
+    { key: 'face',  label: 'Face',  icon: 'fa-mask',              row: 2, column: 1, hint: 'Masks, goggles, spectacles, veils.' },
+    { key: 'neck',  label: 'Neck',  icon: 'fa-gem',               row: 2, column: 5, hint: 'Amulets, necklaces, periapts, holy symbols.' },
+    { key: 'back',  label: 'Back',  icon: 'fa-backpack',          row: 3, column: 1, hint: 'Cloaks, capes, mantles, packs.' },
+    { key: 'chest', label: 'Chest', icon: 'fa-vest',              row: 3, column: 5, hint: 'Armour, robes, tunics — the thing your AC comes from.' },
+    { key: 'arms',  label: 'Arms',  icon: 'fa-shirt-long-sleeve', row: 4, column: 1, hint: 'Bracers, vambraces, sleeves.' },
+    { key: 'hands', label: 'Hands', icon: 'fa-mitten',            row: 4, column: 5, hint: 'Gloves, gauntlets, mitts.' },
+    { key: 'ring1', label: 'Ring',  icon: 'fa-ring',              row: 5, column: 1, hint: 'A ring. Most characters may attune to two at once.' },
+    { key: 'hip1',  label: 'Hip',   icon: 'fa-sack',              row: 5, column: 2, hint: 'Pouches, quivers, horns, sheathed oddments.' },
+    { key: 'waist', label: 'Waist', icon: 'fa-grip-lines',        row: 5, column: 3, hint: 'Belts, girdles, sashes.' },
+    { key: 'hip2',  label: 'Hip',   icon: 'fa-sack',              row: 5, column: 4, hint: 'Pouches, quivers, horns, sheathed oddments.' },
+    { key: 'ring2', label: 'Ring',  icon: 'fa-ring',              row: 5, column: 5, hint: 'A ring. Most characters may attune to two at once.' },
+    { key: 'feet',  label: 'Feet',  icon: 'fa-boot',              row: 6, column: 3, hint: 'Boots, shoes, sandals, greaves.' }
 ];
+
+/* The hints for the slots that DO enforce something. Worded as the rule they
+   actually apply, because here a refusal is possible and "why did nothing
+   happen" is a real question. */
+const HINTS = {
+    weapon: 'A dagger, hand axe or other sidearm — anything you would draw without thinking.',
+    ammo: 'Arrows, bolts, bullets, darts — whatever your weapons spend.',
+    ability: 'A spell or a feature you reach for first: Fire Bolt, Rage, Second Wind. Cantrips welcome.',
+    mainhand: 'The weapon you lead with. Any weapon, or a shield if that is how you fight.',
+    offhand: 'A shield, a second weapon, or a torch.',
+    bothhands: 'A two-handed weapon. Nothing stops you filling the other hands as well — this is a plan, not a rules engine.'
+};
 
 /*
  * THE LAST ROW AND THE BIG THREE, WHICH DEPEND ON WHO IS WEARING THE DOLL.
@@ -152,32 +172,37 @@ export const BUILD_CORE_SLOTS = [
  * every key, so multiclassing into a caster and back finds the weapons where
  * they were left.
  */
+/* The sheath is ROUND, like the ammunition beside it. It was square on the
+   argument that a sheathed weapon is wielded and ammunition is only spent — but
+   in the row as drawn the two of them are the pair that are not worn and not
+   held, and a matched pair of circles says that far better than a distinction
+   nobody was reading. */
 const ROW_SIX_MARTIAL = [
-    { key: 'spell1', label: 'Primary',   icon: 'fa-bolt',       row: 6, column: 1, accepts: 'ability' },
-    { key: 'sheath', label: 'Sheath',    icon: 'fa-dagger',     row: 6, column: 2, accepts: 'weapon' },
-    { key: 'ammo',   label: 'Ammo',      icon: 'fa-bow-arrow',  row: 6, column: 4, round: true, accepts: 'ammo' },
-    { key: 'spell2', label: 'Secondary', icon: 'fa-bolt',       row: 6, column: 5, accepts: 'ability' }
+    { key: 'spell1', label: 'Primary',   icon: 'fa-bolt',       row: 6, column: 1, accepts: 'ability', hint: HINTS.ability },
+    { key: 'sheath', label: 'Sheath',    icon: 'fa-dagger',     row: 6, column: 2, round: true, accepts: 'weapon', hint: HINTS.weapon },
+    { key: 'ammo',   label: 'Ammo',      icon: 'fa-bow-arrow',  row: 6, column: 4, round: true, accepts: 'ammo', hint: HINTS.ammo },
+    { key: 'spell2', label: 'Secondary', icon: 'fa-bolt',       row: 6, column: 5, accepts: 'ability', hint: HINTS.ability }
 ];
 
 const ROW_SIX_CASTER = [
-    { key: 'mainhand', label: 'Main Hand', icon: 'fa-sword',          row: 6, column: 1 },
-    { key: 'sheath',   label: 'Sheath',    icon: 'fa-dagger',         row: 6, column: 2, accepts: 'weapon' },
-    { key: 'ammo',     label: 'Ammo',      icon: 'fa-bow-arrow',      row: 6, column: 4, round: true, accepts: 'ammo' },
-    { key: 'offhand',  label: 'Off Hand',  icon: 'fa-shield-halved',  row: 6, column: 5 }
+    { key: 'mainhand', label: 'Main Hand', icon: 'fa-sword',          row: 6, column: 1, hint: HINTS.mainhand },
+    { key: 'sheath',   label: 'Sheath',    icon: 'fa-dagger',         row: 6, column: 2, round: true, accepts: 'weapon', hint: HINTS.weapon },
+    { key: 'ammo',     label: 'Ammo',      icon: 'fa-bow-arrow',      row: 6, column: 4, round: true, accepts: 'ammo', hint: HINTS.ammo },
+    { key: 'offhand',  label: 'Off Hand',  icon: 'fa-shield-halved',  row: 6, column: 5, hint: HINTS.offhand }
 ];
 
 const BIG_MARTIAL = [
-    { key: 'mainhand',  label: 'Main Hand',  icon: 'fa-sword' },
+    { key: 'mainhand',  label: 'Main Hand',  icon: 'fa-sword', hint: HINTS.mainhand },
     // An axe rather than crossed swords: `fa-swords` reads as dual-wielding,
     // which is the opposite of what this slot means.
-    { key: 'bothhands', label: 'Both Hands', icon: 'fa-axe-battle', accepts: 'weapon' },
-    { key: 'offhand',   label: 'Off Hand',   icon: 'fa-shield-halved' }
+    { key: 'bothhands', label: 'Both Hands', icon: 'fa-axe-battle', accepts: 'weapon', hint: HINTS.bothhands },
+    { key: 'offhand',   label: 'Off Hand',   icon: 'fa-shield-halved', hint: HINTS.offhand }
 ];
 
 const BIG_CASTER = [
-    { key: 'spell1', label: 'Primary',   icon: 'fa-bolt', accepts: 'ability' },
-    { key: 'spell2', label: 'Secondary', icon: 'fa-bolt', accepts: 'ability' },
-    { key: 'spell3', label: 'Tertiary',  icon: 'fa-bolt', accepts: 'ability' }
+    { key: 'spell1', label: 'Primary',   icon: 'fa-bolt', accepts: 'ability', hint: HINTS.ability },
+    { key: 'spell2', label: 'Secondary', icon: 'fa-bolt', accepts: 'ability', hint: HINTS.ability },
+    { key: 'spell3', label: 'Tertiary',  icon: 'fa-bolt', accepts: 'ability', hint: HINTS.ability }
 ];
 
 /**
@@ -331,16 +356,39 @@ export function getBuilds(actor) {
  * expose them separately from its own config sheet.
  */
 const TOKEN_FIT_LABELS = {
-    fill: 'Fill',
-    contain: 'Contain',
-    cover: 'Cover',
-    width: 'Full Width',
-    height: 'Full Height'
+    fill: {
+        label: 'Fill',
+        help: 'Scale adjusts the image after it fills the token dimensions.'
+    },
+    contain: {
+        label: 'Contain',
+        help: 'Scale adjusts the image after fitting it fully within the token.'
+    },
+    cover: {
+        label: 'Cover',
+        help: 'Scale adjusts the image after it expands to cover the token.'
+    },
+    width: {
+        label: 'Full Width',
+        help: 'Scale adjusts the image after fitting it to the token width.'
+    },
+    height: {
+        label: 'Full Height',
+        help: 'Scale adjusts the image after fitting it to the token height.'
+    }
 };
 
 export function tokenFitModes() {
     const keys = CONST?.TEXTURE_DATA_FIT_MODES ?? Object.keys(TOKEN_FIT_LABELS);
-    return keys.map(key => ({ key, label: TOKEN_FIT_LABELS[key] ?? key }));
+    return keys.map(key => ({
+        key,
+        label: TOKEN_FIT_LABELS[key]?.label ?? key,
+        // What the mode does TO THE SCALE below it, which is the only reason the
+        // two controls sit together: the slider means something different under
+        // each of them, and a slider whose meaning silently changes is worse
+        // than one with no label at all.
+        help: TOKEN_FIT_LABELS[key]?.help ?? ''
+    }));
 }
 
 /** Grid spaces and a ratio, or null for each one the costume does not set. */
@@ -379,13 +427,17 @@ export function resolveTokenSettings(actor, build) {
         width: field(stored.width, Number(proto?.width) || 1),
         height: field(stored.height, Number(proto?.height) || 1),
         scale: field(stored.scale, Number(proto?.texture?.scaleX) || 1),
-        fit: {
-            ...field(stored.fit, proto?.texture?.fit ?? 'contain'),
-            options: tokenFitModes().map(mode => ({
-                ...mode,
-                selected: mode.key === (stored.fit ?? proto?.texture?.fit ?? 'contain')
-            }))
-        }
+        fit: (() => {
+            const current = stored.fit ?? proto?.texture?.fit ?? 'contain';
+            return {
+                ...field(stored.fit, proto?.texture?.fit ?? 'contain'),
+                // The line under the controls, for whichever mode is showing —
+                // set or merely current, since the slider behaves the same way
+                // either way.
+                help: tokenFitModes().find(mode => mode.key === current)?.help ?? '',
+                options: tokenFitModes().map(mode => ({ ...mode, selected: mode.key === current }))
+            };
+        })()
     };
 }
 
