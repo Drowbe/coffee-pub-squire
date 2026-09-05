@@ -96,6 +96,14 @@
 
     <div class="squire-build-workspace">
     {{#if hasBuilds}}
+    {{!-- ONE grid for the whole workspace, in both modes and for both kinds of
+          character. The title is a row of it rather than a band above it, so it
+          stops where the doll stops and the rule beside it runs the full height
+          the way the rail's does. Its second row is pinned to the doll's height,
+          which is what makes a costume and a build the same size — and what
+          stops toggling between them resizing the window. --}}
+    <div class="squire-build-columns{{#if isCaster}} has-pack{{/if}}">
+
     {{!-- The name reads as a heading and edits as a field. It was a full-width
           boxed input, which made the least important thing in the window the
           biggest — it only needs to be reachable, not announced. --}}
@@ -120,6 +128,18 @@
             <span class="blacksmith-toggle-label{{#if (eq build.mode 'costume')}} is-active{{/if}}">Costume</span>
         </div>
     </div>
+
+    {{#if isCaster}}{{#unless isCostume}}
+    {{!-- The rule between the doll and the column, mirroring the one between the
+          rail and the workspace. Its own track rather than a border on either
+          side: a border would eat into whichever column carried it, and the
+          whole layout rests on those two being exact multiples of each other.
+          It spans both rows, so it runs past the title to the top.
+
+          Not in costume mode: there is no second column there to divide, and a
+          rule with nothing on the far side of it is just a line. --}}
+    <div class="squire-build-divider"></div>
+    {{/unless}}{{/if}}
 
     {{#if isCostume}}
     {{!-- A costume is three pictures and a name. The doll is not hidden here so
@@ -179,8 +199,8 @@
             {{/if}}
         </div>
     </div>
-    {{else}}
-    <div class="squire-build-columns{{#if isCaster}} has-pack{{/if}}">
+    {{/if}}
+    {{#unless isCostume}}
     <div class="squire-build-doll">
     <div class="squire-build-body">
         {{#each bodySlots}}
@@ -343,12 +363,6 @@
     </div>
 
     {{#if isCaster}}
-    {{!-- The rule between the doll and the column, mirroring the one between the
-          rail and the workspace. Its own track rather than a border on either
-          side: a border would eat into whichever column carried it, and the
-          whole layout rests on those two being exact multiples of each other. --}}
-    <div class="squire-build-divider"></div>
-
     {{!-- THE PREPARED COLUMN.
 
           Twenty-six cells, two across, down the side of the doll — and its size
@@ -379,16 +393,23 @@
               up with their doll. --}}
         <div class="squire-build-pack-head">
             {{#if spellSlots}}
-            {{!-- A readout, never a drop target: in 5e you prepare a LIST and
+            {{!-- The nine ranks as a three by three, reading left to right: 1st
+                  in the corner, 9th in the far one. Position IS the label at
+                  this size, and a grid of nine that never changes shape is
+                  something you can read without counting. A rank the character
+                  has not reached is dimmed and marked "--", the same statement
+                  the dimmed cells below make.
+
+                  A readout, never a drop target: in 5e you prepare a LIST and
                   cast any prepared spell with a slot of sufficient level, so
-                  there is nothing to put in these. They say whether the column
-                  below is castable. Once for the character, not once per class,
-                  because a multiclass caster casts from one pool. --}}
+                  there is nothing to put in these. Once for the character, not
+                  once per class, because a multiclass caster casts from one
+                  pool. --}}
             <div class="squire-build-slot-ranks">
                 {{#each spellSlots}}
-                <span class="squire-build-rank" data-tooltip="{{this.label}} level: {{this.value}} of {{this.max}} remaining">
-                    <span class="squire-build-rank-label">{{this.label}}</span>
-                    <span class="squire-build-rank-pips">{{this.max}}</span>
+                <span class="squire-build-rank{{#unless this.has}} is-empty{{/unless}}"
+                      data-tooltip="{{#if this.has}}{{this.label}} level: {{this.value}} of {{this.max}} remaining{{else}}No {{this.label}} level slots yet{{/if}}">
+                    {{#if this.has}}{{this.max}}{{else}}--{{/if}}
                 </span>
                 {{/each}}
             </div>
@@ -433,9 +454,9 @@
         </div>
     </div>
     {{/if}}
+    {{/unless}}
 
     </div>
-    {{/if}}
     {{else}}
     <div class="squire-empty-message squire-build-empty">
         <p>- No Builds Yet -</p>

@@ -139,8 +139,10 @@ spell in it. All twenty-six squares are always drawn, and the ones past what you
 dimmed and will not take a spell -- they are there to show what levelling up will buy. A multiclass
 caster gets one list rather than one per class, because preparing a spell in this game is a fact about
 the spell rather than about the class that taught it. Your spell slots sit in the square at the top of
-the column, for reference: a prepared spell is not tied to a particular slot, so they are something to
-read rather than something to fill in. Cantrips are not shown at all, being always available and never
+the column: a three by three of all nine ranks, first in the corner and ninth in the far one, with the
+ranks you cannot cast yet dimmed and marked `--`. They are for reference only -- a prepared spell is
+not tied to a particular slot in this game, so they are something to read rather than something to
+fill in. Cantrips are not shown at all, being always available and never
 prepared.
 
 A character who prepares nothing has no such column, and their window is narrower by exactly that

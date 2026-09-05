@@ -107,7 +107,30 @@
    to read as the surface the slots are laid ON rather than as a picture they are
    covering up — and at the point it is quiet enough to manage that, it is not
    contributing enough to justify the file. */
+/* EVERY size in this window comes from these four numbers.
+
+   They are fixed pixels rather than fractions of the window, and that is the
+   point of them. While the tracks were `1fr` the slot size depended on how wide
+   the window happened to be, so a caster's doll and a martial's came out
+   different sizes and their windows came out different heights — the two widths
+   would only have agreed at one exact window size, which is a coincidence rather
+   than a layout. Fixed, the doll is the same object in both, and a window a few
+   pixels wider than it needs to be shows a few pixels of space rather than
+   silently resizing everything inside it. */
 .squire-build {
+    --squire-track: 84px;
+    --squire-gap: 6px;
+    --squire-gutter: 21px;
+    /* Five tracks and the four gaps between them. The doll's own five columns
+       divide this back to exactly one track each. */
+    --squire-doll-width: calc(5 * var(--squire-track) + 4 * var(--squire-gap));
+    /* The big slots are thirds of that width, and square. */
+    --squire-weapon: calc((var(--squire-doll-width) - 2 * var(--squire-gap)) / 3);
+    /* Six body rows, the gaps between them, the gap before the weapons, and the
+       weapons. This is what the workspace's second row is pinned to, which is
+       what makes a costume exactly as tall as a build. */
+    --squire-doll-height: calc(6 * var(--squire-track) + 6 * var(--squire-gap) + var(--squire-weapon));
+
     display: flex;
     flex-direction: column;
     /* The same 10px gap and 8px padding `.squire-tool-content` gives the cleanup
@@ -160,20 +183,22 @@
    by accident. */
 .squire-build-body {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
-    /* The AC badge hangs below the portrait's edge, and the ring row is directly
-       under it. Without this the shield would sit on top of the waist slot. */
-    margin-bottom: 10px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--squire-gap);
 }
 
 /* Thirds, so the weapons are the biggest thing in the window. `aspect-ratio` on
    the slot keeps them square at any width, which is what frees them to be a
-   third rather than a fifth — squareness used to cost them their size. */
+   third rather than a fifth — squareness used to cost them their size.
+
+   The SAME gap as everything else. It was 8px here and 6px in the body, with a
+   further 10px of margin under the body and 14px between the two grids: four
+   different spacings in one column, and the break between the doll and the
+   weapons read as a mistake rather than a division. */
 .squire-build-weapons {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--squire-gap);
 }
 
 /* A slot is a favourites tile that happens to be droppable: `position: relative`
@@ -582,39 +607,54 @@
 
 /* ---------------- THE TWO COLUMNS ----------------
 
-   FIVE equal tracks for the doll, and for a caster a sixth for the prepared
-   column with a gutter between them. This is the whole trick of the layout.
+   FIVE tracks for the doll, and for a caster a sixth for the prepared column
+   with a gutter between them. This is the whole trick of the layout.
 
-   The arithmetic comes out exactly. The doll's width is five tracks plus the
-   four 6px gaps between them, so its own five columns divide back to one track
-   each — a gear slot IS a track. The prepared column is one more track, and two
-   of its cells plus their 6px gap come to exactly one track, so four of them fit
-   the neck box and two stack into one body row. The two grids share every
-   horizontal line down the window.
+   The arithmetic comes out exactly. A gear slot IS a track: the doll spans five
+   of them plus the four gaps between, so its own five columns divide back to one
+   track each. The prepared column is one more track, and two of its cells plus
+   their gap come to exactly one track — so four of them fit the neck box and two
+   stack into one body row, and the two grids share every horizontal line down
+   the window.
 
    The gutter is a track of its own rather than padding or a border on either
-   column, because either of those would eat into a column whose width the rest
-   of the layout is measured against. A martial has neither, and their window is
-   narrower by exactly this much. */
+   column, because either would eat into a column the rest of the layout is
+   measured against. A martial has neither, and their window is narrower by
+   exactly this much and nothing else.
+
+   TWO ROWS. The title is the first, so it stops where the doll stops and the
+   rule beside it runs past it to the top. The second is pinned to the doll's
+   height, which is what makes a costume exactly as tall as a build — toggling
+   between them cannot change the window, because there is nothing left for the
+   height to depend on. */
 .squire-build-columns {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(5, var(--squire-track));
+    grid-template-rows: auto minmax(var(--squire-doll-height), auto);
+    gap: var(--squire-gap);
     /* Top-aligned. The prepared column is a fixed number of square cells rather
        than a list that divides the height it is given, so stretching it would
        make the cells rectangles — the one thing they must not be. */
     align-items: start;
+    justify-content: start;
 }
 
 .squire-build-columns.has-pack {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) 21px minmax(0, 1fr);
+    grid-template-columns: repeat(5, var(--squire-track)) var(--squire-gutter) var(--squire-track);
+}
+
+.squire-build-title-row {
+    grid-column: 1 / 6;
+    grid-row: 1;
 }
 
 /* The rule in the gutter, mirroring the one between the rail and the workspace.
-   Stretched to the row rather than given a height: the row is as tall as the
-   doll, which is what the rule should be as tall as. */
+   Spans both rows so it runs past the title to the very top, the way the rail's
+   does — a rule that started below the title would divide two of the three
+   things in this window and look like an accident. */
 .squire-build-divider {
     grid-column: 6;
+    grid-row: 1 / 3;
     align-self: stretch;
     width: 1px;
     margin: 0 auto;
@@ -623,13 +663,13 @@
 
 .squire-build-doll {
     grid-column: 1 / 6;
+    grid-row: 2;
     display: flex;
     flex-direction: column;
-    /* The weapons row lost its separation when this wrapper arrived: the body
-       and the weapons became plain block siblings with nothing between them.
-       Wider than the 6px inside each grid, because this is the break between
-       what is worn and what is held. */
-    gap: 14px;
+    /* One gap, the same as the one inside both grids it separates. A wider one
+       here was meant to mark the break between what is worn and what is held,
+       and it only made the doll look like two things that had drifted apart. */
+    gap: var(--squire-gap);
     min-width: 0;
 }
 
@@ -649,6 +689,7 @@
    horizontal lines the whole way down. */
 .squire-build-pack {
     grid-column: 7;
+    grid-row: 2;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -790,31 +831,36 @@
    nobody could act on taking height from the list that matters. */
 .squire-build-slot-ranks {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 2px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 3px;
     width: 100%;
+    height: 100%;
 }
 
+/* One cell per rank, holding the count and nothing else. There is no room for a
+   label at this size and no need for one: the cell's POSITION is the rank, first
+   in the corner and ninth in the far one, which is a thing you learn once. The
+   tooltip carries the words. */
 .squire-build-rank {
     display: flex;
-    gap: 3px;
-    align-items: baseline;
+    align-items: center;
     justify-content: center;
     overflow: hidden;
-    padding: 1px 2px;
     border-radius: 2px;
     background: var(--blacksmith-tool-surface-sunken);
-    font-size: 0.58em;
-    white-space: nowrap;
-}
-
-.squire-build-rank-label {
-    color: var(--blacksmith-tool-text-muted);
-}
-
-.squire-build-rank-pips {
     color: var(--blacksmith-tool-text);
+    font-size: 0.66em;
     font-weight: 700;
+}
+
+/* A rank this character cannot cast yet. Dimmed and marked rather than left
+   blank — the same statement the dimmed cells below the grid make, and the
+   reason all nine are drawn instead of only the ones they have. */
+.squire-build-rank.is-empty {
+    color: var(--blacksmith-tool-text-muted);
+    font-weight: 400;
+    opacity: 0.4;
 }
 
 /* ---------------- RARITY ----------------
@@ -1127,7 +1173,18 @@
    under them. They were stacked around it — one above, one below — and that
    spent the column's height on three rows, so all three had to be small. On one
    row they cost a single row between them and the square takes the rest. */
+/* Stretched to fill the row the doll would have occupied. The row is pinned to
+   the doll's height, so a costume is exactly as tall as a build and the window
+   cannot change size when the switch is thrown. */
 .squire-build-costume {
+    /* Every track, including the prepared column's when there is one. A costume
+       has no second column, so rather than leave a caster's window with a strip
+       of nothing down one side, the pictures take the space. It is the one place
+       a caster's window and a martial's differ in this mode, and the alternative
+       — matching them exactly — costs 117px of dead air on every caster. */
+    grid-column: 1 / -1;
+    grid-row: 2;
+    align-self: stretch;
     display: flex;
     flex-direction: column;
     gap: 14px;

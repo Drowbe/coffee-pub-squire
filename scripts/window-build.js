@@ -20,6 +20,27 @@ import { BlacksmithToolWindowBaseV2 } from '/modules/coffee-pub-blacksmith/api/b
 /** How much width the build rail takes. Mirrored in panel-builds.css. */
 const RAIL_WIDTH = 180;
 
+/**
+ * The window's width, in the same numbers panel-builds.css lays the doll out
+ * with. They are duplicated here rather than read back from the stylesheet
+ * because the width has to be known before anything is rendered — and if they
+ * ever drift, the cost is a strip of empty space at one edge rather than a
+ * layout that has quietly resized itself, which is the whole reason the CSS
+ * stopped using fractions.
+ *
+ * TRACK is a gear slot. The doll is five of them plus the gaps between; the
+ * prepared column adds a gutter, two gaps and one more track, and that is the
+ * ONLY difference between a caster's window and anybody else's.
+ */
+const TRACK = 84;
+const GAP = 6;
+const GUTTER = 21;
+const DOLL_WIDTH = 5 * TRACK + 4 * GAP;
+const PACK_WIDTH = GAP + GUTTER + GAP + TRACK;
+/* The rail and its rule, the workspace's inset, the window's own padding, and
+   the frame Foundry draws around all of it. */
+const CHROME = RAIL_WIDTH + 10 + 1 + 10 + 16 + 22;
+
 
 /**
  * One actor's gear builds: a rail listing them, and a paper doll for the one
@@ -79,15 +100,17 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // empty. Set at construction because options are frozen afterwards.
         // Two widths, and only two: a caster's window carries the prepared
         // column and a martial's does not, so a martial's is narrower by exactly
-        // that column and its gutter. This is not the resizing that was taken
-        // out before — that was one window changing size under the cursor when a
-        // switch was thrown. A fighter's window is simply a different window
-        // from a wizard's, and neither ever becomes the other.
+        // that column. This is not the resizing that was taken out before — that
+        // was one window changing size under the cursor when a switch was
+        // thrown. A fighter's window is simply a different window from a
+        // wizard's, and neither ever becomes the other.
         //
-        // The doll is the same size in both. Sharing one width would have paid
-        // for the column by shrinking every gear slot on the characters that do
-        // not have one.
-        const width = (getDollLayout(actor).caster ? 600 : 500) + RAIL_WIDTH;
+        // Height is deliberately still `auto`, because the CONTENT is now a
+        // fixed height: the workspace's second row is pinned to the doll, so a
+        // costume is exactly as tall as a build and both are the same for every
+        // character. Auto over a fixed figure means this window cannot be the
+        // one that clips itself if the theme's chrome changes.
+        const width = CHROME + DOLL_WIDTH + (getDollLayout(actor).caster ? PACK_WIDTH : 0);
         // Before the window is even drawn. Applying a build will one day
         // overwrite the actor's portrait and token, and once it has, the
         // character's own artwork exists nowhere — so it is recorded at the

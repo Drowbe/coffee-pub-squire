@@ -566,24 +566,39 @@ export function getPreparingClasses(actor) {
 }
 
 /**
- * The character's spell slots, as a readout.
+ * The character's spell slots, as a readout: ALL NINE RANKS, always.
  *
- * Every entry `system.spells` holds with a maximum above zero, which covers the
- * nine leveled ranks and a warlock's pact slots without naming either. Purely
- * informational: it is what tells you whether a prepared list is castable, and
- * it is not something a build can change.
+ * Nine and not "the ones they have", because the grid it fills is a fixed three
+ * by three — the same argument as the prepared column beside it. A rank they
+ * cannot cast yet is drawn dimmed rather than dropped, so the shape stays
+ * learnable and the empty corner says what levelling up will buy. Filtering to
+ * `max > 0` made the block a different shape at every level and told you nothing
+ * about the ranks it left out.
+ *
+ * Purely informational. A prepared spell is not tied to a particular slot in
+ * this game, so there is nothing here for a build to change.
+ *
+ * A warlock's pact slots are deliberately not among them. They are not one of
+ * the nine ranks, a warlock does not prepare, and the one character who would
+ * see both — a warlock/cleric — reads their pact magic off the sheet where it
+ * has always lived.
  */
 export function getSpellSlots(actor) {
-    return Object.entries(actor?.system?.spells ?? {})
-        .filter(([, slot]) => Number(slot?.max ?? 0) > 0)
-        .map(([key, slot]) => ({
-            key,
-            label: key === 'pact'
-                ? 'Pact'
-                : `${key.replace('spell', '')}${ORDINALS[key.replace('spell', '')] ?? ''}`,
-            value: Number(slot.value ?? 0),
-            max: Number(slot.max ?? 0)
-        }));
+    const spells = actor?.system?.spells ?? {};
+
+    return Array.from({ length: 9 }, (_, index) => {
+        const level = index + 1;
+        const slot = spells[`spell${level}`];
+        const max = Number(slot?.max ?? 0);
+
+        return {
+            level,
+            label: `${level}${ORDINALS[level] ?? 'th'}`,
+            value: Number(slot?.value ?? 0),
+            max,
+            has: max > 0
+        };
+    });
 }
 
 /** Suffixes for the slot readout's rank labels. */
