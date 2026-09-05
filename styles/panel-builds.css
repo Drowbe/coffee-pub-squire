@@ -366,6 +366,15 @@
 .squire-build-rail-entry {
     display: flex;
     flex-direction: column;
+    /* Square, like everything else in this window. A tile is a picture with a
+       name on it, and a picture cropped to a short wide band shows the middle of
+       whatever was chosen rather than the whole of it — the portraits people
+       pick for a build are portraits, so the tall half is the half that
+       matters. The three parts space themselves out instead of stacking at the
+       top: name at the head, the marks in the middle, the figures on the hem,
+       which is the same arrangement the doll's portrait uses. */
+    aspect-ratio: 1;
+    justify-content: space-between;
     gap: 5px;
     padding: 7px 8px;
     cursor: pointer;
@@ -436,7 +445,9 @@
 
 .squire-build-rail-preview {
     display: flex;
-    gap: 2px;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
 }
 
@@ -445,8 +456,10 @@
    they are on the doll and in the costume view. */
 .squire-build-rail-preview img {
     flex: 0 0 auto;
-    width: 26px;
-    height: 26px;
+    /* Bigger now the tile is square and they sit in the middle of it rather
+       than in a band. */
+    width: 38px;
+    height: 38px;
     object-fit: cover;
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 50%;
