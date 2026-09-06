@@ -1,13 +1,20 @@
 import { MODULE } from './const.js';
 import { getBlacksmith, showSquireToast } from './helpers.js';
-import { CompendiumSearchUtility } from './utility-compendium-search.js';
+import { ItemAcquisition } from './utility-item-acquisition.js';
 import {
     compendiumRequest, compendiumApproved, compendiumDenied, compendiumFailed,
     retireCard, name, sentence
 } from './manager-cards.js';
 
 /**
- * The ask-the-GM rung of compendium access.
+ * The ask-the-GM rung of acquisition access.
+ *
+ * Reached for any content entering a sheet from outside a character, not only
+ * compendium documents: a world item or an Item Directory entry dropped on the
+ * tray by a player on the `request` rung arrives here too. The file keeps its
+ * compendium name, and the card actions keep their `compendium-*` ids, because
+ * those ids are baked into chat messages already in players' logs — renaming
+ * them would strand every in-flight request card at the next reload.
  *
  * A player on the `request` level clicks add and nothing happens to their sheet:
  * a card goes to the GM, who approves or denies it, and the approval performs
@@ -163,7 +170,7 @@ export class CompendiumRequestUtils {
                 return;
             }
 
-            const created = await CompendiumSearchUtility.addToActor(actor, data.itemUuid, 1);
+            const created = await ItemAcquisition.addToActor(actor, data.itemUuid, 1);
             if (!created) {
                 verdict = failed;
                 await compendiumFailed({

@@ -1,22 +1,19 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getPanelItemName, setRowFilter, isRowVisible} from './helpers.js';
-import { CompendiumSearchUtility } from './utility-compendium-search.js';
-import { trackModuleTimeout } from './timer-utils.js';
+import { getNativeElement, renderTemplate, getPanelItemName, openCompendiumSearchWindow, setRowFilter, isRowVisible} from './helpers.js';
+import { ItemAcquisition } from './utility-item-acquisition.js';
 
 /**
  * What the tray column can be showing.
  *
  * 'sheet'     the section tabs and the four item panels
  * 'favorites' the favourites list on its own, no search and no filters
- * 'search'    compendium quick-add
  *
- * Three places, one at a time. This was a `_compendiumMode` boolean until
- * favourites became a place of its own, and a boolean cannot answer "which of
- * three" -- the toggles in the title bar are a three-way switch now, so the
- * state behind them has to be too.
+ * Two places, one at a time. There was a third, 'search', holding the tray's own
+ * compendium quick-add; the magnifying glass opens Blacksmith's palette now and
+ * is an action rather than a mode. See the note on `control-compendium` below.
  */
-const MODES = ['sheet', 'favorites', 'search'];
+const MODES = ['sheet', 'favorites'];
 
 /** Every stacked panel, in tray order. */
 const PANEL_TYPES = ['favorites', 'weapons', 'spells', 'features', 'inventory'];
@@ -74,29 +71,6 @@ const TAB_TOGGLES = {
     inventory: ['equipped']
 };
 
-/**
- * Which tab owns an item, keyed by `type`.
- *
- * Only for routing now -- revealAddedItem uses it to open the tab that will
- * hold a newly added item. It used to filter rows within a tab as well, which
- * mattered while Favorites sat above every tab and could hold anything. With
- * favourites in their own view every sheet panel is homogeneous (the inventory
- * panel takes equipment/consumable/tool/loot/containers, all of which are this
- * tab; features takes only feats), so that predicate could never fire and is
- * gone rather than left in as a comforting no-op.
- */
-const TAB_FOR_ITEM_TYPE = {
-    weapon: 'weapons',
-    spell: 'spells',
-    feat: 'features',
-    equipment: 'inventory',
-    consumable: 'inventory',
-    tool: 'inventory',
-    loot: 'inventory',
-    backpack: 'inventory',
-    currency: 'inventory'
-};
-
 /** Action-economy buckets, in bar order. Passive is what makes the set complete. */
 const ACTION_BUCKETS = ['action', 'bonus', 'reaction', 'special', 'passive'];
 
@@ -133,9 +107,7 @@ export class ControlPanel {
         // tray opens showing everything.
         this._onlyEquipped = false;
         this._onlyPrepared = false;
-        // Which of MODES the column is showing. Seeded from the remembered view
-        // -- see `controlMode` in settings.js for why 'search' is never one of
-        // the values that can come back.
+        // Which of MODES the column is showing, seeded from the remembered view.
         this._mode = ControlPanel._rememberedMode();
     }
 
@@ -163,17 +135,13 @@ export class ControlPanel {
         }
         if (!this.element) return;
 
-        // Browsing and adding are separate rungs, so the mode toggle and the
-        // add-flow option are gated separately: "clear the search and stay
-        // here after adding" is meaningless to a player who can only look.
-        const canAdd = CompendiumSearchUtility.canAdd(this.actor);
         const templateData = {
-            canUseCompendiums: CompendiumSearchUtility.canBrowse(this.actor),
-            canAddFromCompendiums: canAdd,
-            compendiumToggleTitle: canAdd
-                ? 'Search Compendiums to Add Items'
-                : 'Search Compendiums',
-            clearOnAdd: game.settings.get(MODULE.ID, 'compendiumClearOnAdd'),
+            // The palette is Blacksmith's and a player can reach it from their
+            // menubar regardless, so this is a convenience link rather than a
+            // gate. It is still hidden from a player who may not add: an
+            // affordance Squire offers should not lead somewhere Squire's own
+            // rules would refuse.
+            canAddFromCompendiums: ItemAcquisition.canAdd(this.actor),
             tabs: PANEL_TABS.map(tab => ({
                 key: tab,
                 label: TAB_LABELS[tab],
@@ -203,82 +171,6 @@ export class ControlPanel {
         
         this._activateListeners(this.element);
         this._updateVisibility();
-        this._bindSearchPanelClose();
-    }
-
-    /**
-     * Point the results panel's × at this control panel.
-     *
-     * Bound on every render, not just on entering the mode: PanelManager builds
-     * fresh panel instances when the tray rebuilds, and a callback captured on a
-     * previous instance would leave the × doing nothing.
-     */
-    _bindSearchPanelClose() {
-        const searchPanel = PanelManager.instance?.compendiumSearchPanel;
-        if (!searchPanel) return;
-        searchPanel.onRequestClose = () => this.setMode('sheet');
-        // The results panel doesn't own the search box, so it asks for the reset
-        // rather than reaching across to clear it.
-        searchPanel.onRequestClearSearch = () => this.clearSearch();
-        searchPanel.onRequestRevealItem = (item) => this.revealAddedItem(item);
-    }
-
-    /**
-     * Leave search mode and scroll the freshly added item into view.
-     *
-     * The alternative to staying in search: you added the one thing you came
-     * for, so the useful next view is the sheet with that item in front of you.
-     */
-    async revealAddedItem(item) {
-        if (!item) return;
-        await this.setMode('sheet');
-
-        // Switch to the tab that holds it first. Adding a longbow while the
-        // Spells tab is open used to land you on a sheet with no longbow on it,
-        // and _waitForItemRow would poll a hidden panel and give up in silence.
-        const owner = TAB_FOR_ITEM_TYPE[item.type];
-        if (owner && this.activeTab !== 'all') await this.setActiveTab(owner);
-
-        // The item arrives via createItem hooks that re-render whichever panel
-        // holds it, and those run independently of this call — so poll briefly
-        // for the row rather than guessing which render wins the race.
-        const row = await this._waitForItemRow(item.id);
-        if (!row) return;
-
-        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Items already get a NEW badge from the createItem hook; this is just a
-        // momentary "here" so the eye lands in the right place after the scroll.
-        row.classList.add('just-added');
-        trackModuleTimeout(() => row.classList.remove('just-added'), 2500);
-    }
-
-    /**
-     * Poll for an item's row, bounded so a hidden or unrendered panel gives up
-     * quietly rather than looping. Returns null if it never appears — which is
-     * the normal outcome when the panel holding it is toggled off.
-     */
-    async _waitForItemRow(itemId, attempts = 12) {
-        for (let i = 0; i < attempts; i++) {
-            const row = this.element?.querySelector(
-                `.panel-containers.stacked .panel-item[data-item-id="${itemId}"]`
-            );
-            // offsetParent is null for anything inside a display:none panel.
-            if (row?.offsetParent) return row;
-            await new Promise(resolve => requestAnimationFrame(resolve));
-        }
-        return null;
-    }
-
-    /** Empty the search box and reset whatever it was driving. */
-    clearSearch() {
-        const searchInput = this.element
-            ?.querySelector('[data-panel="control"]')
-            ?.querySelector('.global-search');
-        if (searchInput) searchInput.value = '';
-        this._handleSearch('');
-        // The point of clearing after an add is to type the next lookup, so put
-        // the caret back rather than making the user click the box again.
-        searchInput?.focus();
     }
 
     /**
@@ -319,103 +211,55 @@ export class ControlPanel {
      *
      * Static because the constructor needs it before there is an instance, and
      * validating here rather than trusting the stored string means a value
-     * written by an older build -- or one naming a mode that no longer exists --
-     * lands on favourites instead of on nothing at all.
-     *
-     * 'search' is rejected as well as unknown values: it is never written, but
-     * a hand-edited setting should not be able to open the tray into quick-add.
+     * written by an older build -- or one naming a mode that no longer exists,
+     * as 'search' now does -- lands on favourites instead of on nothing at all.
      */
     static _rememberedMode() {
         const stored = game.settings.get(MODULE.ID, 'controlMode');
         return (stored === 'sheet' || stored === 'favorites') ? stored : 'favorites';
     }
 
-    /** True while the compendium quick-add results panel is showing. */
-    get isCompendiumMode() {
-        return this._mode === 'search';
-    }
-
     /**
-     * Switch the column between the sheet, the favourites list and quick-add.
+     * Switch the column between the sheet and the favourites list.
      *
-     * The three are mutually exclusive because the column is not tall enough to
-     * be two of them at once, and because the search box means something
-     * different in each: filter what you have, nothing at all, find what you
-     * don't.
+     * The two are mutually exclusive because the column is not tall enough to
+     * be both at once.
      */
     async setMode(mode) {
         if (!MODES.includes(mode) || this._mode === mode) return;
         this._mode = mode;
-
-        // Remember where they were, but never quick-add: leaving it should put
-        // you back where you were before you went looking, not leave the tray
-        // opening into a search box next session.
-        if (mode !== 'search') {
-            await game.settings.set(MODULE.ID, 'controlMode', mode);
-        }
-
-        const searchPanel = PanelManager.instance?.compendiumSearchPanel;
-        this._bindSearchPanelClose();
+        await game.settings.set(MODULE.ID, 'controlMode', mode);
 
         this._updateVisibility();
 
         const controlPanel = this.element?.querySelector('[data-panel="control"]');
         const searchInput = controlPanel?.querySelector('.global-search');
-        if (searchInput) {
-            searchInput.placeholder = this.isCompendiumMode
-                ? 'Search Compendiums...'
-                : 'Search All Sections...';
-            searchInput.value = '';
-        }
-
-        // The term means something different on each side — "longbow" as a panel
-        // filter hides everything you own, and as a compendium query it's a
-        // search you didn't ask for. Carrying it across is wrong in both
-        // directions, so each mode starts clean.
+        if (searchInput) searchInput.value = '';
         this._searchTerm = '';
 
-        if (this.isCompendiumMode) {
-            await searchPanel?.render(this.element);
-            searchPanel?.setQuery('');
-            searchInput?.focus();
-        } else {
-            // Clear the filter the panels were showing, and restore any category
-            // headers and "no matches" rows the previous search had hidden.
-            // Runs for favourites too: the box is gone from that view, so a term
-            // left behind would be filtering from somewhere you cannot see.
-            this._handleSearch('');
-        }
+        // Clear the filter the panels were showing, and restore any category
+        // headers and "no matches" rows the previous search had hidden. Runs for
+        // favourites too: the box is gone from that view, so a term left behind
+        // would be filtering from somewhere you cannot see.
+        this._handleSearch('');
     }
 
     _updateVisibility() {
         if (!this.element) return;
 
-        // Swap the stack and the quick-add results panel. Favourites live in
-        // the stack like every other panel, so the stack shows for two of the
-        // three modes and only which panels are `.visible` differs.
-        const stack = this.element.querySelector('.panel-containers.stacked');
-        if (stack) stack.style.display = this.isCompendiumMode ? 'none' : '';
-
-        // Class only — the stylesheet owns hidden vs shown for this container,
-        // so there's no inline style racing the CSS.
-        this.element
-            .querySelector('.panel-container[data-panel="compendium-search"]')
-            ?.classList.toggle('visible', this.isCompendiumMode);
-
         const controlEl = this.element.querySelector('[data-panel="control"]');
 
-        // Three-way switch: the mode you are in is lit, the other two dimmed.
+        // Two-way switch: the mode you are in is lit, the other dimmed.
         controlEl?.querySelectorAll('.control-mode-toggle').forEach(toggle => {
             const selected = toggle.dataset.mode === this._mode;
             toggle.classList.toggle('active', selected);
             toggle.classList.toggle('faded', !selected);
         });
 
-        // Neither quick-add nor favourites has anything for the tabs and the
-        // filter bar to act on, so they collapse rather than sitting there
-        // greyed out — pure dead space in a column where vertical room is the
-        // scarce thing. Favourites drops the search box with them.
-        controlEl?.classList.toggle('compendium-mode', this.isCompendiumMode);
+        // Favourites has nothing for the tabs and the filter bar to act on, so
+        // they collapse rather than sitting there greyed out — pure dead space
+        // in a column where vertical room is the scarce thing. It drops the
+        // search box with them.
         controlEl?.classList.toggle('favorites-mode', this._mode === 'favorites');
 
         const activeTab = this.activeTab;
@@ -550,13 +394,6 @@ export class ControlPanel {
         if (!this.element) return;
 
         this._searchTerm = searchTerm;
-
-        // In quick-add mode the box searches compendiums instead of filtering
-        // the panels, which are hidden anyway.
-        if (this.isCompendiumMode) {
-            PanelManager.instance?.compendiumSearchPanel?.setQuery(searchTerm);
-            return;
-        }
 
         // The per-panel search boxes would be filtering a list the global box
         // has already filtered, so they step aside while it holds a term.
@@ -753,19 +590,29 @@ export class ControlPanel {
             });
         }
 
-        // "Clear search after adding" — remembered per user.
-        const clearOnAdd = controlPanel.querySelector('.compendium-clear-on-add');
-        if (clearOnAdd) {
-            const newClearOnAdd = clearOnAdd.cloneNode(true);
-            clearOnAdd.parentNode?.replaceChild(newClearOnAdd, clearOnAdd);
-
-            newClearOnAdd.addEventListener('change', async (event) => {
-                await game.settings.set(MODULE.ID, 'compendiumClearOnAdd', event.target.checked);
+        // Compendium search. An action, not a mode: it opens Blacksmith's
+        // palette as a window beside the tray, which is why it sits with the
+        // broom and the builds icon rather than among the mode toggles.
+        //
+        // Squire had its own quick-add column here and it was the worse tool at
+        // every point of comparison -- it took over the panel stack, so finding
+        // something and looking at what you already have were mutually
+        // exclusive; a button and a jump beat dragging for nothing; and two
+        // compendium searches a click apart left the user picking between them.
+        // The policy that used to justify keeping it now lives in
+        // ItemAcquisition and governs drops, so nothing was lost by deleting it.
+        const compendiumButton = controlPanel.querySelector('.control-compendium');
+        if (compendiumButton) {
+            const newCompendiumButton = compendiumButton.cloneNode(true);
+            compendiumButton.parentNode?.replaceChild(newCompendiumButton, compendiumButton);
+            newCompendiumButton.addEventListener('click', async () => {
+                await openCompendiumSearchWindow();
             });
         }
 
-        // Sheet / search mode switch. Delegated on the container rather than
-        // bound per icon, so the header markup can change without rewiring.
+        // Sheet / favourites mode switch. Delegated on the container rather
+        // than bound per icon, so the header markup can change without
+        // rewiring.
         const modeToggles = controlPanel.querySelector('.control-mode-toggles');
         if (modeToggles) {
             const newToggles = modeToggles.cloneNode(true);
@@ -775,7 +622,7 @@ export class ControlPanel {
                 const toggle = event.target.closest('.control-mode-toggle');
                 if (!toggle) return;
                 // Idempotent: clicking the mode you are already in is a no-op
-                // rather than a toggle, which is what a three-way switch means.
+                // rather than a toggle, which is what a two-way switch means.
                 await this.setMode(toggle.dataset.mode);
             });
         }
@@ -791,9 +638,8 @@ export class ControlPanel {
                 this._handleSearch(event.target.value);
             });
 
-            // Escape backs out one step: from compendium search to the sheet
-            // (setMode clears the box on the way), or from a filtered sheet
-            // back to the unfiltered one.
+            // Escape backs out one step, from a filtered sheet to the
+            // unfiltered one.
             //
             // stopPropagation because Foundry binds Escape globally — without it
             // the keypress also closes the topmost application or opens the game
@@ -803,10 +649,6 @@ export class ControlPanel {
                 event.preventDefault();
                 event.stopPropagation();
 
-                if (this.isCompendiumMode) {
-                    await this.setMode('sheet');
-                    return;
-                }
                 if (newInput.value !== '') {
                     newInput.value = '';
                     this._handleSearch('');

@@ -70,8 +70,7 @@
     "scripts/utility-lights.js",
     "scripts/utility-statblock.js",
     "scripts/utility-quantity.js",
-    "scripts/utility-compendium-search.js",
-    "scripts/panel-compendium-search.js"
+    "scripts/utility-item-acquisition.js"
   ],
   "packs": [],
   "relationships": {

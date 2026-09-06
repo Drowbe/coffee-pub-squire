@@ -1,43 +1,36 @@
 <div class="tray-title-small">
 <span>Character Sheet</span>
 {{!--
-    The mode switch: favourites, the sheet, and compendium quick-add.
+    The mode switch: favourites and the sheet.
 
-    The heart and the person are always both here. Favourites is a view now
-    rather than a block pinned above the tabs, so there is always somewhere to
-    switch back FROM -- which is why the person icon is no longer gated behind
-    `canUseCompendiums` the way it was when the pair was a two-state switch and
-    the second state was compendiums. A player who cannot browse compendiums
-    still gets two modes and needs both icons to move between them.
+    The heart and the person are always both here. Favourites is a view rather
+    than a block pinned above the tabs, so there is always somewhere to switch
+    back FROM and both icons are needed to move between them.
 
-    The broom and the builds icon are not modes and sit before the separator:
-    they open WINDOWS, rather than changing what this column shows. Builds moved
-    here from a section of its own in the favourites view, which spent a lot of a
-    narrow column on something touched rarely.
+    Everything BEFORE the separator is an action, not a mode: it opens a WINDOW
+    rather than changing what this column shows. The magnifying glass is on that
+    side for exactly that reason -- it opens Blacksmith's compendium palette,
+    which sits beside the tray rather than replacing what the tray is showing.
+    Squire's own quick-add column used to be a third mode here, and being a mode
+    was half of what was wrong with it.
 --}}
 <div class="control-mode-toggles">
     <i class="fa-solid fa-shirt control-builds" data-tooltip="Gear Builds"></i>
     {{#if canCleanup}}
     <i class="fa-solid fa-broom control-cleanup" title="{{cleanupTooltip}}"></i>
     {{/if}}
+    {{#if canAddFromCompendiums}}
+    <i class="fa-solid fa-magnifying-glass control-compendium" data-tooltip="Search Compendiums to Add Items"></i>
+    {{/if}}
     <span class="control-toggle-separator"></span>
     <i class="fa-solid fa-heart control-mode-toggle" data-mode="favorites" title="Show Favorites"></i>
     <i class="fa-solid fa-user control-mode-toggle" data-mode="sheet" title="Show This Character's Items"></i>
-    {{#if canUseCompendiums}}
-    <i class="fa-solid fa-magnifying-glass control-mode-toggle" data-mode="search" title="{{compendiumToggleTitle}}"></i>
-    {{/if}}
 </div>
 </div>
 <div class="control-search">
 <input type="text" class="global-search" placeholder="Search All Sections...">
 <i class="fa-solid fa-times search-clear" title="Clear Search"></i>
 </div>
-{{#if canAddFromCompendiums}}
-<label class="control-search-option" title="On: adding empties the search box and stays here, for adding several things. Off: adding returns to the character sheet and scrolls to the new item.">
-<input type="checkbox" class="compendium-clear-on-add" {{#if clearOnAdd}}checked{{/if}}>
-<span>Clear search and keep open on add</span>
-</label>
-{{/if}}
 {{!--
     SECTION TABS
 

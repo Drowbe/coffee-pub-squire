@@ -2,8 +2,9 @@ import { MODULE, TEMPLATES, CSS_CLASSES, SQUIRE, getHandleWidth } from './const.
 import { getTransferBlocker, renderTemplate, getCampaignContext, resolveDroppedItem, showSquireToast, getActorDisplayName, isGMOrPartyLeader, setRowFilter, isRowVisible} from './helpers.js';
 import {
     transferRequestSender, transferRequestGMApproval, transferRequestReceiver,
-    transferComplete, itemReceived
+    transferComplete
 } from './manager-cards.js';
+import { ItemAcquisition } from './utility-item-acquisition.js';
 import { CharacterPanel } from './panel-character.js';
 import { GmPanel } from './panel-gm.js';
 import { SpellsPanel } from './panel-spells.js';
@@ -12,7 +13,6 @@ import { InventoryPanel } from './panel-inventory.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { syncFavorites } from './manager-favorites-sync.js';
 import { ControlPanel } from './panel-control.js';
-import { CompendiumSearchPanel } from './panel-compendium-search.js';
 import { FeaturesPanel } from './panel-features.js';
 import { CharacterSummaryPanel } from './panel-character-summary.js';
 import { PartyPanel } from './panel-party.js';
@@ -285,7 +285,6 @@ export class PanelManager {
                 this.gmPanel = new GmPanel(actor);
             }
             this.controlPanel = new ControlPanel(actor);
-            this.compendiumSearchPanel = new CompendiumSearchPanel(actor);
             this.favoritesPanel = new FavoritesPanel(actor);
             this.spellsPanel = new SpellsPanel(actor);
             this.weaponsPanel = new WeaponsPanel(actor);
@@ -656,7 +655,6 @@ export class PanelManager {
         // Create new panel instances with updated element references
         this.characterPanel = new CharacterPanel(this.actor);
         this.controlPanel = new ControlPanel(this.actor);
-        this.compendiumSearchPanel = new CompendiumSearchPanel(this.actor);
         this.favoritesPanel = new FavoritesPanel(this.actor);
         this.spellsPanel = new SpellsPanel(this.actor);
         this.weaponsPanel = new WeaponsPanel(this.actor);
@@ -673,7 +671,6 @@ export class PanelManager {
             this.gmPanel.element = PanelManager.element;
         }
         this.controlPanel.element = PanelManager.element;
-        this.compendiumSearchPanel.element = PanelManager.element;
         this.favoritesPanel.element = PanelManager.element;
         this.spellsPanel.element = PanelManager.element;
         this.weaponsPanel.element = PanelManager.element;
@@ -1266,69 +1263,20 @@ export class PanelManager {
                                 return;
                             }
                         } else {
-                            try {
-                                // Get the item from the UUID
-                                const item = await fromUuid(data.uuid);
-                                if (!item) {
-                                    return;
-                                }
-                                // Create the item on the actor
-                                const createdItem = await actor.createEmbeddedDocuments('Item', [item.toObject()]);
-                                // Add to newlyAddedItems in PanelManager
-                                if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
-                                    game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(createdItem[0].id, Date.now());
-                                }
-                                
-                                // Send chat notification. Named for the actor the
-                                // item was dropped on — the card used to name
-                                // whichever actor the tray happened to be showing,
-                                // which is the same one only by coincidence.
-                                await itemReceived({
-                                    icon: this._getDropIcon(item.type),
-                                    title: this._getDropTitle(item.type),
-                                    actorName: actor.name,
-                                    itemName: item.name,
-                                    speaker: ChatMessage.getSpeaker({ actor })
-                                });
+                            // Content arriving from outside a character —
+                            // a compendium document, a world item, a drag out
+                            // of Blacksmith's compendium palette. All of it goes
+                            // through the acquisition gate, which is the whole
+                            // point: this branch used to create the item on the
+                            // strength of "an actor is selected", so the rung a
+                            // GM had set governed the tray's own compendium
+                            // search and nothing that landed here.
+                            const { outcome, item } = await ItemAcquisition.acquire(actor, data.uuid);
+                            // A request or a refusal has nothing on the sheet to
+                            // show yet; both already said so in a toast.
+                            if (outcome !== 'added') return;
 
-                                // Determine which panel to re-render based on item type
-                                let targetPanel;
-                                switch (item.type) {
-                                    case 'weapon':
-                                        targetPanel = 'weapons';
-                                        break;
-                                    case 'spell':
-                                        targetPanel = 'spells';
-                                        break;
-                                    case 'feat':
-                                        targetPanel = 'features';
-                                        break;
-                                    default:
-                                        targetPanel = 'inventory';
-                                }
-                                // Re-render the appropriate panel
-                                switch (targetPanel) {
-                                    case 'favorites':
-                                        if (this.favoritesPanel) await this.favoritesPanel.render(PanelManager.element);
-                                        break;
-                                    case 'weapons':
-                                        if (this.weaponsPanel) await this.weaponsPanel.render(PanelManager.element);
-                                        break;
-                                    case 'spells':
-                                        if (this.spellsPanel) await this.spellsPanel.render(PanelManager.element);
-                                        break;
-                                    case 'features':
-                                        if (this.featuresPanel) await this.featuresPanel.render(PanelManager.element);
-                                        break;
-                                    case 'inventory':
-                                        if (this.inventoryPanel) await this.inventoryPanel.render(PanelManager.element);
-                                        break;
-                                }
-                                this.controlPanel?.reapplyFilters();
-                            } catch (error) {
-                                console.error('DROPZONE | Error processing world item:', error);
-                                ui.notifications.error("Error processing dropped item. See console for details.");
-                            }
+                            await this._renderPanelForItemType(item.type);
                         }
                         break;
                     default:
@@ -1420,24 +1368,20 @@ export class PanelManager {
         await this.handleManager.updateHandle();
     }
 
-    // Helper method to get the appropriate icon based on item type
-    _getDropIcon(type) {
-        switch(type) {
-            case 'spell': return 'fa-solid fa-stars';
-            case 'weapon': return 'fa-solid fa-swords';
-            case 'feat': return 'fa-solid fa-sparkles';
-            default: return 'fa-solid fa-backpack';
-        }
-    }
+    /**
+     * Repaint whichever panel an acquired item landed in, then re-apply the
+     * active filters so a new row doesn't appear through a filter that should
+     * be hiding it.
+     */
+    async _renderPanelForItemType(type) {
+        const panel = {
+            weapon: this.weaponsPanel,
+            spell: this.spellsPanel,
+            feat: this.featuresPanel
+        }[type] ?? this.inventoryPanel;
 
-    // Helper method to get the appropriate title based on item type
-    _getDropTitle(type) {
-        switch(type) {
-            case 'spell': return 'New Spell Added';
-            case 'weapon': return 'New Weapon Added';
-            case 'feat': return 'New Feature Added';
-            default: return 'New Item Added';
-        }
+        if (panel) await panel.render(PanelManager.element);
+        this.controlPanel?.reapplyFilters();
     }
 
     /**

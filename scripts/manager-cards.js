@@ -344,29 +344,28 @@ export function transferExpired({ perspective, sourceActorName, targetActorName,
     });
 }
 
-/** The GM put something on a sheet directly, with no request in between. */
-export function transferByGM({ icon, title, itemName, targetActorName, speaker }) {
+/**
+ * Content entered a sheet from outside a character — a compendium document, a
+ * world item, an Item Directory entry.
+ *
+ * One card for every acquisition path. There used to be two, `itemReceived` for
+ * a tray drop and `transferByGM` for a party-card drop, and they disagreed:
+ * the party one said "The GM added" whoever had actually done it. Naming the
+ * acquiring user is the point — a card that records an arrival without saying
+ * who caused it is the half of the record that matters missing.
+ *
+ * Posted for player acquisitions only; see ItemAcquisition._performAdd().
+ */
+export function itemAcquired({ icon, title, actorName, itemName, userName, speaker }) {
     return post({
-        type: 'transfer-gm',
+        type: 'item-acquired',
         speaker,
         parts: [
             header(icon, title),
             prose(sentence(
-                'The GM added ', name(itemName), ' to ',
-                name(`${targetActorName ?? 'the actor'}'s inventory`), '.'
+                name(userName ?? 'Someone'), ' added ', name(itemName),
+                ' to ', name(actorName ?? 'the actor'), '.'
             ))
-        ]
-    });
-}
-
-/** Something arrived on a sheet by being dropped on the Squire tray. */
-export function itemReceived({ icon, title, actorName, itemName, speaker }) {
-    return post({
-        type: 'item-received',
-        speaker,
-        parts: [
-            header(icon, title),
-            prose(sentence(name(actorName), ' received ', name(itemName), ' via the Squire tray.'))
         ]
     });
 }
@@ -444,7 +443,7 @@ export function compendiumRequest({ requesterName, itemName, itemType, actorName
         speaker,
         flags,
         parts: [
-            header('fa-solid fa-book-open-cover', 'Compendium Request'),
+            header('fa-solid fa-book-open-cover', 'Item Request'),
             prose(sentence(
                 name(requesterName), ' wants to add ', name(itemName),
                 itemType ? [' (', { literal: String(itemType) }, ')'] : '',

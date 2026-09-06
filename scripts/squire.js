@@ -131,8 +131,6 @@ Hooks.once('ready', async () => {
         // may be newer than the Blacksmith a given world has installed.
         blacksmithApi?.inventory?.registerTransientFlag?.(`${MODULE.ID}.isNew`);
 
-        await migrateCompendiumAccessSetting();
-
         // Register all hooks after Blacksmith is ready
         if (!getBlacksmithHookManager()?.registerHook) {
             throw new Error(
@@ -1454,6 +1452,19 @@ Hooks.once('ready', async function() {
     }
     // Register module settings
     registerSettings();
+
+    // Immediately after, and never earlier: every branch of the migration reads
+    // or writes `compendiumPlayerAccess`, so it needs the settings registered.
+    //
+    // It used to run from Squire's other `ready` callback, which lands BEFORE
+    // this one -- two `Hooks.once('ready')` blocks that each await Blacksmith
+    // interleave, and settings are registered here. That only ever worked
+    // because the first thing the migration did was a `game.settings.storage`
+    // read, which needs no registration and returned nothing on a world with no
+    // legacy setting, so it took an early return before touching the registry.
+    // Any world that DID hold the legacy boolean threw into its own catch and
+    // silently kept the old value.
+    await migrateCompendiumAccessSetting();
 
 
 

@@ -2,7 +2,7 @@
    CONTROLS
 
    The Character Sheet control panel: the filter bar, the search field, and the
-   mode toggles that switch the tray between browsing and quick-add.
+   mode toggles that switch the tray between the sheet and favourites.
 
    Split out of a single 1,376-line tray.css. The @import order in default.css
    is the original source order and is load-bearing: several rules here rely on
@@ -229,7 +229,7 @@
     opacity: 1;
 }
 
-/* ---------- Sheet / compendium-search mode switch ---------- */
+/* ---------- Sheet / favourites mode switch ---------- */
 
 /* Lives in the title bar's right zone, the same slot the GM Details and
    Character Summary chevrons occupy — so a right-edge icon consistently means
@@ -249,7 +249,8 @@
 /* A little room of its own around each glyph, so the hit area is bigger than the
    ink and a near miss lands on nothing rather than on the neighbour. */
 .squire-tray [data-panel="control"] .control-mode-toggle,
-.squire-tray [data-panel="control"] .control-cleanup {
+.squire-tray [data-panel="control"] .control-cleanup,
+.squire-tray [data-panel="control"] .control-compendium {
     padding: 2px 1px;
 }
 
@@ -270,7 +271,8 @@
    you: the rule stays valid, so nothing fails — it just applies to the wrong
    elements, permanently. */
 .squire-tray [data-panel="control"] .control-mode-toggle,
-.squire-tray [data-panel="control"] .control-cleanup {
+.squire-tray [data-panel="control"] .control-cleanup,
+.squire-tray [data-panel="control"] .control-compendium {
     cursor: pointer;
     /* The chips' own tan — see .filter-chip above. */
     color: rgba(159, 146, 117, 0.9);
@@ -290,19 +292,10 @@
 }
 
 .squire-tray [data-panel="control"] .control-mode-toggle:hover,
-.squire-tray [data-panel="control"] .control-cleanup:hover {
+.squire-tray [data-panel="control"] .control-cleanup:hover,
+.squire-tray [data-panel="control"] .control-compendium:hover {
     color: var(--squire-color-hover);
     opacity: 1;
-}
-
-/* Neither the tabs nor the bar has anything to act on while quick-add is
-   showing, so both collapse instead of sitting greyed out and eating vertical
-   space. The search box moves up into the gap, which is a deliberate part of
-   that mode reading as a different place rather than the same panel with
-   things switched off. */
-.squire-tray [data-panel="control"].compendium-mode .control-filter-bar,
-.squire-tray [data-panel="control"].compendium-mode .control-tabs {
-    display: none;
 }
 
 /* With everything below the title hidden, the strip ends on a heading — and the
@@ -314,8 +307,7 @@
    Extra room rather than a rule or a matching background: the two ARE different
    kinds of heading — one names the panel you are in, the other names the list
    below it — so the fix is to stop them touching, not to make them look alike. */
-.squire-tray [data-panel="control"].favorites-mode,
-.squire-tray [data-panel="control"].compendium-mode {
+.squire-tray [data-panel="control"].favorites-mode {
     /* `margin-bottom` REPLACES the 6px `.panel-container` gives every panel, it
        does not add to it — so the padding is what actually buys the room. The
        sheet has ~17px between its chip row and the first section header; this
@@ -325,43 +317,14 @@
     padding-bottom: 10px;
 }
 
-/* The favourites view goes further and drops the search box too, so the title
-   bar sits directly on the list. Nothing here is greyed out or empty: there are
-   no sections to tab between, no action costs worth filtering a shortlist by,
-   and a search box over a list you curated by hand is a control looking for a
-   job. The list keeps its own header and its own clear-all, which is the one
-   control the view does need. */
+/* The favourites view drops the search box too, so the title bar sits directly
+   on the list. Nothing here is greyed out or empty: there are no sections to tab
+   between, no action costs worth filtering a shortlist by, and a search box over
+   a list you curated by hand is a control looking for a job. The list keeps its
+   own header and its own clear-all, which is the one control the view needs. */
 .squire-tray [data-panel="control"].favorites-mode .control-filter-bar,
 .squire-tray [data-panel="control"].favorites-mode .control-tabs,
-.squire-tray [data-panel="control"].favorites-mode .control-search,
-.squire-tray [data-panel="control"].favorites-mode .control-search-option {
+.squire-tray [data-panel="control"].favorites-mode .control-search {
     display: none;
-}
-
-/* The inverse: this option only means anything while searching compendiums, so
-   it appears with that mode rather than sitting inert on the sheet. */
-.squire-tray [data-panel="control"] .control-search-option {
-    display: none;
-}
-
-.squire-tray [data-panel="control"].compendium-mode .control-search-option {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 6px;
-    cursor: pointer;
-    font-size: 0.8em;
-    color: rgba(255, 255, 255, 0.55);
-    user-select: none;
-}
-
-.squire-tray [data-panel="control"] .control-search-option:hover {
-    color: rgba(255, 255, 255, 0.85);
-}
-
-.squire-tray [data-panel="control"] .control-search-option input {
-    margin: 0;
-    flex: 0 0 auto;
-    cursor: pointer;
 }
 

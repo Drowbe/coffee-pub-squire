@@ -1,10 +1,11 @@
 import { MODULE, TEMPLATES, SQUIRE } from './const.js';
 import { PanelManager } from './manager-panel.js';
+import { ItemAcquisition } from './utility-item-acquisition.js';
 import { TransferUtils } from './transfer-utils.js';
 import { trackModuleTimeout, clearTrackedTimeout } from './timer-utils.js';
 import { getHealthbarStatusClass, getNativeElement, getTransferBlocker, renderTemplate, resolveDroppedItem, showSquireToast, getActorDisplayName, openHealthWindow, getTokenDisposition } from './helpers.js';
 import {
-    transferByGM, transferComplete, transferRejected, transferRequestSender,
+    transferComplete, transferRejected, transferRequestSender,
     retireCard
 } from './manager-cards.js';
 
@@ -622,49 +623,34 @@ export class PartyPanel {
                             return;
                             
                         } else {
-                            // This is a regular world item
+                            // A regular world item, or anything dragged in from
+                            // outside a character. Resolved through
+                            // `fromDropData` rather than the uuid alone because
+                            // it accepts every drop shape core produces, then
+                            // handed to the acquisition gate — this branch used
+                            // to create the item outright, so the rung a GM set
+                            // governed the tray's compendium search and not a
+                            // drop onto a party card.
                             item = await Item.implementation.fromDropData(data);
                             if (!item) return;
-                            
-                            // Create the item on the actor
-                            const createdItem = await targetActor.createEmbeddedDocuments('Item', [item.toObject()]);
-                            
-                            // Add to newlyAddedItems in PanelManager
-                            if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
-                                game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(createdItem[0].id, Date.now());
-                            }
-                            
-                            // Send chat notification
-                            await transferByGM({
-                                icon: this._getDropIcon(item.type),
-                                title: this._getDropTitle(item.type),
-                                itemName: item.name,
-                                targetActorName: targetActor.name,
-                                speaker: ChatMessage.getSpeaker({ actor: targetActor })
-                            });
+
+                            const { outcome } = await ItemAcquisition.acquire(targetActor, item);
+                            // A request or a refusal leaves the sheet untouched
+                            // and has already said so in a toast.
+                            if (outcome !== 'added') return;
                         }
                         break;
 
-                    case 'ItemDirectory':
-                        const itemData = game.items.get(data.uuid)?.toObject();
-                        if (itemData) {
-                            const newItem = await targetActor.createEmbeddedDocuments('Item', [itemData]);
-                            
-                            // Add to newlyAddedItems in PanelManager
-                            if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
-                                game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(newItem[0].id, Date.now());
-                            }
-                            
-                            // Send chat notification
-                            await transferByGM({
-                                icon: this._getDropIcon(itemData.type),
-                                title: this._getDropTitle(itemData.type),
-                                itemName: itemData.name,
-                                targetActorName: targetActor.name,
-                                speaker: ChatMessage.getSpeaker({ actor: targetActor })
-                            });
-                        }
+                    // Legacy drop shape: the v13 Items sidebar sends
+                    // `{type: 'Item', uuid}` and lands in the case above. Kept
+                    // for anything still emitting the old payload, and resolved
+                    // by uuid — `game.items.get()` takes an id, so the uuid this
+                    // arrives with never matched anything here.
+                    case 'ItemDirectory': {
+                        const { outcome } = await ItemAcquisition.acquire(targetActor, data.uuid);
+                        if (outcome !== 'added') return;
                         break;
+                    }
 
                     // Special case: Actor -> Actor item transfer
                     case 'Actor':
@@ -774,26 +760,6 @@ export class PartyPanel {
         // Note: Handle party member health bar clicks are handled by the handle manager, not the party panel
     }
     
-    // Helper method to get the appropriate icon based on item type
-    _getDropIcon(type) {
-        switch(type) {
-            case 'spell': return 'fa-solid fa-stars';
-            case 'weapon': return 'fa-solid fa-swords';
-            case 'feat': return 'fa-solid fa-sparkles';
-            default: return 'fa-solid fa-backpack';
-        }
-    }
-
-    // Helper method to get the appropriate title based on item type
-    _getDropTitle(type) {
-        switch(type) {
-            case 'spell': return 'New Spell Added';
-            case 'weapon': return 'New Weapon Added';
-            case 'feat': return 'New Feature Added';
-            default: return 'New Item Added';
-        }
-    }
-
     /**
      * Debounced re-render: multi-select bursts, token movement steps, and HP storms
      * each fire one hook per event — coalesce them into a single render pass.

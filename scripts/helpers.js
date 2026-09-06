@@ -279,6 +279,17 @@ export async function openXpWindow() {
     return openBlacksmithWindow('blacksmith-xp', null, 'The XP window');
 }
 
+/**
+ * Blacksmith's compendium search palette.
+ *
+ * Squire used to carry its own quick-add column in the tray. This is the same
+ * job done better -- a window that sits beside the tray instead of replacing
+ * what it shows, with facets, a browse mode and native drag onto the sheet.
+ */
+export async function openCompendiumSearchWindow() {
+    return openBlacksmithWindow('blacksmith-compendium-search', null, 'Compendium search');
+}
+
 /** Blacksmith's party statistics window. */
 export async function openPartyStatsWindow() {
     return openBlacksmithWindow('blacksmith-stats-party', null, 'Party statistics');

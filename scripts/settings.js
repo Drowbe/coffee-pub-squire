@@ -526,42 +526,50 @@ export const registerSettings = function() {
 
 	// ---------- Compendiums Heading ----------
 	game.settings.register(MODULE.ID, "headingH3Compendiums", {
-		name: 'Compendiums',
-		hint: 'The tray\'s compendium search, and how much of it players get. Sits next to Transfers because both govern how content arrives on a character sheet.',
+		name: 'Adding Content',
+		hint: 'How content that is not already on a character reaches a sheet — the tray\'s compendium search, and anything dropped on the tray or a party card. Sits next to Transfers because both govern how content arrives on a character sheet.',
 		scope: "world",
 		config: true,
 		default: "",
 		type: String,
 	});
 
-    // Four rungs rather than a boolean, because "may they add things" and "may
-    // they look things up" are different questions. A player who doesn't
-    // understand how grappling works, or who wants to read the other party
-    // member's spell, needs the compendium open — not write access to their own
-    // sheet. Migrated from the old `compendiumAddPlayers` boolean by
-    // migrateCompendiumAccessSetting().
+    // Three rungs rather than a boolean, because "may they add things" and "may
+    // they ask" are different questions.
+    //
+    // There was a fourth, `browse` -- search and read, no adding -- and it had
+    // exactly one subject: Squire's own compendium column in the tray. That is
+    // gone, and Blacksmith's palette is not Squire's to gate, so `browse` had
+    // nothing left to permit and was indistinguishable from `none` in every
+    // observable way. migrateCompendiumAccessSetting() folds it into `none`,
+    // which is what it had already become.
+    //
+    // Migrated from the old `compendiumAddPlayers` boolean by the same function.
+    //
+    // The key still says "compendium" and the setting no longer only means
+    // compendiums: it governs every acquisition, including a world item or a
+    // sidebar entry dropped on the tray. Kept anyway — the key is already
+    // carrying one migration, and a second rename to make an identifier match a
+    // label would cost every world a re-migration and buy nothing a player can
+    // see. The displayed name is what people read, and that says what it does.
     game.settings.register(MODULE.ID, 'compendiumPlayerAccess', {
-        name: 'Let Players Use Compendiums',
-        hint: 'What players may do with the tray\'s compendium search on characters they own. The GM can always search and add.',
+        name: 'Let Players Add Content',
+        hint: 'What players may do with content that is not already on a character — the tray\'s compendium search, and items dropped on the tray or a party card. Applies to characters they own. The GM can always add.',
         scope: 'world',
         config: true,
         type: String,
         choices: {
-            none: 'Off — no compendium mode for players',
-            browse: 'Look only — search and read details, no adding',
+            none: 'Off — players cannot add content',
             request: 'Ask the GM — adding sends a request to approve or deny',
             add: 'Add freely — players add straight to their own sheet'
         },
         default: COMPENDIUM_ACCESS_DEFAULT,
         onChange: () => {
             // World-scoped, so a GM flipping this has to reach players who
-            // already have the tray open. The toggle lives in the control panel
-            // and the results panel changes shape with the mode.
+            // already have the tray open: the compendium launcher in the control
+            // panel appears and disappears with the rung.
             if (PanelManager.instance?.controlPanel) {
                 PanelManager.instance.controlPanel.render(PanelManager.element);
-            }
-            if (PanelManager.instance?.compendiumSearchPanel) {
-                PanelManager.instance.compendiumSearchPanel.render(PanelManager.element);
             }
         }
     });
@@ -636,15 +644,6 @@ export const registerSettings = function() {
         default: false
     });
 
-    // Remembered per-user state for the compendium quick-add checkbox. Not in
-    // the config UI — it's toggled inline where it takes effect.
-    game.settings.register(MODULE.ID, 'compendiumClearOnAdd', {
-        scope: 'user',
-        config: false,
-        type: Boolean,
-        default: true
-    });
-
     // --- Section tabs ---
     //
     // What is left of the fourteen-chip filter bar. Nine of those chips are
@@ -680,13 +679,8 @@ export const registerSettings = function() {
         default: 'all'
     });
 
-    // Which of the three views the Character tab opens on: 'sheet' or
-    // 'favorites'. One of MODES in panel-control.js, minus 'search'.
-    //
-    // 'search' is never written here. Compendium quick-add is a thing you are
-    // in the middle of doing, not a place you live, and restoring into it on
-    // load would also mean restoring into a mode the GM may since have revoked
-    // access to. Leaving it returns you to whatever this last held.
+    // Which view the Character tab opens on: 'sheet' or 'favorites'. One of
+    // MODES in panel-control.js.
     //
     // Favourites is the default because it is the answer to "what do I reach
     // for", which is the question the tray is open to answer most of the time.
@@ -902,6 +896,21 @@ export const registerSettings = function() {
  */
 export async function migrateCompendiumAccessSetting() {
     if (!game.user.isGM) return;
+
+    // The `browse` rung is gone: it permitted searching and reading in Squire's
+    // own compendium column, and that column no longer exists. Blacksmith's
+    // palette is not Squire's to gate, so a world left on `browse` would be
+    // holding a value that permits nothing -- which is `none`, said less
+    // clearly. Folded first, and unconditionally, because unlike the boolean
+    // below there is no "did the GM choose this" question to ask: whatever they
+    // chose, the thing they chose it for is gone.
+    try {
+        if (game.settings.get(MODULE.ID, 'compendiumPlayerAccess') === 'browse') {
+            await game.settings.set(MODULE.ID, 'compendiumPlayerAccess', 'none');
+        }
+    } catch (error) {
+        console.error(`${MODULE.ID}: Failed to migrate the browse access rung:`, error);
+    }
 
     const legacy = game.settings.storage.get('world')?.getSetting?.(`${MODULE.ID}.compendiumAddPlayers`);
     if (!legacy) return;
