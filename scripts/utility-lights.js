@@ -493,7 +493,8 @@ export class LightUtility {
         const controlled = canvas.tokens?.controlled || [];
         
         // Find token for this actor
-        let token = controlled.find(t => t.actor?.id === actor.id);
+        // uuid, not id: an unlinked token's synthetic actor carries the BASE actor's id, so every copy of a pasted monster shares one.
+        let token = controlled.find(t => t.actor?.uuid === actor.uuid);
         
         if (!token) {
             // Fallback: get active tokens for this actor

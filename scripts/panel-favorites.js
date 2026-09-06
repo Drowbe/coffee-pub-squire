@@ -521,7 +521,10 @@ export class FavoritesPanel {
             }
             
             // Refresh the panels if they exist
-            if (PanelManager.instance && PanelManager.currentActor?.id === actor.id) {
+            // uuid, not id: an unlinked token's synthetic actor carries the BASE actor's id, so every copy of a pasted monster shares one.
+            // Without this, favouriting on one copy repainted the panel while a
+            // different copy was on screen.
+            if (PanelManager.instance && PanelManager.currentActor?.uuid === actor.uuid) {
                 // First update the favorites panel
                 if (PanelManager.instance.favoritesPanel?.element) {
                     await PanelManager.instance.favoritesPanel.render(PanelManager.instance.favoritesPanel.element);

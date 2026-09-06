@@ -7,7 +7,8 @@ import {
     renameBuild, setBuildSlot, moveBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
-    resolveTokenSettings, setBuildTokenSetting, setBuildPreparation, pullFromSheet,
+    resolveTokenSettings, setBuildTokenSetting, setBuildPreparation,
+    planImport, applyImportPlan,
     estimateArmorClass, previewSlotChange, setBuildMode, convertBuildMode, revertBuild, damageLabel,
     setActiveBuildId, getActiveBuildId, ensureDefaultCostume, ensureDefaultBuild,
     moveBuild, resolveMainImage,
@@ -144,7 +145,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // costume, so it sits first in the rail — it is the thing this window is
         // mostly for, and the one that protects them from learning what applying
         // does the hard way.
-        await ensureDefaultBuild(actor);
+        const firstRun = await ensureDefaultBuild(actor);
         // Their own face, as something they can put back on. The captured
         // defaults are a safety net nobody can see or click; this is the
         // clickable one.
@@ -173,6 +174,13 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // itself when a theme's chrome changes.
         const width = widthFor(actor, selected ? getBuild(actor, selected) : null);
         const win = new BuildWindow({ id, actor, buildId: selected, position: { width, height: 'auto' } });
+
+        // What the first-run snapshot could not place, shown on the doll it was
+        // made for. It is the only importer path that does not ask.
+        if (firstRun?.unknown?.length || firstRun?.crowded?.length) {
+            win._importReport = { unknown: firstRun.unknown ?? [], crowded: firstRun.crowded ?? [] };
+        }
+
         await win.render({ force: true });
         return win;
     }
@@ -213,6 +221,8 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
     /** Show a different build. */
     async selectBuild(buildId) {
         if (!buildId || buildId === this.buildId) return;
+        // The report describes an import into the build being left behind.
+        this._importReport = null;
         this.buildId = buildId;
         await this.render(false);
     }
@@ -340,79 +350,132 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             return;
         }
 
-        const state = equippedState(this.actor);
-        const caster = canPrepareSpells(this.actor);
+        const plan = planImport(this.actor, build);
+        if (!plan.rows.length && !plan.spells.length) {
+            ui.notifications.info(`${this.actor.name} has nothing equipped to take.`);
+            return;
+        }
 
-        const form = `
-            <p>Fill <strong>${foundry.utils.escapeHTML(build.name)}</strong> from what
-               <strong>${foundry.utils.escapeHTML(this.actor.name)}</strong> is wearing now.</p>
-            <label class="squire-build-pull-option">
-                <input type="checkbox" name="gear" checked>
-                <span>Equipment &mdash; ${state.gear.size} item${state.gear.size === 1 ? '' : 's'} currently equipped</span>
-            </label>
-            ${caster ? `
-            <label class="squire-build-pull-option">
-                <input type="checkbox" name="prepared" ${build.includesPrepared ? 'checked' : ''}>
-                <span>Prepared spells &mdash; ${state.spells.size} currently prepared</span>
-            </label>` : ''}
-            <label class="squire-build-pull-option">
-                <input type="checkbox" name="empty">
-                <span>Empty the build first &mdash; clear everything, including the parts not ticked above</span>
-            </label>
-            <p>Whatever is in the parts you tick is replaced either way. The build's name and
-               pictures are never touched.</p>`;
+        const escape = foundry.utils.escapeHTML;
 
-        // `prompt`, not `confirm`: this asks for two answers rather than one,
-        // and `getValue` reads them off the submit button's own form.
-        const { action, value: picked } = await getBlacksmith().dialog.prompt({
-            title: 'Pull From Sheet',
-            content: form,
-            getValue: (root) => ({
-                gear: !!root?.elements?.gear?.checked,
-                prepared: !!root?.elements?.prepared?.checked,
-                empty: !!root?.elements?.empty?.checked
-            }),
-            submitLabel: 'Fill From Sheet',
-            submitIcon: 'fa-solid fa-download'
-        });
-        if (action !== 'submit' || !picked
-            || (!picked.gear && !picked.prepared && !picked.empty)) return;
+        // A row per item, with the proposal already chosen and every legal
+        // alternative in the list. The point of showing it rather than doing it
+        // is that equipping this build later takes everything else OFF — so the
+        // moment to disagree is now, against a named list, not afterwards
+        // against a doll that already happened.
+        const row = (item) => `
+            <tr data-item-id="${item.id}">
+                <td class="squire-plan-item">
+                    <img src="${escape(item.img ?? '')}" alt="">
+                    <span data-item-uuid="${escape(item.uuid ?? '')}">${escape(item.name)}</span>
+                </td>
+                <td>
+                    <select class="squire-plan-slot" name="slot-${item.id}">
+                        <option value=""${item.slot ? '' : ' selected'}>&mdash; Not equipped &mdash;</option>
+                        ${item.options.map(option => `
+                            <option value="${option.key}"${option.key === item.slot ? ' selected' : ''}>
+                                ${escape(option.label)}
+                            </option>`).join('')}
+                    </select>
+                </td>
+            </tr>`;
 
-        const result = await pullFromSheet(this.actor, this.buildId, {
-            gear: !!picked.gear,
-            prepared: !!picked.prepared,
-            empty: !!picked.empty
-        });
-        if (!result) return;
+        const spellRow = (spell) => `
+            <tr data-spell-id="${spell.id}">
+                <td class="squire-plan-item">
+                    <img src="${escape(spell.img ?? '')}" alt="">
+                    <span data-item-uuid="${escape(spell.uuid ?? '')}">${escape(spell.name)}</span>
+                </td>
+                <td>
+                    <select class="squire-plan-prepared" name="prep-${spell.id}">
+                        <option value="1"${spell.prepared ? ' selected' : ''}>Prepared</option>
+                        <option value=""${spell.prepared ? '' : ' selected'}>Not prepared</option>
+                    </select>
+                </td>
+            </tr>`;
 
-        const parts = [];
-        if (picked.gear) parts.push(`${result.gearCount} item${result.gearCount === 1 ? '' : 's'}`);
-        if (picked.prepared) parts.push(`${result.spellCount} spell${result.spellCount === 1 ? '' : 's'}`);
+        const content = `
+            <div class="squire-plan">
+                <p>Everything <strong>${escape(this.actor.name)}</strong> has equipped, and where it
+                   would go in <strong>${escape(build.name)}</strong>. Anything left
+                   <em>Not equipped</em> is not part of the build.</p>
+                <table class="squire-plan-table">
+                    <thead><tr><th>Item</th><th>Slot</th></tr></thead>
+                    <tbody>${plan.rows.map(row).join('')}</tbody>
+                </table>
+                ${plan.spells.length ? `
+                <p class="squire-plan-heading">Prepared spells
+                   <span class="squire-plan-count">0 / ${plan.limit}</span></p>
+                <table class="squire-plan-table">
+                    <tbody>${plan.spells.map(spellRow).join('')}</tbody>
+                </table>` : ''}
+            </div>`;
 
-        const said = parts.length
-            ? `${picked.empty ? 'Emptied, then filled' : 'Filled'} with ${parts.join(' and ')}`
-            : 'Emptied';
+        // Live rules, bound after each render because DialogV2 cannot be given
+        // listeners before it opens.
+        const controls = {
+            attach: (root) => {
+                const slotSelects = [...root.querySelectorAll('.squire-plan-slot')];
 
-        showSquireToast(build.name, { subtitle: said, icon: 'fa-solid fa-download' });
+                // ONE ITEM PER SLOT. Choosing a slot something else already has
+                // turns that other one loose rather than quietly double-booking
+                // the doll — a build cannot put two things in one hand, and the
+                // honest way to say so is to show the thing that got displaced
+                // sitting at Not equipped.
+                for (const select of slotSelects) {
+                    select.addEventListener('change', () => {
+                        if (!select.value) return;
+                        for (const other of slotSelects) {
+                            if (other !== select && other.value === select.value) other.value = '';
+                        }
+                    });
+                }
 
-        // What it could not place, NAMED — and the two reasons kept apart,
-        // because they have different answers. "Nothing could say where this
-        // goes" is a gap in what anything knows and you fix it by dragging.
-        // "The slot was taken" is not a failure at all: you own one neck, and a
-        // character wearing two amulets on the sheet cannot wear both here.
-        // Rolling them together would make the second look like a defect.
-        const say = (names, sentence) => {
-            if (!names?.length) return;
-            const list = names.map(name => foundry.utils.escapeHTML(name)).join(', ');
-            // PERMANENT. This is a list of item names the player has to act on,
-            // and a toast that fades takes the list with it — the report was
-            // being missed entirely. It dismisses on click like any other.
-            ui.notifications.warn(`${sentence} ${list}. Drag them onto the figure to place them.`,
-                { permanent: true });
+                // The prepared count, live, because the limit is a real ceiling
+                // and this is the one screen where it can be exceeded.
+                const prepSelects = [...root.querySelectorAll('.squire-plan-prepared')];
+                const counter = root.querySelector('.squire-plan-count');
+                if (!counter) return;
+
+                const recount = () => {
+                    const chosen = prepSelects.filter(select => select.value).length;
+                    counter.textContent = `${chosen} / ${plan.limit}`;
+                    counter.classList.toggle('is-over', chosen > plan.limit);
+                };
+
+                prepSelects.forEach(select => select.addEventListener('change', recount));
+                recount();
+            }
         };
 
-        say(result.unknown, `Could not work out where ${result.unknown?.length === 1 ? 'this goes' : 'these go'}, so ${result.unknown?.length === 1 ? 'it is' : 'they are'} not in the build:`);
-        say(result.crowded, `No room left for ${result.crowded?.length === 1 ? 'this' : 'these'}, so ${result.crowded?.length === 1 ? 'it is' : 'they are'} not in the build:`);
+        const { action, value } = await getBlacksmith().dialog.prompt({
+            title: 'Fill From Sheet',
+            content,
+            controls,
+            getValue: (root) => ({
+                slots: Object.fromEntries([...root.querySelectorAll('.squire-plan-slot')]
+                    .map(select => [select.name.replace(/^slot-/, ''), select.value])),
+                spells: [...root.querySelectorAll('.squire-plan-prepared')]
+                    .filter(select => select.value)
+                    .map(select => select.name.replace(/^prep-/, ''))
+            }),
+            submitLabel: 'Fill Build',
+            submitIcon: 'fa-solid fa-download'
+        });
+        if (action !== 'submit' || !value) return;
+
+        await applyImportPlan(this.actor, this.buildId, value);
+
+        const placed = Object.values(value.slots).filter(Boolean).length;
+        showSquireToast(build.name, {
+            subtitle: `${placed} item${placed === 1 ? '' : 's'} placed`
+                + (plan.preparing ? `, ${value.spells.length} spell${value.spells.length === 1 ? '' : 's'} prepared` : ''),
+            icon: 'fa-solid fa-download'
+        });
+
+        // No leftovers report: nothing was left over. Every item was on the
+        // table and every one of them has an answer the player chose.
+        this._importReport = null;
         await this._refresh();
     }
 
@@ -743,6 +806,9 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 weight: gearWeight(this.actor, build),
                 armorClass: estimateArmorClass(this.actor, build),
                 imageSlots,
+                // The last import's leftovers, if it had any. See
+                // pullSelectedFromSheet() for why this lives on the instance.
+                importReport: this._importReport,
                 pack,
                 isCaster: plansPrepared,
                 // The switch shows for a caster whether or not it is on; the
@@ -969,6 +1035,11 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
 
         root.querySelector('.squire-build-pull')?.addEventListener('click', async () => {
             await this.pullSelectedFromSheet();
+        });
+
+        root.querySelector('.squire-build-report-close')?.addEventListener('click', async () => {
+            this._importReport = null;
+            await this.render(false);
         });
 
         // A global option, so it writes a setting rather than the build.
@@ -1363,7 +1434,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // A cell past the class's limit is not a slot yet. The grid already
         // makes it unclickable; this is the same answer given again, because a
         // pointer-events rule is a cursor hint and not a permission check.
-        if (slot.classList.contains('is-beyond')) {
+        if (slot.classList.contains('is-beyond') && !slot.classList.contains('is-filled')) {
             ui.notifications.warn(`${this.actor.name} cannot prepare that many spells yet.`);
             return;
         }

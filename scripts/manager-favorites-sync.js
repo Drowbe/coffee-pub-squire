@@ -226,7 +226,8 @@ export async function syncFavorites(actor) {
         // agreed) changes nothing the tray is showing. Dynamic import because
         // panel-favorites.js imports manager-panel.js, which imports this file —
         // a static import would close that loop at module-evaluation time.
-        if (squireChanged && actor.id === game.modules.get(MODULE.ID)?.api?.PanelManager?.currentActor?.id) {
+        // uuid, not id: an unlinked token's synthetic actor carries the BASE actor's id, so every copy of a pasted monster shares one.
+        if (squireChanged && actor.uuid === game.modules.get(MODULE.ID)?.api?.PanelManager?.currentActor?.uuid) {
             const { FavoritesPanel } = await import('./panel-favorites.js');
             await FavoritesPanel.refreshFavoritesUI(actor);
         }

@@ -927,10 +927,23 @@
    the character levelled would stop being a fixed shape — and because what the
    next level buys is worth being able to see. Refuses drops here; the drop
    handler refuses them again, since a cursor is not a permission check. */
-.squire-build-pack-cell.is-beyond {
+/* EMPTY and past the limit. A cell holding a spell is never dimmed and never
+   inert, however far down the column it is: the limit can fall — a level change,
+   or a build made when it was higher — and a filled cell beyond it was rendered
+   at 22% opacity with `pointer-events: none`, so the spell could not be read,
+   hovered or right-clicked away. Unreachable, and the one filled thing in this
+   window you could not interact with. */
+.squire-build-pack-cell.is-beyond:not(.is-filled):not(.is-missing) {
     opacity: 0.22;
     border-style: dotted;
     pointer-events: none;
+}
+
+/* Filled but past the limit: kept fully legible and fully live, marked with the
+   same amber the rest of the window uses for "this wants your attention". */
+.squire-build-pack-cell.is-beyond.is-filled {
+    border-style: dashed;
+    border-color: #e0a52e;
 }
 
 .squire-build-pack-cell.is-drop-target {
@@ -1123,6 +1136,147 @@
    more urgently not-equipped than it is uncommon. */
 .squire-build-slot[data-rarity].is-drifted.is-filled {
     border-color: #e0a52e;
+}
+
+/* ---------------- THE IMPORT REPORT ----------------
+
+   What the last import could not place, laid OVER the doll rather than beside
+   it. Absolutely positioned on purpose: the workspace's second row is pinned to
+   the doll's height and a strip in the flow would push past it, which would make
+   an import change the size of the window.
+
+   Over the weapons at the foot, because that is the emptiest part of the doll
+   before anything has been dragged in — and because the eye is already going
+   there after an import. Amber, like everything else here that means "this wants
+   your attention and is not broken". */
+.squire-build-report {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 5;
+    padding: 8px 26px 8px 10px;
+    border: 1px solid rgba(224, 165, 46, 0.5);
+    border-radius: 4px;
+    background: rgba(20, 14, 6, 0.94);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+}
+
+.squire-build-report p {
+    margin: 0 0 3px;
+    color: var(--blacksmith-tool-text);
+    font-size: 0.72em;
+    line-height: 1.45;
+}
+
+.squire-build-report strong {
+    color: #e0a52e;
+}
+
+.squire-build-report-hint {
+    margin-bottom: 0 !important;
+    color: var(--blacksmith-tool-text-muted) !important;
+    font-size: 0.68em !important;
+    font-style: italic;
+}
+
+.squire-build-report-close {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    width: 18px;
+    height: 18px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    border: none;
+    border-radius: 3px;
+    background: none;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.8em;
+}
+
+.squire-build-report-close:hover {
+    color: var(--blacksmith-tool-text);
+}
+
+/* The doll column is the report's positioning context. */
+.squire-build-doll {
+    position: relative;
+}
+
+/* ---------------- THE IMPORT PLAN ----------------
+
+   Every equipped item and where it would go, as a table to argue with rather
+   than a result to discover. It replaced three tick boxes and a report, and the
+   reason is that equipping a build takes everything else OFF — so the moment to
+   disagree is before it happens, against a named list, not afterwards against a
+   doll that already did. */
+.squire-plan p {
+    margin: 0 0 8px;
+}
+
+.squire-plan-heading {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-top: 12px !important;
+    font-weight: 700;
+}
+
+/* The prepared count, live. This is the one screen where the limit can be
+   exceeded, so it has to say when it has been. */
+.squire-plan-count {
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+}
+
+.squire-plan-count.is-over {
+    color: #e0a52e;
+    font-weight: 700;
+}
+
+.squire-plan-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.squire-plan-table th {
+    padding-bottom: 4px;
+    font-size: 0.85em;
+    text-align: left;
+    opacity: 0.7;
+}
+
+.squire-plan-table td {
+    padding: 2px 0;
+    vertical-align: middle;
+}
+
+/* The item column takes what the dropdown leaves, so a long name wraps rather
+   than squeezing the control that has to be clicked. */
+.squire-plan-item {
+    width: 100%;
+}
+
+.squire-plan-item img {
+    width: 22px;
+    height: 22px;
+    margin-right: 6px;
+    object-fit: cover;
+    vertical-align: middle;
+    border: none;
+    border-radius: 3px;
+}
+
+.squire-plan-slot,
+.squire-plan-prepared {
+    width: 100%;
+    min-width: 150px;
 }
 
 /* ---------------- RARITY ----------------

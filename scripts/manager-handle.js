@@ -48,7 +48,10 @@ export class HandleManager {
     _resolveTokenForActor(actor) {
         if (!actor) return null;
         const controlled = canvas?.tokens?.controlled ?? [];
-        let token = controlled.find(t => t.actor?.id === actor.id);
+        // uuid, not id: an unlinked token's synthetic actor carries the BASE actor's id, so every copy of a pasted monster shares one.
+        // Matching on id here returned whichever copy happened to be first in
+        // the controlled set, which is not necessarily the one being shown.
+        let token = controlled.find(t => t.actor?.uuid === actor.uuid);
         if (token) return token;
         const activeTokens = actor.getActiveTokens?.(true) ?? [];
         if (!activeTokens?.length) return null;
@@ -103,7 +106,7 @@ export class HandleManager {
             currentActor.healthStatus = healthData.status;
             currentActor.healthbarStatusClass = healthData.statusClass;
             currentActor.healthPercentage = healthData.percentage;
-            const currentToken = tokens.find(t => t.actor?.id === currentActor.id) || this._resolveTokenForActor(currentActor);
+            const currentToken = tokens.find(t => t.actor?.uuid === currentActor.uuid) || this._resolveTokenForActor(currentActor);
             currentActor.handleDisplayName = this._getDisplayName(currentToken, currentActor);
         }
 

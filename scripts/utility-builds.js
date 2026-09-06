@@ -952,6 +952,10 @@ export function resolvePreparedSpells(actor, build, drift = null) {
             missing: !!itemId && !item,
             name: item?.name ?? null,
             img: item?.img ?? null,
+            // The system's own item card hangs off a uuid, exactly as it does
+            // on a gear slot. Without it a prepared spell was the one filled
+            // thing in this window you could not hover to read.
+            uuid: item?.uuid ?? null,
             level: item?.system?.level ?? null,
             // Marked, not counted. Preparing six concentration spells is legal —
             // you simply cannot run two at once — so this is a fact about each
@@ -1314,8 +1318,7 @@ export async function applyBuild(actor, build) {
         // importer refuses to spend a slot on them — so without this, applying
         // any build would turn off a character's claws and take their backpack
         // off their back.
-        if (item.type === 'weapon' && item.system?.type?.value === 'natural') continue;
-        if (isContainer(item)) continue;
+        if (isUnplannable(item)) continue;
 
         if (item.system?.equipped !== undefined) {
             const shouldEquip = gearIds.has(item.id);
@@ -1607,8 +1610,37 @@ function isContainer(item) {
     return ['container', 'backpack'].includes(item?.type);
 }
 
+/**
+ * Items a build NEVER names, and must therefore never unequip.
+ *
+ * The definitive list, in one place, because it has to be the same answer in
+ * three: the importer refuses to spend a slot on these, applying refuses to
+ * strip them, and drift refuses to count them. Any of the three disagreeing
+ * produces a specific bug — a build that takes a character's backpack off, or
+ * one that reads as permanently drifted because of their claws.
+ *
+ * It was written out twice and the two copies had already diverged: siege and
+ * improvised weapons were excluded from classification but not from the
+ * unequip sweep, so equipping any build would have unequipped a ballista.
+ *
+ *   NATURAL WEAPONS   claws, bites, unarmed strikes. A fact about the creature.
+ *   SIEGE / IMPROVISED a ballista is scenery; a thrown chair is a decision made
+ *                     once, in a fight, and never planned.
+ *   CONTAINERS        where things live, not something worn. The author's call,
+ *                     and the reason a Fanny Pack of Holding does not get a slot.
+ *
+ * What is deliberately NOT here: everything else a character can equip. A Gem of
+ * Brightness has no obvious home and the importer says so rather than hiding it
+ * — being unplaceable is not the same as being ignorable.
+ */
+export function isUnplannable(item) {
+    if (isContainer(item)) return true;
+    return item?.type === 'weapon'
+        && ['natural', 'siege', 'improv'].includes(item?.system?.type?.value);
+}
+
 function slotClaim(item) {
-    if (isContainer(item)) return NOT_GEAR;
+    if (isUnplannable(item)) return NOT_GEAR;
 
     const api = equipLocations();
     if (!api) return null;
@@ -1691,6 +1723,107 @@ function favoriteIds(actor) {
         .map(entry => entry.id.split('.').pop());
 
     return new Set(ids);
+}
+
+/**
+ * The importer's PROPOSAL, as a table to be argued with rather than a result.
+ *
+ * Same classification and the same merit ordering `pullFromSheet` uses — this is
+ * that function stopping one step early, before it writes, and handing back what
+ * it was about to do.
+ *
+ * Every equipped item gets a row, including the ones nothing could place. That
+ * is the point of it: an item with no obvious home used to be reported after the
+ * fact in a list you could not act on, and the honest place for "we do not know
+ * where your Gem of Brightness goes" is a dropdown next to the words Gem of
+ * Brightness. Unplaceable rows sort FIRST, because they are the decisions that
+ * still need making and the rest are already made.
+ *
+ * `options` is every slot the item could legally occupy, in the order worth
+ * trying: what we proposed, then everything else, then nothing. Body slots take
+ * anything — see SLOT_RULES and the note about a pair of boots being
+ * indistinguishable from a hat — so most items offer most of the doll, and that
+ * is correct rather than lazy: the player knows where their circlet goes and we
+ * do not.
+ */
+export function planImport(actor, build) {
+    const layout = getDollLayout(actor);
+    const slots = [...layout.body, ...layout.big];
+    const equipped = (actor?.items ?? []).filter(item => item.system?.equipped && !isUnplannable(item));
+
+    const signals = {
+        favorites: favoriteIds(actor),
+        handle: new Set(actor?.getFlag?.(MODULE.ID, 'favoriteHandle') ?? [])
+    };
+    const ranked = [...equipped].sort((a, b) => itemMerit(b, signals) - itemMerit(a, signals));
+
+    // The proposal, run exactly as the importer would run it.
+    const taken = new Set();
+    const proposed = new Map();
+
+    for (const item of ranked) {
+        const claim = slotClaim(item);
+        if (!claim || claim === NOT_GEAR) continue;
+
+        const key = claim.find(candidate => slots.some(slot => slot.key === candidate) && !taken.has(candidate));
+        if (!key) continue;
+
+        taken.add(key);
+        proposed.set(item.id, key);
+    }
+
+    const rows = ranked.map(item => ({
+        id: item.id,
+        name: item.name,
+        img: item.img,
+        uuid: item.uuid,
+        slot: proposed.get(item.id) ?? '',
+        // Legal homes only. An arrow cannot go in a ring slot and the dropdown
+        // should not offer it — the doll refuses that drop already, and an
+        // option that cannot be chosen is worse than one that is absent.
+        options: slots
+            .filter(slot => !refuseSlotDrop(slot.key, item))
+            .map(slot => ({ key: slot.key, label: slot.label }))
+    }));
+
+    // Decisions first: anything we could not place, then everything else in
+    // merit order, which is the order it was already reasoned about in.
+    rows.sort((a, b) => (a.slot ? 1 : 0) - (b.slot ? 1 : 0));
+
+    // Prepared spells, if this build plans them. Two states rather than a slot
+    // list, and the limit is a real ceiling the player can exceed here, which is
+    // why the window has to say how many they have chosen.
+    const preparing = build?.includesPrepared && canPrepareSpells(actor);
+    const limit = preparedLimit(actor);
+    const spells = preparing
+        ? (actor?.items ?? [])
+            .filter(item => item.type === 'spell' && item.system?.countsPrepared)
+            .map(item => ({
+                id: item.id,
+                name: item.name,
+                img: item.img,
+                uuid: item.uuid,
+                level: item.system?.level ?? 0,
+                prepared: Number(item.system?.prepared) > 0
+            }))
+            .sort((a, b) => (b.prepared - a.prepared) || (a.level - b.level) || a.name.localeCompare(b.name))
+        : [];
+
+    return { rows, spells, limit, preparing };
+}
+
+/** Write a decided plan: slot keys by item id, and the prepared list in order. */
+export async function applyImportPlan(actor, buildId, { slots = {}, spells = [] } = {}) {
+    await saveBuilds(actor, getBuilds(actor).map(build => {
+        if (build.id !== buildId) return build;
+
+        const next = Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null]));
+        for (const [itemId, slotKey] of Object.entries(slots)) {
+            if (slotKey && slotKey in next) next[slotKey] = itemId;
+        }
+
+        return { ...build, slots: next, spells: spells.slice(0, PACK_GRID_SIZE) };
+    }));
 }
 
 /**
@@ -1918,8 +2051,7 @@ export function equippedState(actor) {
         // natural weapon or a container, so counting either as equipped would
         // report every character with claws — or a backpack — as permanently
         // drifted from every build.
-        if (item.type === 'weapon' && item.system?.type?.value === 'natural') continue;
-        if (isContainer(item)) continue;
+        if (isUnplannable(item)) continue;
 
         // Equippable is "has an equipped flag at all" — dnd5e's own way of
         // saying the question applies to this item. The same test applyBuild
@@ -2067,8 +2199,14 @@ export async function ensureDefaultBuild(actor) {
     if (!equipLocations()) return;
 
     const build = await createBuild(actor, 'Original Gear');
-    await pullFromSheet(actor, build.id, { gear: true, prepared: false });
+    const result = await pullFromSheet(actor, build.id, { gear: true, prepared: false });
     await setActiveBuildId(actor, build.id);
+
+    // Handed back so the window can say what this silent snapshot could not
+    // place. Every other route into the importer now asks item by item, so this
+    // is the one path where something can be left out without anybody being
+    // told — and it is the first thing a player ever sees here.
+    return { buildId: build.id, ...result };
 }
 
 export async function ensureDefaultCostume(actor) {

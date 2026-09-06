@@ -353,6 +353,37 @@
     {{/if}}
     {{#unless isCostume}}
     <div class="squire-build-doll">
+        {{#if importReport}}
+        {{!-- What the last import could not place, beside the doll rather than in a
+              notification. These are things to DRAG ONTO THE FIGURE, so the list has
+              to still be there while you drag — a toast that fades takes the names
+              with it, and two permanent ones are a stack of warnings over the corner
+              of the screen.
+
+              Two reasons, kept apart because they have different answers. Nothing
+              could say where it goes: a gap in what anything knows, and you fix it
+              by putting it somewhere yourself. The slot was taken: not a failure at
+              all — a character can equip two amulets on their sheet and has one
+              neck. Rolled together the second reads as a bug in the first. --}}
+        <div class="squire-build-report">
+            <button type="button" class="squire-build-report-close" data-tooltip="Dismiss">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            {{#if importReport.unknown.length}}
+            <p><strong>Nowhere obvious to put {{#if (eq importReport.unknown.length 1)}}this{{else}}these{{/if}}:</strong>
+               {{#each importReport.unknown}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}</p>
+            {{/if}}
+
+            {{#if importReport.crowded.length}}
+            <p><strong>No slot left for {{#if (eq importReport.crowded.length 1)}}this{{else}}these{{/if}}:</strong>
+               {{#each importReport.crowded}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}</p>
+            {{/if}}
+
+            <p class="squire-build-report-hint">Not in this build. Drag any of them onto the figure to add {{#if (eq importReport.unknown.length 1)}}it{{else}}them{{/if}}.</p>
+        </div>
+        {{/if}}
+
     <div class="squire-build-body">
         {{#each bodySlots}}
         <div class="squire-build-slot{{#if this.round}} is-round{{/if}}{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}{{#if this.drifted}} is-drifted{{/if}}"
@@ -601,7 +632,7 @@
         <div class="squire-build-pack-grid">
             {{#each pack}}
             <div class="squire-build-pack-cell{{#if this.beyond}} is-beyond{{/if}}{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}{{#if this.drifted}} is-drifted{{/if}}"
-                 data-pack-index="{{this.index}}"{{#if this.itemId}} data-item-id="{{this.itemId}}"{{/if}}
+                 data-pack-index="{{this.index}}"{{#if this.uuid}} data-item-uuid="{{this.uuid}}"{{/if}}
                  data-tooltip="{{#if this.beyond}}<strong>Not yet</strong><br>This character cannot prepare this many spells at their level. The cell is here so you can see what levelling up will buy.{{else if this.filled}}{{this.name}}{{#if this.drifted}}<br><strong>Not prepared</strong>{{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This is no longer on the sheet<br><em>Right-click to clear</em>{{else}}<strong>Prepared spell</strong><br>Any levelled spell this character knows. Cantrips are always available and are not prepared, so they do not go here.<br><em>Drag one in from the Squire tray or your character sheet</em>{{/if}}">
                 {{#if this.filled}}
                 <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">

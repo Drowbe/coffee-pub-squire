@@ -421,8 +421,15 @@ export class PanelManager {
                 await game.settings.set(MODULE.ID, 'viewMode', enabledTabs[0]);
             }
             
-            // If we have an instance with the same actor, do nothing
-            if (PanelManager.instance && PanelManager.currentActor?.id === actor?.id) {
+            // If we have an instance with the same actor, do nothing.
+            //
+            // UUID, NOT ID. An unlinked token's actor is synthetic — built from
+            // the base actor plus that token's delta — and it carries the BASE
+            // actor's id. Paste a goblin four times and all four report the same
+            // `.id`, so this gate said "same actor, nothing to do" every time the
+            // player selected a different one and the tray never switched. The
+            // uuid is per token and is the only field that separates them.
+            if (PanelManager.instance && PanelManager.currentActor?.uuid === actor?.uuid) {
                 PanelManager._initializationInProgress = false;
                 return;
             }
@@ -1094,7 +1101,12 @@ export class PanelManager {
                             // its own owner just duplicates it. Belt-and-braces
                             // behind the _trayItemDragActive gate — this also
                             // catches a drag from this actor's own sheet.
-                            if (sourceActor.id === actor.id) return;
+                            //
+                            // uuid, not id: two copies of one unlinked token
+                            // share an id, so handing a potion from one goblin
+                            // to another was read as a self-drop and silently
+                            // did nothing.
+                            if (sourceActor.uuid === actor.uuid) return;
                             
 
                             // A packed container can't be handed over: dnd5e keeps
@@ -2046,7 +2058,10 @@ export async function _updateTrayFromSelection() {
 
     // EARLY RETURN OPTIMIZATION: Skip expensive operations if nothing changed
     // This prevents lag during multi-select when selecting same-type tokens
-    const actorUnchanged = PanelManager.currentActor?.id === actorToUse.id;
+    // uuid, not id — see initialize(). Copies of one unlinked token share an
+    // id, so this early return skipped the rebuild for what is a different
+    // creature.
+    const actorUnchanged = PanelManager.currentActor?.uuid === actorToUse.uuid;
     const actorChanged = !actorUnchanged;
     // Token set last seen by this function. It used to be read off the health
     // panel's list, which Blacksmith owns now; the diff is still what keeps
