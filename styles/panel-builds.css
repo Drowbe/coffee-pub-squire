@@ -1718,12 +1718,19 @@
     right: 5px;
 }
 
-/* Bottom left, opposite the shield's centre so the two never collide. */
+/* BOTTOM RIGHT. It carried no position at all, which for an absolutely
+   positioned box means "wherever you would have been in the flow" — so the drift
+   count landed across the middle of the portrait's face. The four plates now
+   hold the four corners, clear of the armour class badge on the hem between the
+   bottom two. */
 .squire-build-plate-drift {
+    right: 5px;
+    bottom: 5px;
     color: #e0a52e;
     border-color: rgba(224, 165, 46, 0.45);
 }
 
+/* Bottom left. */
 .squire-build-plate-warning {
     bottom: 5px;
     left: 5px;

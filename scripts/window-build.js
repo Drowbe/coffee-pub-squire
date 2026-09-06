@@ -4,7 +4,7 @@ import { renderTemplate, showSquireToast, getBlacksmith } from './helpers.js';
 import {
     BUILD_SLOT_KEYS, getDollLayout,
     getBuilds, getBuild, createBuild, deleteBuild, duplicateBuild, applyBuild, buildSummary,
-    renameBuild, setBuildSlot, resolveSlots, attunementSummary,
+    renameBuild, setBuildSlot, moveBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
     resolveTokenSettings, setBuildTokenSetting, setBuildPreparation, pullFromSheet,
@@ -12,7 +12,7 @@ import {
     setActiveBuildId, getActiveBuildId, ensureDefaultCostume, ensureDefaultBuild,
     moveBuild, resolveMainImage,
     resolveTileImage,
-    equippedState, buildDrift, recaptureDefaultImages
+    equippedState, buildDrift, recaptureDefaultImages, canPrepareSpells
 } from './utility-builds.js';
 
 /**
@@ -57,9 +57,12 @@ const CHROME = RAIL_WIDTH + 10 + 1 + 10 + 16 + 22;
  * down rather than leaving it stretched around empty space.
  */
 function widthFor(actor, build) {
-    const needsPack = getDollLayout(actor).caster
-        && build?.mode !== 'costume'
-        && !!build?.includesPrepared;
+    // The column, not the doll: what widens the window is planning a prepared
+    // list, which a martial who casts can do and a caster who is not doing it
+    // cannot.
+    const needsPack = build?.mode !== 'costume'
+        && !!build?.includesPrepared
+        && canPrepareSpells(actor);
 
     return CHROME + DOLL_WIDTH + (needsPack ? PACK_WIDTH : 0);
 }
@@ -326,7 +329,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         if (!build || build.mode === 'costume') return;
 
         const state = equippedState(this.actor);
-        const caster = getDollLayout(this.actor).caster;
+        const caster = canPrepareSpells(this.actor);
 
         const form = `
             <p>Fill <strong>${foundry.utils.escapeHTML(build.name)}</strong> from what
@@ -340,7 +343,12 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 <input type="checkbox" name="prepared" ${build.includesPrepared ? 'checked' : ''}>
                 <span>Prepared spells &mdash; ${state.spells.size} currently prepared</span>
             </label>` : ''}
-            <p>Whatever is in those parts of the build now is replaced.</p>`;
+            <label class="squire-build-pull-option">
+                <input type="checkbox" name="empty">
+                <span>Empty the build first &mdash; clear everything, including the parts not ticked above</span>
+            </label>
+            <p>Whatever is in the parts you tick is replaced either way. The build's name and
+               pictures are never touched.</p>`;
 
         // `prompt`, not `confirm`: this asks for two answers rather than one,
         // and `getValue` reads them off the submit button's own form.
@@ -349,16 +357,19 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             content: form,
             getValue: (root) => ({
                 gear: !!root?.elements?.gear?.checked,
-                prepared: !!root?.elements?.prepared?.checked
+                prepared: !!root?.elements?.prepared?.checked,
+                empty: !!root?.elements?.empty?.checked
             }),
             submitLabel: 'Fill From Sheet',
             submitIcon: 'fa-solid fa-download'
         });
-        if (action !== 'submit' || !picked || (!picked.gear && !picked.prepared)) return;
+        if (action !== 'submit' || !picked
+            || (!picked.gear && !picked.prepared && !picked.empty)) return;
 
         const result = await pullFromSheet(this.actor, this.buildId, {
             gear: !!picked.gear,
-            prepared: !!picked.prepared
+            prepared: !!picked.prepared,
+            empty: !!picked.empty
         });
         if (!result) return;
 
@@ -366,10 +377,11 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         if (picked.gear) parts.push(`${result.gearCount} item${result.gearCount === 1 ? '' : 's'}`);
         if (picked.prepared) parts.push(`${result.spellCount} spell${result.spellCount === 1 ? '' : 's'}`);
 
-        showSquireToast(build.name, {
-            subtitle: parts.length ? `Filled with ${parts.join(' and ')}` : 'Nothing to take',
-            icon: 'fa-solid fa-download'
-        });
+        const said = parts.length
+            ? `${picked.empty ? 'Emptied, then filled' : 'Filled'} with ${parts.join(' and ')}`
+            : 'Emptied';
+
+        showSquireToast(build.name, { subtitle: said, icon: 'fa-solid fa-download' });
         await this._refresh();
     }
 
@@ -658,11 +670,12 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // heading and no count: the cells say what they hold, a cleric knows
         // they are a cleric, and a label above the grid would push every cell
         // out of line with the doll — which is the one thing it is built to do.
-        // Only when this build actually plans preparation. A caster who is
-        // planning gear alone has no use for twenty-six cells they did not ask
-        // for, and drawing them would imply applying touches spells when it does
-        // not.
-        const plansPrepared = layout.caster && !!build?.includesPrepared;
+        // The COLUMN is not the doll's business. A ranger gets a martial's doll
+        // and can still plan a prepared list; a sorcerer gets a caster's doll and
+        // may be planning gear alone. The two questions are asked separately —
+        // see canPrepareSpells — and only this one decides the column.
+        const canPrepare = canPrepareSpells(this.actor);
+        const plansPrepared = canPrepare && !!build?.includesPrepared;
         const pack = plansPrepared ? resolvePreparedSpells(this.actor, build, shownDrift) : null;
 
         return {
@@ -703,7 +716,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 isCaster: plansPrepared,
                 // The switch shows for a caster whether or not it is on; the
                 // column is what the switch controls.
-                canPrepare: layout.caster,
+                canPrepare,
                 includesPrepared: !!build?.includesPrepared,
                 // Cantrips are gone from this window. They are always available,
                 // never prepared and never chosen, so there was nothing anybody
@@ -1002,6 +1015,35 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         });
 
         root.querySelectorAll('.squire-build-slot:not(.squire-build-image-slot), .squire-build-pack-cell').forEach(slot => {
+            // A FILLED gear slot can be picked up and dropped on another one,
+            // which is how you fix a placement rather than clearing a slot and
+            // finding the item again in the tray. The whole doll is a plan, and
+            // rearranging a plan should not cost two gestures.
+            //
+            // The dragged slot's key rides on PanelManager for the same reason
+            // every other drag in this module does: `dataTransfer` is readable
+            // on drop but PROTECTED during dragover, and the preview under the
+            // cursor has to know what it is being offered before the drop lands.
+            if (slot.dataset.slot && slot.classList.contains('is-filled')) {
+                slot.draggable = true;
+
+                slot.addEventListener('dragstart', (event) => {
+                    PanelManager._buildSlotDragKey = slot.dataset.slot;
+                    event.dataTransfer.effectAllowed = 'move';
+                    // A payload it can carry, so dropping outside this window
+                    // does nothing rather than something surprising. It is
+                    // deliberately not a Foundry document: "move this between
+                    // two boxes" must never be able to create a token.
+                    event.dataTransfer.setData('text/plain', JSON.stringify({
+                        type: 'squire-build-slot', slot: slot.dataset.slot
+                    }));
+                });
+
+                slot.addEventListener('dragend', () => {
+                    PanelManager._buildSlotDragKey = null;
+                });
+            }
+
             // dragover must preventDefault or the browser refuses the drop. The
             // class is added here rather than on dragenter because dragenter
             // fires again for every child element crossed, and a slot with an
@@ -1084,6 +1126,9 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
     _previewDrop(slot) {
         const slotKey = slot.dataset.slot;
         if (!slotKey || !this.build) return;
+        // Nothing is being ADDED during a slot-to-slot drag, so there is no
+        // before-and-after to show.
+        if (PanelManager._buildSlotDragKey) return;
 
         const itemId = PanelManager._trayDragItemId;
         const item = itemId ? this.actor?.items?.get(itemId) : null;
@@ -1199,6 +1244,32 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         event.preventDefault();
         event.stopPropagation();
         slot.classList.remove('is-drop-target');
+
+        // A slot dropped on a slot: rearranging the doll rather than adding to
+        // it. Handled before the payload is read at all, because there is no
+        // item being offered — only a pair of boxes to exchange.
+        const from = PanelManager._buildSlotDragKey;
+        PanelManager._buildSlotDragKey = null;
+        if (from && slot.dataset.slot && this.build) {
+            if (from === slot.dataset.slot) return;
+
+            // The rules still apply to the destination. Dragging a torch into
+            // the ammunition circle is the same refusal whether the torch came
+            // from the tray or from the character's belt.
+            const moving = this.actor?.items?.get(this.build.slots?.[from]);
+            const displaced = this.actor?.items?.get(this.build.slots?.[slot.dataset.slot]);
+
+            const refusal = (moving && refuseSlotDrop(slot.dataset.slot, moving))
+                || (displaced && refuseSlotDrop(from, displaced));
+            if (refusal) {
+                ui.notifications.warn(refusal);
+                return;
+            }
+
+            await moveBuildSlot(this.actor, this.buildId, from, slot.dataset.slot);
+            await this._refresh();
+            return;
+        }
 
         const { slot: slotKey, packIndex } = slot.dataset;
         const isPackCell = packIndex !== undefined;

@@ -206,14 +206,42 @@ const BIG_CASTER = [
 ];
 
 /**
- * Which doll this character gets.
+ * Whether this character's CLASS makes them a caster, for the doll's shape.
  *
- * Decided by whether anything about them PREPARES — the same test that decides
- * whether they get a spell list at all, so the two halves of the window can
- * never disagree about what kind of character this is.
+ * dnd5e grades spellcasting on the class item: `full` and `pact` are casters,
+ * `half` and `third` and `artificer` are martials who also cast. That grading is
+ * exactly the distinction this window needs and it is already in the data.
+ *
+ * The test used to be "prepares anything", which is a different question and got
+ * a ranger wrong — a ranger prepares spells and is not a spellcaster, so they
+ * were handed a wizard's doll with three quick-cast slots where their weapons
+ * should be. In modern rules half the martial classes cast something; having
+ * spells says nothing about what a character LEADS with, and what they lead with
+ * is the only thing this layout is about.
+ */
+function isCasterClass(actor) {
+    return Object.values(actor?.classes ?? {})
+        .some(cls => ['full', 'pact'].includes(cls?.system?.spellcasting?.progression));
+}
+
+/**
+ * Whether this character can plan a prepared list at all, for the switch.
+ *
+ * A DIFFERENT question from the one above, and deliberately a looser one. The
+ * doll's shape is about what they lead with; this is about whether there is
+ * anything to plan — so a ranger, a paladin and an eldritch knight all get the
+ * switch on a martial's doll, which is the correct answer for every one of them.
+ */
+export function canPrepareSpells(actor) {
+    return getPreparingClasses(actor).length > 0
+        || Object.values(actor?.system?.spells ?? {}).some(slot => Number(slot?.max ?? 0) > 0);
+}
+
+/**
+ * Which doll this character gets.
  */
 export function getDollLayout(actor) {
-    const caster = getPreparingClasses(actor).length > 0;
+    const caster = isCasterClass(actor);
     return {
         caster,
         body: [...BUILD_CORE_SLOTS, ...(caster ? ROW_SIX_CASTER : ROW_SIX_MARTIAL)],
@@ -688,6 +716,33 @@ export async function renameBuild(actor, buildId, name) {
  * nobody owns, which is a different feature — a shopping list rather than a
  * loadout — and would make every slot an async resolve on every render.
  */
+/**
+ * Move what is in one slot into another, swapping with whatever is there.
+ *
+ * ONE write, not two calls to setBuildSlot. Two would each save the whole flag,
+ * and the state between them has the same item in two slots — which the window
+ * would render if it happened to refresh in the gap, and which the second write
+ * would then be building on top of.
+ *
+ * A swap rather than a displacement: the thing already in the target has to go
+ * somewhere, and where it came from is the only place that is certainly free.
+ */
+export async function moveBuildSlot(actor, buildId, fromKey, toKey) {
+    if (fromKey === toKey) return;
+    if (!BUILD_SLOT_KEYS.includes(fromKey) || !BUILD_SLOT_KEYS.includes(toKey)) return;
+
+    await saveBuilds(actor, getBuilds(actor).map(build => build.id === buildId
+        ? {
+            ...build,
+            slots: {
+                ...build.slots,
+                [toKey]: build.slots?.[fromKey] ?? null,
+                [fromKey]: build.slots?.[toKey] ?? null
+            }
+        }
+        : build));
+}
+
 export async function setBuildSlot(actor, buildId, slotKey, itemId) {
     if (!BUILD_SLOT_KEYS.includes(slotKey)) return;
 
@@ -1253,6 +1308,12 @@ export async function applyBuild(actor, build) {
     for (const item of costume ? [] : actor.items) {
         // Equippable is "has an equipped flag at all" — that is dnd5e's own way
         // of saying the question applies to this item.
+        // A natural weapon is never planned and must never be stripped. Claws
+        // and unarmed strikes carry an `equipped` flag like anything else, so a
+        // build that does not name them — and none does, because the importer
+        // refuses to spend a slot on one — would otherwise turn them off.
+        if (item.type === 'weapon' && item.system?.type?.value === 'natural') continue;
+
         if (item.system?.equipped !== undefined) {
             const shouldEquip = gearIds.has(item.id);
             if (!!item.system.equipped !== shouldEquip) {
@@ -1450,6 +1511,90 @@ export function getHandleBuildIds(actor) {
  * identical shirts, which was the point of the borrowing in the first place.
  */
 /**
+ * Which slot a name suggests, in the order the words have to be tried.
+ *
+ * FACE before HEAD, because a mask is worn on one and the word appears in lists
+ * of the other. WAIST before BACK, because a "belt pouch" is a belt. The order
+ * is the rule; the patterns on their own would contradict each other.
+ *
+ * English, and knowingly so. This reads item names because nothing else in the
+ * data distinguishes a helm from a boot, which is the same reason the body slots
+ * accept anything in the first place. A wrong guess is one drag from right.
+ */
+const NAME_SLOT_PATTERNS = [
+    ['face',  /\b(mask|goggles?|spectacles?|lenses?|eyepatch|veil|visor|monocle)\b/i],
+    ['head',  /\b(helm|helmet|hat|cap|crown|circlet|coif|hood|diadem|tiara)\b/i],
+    ['neck',  /\b(amulet|necklace|periapt|pendant|torc|collar|medallion|scarab|brooch|holy symbol|talisman)\b/i],
+    ['waist', /\b(belt|girdle|sash|baldric)\b/i],
+    ['feet',  /\b(boots?|shoes?|sandals?|greaves?|slippers?)\b/i],
+    ['hands', /\b(gloves?|gauntlets?|mitts?|handwraps?)\b/i],
+    ['arms',  /\b(bracers?|vambraces?|armbands?|sleeves?)\b/i],
+    ['back',  /\b(cloak|cape|mantle|backpack|haversack|quiver|pack|satchel|wings?)\b/i],
+    ['ring1', /\bring\b/i],
+    ['ring2', /\bring\b/i],
+    // The pouches: things carried on a belt rather than worn on a body part.
+    // LAST of the patterns, so a garment above wins over the word "kit"
+    // happening to appear in the same name.
+    ['hip1',  /\b(pouch|horn|pipes?|lantern|torch|flask|totem|idol|figurine|focus|wand|rod|staff|instrument|kit|tools?|deck|orb)\b/i],
+    ['hip2',  /\b(pouch|horn|pipes?|lantern|torch|flask|totem|idol|figurine|focus|wand|rod|staff|instrument|kit|tools?|deck|orb)\b/i]
+];
+
+function slotGuessFromName(name) {
+    if (!name) return [];
+    return NAME_SLOT_PATTERNS.filter(([, pattern]) => pattern.test(name)).map(([key]) => key);
+}
+
+/** An item that is not gear at all and belongs in no slot. */
+const NOT_GEAR = Symbol('not gear');
+
+/**
+ * Where one item claims to belong, strongest first — or nothing, if it has no
+ * claim and will have to take whatever is left.
+ *
+ * The distinction between HAVING a claim and not is the whole engine. Placement
+ * runs in two passes: everything with a claim is placed first, and only then do
+ * the claimless take what remains. In one pass an arrow reached the neck slot
+ * before the Amulet of Health was even considered, and the amulet ended up on
+ * the character's feet — not because the guesses were wrong but because they
+ * were made in the order the items happened to be listed.
+ *
+ * dnd5e models no body slots and never has: `miscEquipmentTypes` is clothing,
+ * ring, rod, trinket, vehicle, wand, wondrous. There is no data saying a helm is
+ * worn on the head, which is exactly why the doll's body slots accept anything.
+ * So this asks the data everything it can answer and reads the name for the
+ * rest.
+ */
+function slotClaim(item) {
+    const kind = item.system?.type?.value;
+
+    if (item.type === 'weapon') {
+        // A natural weapon is a fact about the creature, not a thing it chose to
+        // pick up. Claws and unarmed strikes belong in no slot and should not
+        // spend one.
+        return kind === 'natural' ? NOT_GEAR : ['mainhand', 'offhand', 'sheath', 'bothhands'];
+    }
+
+    if (item.type === 'consumable' && kind === 'ammo') return ['ammo'];
+    if (kind === 'shield') return ['offhand'];
+    if (item.system?.armor?.value) return ['chest'];
+    if (kind === 'ring') return ['ring1', 'ring2'];
+    if (['container', 'backpack'].includes(item.type)) return ['back'];
+    // A tool is carried, never worn. dnd5e says so by typing it, which makes
+    // this a fact rather than a guess.
+    if (item.type === 'tool') return ['hip1', 'hip2'];
+
+    const byName = slotGuessFromName(item.name);
+    if (byName.length) return byName;
+
+    // `clothing` says it is worn without saying where, which is still more than
+    // nothing: the chest is where most of it goes and the back is where the rest
+    // does.
+    if (kind === 'clothing') return ['chest', 'back'];
+
+    return null;
+}
+
+/**
  * Fill a build from what the character has on RIGHT NOW.
  *
  * The reverse of applying, and the answer to having spent an hour getting a kit
@@ -1467,41 +1612,62 @@ export function getHandleBuildIds(actor) {
  * being dropped. A build missing the item you were looking at is worse than a
  * build with a lantern in the neck slot, and the second is one drag from fixed.
  */
-export async function pullFromSheet(actor, buildId, { gear = false, prepared = false } = {}) {
+export async function pullFromSheet(actor, buildId, { gear = false, prepared = false, empty = false } = {}) {
     const build = getBuild(actor, buildId);
-    if (!build || (!gear && !prepared)) return null;
+    if (!build || (!gear && !prepared && !empty)) return null;
 
     const layout = getDollLayout(actor);
     const next = { ...build };
+
+    // Emptied FIRST, and independently of what is then taken. Each half an
+    // import touches is already replaced rather than merged, so this is only for
+    // the half it does NOT touch: taking gear alone into a build that also plans
+    // spells otherwise leaves the old list sitting there, which is correct when
+    // you meant to keep it and surprising when you did not.
+    //
+    // The name and the pictures survive. Those are what the build IS; this
+    // empties what it holds.
+    if (empty) {
+        next.slots = Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null]));
+        next.spells = [];
+    }
     let gearCount = 0;
     let spellCount = 0;
 
     if (gear) {
         const slots = Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null]));
         const equipped = (actor?.items ?? []).filter(item => item.system?.equipped);
+        const exists = new Set([...layout.body, ...layout.big].map(slot => slot.key));
 
-        // The slots a guess can name, in the order a guess should try them.
         const place = (key, item) => {
-            if (!key || slots[key] || !layout.body.concat(layout.big).some(slot => slot.key === key)) return false;
+            if (!key || !exists.has(key) || slots[key]) return false;
             slots[key] = item.id;
             return true;
         };
 
-        const bodyKeys = layout.body.filter(slot => !slot.accepts || slot.accepts === 'gear').map(slot => slot.key);
+        // Everything else, in the order a leftover should try them: the pouches
+        // first, because that is what the hips are for, then the rest of the
+        // body. A leftover used to start at the head, which is how a fanny pack
+        // ended up on somebody's scalp.
+        const spare = ['hip1', 'hip2', 'back', 'waist', 'neck', 'chest',
+                       'arms', 'hands', 'feet', 'face', 'head']
+            .filter(key => exists.has(key));
+
+        // PASS ONE: everything that knows where it belongs. Nothing without a
+        // claim gets a look at a named slot until these are settled, which is
+        // the entire fix — see slotClaim().
+        const parked = [];
 
         for (const item of equipped) {
-            const kind = item.system?.type?.value;
-            const guesses = item.type === 'weapon'
-                ? ['mainhand', 'bothhands', 'offhand', 'sheath']
-                : kind === 'shield' ? ['offhand']
-                : kind === 'ring' ? ['ring1', 'ring2']
-                : item.system?.armor?.value ? ['chest']
-                : [];
+            const claim = slotClaim(item);
+            if (claim === NOT_GEAR) continue;
 
-            const placed = guesses.some(key => place(key, item));
-            if (!placed) bodyKeys.some(key => place(key, item));
             gearCount++;
+            if (!claim || !claim.some(key => place(key, item))) parked.push(item);
         }
+
+        // PASS TWO: whatever is left, into whatever is free.
+        for (const item of parked) spare.some(key => place(key, item));
 
         next.slots = slots;
     }
@@ -1628,6 +1794,11 @@ export function equippedState(actor) {
     const spells = new Set();
 
     for (const item of actor?.items ?? []) {
+        // Natural weapons are skipped here exactly as applyBuild skips them: a
+        // build never names one, so counting it as equipped would report every
+        // character with claws as permanently drifted from every build.
+        if (item.type === 'weapon' && item.system?.type?.value === 'natural') continue;
+
         // Equippable is "has an equipped flag at all" — dnd5e's own way of
         // saying the question applies to this item. The same test applyBuild
         // uses, so the two can never disagree about what counts.
