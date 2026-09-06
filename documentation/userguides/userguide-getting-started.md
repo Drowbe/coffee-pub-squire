@@ -178,6 +178,20 @@ uses now, and right-clicking one puts it back to that. **Anything that will actu
 carries an amber warning triangle**, so a costume with no mark on it changes nothing but the picture. Equipping a gear build never touches any of it. Your **Default Costume**
 records your token's own size and framing when it is made, so it is the one that puts everything back.
 
+The **download** button beside a build's name fills it from what your character is wearing *right
+now* -- useful if you set a kit up on the sheet before finding this window, or changed something there
+and want the build to catch up. It offers three tick boxes: equipment, prepared spells, and *empty the
+build first*, which clears the parts you did not tick as well.
+
+**It will not guess.** Where an item goes is worked out from what the system actually knows -- weapons,
+ammunition, shields, armour, rings, containers, tools -- and then from the item's name for the things
+the system has no opinion about, like a Cloak of Protection. Anything it cannot work out is left out
+and named back to you, rather than dropped into whichever slot happened to be free: a build with two
+things missing tells you exactly what to fix, and a build with two things in the wrong holes tells you
+nothing. It says which of two reasons applied -- nothing could say where the item goes, or it knew and
+the slot was already taken, which is what happens when a character has two amulets equipped and one
+neck to wear them on.
+
 Beside a build's name is a **Build / Costume** switch. A **Costume** changes only your portrait and
 token when applied and leaves your gear and spells completely alone -- useful for a disguise, a
 wild shape, or a change of clothes. Switch to it and the window changes with it: no slots, no spells,

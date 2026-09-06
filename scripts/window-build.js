@@ -328,6 +328,18 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const build = this.build;
         if (!build || build.mode === 'costume') return;
 
+        // Classification lives in Blacksmith. Squire only maps a body location
+        // onto a slot on this doll, so without that API there is nothing to map
+        // and every item would come back unplaceable — which would read as a
+        // broken importer rather than an out-of-date dependency. Say which.
+        if (!game.modules.get('coffee-pub-blacksmith')?.api?.equipLocations) {
+            ui.notifications.warn(
+                'Filling a build from the sheet needs a newer Coffee Pub Blacksmith. '
+                + 'Everything else in this window works as usual.'
+            );
+            return;
+        }
+
         const state = equippedState(this.actor);
         const caster = canPrepareSpells(this.actor);
 
@@ -382,6 +394,25 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             : 'Emptied';
 
         showSquireToast(build.name, { subtitle: said, icon: 'fa-solid fa-download' });
+
+        // What it could not place, NAMED — and the two reasons kept apart,
+        // because they have different answers. "Nothing could say where this
+        // goes" is a gap in what anything knows and you fix it by dragging.
+        // "The slot was taken" is not a failure at all: you own one neck, and a
+        // character wearing two amulets on the sheet cannot wear both here.
+        // Rolling them together would make the second look like a defect.
+        const say = (names, sentence) => {
+            if (!names?.length) return;
+            const list = names.map(name => foundry.utils.escapeHTML(name)).join(', ');
+            // PERMANENT. This is a list of item names the player has to act on,
+            // and a toast that fades takes the list with it — the report was
+            // being missed entirely. It dismisses on click like any other.
+            ui.notifications.warn(`${sentence} ${list}. Drag them onto the figure to place them.`,
+                { permanent: true });
+        };
+
+        say(result.unknown, `Could not work out where ${result.unknown?.length === 1 ? 'this goes' : 'these go'}, so ${result.unknown?.length === 1 ? 'it is' : 'they are'} not in the build:`);
+        say(result.crowded, `No room left for ${result.crowded?.length === 1 ? 'this' : 'these'}, so ${result.crowded?.length === 1 ? 'it is' : 'they are'} not in the build:`);
         await this._refresh();
     }
 

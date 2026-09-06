@@ -1308,11 +1308,14 @@ export async function applyBuild(actor, build) {
     for (const item of costume ? [] : actor.items) {
         // Equippable is "has an equipped flag at all" — that is dnd5e's own way
         // of saying the question applies to this item.
-        // A natural weapon is never planned and must never be stripped. Claws
-        // and unarmed strikes carry an `equipped` flag like anything else, so a
-        // build that does not name them — and none does, because the importer
-        // refuses to spend a slot on one — would otherwise turn them off.
+        // Never planned, so never stripped. A natural weapon is a fact about
+        // the creature; a container is where things live. Both carry an
+        // `equipped` flag like anything else, and no build names either — the
+        // importer refuses to spend a slot on them — so without this, applying
+        // any build would turn off a character's claws and take their backpack
+        // off their back.
         if (item.type === 'weapon' && item.system?.type?.value === 'natural') continue;
+        if (isContainer(item)) continue;
 
         if (item.system?.equipped !== undefined) {
             const shouldEquip = gearIds.has(item.id);
@@ -1511,87 +1514,183 @@ export function getHandleBuildIds(actor) {
  * identical shirts, which was the point of the borrowing in the first place.
  */
 /**
- * Which slot a name suggests, in the order the words have to be tried.
+ * An item that is not body equipment at all, as against one whose home is merely
+ * unknown. Two empty answers, deliberately distinct — Blacksmith's contract
+ * calls them `'none'` and `null`.
  *
- * FACE before HEAD, because a mask is worn on one and the word appears in lists
- * of the other. WAIST before BACK, because a "belt pouch" is a belt. The order
- * is the rule; the patterns on their own would contradict each other.
+ *   NOT_GEAR : a potion, a scroll, a natural weapon. Nothing to decide and
+ *              nothing to say. Silent.
+ *   null     : a wondrous item nobody has a word for, or one whose slot was
+ *              taken. Worth naming, because the player can place it by hand.
  *
- * English, and knowingly so. This reads item names because nothing else in the
- * data distinguishes a helm from a boot, which is the same reason the body slots
- * accept anything in the first place. A wrong guess is one drag from right.
+ * Collapsing them means either nagging about every potion or silently dropping
+ * the item somebody actually wanted.
  */
-const NAME_SLOT_PATTERNS = [
-    ['face',  /\b(mask|goggles?|spectacles?|lenses?|eyepatch|veil|visor|monocle)\b/i],
-    ['head',  /\b(helm|helmet|hat|cap|crown|circlet|coif|hood|diadem|tiara)\b/i],
-    ['neck',  /\b(amulet|necklace|periapt|pendant|torc|collar|medallion|scarab|brooch|holy symbol|talisman)\b/i],
-    ['waist', /\b(belt|girdle|sash|baldric)\b/i],
-    ['feet',  /\b(boots?|shoes?|sandals?|greaves?|slippers?)\b/i],
-    ['hands', /\b(gloves?|gauntlets?|mitts?|handwraps?)\b/i],
-    ['arms',  /\b(bracers?|vambraces?|armbands?|sleeves?)\b/i],
-    ['back',  /\b(cloak|cape|mantle|backpack|haversack|quiver|pack|satchel|wings?)\b/i],
-    ['ring1', /\bring\b/i],
-    ['ring2', /\bring\b/i],
-    // The pouches: things carried on a belt rather than worn on a body part.
-    // LAST of the patterns, so a garment above wins over the word "kit"
-    // happening to appear in the same name.
-    ['hip1',  /\b(pouch|horn|pipes?|lantern|torch|flask|totem|idol|figurine|focus|wand|rod|staff|instrument|kit|tools?|deck|orb)\b/i],
-    ['hip2',  /\b(pouch|horn|pipes?|lantern|torch|flask|totem|idol|figurine|focus|wand|rod|staff|instrument|kit|tools?|deck|orb)\b/i]
-];
-
-function slotGuessFromName(name) {
-    if (!name) return [];
-    return NAME_SLOT_PATTERNS.filter(([, pattern]) => pattern.test(name)).map(([key]) => key);
-}
-
-/** An item that is not gear at all and belongs in no slot. */
-const NOT_GEAR = Symbol('not gear');
+const NOT_GEAR = Symbol('not body equipment');
 
 /**
- * Where one item claims to belong, strongest first — or nothing, if it has no
- * claim and will have to take whatever is left.
+ * WHERE A LOCATION LANDS ON THIS DOLL.
  *
- * The distinction between HAVING a claim and not is the whole engine. Placement
- * runs in two passes: everything with a claim is placed first, and only then do
- * the claimless take what remains. In one pass an arrow reached the neck slot
- * before the Amulet of Health was even considered, and the amulet ended up on
- * the character's feet — not because the guesses were wrong but because they
- * were made in the order the items happened to be listed.
+ * Blacksmith answers LOCATION; this answers SLOT. That line is the whole reason
+ * the classifier lives over there — `sheath`, `hip1`, `bothhands` and the rest
+ * are positions in this window's layout, and a shared API that knew about them
+ * would be a shared API with Squire's opinions baked in. It returns thirteen
+ * generic body locations and this table turns them into the twenty-one keys the
+ * doll actually has.
  *
- * dnd5e models no body slots and never has: `miscEquipmentTypes` is clothing,
- * ring, rod, trinket, vehicle, wand, wondrous. There is no data saying a helm is
- * worn on the head, which is exactly why the doll's body slots accept anything.
- * So this asks the data everything it can answer and reads the name for the
- * rest.
+ * The `else` chains are OCCUPANCY, which is ours by the same argument: knowing a
+ * ring goes on a finger is classification, and knowing this character already
+ * has one on is not.
+ *
+ * `held` is the interesting one. Blacksmith reports grip — main, off, both, or
+ * either for a versatile weapon — and never claims a slot is blocked, so a
+ * shield says `off` and stops nothing. Every fallback below is this window
+ * deciding what to do when its first choice is full.
  */
-function slotClaim(item) {
-    const kind = item.system?.type?.value;
+const LOCATION_SLOTS = {
+    head:  ['head'],
+    face:  ['face'],
+    neck:  ['neck'],
+    back:  ['back'],
+    chest: ['chest'],
+    arms:  ['arms'],
+    hands: ['hands'],
+    waist: ['waist'],
+    feet:  ['feet'],
+    ring:  ['ring1', 'ring2'],
+    carried: ['hip1', 'hip2'],
+    ammunition: ['ammo']
+};
 
-    if (item.type === 'weapon') {
-        // A natural weapon is a fact about the creature, not a thing it chose to
-        // pick up. Claws and unarmed strikes belong in no slot and should not
-        // spend one.
-        return kind === 'natural' ? NOT_GEAR : ['mainhand', 'offhand', 'sheath', 'bothhands'];
+/** Where a HELD item lands, by grip. The sheath is reachable from grip alone. */
+const GRIP_SLOTS = {
+    both:   ['bothhands', 'mainhand'],
+    main:   ['mainhand', 'offhand', 'sheath'],
+    off:    ['offhand', 'sheath', 'mainhand'],
+    either: ['mainhand', 'offhand', 'sheath']
+};
+
+/**
+ * Blacksmith's equip-location API, or null if this Blacksmith predates it.
+ *
+ * Feature-detected rather than imported. Squire already hard-imports the window
+ * base class from Blacksmith's bridge, so the dependency is not new — but this
+ * particular surface arrived later, and an older Blacksmith should cost the
+ * import button rather than the whole module.
+ */
+function equipLocations() {
+    return game.modules.get('coffee-pub-blacksmith')?.api?.equipLocations ?? null;
+}
+
+/**
+ * Which slots this item could occupy, strongest first — or nothing.
+ *
+ * A thin map now. It used to be a hundred lines of dnd5e knowledge that Vault,
+ * Merchant and Blacksmith's own importer would each have had to write again,
+ * differently. What is left is the half that is genuinely this window's: which
+ * box a body location corresponds to on this particular doll.
+ */
+/**
+ * A container is where things LIVE, not something a character chose to wear.
+ *
+ * Blacksmith answers `back` for one, which is a fair general answer — a backpack
+ * is worn on the back. This doll declines it anyway, and that is a consumer
+ * decision rather than a disagreement: a slot spent on a Fanny Pack of Holding
+ * says nothing about how the character fights or what they look like, and the
+ * back is one of thirteen places a cloak could have gone.
+ *
+ * Their CONTENTS need no special handling. An item stowed in a bag is not
+ * equipped, so the equipped filter has already excluded it — which is right,
+ * because you are not wearing it.
+ */
+function isContainer(item) {
+    return ['container', 'backpack'].includes(item?.type);
+}
+
+function slotClaim(item) {
+    if (isContainer(item)) return NOT_GEAR;
+
+    const api = equipLocations();
+    if (!api) return null;
+
+    const { location, grip } = api.resolve(item);
+
+    // 'none' — deliberately not body equipment. Silent.
+    if (location === 'none') return NOT_GEAR;
+    // null — no idea. Named to the player so they can place it by hand.
+    if (!location) return null;
+
+    if (location === 'held') return GRIP_SLOTS[grip] ?? GRIP_SLOTS.main;
+
+    return LOCATION_SLOTS[location] ?? null;
+}
+
+/**
+ * How much this character seems to care about an item, for deciding who wins a
+ * contested slot.
+ *
+ * Placement used to follow whatever order the sheet happened to list things in,
+ * which put an Unarmed Strike in the main hand and an Oathbow in the sheath. The
+ * classifier is not wrong about either — both are weapons and both can be
+ * held — so the question is not "where could this go" but "which of these does
+ * this character actually lead with", and that is occupancy: ours.
+ *
+ * Four signals, in the order they deserve weight:
+ *
+ *   FAVOURITED, on the character sheet. The strongest signal there is, because
+ *   it is the player saying so in their own words rather than us inferring it.
+ *   ON THE TRAY HANDLE. The same statement made with a drag: these are the
+ *   things they reach for without opening anything.
+ *   DAMAGE. What the weapon actually does, averaged from its formula. This is
+ *   what separates an Oathbow from an Unarmed Strike when nothing else has an
+ *   opinion.
+ *   MAGICAL. A tiebreak, and only that — a +1 dagger does not out-rank a
+ *   greatsword, but it does out-rank a mundane dagger.
+ */
+function itemMerit(item, { favorites, handle }) {
+    let score = 0;
+
+    if (favorites.has(item.id)) score += 1000;
+    if (handle.has(item.id)) score += 500;
+
+    // Average of the damage dice, roughly. `2d6 + 3` is 10; `1` is 1. Good
+    // enough to rank weapons against each other, which is all it is for — the
+    // window shows the real formula everywhere it matters.
+    const formula = item?.system?.damage?.base?.formula;
+    if (formula) {
+        let average = 0;
+        for (const [, count, faces] of String(formula).matchAll(/(\d*)d(\d+)/gi)) {
+            average += (Number(count) || 1) * (Number(faces) + 1) / 2;
+        }
+        for (const [, sign, flat] of String(formula).matchAll(/([+-])\s*(\d+)(?!d)/gi)) {
+            average += (sign === '-' ? -1 : 1) * Number(flat);
+        }
+        score += Math.max(0, average);
     }
 
-    if (item.type === 'consumable' && kind === 'ammo') return ['ammo'];
-    if (kind === 'shield') return ['offhand'];
-    if (item.system?.armor?.value) return ['chest'];
-    if (kind === 'ring') return ['ring1', 'ring2'];
-    if (['container', 'backpack'].includes(item.type)) return ['back'];
-    // A tool is carried, never worn. dnd5e says so by typing it, which makes
-    // this a fact rather than a guess.
-    if (item.type === 'tool') return ['hip1', 'hip2'];
+    // ARMOUR OUTRANKS A GARMENT for the chest, and by a wide enough margin that
+    // no amount of dice can overturn it. A Robe of the Archmagi and a suit of
+    // studded leather both claim the chest and a character has one; the armour
+    // is the one the window's AC badge is reading, so losing it to a robe on a
+    // tie in list order is the worst of the two outcomes. Scaled by its own
+    // value so plate beats leather.
+    const armor = Number(item?.system?.armor?.value ?? 0);
+    if (armor > 0) score += 200 + armor;
 
-    const byName = slotGuessFromName(item.name);
-    if (byName.length) return byName;
+    if (item?.system?.rarity && item.system.rarity !== 'common') score += 2;
+    if (item?.system?.attuned) score += 2;
 
-    // `clothing` says it is worn without saying where, which is still more than
-    // nothing: the chest is where most of it goes and the back is where the rest
-    // does.
-    if (kind === 'clothing') return ['chest', 'back'];
+    return score;
+}
 
-    return null;
+/** The sheet's favourited item ids. */
+function favoriteIds(actor) {
+    const ids = (actor?.system?.favorites ?? [])
+        .filter(entry => typeof entry?.id === 'string')
+        // dnd5e stores these as relative UUIDs — `.Item.abc123`.
+        .map(entry => entry.id.split('.').pop());
+
+    return new Set(ids);
 }
 
 /**
@@ -1633,10 +1732,23 @@ export async function pullFromSheet(actor, buildId, { gear = false, prepared = f
     }
     let gearCount = 0;
     let spellCount = 0;
+    // Two different failures, kept apart because they have different answers.
+    // `unknown` is "nothing could say where this goes" — drag it in yourself.
+    // `crowded` is "it knew, and the slot was taken" — you own one neck.
+    const unknown = [];
+    const crowded = [];
 
     if (gear) {
         const slots = Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null]));
         const equipped = (actor?.items ?? []).filter(item => item.system?.equipped);
+
+        // Read once for the whole pass rather than per comparison — a sort calls
+        // its comparator O(n log n) times and both of these walk a list.
+        const signals = {
+            favorites: favoriteIds(actor),
+            handle: new Set(actor?.getFlag?.(MODULE.ID, 'favoriteHandle') ?? [])
+        };
+        const merit = item => itemMerit(item, signals);
         const exists = new Set([...layout.body, ...layout.big].map(slot => slot.key));
 
         const place = (key, item) => {
@@ -1645,29 +1757,37 @@ export async function pullFromSheet(actor, buildId, { gear = false, prepared = f
             return true;
         };
 
-        // Everything else, in the order a leftover should try them: the pouches
-        // first, because that is what the hips are for, then the rest of the
-        // body. A leftover used to start at the head, which is how a fanny pack
-        // ended up on somebody's scalp.
-        const spare = ['hip1', 'hip2', 'back', 'waist', 'neck', 'chest',
-                       'arms', 'hands', 'feet', 'face', 'head']
-            .filter(key => exists.has(key));
+        // Sorted by MERIT before anything is placed, so the contested slots go
+        // to the things this character actually leads with rather than to
+        // whatever the sheet happened to list first. See itemMerit().
+        const ranked = [...equipped].sort((a, b) => merit(b) - merit(a));
 
-        // PASS ONE: everything that knows where it belongs. Nothing without a
-        // claim gets a look at a named slot until these are settled, which is
-        // the entire fix — see slotClaim().
+        // PASS ONE: the confident claims. Nothing weaker gets a look at a named
+        // slot until these are settled — in one pass a spare arrow reached the
+        // neck before the Amulet of Health was considered, and the amulet ended
+        // up on her feet.
         const parked = [];
 
-        for (const item of equipped) {
+        for (const item of ranked) {
             const claim = slotClaim(item);
             if (claim === NOT_GEAR) continue;
 
-            gearCount++;
-            if (!claim || !claim.some(key => place(key, item))) parked.push(item);
+            if (!claim) {
+                // No idea where it goes. Say so rather than inventing a home:
+                // wrong imports are worse than none.
+                unknown.push(item.name);
+                continue;
+            }
+
+            if (claim.some(key => place(key, item))) gearCount++;
+            else parked.push(item);
         }
 
-        // PASS TWO: whatever is left, into whatever is free.
-        for (const item of parked) spare.some(key => place(key, item));
+        // PASS TWO: claims whose slots were all taken — a third arrow against
+        // one ammunition slot, a fourth pouch against two hips. Knowing where you
+        // belong and finding it full is a different thing from not knowing, and
+        // still not a reason to be put somewhere wrong.
+        for (const item of parked) crowded.push(item.name);
 
         next.slots = slots;
     }
@@ -1687,7 +1807,7 @@ export async function pullFromSheet(actor, buildId, { gear = false, prepared = f
     }
 
     await saveBuilds(actor, getBuilds(actor).map(entry => entry.id === buildId ? next : entry));
-    return { gearCount, spellCount };
+    return { gearCount, spellCount, unknown, crowded };
 }
 
 /**
@@ -1794,10 +1914,12 @@ export function equippedState(actor) {
     const spells = new Set();
 
     for (const item of actor?.items ?? []) {
-        // Natural weapons are skipped here exactly as applyBuild skips them: a
-        // build never names one, so counting it as equipped would report every
-        // character with claws as permanently drifted from every build.
+        // Skipped here exactly as applyBuild skips them: a build never names a
+        // natural weapon or a container, so counting either as equipped would
+        // report every character with claws — or a backpack — as permanently
+        // drifted from every build.
         if (item.type === 'weapon' && item.system?.type?.value === 'natural') continue;
+        if (isContainer(item)) continue;
 
         // Equippable is "has an equipped flag at all" — dnd5e's own way of
         // saying the question applies to this item. The same test applyBuild
@@ -1938,6 +2060,11 @@ export async function ensureDefaultBuild(actor) {
 
     const equipped = (actor.items ?? []).filter(item => item.system?.equipped);
     if (!equipped.length) return;
+
+    // Nothing to snapshot with. This runs on the FIRST open, before anybody has
+    // asked for anything, so an older Blacksmith should cost the snapshot
+    // silently rather than making a build of nothing and calling it their gear.
+    if (!equipLocations()) return;
 
     const build = await createBuild(actor, 'Original Gear');
     await pullFromSheet(actor, build.id, { gear: true, prepared: false });
