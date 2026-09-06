@@ -1809,7 +1809,33 @@ export function planImport(actor, build) {
             .sort((a, b) => (b.prepared - a.prepared) || (a.level - b.level) || a.name.localeCompare(b.name))
         : [];
 
-    return { rows, spells, limit, preparing };
+    // The slots in HEAD-TO-TOE order, each with the glyph the doll draws it
+    // with. The table is built around this rather than around the items: a row
+    // per slot shows the GAPS, and a list of items only ever shows what you
+    // already have.
+    //
+    // Stated rather than derived from the grid. The doll's positions interleave
+    // — ring, hip, waist, hip, ring share one row, because that is how a body
+    // looks — and reading that out row by row gives an order nobody would think
+    // of as head to toe. The pairs belong together in a list even though they sit
+    // apart on a figure.
+    const READING_ORDER = [
+        'head', 'face', 'neck', 'back', 'chest', 'arms', 'hands',
+        'ring1', 'ring2', 'hip1', 'hip2', 'waist', 'feet',
+        // The things held rather than worn, after everything worn.
+        'mainhand', 'offhand', 'bothhands', 'sheath', 'ammo',
+        'spell1', 'spell2', 'spell3'
+    ];
+
+    const byKey = new Map([...layout.body, ...layout.big].map(slot => [slot.key, slot]));
+    const order = READING_ORDER
+        .filter(key => byKey.has(key))
+        .map(key => {
+            const slot = byKey.get(key);
+            return { key, label: slot.label, icon: slot.icon };
+        });
+
+    return { rows, spells, limit, preparing, order };
 }
 
 /** Write a decided plan: slot keys by item id, and the prepared list in order. */

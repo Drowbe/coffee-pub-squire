@@ -1210,17 +1210,42 @@
 
 /* ---------------- THE IMPORT PLAN ----------------
 
-   Every equipped item and where it would go, as a table to argue with rather
-   than a result to discover. It replaced three tick boxes and a report, and the
-   reason is that equipping a build takes everything else OFF — so the moment to
-   disagree is before it happens, against a named list, not afterwards against a
-   doll that already did. */
+   A row per SLOT, head to toe, and the items that landed nowhere after them. It
+   was a row per item, which showed what the character owns and hid the thing you
+   actually need: which slots are still empty. A gap is invisible in a list of
+   items and obvious in a list of slots.
+
+   Every cell keeps `display: table-cell` and does its layout in a DIV inside.
+   The first version put `display: flex` on the cells themselves, which takes
+   them OUT of the table's column model — widths stop applying, colspan stops
+   working, and each column shrinks to its own content. The names and pictures
+   were rendering the whole time with nowhere to be. */
+.squire-plan {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
 .squire-plan p {
+    flex: 0 0 auto;
     margin: 0 0 8px;
+}
+
+/* The list scrolls, the heading and the buttons do not. A character with forty
+   equipped items produced a dialog taller than the screen with its own controls
+   pushed off the bottom. */
+.squire-plan-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 46vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-right: 4px;
 }
 
 .squire-plan-heading {
     display: flex;
+    flex: 0 0 auto;
     gap: 8px;
     align-items: baseline;
     justify-content: space-between;
@@ -1240,43 +1265,103 @@
     font-weight: 700;
 }
 
+/* FIXED layout, so the columns are the same width in every row and a long item
+   name has something definite to be cut against. Automatic layout sizes columns
+   from their contents, which makes the widest name set the shape of the table
+   and the dropdowns land in a different place on every row. */
 .squire-plan-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
 }
 
-.squire-plan-table th {
-    padding-bottom: 4px;
-    font-size: 0.85em;
-    text-align: left;
-    opacity: 0.7;
-}
-
-.squire-plan-table td {
-    padding: 2px 0;
+.squire-plan-row td {
+    padding: 3px 0;
     vertical-align: middle;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* The item column takes what the dropdown leaves, so a long name wraps rather
-   than squeezing the control that has to be clicked. */
-.squire-plan-item {
-    width: 100%;
+/* The slot, with the same glyph the doll draws it with — so the row and the
+   figure name the same thing the same way. */
+.squire-plan-slot-cell {
+    width: 108px;
 }
 
-.squire-plan-item img {
-    width: 22px;
-    height: 22px;
-    margin-right: 6px;
+.squire-plan-slot-cell > div {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    overflow: hidden;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.72em;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.squire-plan-slot-cell i {
+    flex: 0 0 14px;
+    text-align: center;
+    opacity: 0.75;
+}
+
+/* One line, cut with an ellipsis. A magic item's name runs long and wrapping it
+   would push the control it belongs to onto a second row. */
+.squire-plan-name > div {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.squire-plan-name span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.squire-plan-name img {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
     object-fit: cover;
-    vertical-align: middle;
     border: none;
     border-radius: 3px;
+}
+
+.squire-plan-control {
+    width: 150px;
+}
+
+/* A slot with nothing in it. Quiet, and carrying no control — there is nothing
+   to decide on this row, only something to notice. It is filled from the item's
+   own row further down. */
+.squire-plan-row.is-empty {
+    opacity: 0.45;
+}
+
+.squire-plan-row.is-empty .squire-plan-name {
+    font-size: 0.82em;
+}
+
+/* Everything that landed nowhere, under a rule that says so. */
+.squire-plan-divider td {
+    padding: 10px 0 4px;
+    color: var(--blacksmith-tool-accent);
+    font-size: 0.72em;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.squire-plan-row.is-loose .squire-plan-slot-cell {
+    opacity: 0.35;
 }
 
 .squire-plan-slot,
 .squire-plan-prepared {
     width: 100%;
-    min-width: 150px;
+    min-width: 0;
 }
 
 /* ---------------- RARITY ----------------

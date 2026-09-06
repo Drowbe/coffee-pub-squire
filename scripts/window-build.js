@@ -358,92 +358,175 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
 
         const escape = foundry.utils.escapeHTML;
 
-        // A row per item, with the proposal already chosen and every legal
-        // alternative in the list. The point of showing it rather than doing it
-        // is that equipping this build later takes everything else OFF — so the
-        // moment to disagree is now, against a named list, not afterwards
-        // against a doll that already happened.
-        const row = (item) => `
-            <tr data-item-id="${item.id}">
-                <td class="squire-plan-item">
-                    <img src="${escape(item.img ?? '')}" alt="">
-                    <span data-item-uuid="${escape(item.uuid ?? '')}">${escape(item.name)}</span>
-                </td>
-                <td>
-                    <select class="squire-plan-slot" name="slot-${item.id}">
-                        <option value=""${item.slot ? '' : ' selected'}>&mdash; Not equipped &mdash;</option>
-                        ${item.options.map(option => `
-                            <option value="${option.key}"${option.key === item.slot ? ' selected' : ''}>
-                                ${escape(option.label)}
-                            </option>`).join('')}
-                    </select>
-                </td>
-            </tr>`;
+        // ONE ROW PER SLOT, head to toe, and the items that landed nowhere after
+        // them. It was a row per item, which showed what the character owns and
+        // hid the thing you actually need to see — which slots are still EMPTY.
+        // A gap is invisible in a list of items and obvious in a list of slots.
+        //
+        // The dropdown is on the item, not the slot: it says where this thing is
+        // going, and moving it leaves the slot it came from showing as empty.
+        // Rows re-sort after every change, so the table always reads in doll
+        // order and an item you just moved appears where it now belongs.
+        const byId = new Map(plan.rows.map(item => [item.id, item]));
+
+        const renderRows = (assignment) => {
+            const occupant = new Map();
+            for (const [itemId, slotKey] of Object.entries(assignment)) {
+                if (slotKey) occupant.set(slotKey, itemId);
+            }
+
+            const slotRow = (slot) => {
+                const item = byId.get(occupant.get(slot.key));
+
+                // An empty slot still gets a row, greyed, with no control on it:
+                // there is nothing to decide here, only something to notice. You
+                // fill it from the item's own row further down.
+                // The flex lives in a DIV inside each cell, never on the cell.
+                // A `td` set to `display: flex` stops being a table cell — it
+                // leaves the column model, so widths, alignment and colspan all
+                // stop working and every column collapses to its content. That
+                // is what emptied this table: the names and icons were there and
+                // had nowhere to be.
+                const slotCell = `
+                    <td class="squire-plan-slot-cell">
+                        <div>
+                            <i class="fa-solid ${escape(slot.icon)}"></i>
+                            <span>${escape(slot.label)}</span>
+                        </div>
+                    </td>`;
+
+                if (!item) {
+                    return `
+                        <tr class="squire-plan-row is-empty">
+                            ${slotCell}
+                            <td class="squire-plan-name" colspan="2"><div><em>Nothing assigned</em></div></td>
+                        </tr>`;
+                }
+
+                return `
+                    <tr class="squire-plan-row" data-item-id="${item.id}">
+                        ${slotCell}
+                        <td class="squire-plan-name">
+                            <div>
+                                <img src="${escape(item.img ?? '')}" alt="">
+                                <span data-item-uuid="${escape(item.uuid ?? '')}">${escape(item.name)}</span>
+                            </div>
+                        </td>
+                        <td class="squire-plan-control">${select(item, assignment[item.id] ?? '')}</td>
+                    </tr>`;
+            };
+
+            const loose = plan.rows
+                .filter(item => !assignment[item.id])
+                .map(item => `
+                    <tr class="squire-plan-row is-loose" data-item-id="${item.id}">
+                        <td class="squire-plan-slot-cell"><div><i class="fa-solid fa-minus"></i></div></td>
+                        <td class="squire-plan-name">
+                            <div>
+                                <img src="${escape(item.img ?? '')}" alt="">
+                                <span data-item-uuid="${escape(item.uuid ?? '')}">${escape(item.name)}</span>
+                            </div>
+                        </td>
+                        <td class="squire-plan-control">${select(item, '')}</td>
+                    </tr>`);
+
+            return plan.order.map(slotRow).join('')
+                + (loose.length
+                    ? `<tr class="squire-plan-divider"><td colspan="3">Not equipped</td></tr>${loose.join('')}`
+                    : '');
+        };
+
+        const select = (item, chosen) => `
+            <select class="squire-plan-slot" data-item-id="${item.id}">
+                <option value=""${chosen ? '' : ' selected'}>&mdash; Not equipped &mdash;</option>
+                ${item.options.map(option => `
+                    <option value="${option.key}"${option.key === chosen ? ' selected' : ''}>
+                        ${escape(option.label)}
+                    </option>`).join('')}
+            </select>`;
 
         const spellRow = (spell) => `
-            <tr data-spell-id="${spell.id}">
-                <td class="squire-plan-item">
-                    <img src="${escape(spell.img ?? '')}" alt="">
-                    <span data-item-uuid="${escape(spell.uuid ?? '')}">${escape(spell.name)}</span>
+            <tr class="squire-plan-row">
+                <td class="squire-plan-slot-cell"><div><i class="fa-solid fa-sparkles"></i></div></td>
+                <td class="squire-plan-name">
+                    <div>
+                        <img src="${escape(spell.img ?? '')}" alt="">
+                        <span data-item-uuid="${escape(spell.uuid ?? '')}">${escape(spell.name)}</span>
+                    </div>
                 </td>
-                <td>
-                    <select class="squire-plan-prepared" name="prep-${spell.id}">
+                <td class="squire-plan-control">
+                    <select class="squire-plan-prepared" data-spell-id="${spell.id}">
                         <option value="1"${spell.prepared ? ' selected' : ''}>Prepared</option>
                         <option value=""${spell.prepared ? '' : ' selected'}>Not prepared</option>
                     </select>
                 </td>
             </tr>`;
 
+        // The proposal, as a plain map of item id to slot key. Everything the
+        // table draws is derived from this, so a change is one write and a
+        // redraw rather than a hunt through the DOM for what moved.
+        const assignment = Object.fromEntries(plan.rows.map(item => [item.id, item.slot]));
+
         const content = `
             <div class="squire-plan">
-                <p>Everything <strong>${escape(this.actor.name)}</strong> has equipped, and where it
-                   would go in <strong>${escape(build.name)}</strong>. Anything left
+                <p>Where <strong>${escape(this.actor.name)}</strong>'s equipment would go in
+                   <strong>${escape(build.name)}</strong>. Anything left
                    <em>Not equipped</em> is not part of the build.</p>
-                <table class="squire-plan-table">
-                    <thead><tr><th>Item</th><th>Slot</th></tr></thead>
-                    <tbody>${plan.rows.map(row).join('')}</tbody>
-                </table>
-                ${plan.spells.length ? `
-                <p class="squire-plan-heading">Prepared spells
-                   <span class="squire-plan-count">0 / ${plan.limit}</span></p>
-                <table class="squire-plan-table">
-                    <tbody>${plan.spells.map(spellRow).join('')}</tbody>
-                </table>` : ''}
+                <div class="squire-plan-scroll">
+                    <table class="squire-plan-table"><tbody>${renderRows(assignment)}</tbody></table>
+                    ${plan.spells.length ? `
+                    <p class="squire-plan-heading">Prepared spells
+                       <span class="squire-plan-count">0 / ${plan.limit}</span></p>
+                    <table class="squire-plan-table"><tbody>${plan.spells.map(spellRow).join('')}</tbody></table>` : ''}
+                </div>
             </div>`;
 
-        // Live rules, bound after each render because DialogV2 cannot be given
-        // listeners before it opens.
         const controls = {
             attach: (root) => {
-                const slotSelects = [...root.querySelectorAll('.squire-plan-slot')];
-
-                // ONE ITEM PER SLOT. Choosing a slot something else already has
-                // turns that other one loose rather than quietly double-booking
-                // the doll — a build cannot put two things in one hand, and the
-                // honest way to say so is to show the thing that got displaced
-                // sitting at Not equipped.
-                for (const select of slotSelects) {
-                    select.addEventListener('change', () => {
-                        if (!select.value) return;
-                        for (const other of slotSelects) {
-                            if (other !== select && other.value === select.value) other.value = '';
-                        }
-                    });
-                }
-
-                // The prepared count, live, because the limit is a real ceiling
-                // and this is the one screen where it can be exceeded.
-                const prepSelects = [...root.querySelectorAll('.squire-plan-prepared')];
+                // The FIRST table's body — the second one is the spells, which
+                // is not redrawn and must not be replaced by the gear rows.
+                const body = root.querySelector('.squire-plan-table tbody');
                 const counter = root.querySelector('.squire-plan-count');
-                if (!counter) return;
 
+                // Declared before the listener that calls it, not after. It
+                // worked either way — the listener runs later — but a function
+                // referenced above its own declaration is a trap for whoever
+                // reorders this next.
                 const recount = () => {
-                    const chosen = prepSelects.filter(select => select.value).length;
+                    if (!counter) return;
+                    const chosen = [...root.querySelectorAll('.squire-plan-prepared')]
+                        .filter(control => control.value).length;
                     counter.textContent = `${chosen} / ${plan.limit}`;
                     counter.classList.toggle('is-over', chosen > plan.limit);
                 };
 
-                prepSelects.forEach(select => select.addEventListener('change', recount));
+                // Delegated, because the rows are replaced on every change.
+                root.addEventListener('change', (event) => {
+                    // NOT named `select`: that is the row-building function in
+                    // the enclosing scope, and shadowing it here would leave the
+                    // next person reading two different things with one name.
+                    const control = event.target.closest('.squire-plan-slot');
+                    if (control && body) {
+                        const itemId = control.dataset.itemId;
+                        const slotKey = control.value;
+
+                        // ONE ITEM PER SLOT. Taking a slot something else holds
+                        // turns that one loose rather than double-booking the
+                        // doll — and because the table is drawn from the map,
+                        // you watch it drop to the Not equipped list.
+                        if (slotKey) {
+                            for (const [other, key] of Object.entries(assignment)) {
+                                if (other !== itemId && key === slotKey) assignment[other] = '';
+                            }
+                        }
+                        assignment[itemId] = slotKey;
+                        body.innerHTML = renderRows(assignment);
+                        return;
+                    }
+
+                    if (event.target.closest('.squire-plan-prepared')) recount();
+                });
+
                 recount();
             }
         };
@@ -452,15 +535,21 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             title: 'Fill From Sheet',
             content,
             controls,
+            // Read from the map rather than the DOM: the map is what the table
+            // was drawn from, and it survives a row being replaced mid-edit.
             getValue: (root) => ({
-                slots: Object.fromEntries([...root.querySelectorAll('.squire-plan-slot')]
-                    .map(select => [select.name.replace(/^slot-/, ''), select.value])),
+                slots: { ...assignment },
                 spells: [...root.querySelectorAll('.squire-plan-prepared')]
-                    .filter(select => select.value)
-                    .map(select => select.name.replace(/^prep-/, ''))
+                    .filter(control => control.value)
+                    .map(control => control.dataset.spellId)
             }),
             submitLabel: 'Fill Build',
-            submitIcon: 'fa-solid fa-download'
+            submitIcon: 'fa-solid fa-download',
+            // A stated width, because the table has three columns of known size
+            // and letting it size itself made the dropdowns land in a different
+            // place on every row. It also lifts the dialog API's automatic width
+            // cap, which is meant for a paragraph of prose rather than a table.
+            position: { width: 640 }
         });
         if (action !== 'submit' || !value) return;
 
