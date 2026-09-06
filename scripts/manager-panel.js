@@ -1277,6 +1277,11 @@ export class PanelManager {
                             if (outcome !== 'added') return;
 
                             await this._renderPanelForItemType(item.type);
+                            // Say where it went. A drop lands somewhere the user
+                            // may not be looking -- a longbow while the Spells
+                            // tab is open used to arrive with no visible sign it
+                            // had arrived at all.
+                            await this.controlPanel?.revealAddedItem(item);
                         }
                         break;
                     default:
@@ -1372,6 +1377,10 @@ export class PanelManager {
      * Repaint whichever panel an acquired item landed in, then re-apply the
      * active filters so a new row doesn't appear through a filter that should
      * be hiding it.
+     *
+     * Still worth doing even though the reveal that follows switches to All and
+     * shows every panel: the row has to EXIST for the reveal to find it, and
+     * this is the render that is guaranteed to have run by the time it looks.
      */
     async _renderPanelForItemType(type) {
         const panel = {

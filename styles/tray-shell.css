@@ -161,6 +161,32 @@
     border-radius: 6px;
 }
 
+/* PANEL VISIBILITY
+   Which stacked panels are on screen -- the whole of what the mode toggles and
+   the section tabs actually do. panel-control.js writes `.visible`; this is what
+   makes writing it mean anything.
+
+   Lives here, beside the base `.panel-container` rule it overrides, and NOT in a
+   feature stylesheet. It was in tray-compendium.css, where the name said
+   "compendium" and the rules governed every panel in the tray -- so deleting that
+   feature took the tab system with it and every panel showed at once. */
+.panel-containers.stacked .panel-container[data-panel] {
+    display: none;
+}
+
+.panel-containers.stacked .panel-container[data-panel].visible {
+    display: block;
+}
+
+/* A section a filter has emptied stands down entirely rather than lingering as
+   a heading over nothing. Kept separate from `.visible`, which belongs to the
+   section tabs: two owners writing one class is the race this whole arrangement
+   exists to avoid. Higher specificity so it wins over `.visible` without
+   needing !important. */
+.panel-containers.stacked .panel-container[data-panel].visible.filtered-empty {
+    display: none;
+}
+
 
 /* Collapse placeholder when empty to remove gap */
 

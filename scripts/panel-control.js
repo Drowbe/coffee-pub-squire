@@ -2,6 +2,7 @@ import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { getNativeElement, renderTemplate, getPanelItemName, openCompendiumSearchWindow, setRowFilter, isRowVisible} from './helpers.js';
 import { ItemAcquisition } from './utility-item-acquisition.js';
+import { trackModuleTimeout } from './timer-utils.js';
 
 /**
  * What the tray column can be showing.
@@ -126,6 +127,59 @@ export class ControlPanel {
         if (!PANEL_TABS.includes(tab) || tab === this.activeTab) return;
         await game.settings.set(MODULE.ID, 'controlActiveTab', tab);
         this._updateVisibility();
+    }
+
+    /**
+     * Put a freshly acquired item in front of the user: open the sheet on All,
+     * scroll the row into view, and flash it.
+     *
+     * All rather than the tab that owns the item. A drop is not a navigation --
+     * the user was looking at something when they did it -- so the least
+     * surprising place to land is the one view where the new row is guaranteed
+     * to be visible whatever it turned out to be, rather than one that silently
+     * moved them to Spells because the thing they dragged was a spell.
+     *
+     * Everything here is best-effort. It is confirmation of something that has
+     * already happened, so a poll that gives up is a missing flourish and not a
+     * failure -- there is nothing to report and nothing to undo.
+     */
+    async revealAddedItem(item) {
+        if (!item) return;
+        await this.setMode('sheet');
+        await this.setActiveTab('all');
+
+        // The item arrives via createItem hooks that re-render whichever panel
+        // holds it, and those run independently of this call -- so poll briefly
+        // for the row rather than guessing which render wins the race.
+        const row = await this._waitForItemRow(item.id);
+        if (!row) return;
+
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Items already get a NEW badge from the createItem hook; this is just a
+        // momentary "here" so the eye lands in the right place after the scroll.
+        //
+        // 3000ms because the animation is three one-second pulses and ends at
+        // rest on its own -- this only takes the class back off afterwards, so
+        // a re-added item animates again. Keep the two in step: shortening this
+        // below the animation would cut a lit border off mid-pulse.
+        row.classList.add('just-added');
+        trackModuleTimeout(() => row.classList.remove('just-added'), 3000);
+    }
+
+    /**
+     * Poll for an item's row, bounded so a hidden or unrendered panel gives up
+     * quietly rather than looping. Returns null if it never appears.
+     */
+    async _waitForItemRow(itemId, attempts = 12) {
+        for (let i = 0; i < attempts; i++) {
+            const row = this.element?.querySelector(
+                `.panel-containers.stacked .panel-item[data-item-id="${itemId}"]`
+            );
+            // offsetParent is null for anything inside a display:none panel.
+            if (row?.offsetParent) return row;
+            await new Promise(resolve => requestAnimationFrame(resolve));
+        }
+        return null;
     }
 
     async render(html) {

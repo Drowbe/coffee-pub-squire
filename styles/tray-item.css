@@ -335,3 +335,53 @@
     border: 2px solid #2a2a2a;
 }
 
+/* The "Always Available" star a feature wears in its row buttons. Gold and lit,
+   because unlike the other glyphs in that cluster it has no off state to
+   contrast against -- a feat is always available or the star is not drawn. */
+.panel-item .tray-buttons .fa-stars {
+    color: #ffd700;
+    text-shadow: 0 0 3px #ffd700;
+}
+
+/* ===== JUST ADDED =================================================
+   A pulsing border on an acquired item once it has been scrolled into view,
+   after the quest-entry highlight the pin used to draw. The NEW badge from the
+   createItem hook is the lasting marker; this only lands the eye.
+
+   OUTLINE, not border. `.panel-item` is `border: none`, so animating a border
+   would either show nothing or add 2px to a row mid-list and shove every row
+   below it. An outline is drawn outside the box without taking part in layout,
+   and follows the row's 3px radius.
+
+   Three finite pulses that begin and END at rest, rather than
+   `infinite alternate` stopped by removing the class. Two reasons: the class is
+   removed on a timer, and a timer landing mid-pulse cuts a lit border off
+   instantly; and a finite count means the CSS decides how long this runs, so the
+   duration cannot drift out of step with the JS the way an infinite one silently
+   would. The timeout only cleans the class up after the animation has finished
+   on its own. */
+.squire-tray .panel-item.just-added {
+    outline: 2px solid transparent;
+    outline-offset: -1px;
+    animation: squire-just-added 1s ease-in-out 3;
+}
+
+@keyframes squire-just-added {
+    0%, 100% {
+        outline-color: transparent;
+        box-shadow: none;
+    }
+    50% {
+        outline-color: rgba(231, 91, 1, 0.9);
+        box-shadow: 0 0 10px rgba(231, 91, 1, 0.55);
+    }
+}
+
+/* The point is to say WHICH row, so reduced motion keeps the marking and drops
+   the pulsing rather than dropping both. It is still removed on the same timer. */
+@media (prefers-reduced-motion: reduce) {
+    .squire-tray .panel-item.just-added {
+        animation: none;
+        outline-color: rgba(231, 91, 1, 0.75);
+    }
+}

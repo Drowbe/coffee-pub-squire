@@ -20,3 +20,12 @@
 }
 
 /* Spell context badges are now styled in tray.css via .panel-item-context/.panel-item-badge */
+
+/* Spell-slot pips on a level's category header. Rendered by panel-spells.hbs;
+   the rule lived in tray-compendium.css, with a comment claiming duplicates in
+   this file that were not here. It is here now, and there is one of it. */
+.squire-tray .category-header .slot-pips {
+    display: flex;
+    gap: 2px;
+    margin-left: 8px;
+}
