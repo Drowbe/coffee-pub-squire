@@ -285,6 +285,18 @@ export async function openXpWindow() {
  * Squire used to carry its own quick-add column in the tray. This is the same
  * job done better -- a window that sits beside the tray instead of replacing
  * what it shows, with facets, a browse mode and native drag onto the sheet.
+ *
+ * Opened with no seed, deliberately. Blacksmith accepts an opening
+ * `{type, subtype, query}` and re-seeds an ALREADY-OPEN palette when given one,
+ * which is right for a caller that means "show me spells" and wrong for a plain
+ * "open the search" button -- that one would discard a search the user was
+ * halfway through typing. With no seed it opens where they left it, and the
+ * window is single-instance, so a second click raises the one already up rather
+ * than building another.
+ *
+ * Never call this at load time: Blacksmith registers its windows shortly after
+ * marking ready, and a consumer that wakes in between finds an empty registry.
+ * From a user gesture that cannot happen.
  */
 export async function openCompendiumSearchWindow() {
     return openBlacksmithWindow('blacksmith-compendium-search', null, 'Compendium search');

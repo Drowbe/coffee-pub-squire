@@ -601,12 +601,35 @@ export class ControlPanel {
         // compendium searches a click apart left the user picking between them.
         // The policy that used to justify keeping it now lives in
         // ItemAcquisition and governs drops, so nothing was lost by deleting it.
-        const compendiumButton = controlPanel.querySelector('.control-compendium');
-        if (compendiumButton) {
-            const newCompendiumButton = compendiumButton.cloneNode(true);
-            compendiumButton.parentNode?.replaceChild(newCompendiumButton, compendiumButton);
-            newCompendiumButton.addEventListener('click', async () => {
-                await openCompendiumSearchWindow();
+        //
+        // Delegated from the panel and guarded by a flag, the same as builds and
+        // cleanup above -- NOT bound to the icon. The icon lives inside
+        // `.control-mode-toggles`, and the mode-switch block below replaces that
+        // whole container with a clone on every render, so a listener on the
+        // icon is discarded a few lines later and the button silently does
+        // nothing. That is exactly the failure the two handlers above are
+        // written the way they are to avoid.
+        if (controlPanel.dataset.compendiumBound !== 'true') {
+            controlPanel.dataset.compendiumBound = 'true';
+            controlPanel.addEventListener('click', async (event) => {
+                if (!event.target.closest('.control-compendium')) return;
+                event.preventDefault();
+                event.stopPropagation();
+
+                try {
+                    // No seed. Blacksmith's palette takes an optional opening
+                    // state, and deliberately re-seeds an already-open window --
+                    // so passing one from a plain "open the search" button would
+                    // throw away a search the user was in the middle of typing.
+                    // With no seed it opens where they left it, and a second
+                    // click raises the window that is already up.
+                    await openCompendiumSearchWindow();
+                } catch (error) {
+                    // An async click handler swallows its own rejection: without
+                    // this a failure here is a button that silently does nothing.
+                    console.error('Coffee Pub Squire | Failed to open compendium search:', error);
+                    ui.notifications.error('Compendium search could not be opened. See the console for details.');
+                }
             });
         }
 
