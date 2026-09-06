@@ -158,12 +158,12 @@ export class ControlPanel {
         // Items already get a NEW badge from the createItem hook; this is just a
         // momentary "here" so the eye lands in the right place after the scroll.
         //
-        // 3000ms because the animation is three one-second pulses and ends at
+        // 6000ms because the animation is six one-second pulses and ends at
         // rest on its own -- this only takes the class back off afterwards, so
         // a re-added item animates again. Keep the two in step: shortening this
-        // below the animation would cut a lit border off mid-pulse.
+        // below the animation would cut a lit row back to normal mid-pulse.
         row.classList.add('just-added');
-        trackModuleTimeout(() => row.classList.remove('just-added'), 3000);
+        trackModuleTimeout(() => row.classList.remove('just-added'), 6000);
     }
 
     /**

@@ -344,44 +344,47 @@
 }
 
 /* ===== JUST ADDED =================================================
-   A pulsing border on an acquired item once it has been scrolled into view,
-   after the quest-entry highlight the pin used to draw. The NEW badge from the
+   A pulsing wash on an acquired item once it has been scrolled into view, after
+   the quest-entry highlight the map pin used to draw. The NEW badge from the
    createItem hook is the lasting marker; this only lands the eye.
 
-   OUTLINE, not border. `.panel-item` is `border: none`, so animating a border
-   would either show nothing or add 2px to a row mid-list and shove every row
-   below it. An outline is drawn outside the box without taking part in layout,
-   and follows the row's 3px radius.
+   BACKGROUND, not an outline or a border. `.panel-item` is `border: none`, so a
+   border would add 2px to a row mid-list and shove everything below it down, and
+   a 2px outline on a row this size is too thin a line to catch the eye at all --
+   which is exactly how it behaved. The whole row changing colour cannot be
+   missed.
 
-   Three finite pulses that begin and END at rest, rather than
-   `infinite alternate` stopped by removing the class. Two reasons: the class is
-   removed on a timer, and a timer landing mid-pulse cuts a lit border off
-   instantly; and a finite count means the CSS decides how long this runs, so the
-   duration cannot drift out of step with the JS the way an infinite one silently
-   would. The timeout only cleans the class up after the animation has finished
-   on its own. */
+   Six finite pulses that begin and END on the row's own resting colour, rather
+   than `infinite alternate` stopped by removing the class. Two reasons: the class
+   comes off on a timer, and a timer landing mid-pulse cuts a lit row back to
+   normal instantly; and a finite count means the CSS owns the duration, so it
+   cannot drift out of step with the JS the way an infinite one silently would.
+   The timeout only takes the class off after the animation has ended on its own.
+
+   The resting stops are `.panel-item`'s own background restated. For the 6
+   seconds this runs it also overrides `:hover` and `.prepared`, which is worth
+   it: the point is that this row is different from every other row right now,
+   and a state colour showing through would blunt exactly that. */
 .squire-tray .panel-item.just-added {
-    outline: 2px solid transparent;
-    outline-offset: -1px;
-    animation: squire-just-added 1s ease-in-out 3;
+    animation: squire-just-added 1s ease-in-out 6;
 }
 
 @keyframes squire-just-added {
     0%, 100% {
-        outline-color: transparent;
+        background-color: rgba(0, 0, 0, 0.2);
         box-shadow: none;
     }
     50% {
-        outline-color: rgba(231, 91, 1, 0.9);
-        box-shadow: 0 0 10px rgba(231, 91, 1, 0.55);
+        background-color: rgba(231, 91, 1, 0.45);
+        box-shadow: 0 0 10px rgba(231, 91, 1, 0.35);
     }
 }
 
-/* The point is to say WHICH row, so reduced motion keeps the marking and drops
-   the pulsing rather than dropping both. It is still removed on the same timer. */
+/* The point is to say WHICH row, so reduced motion keeps the wash and drops the
+   pulsing rather than dropping both. It is still removed on the same timer. */
 @media (prefers-reduced-motion: reduce) {
     .squire-tray .panel-item.just-added {
         animation: none;
-        outline-color: rgba(231, 91, 1, 0.75);
+        background-color: rgba(231, 91, 1, 0.35);
     }
 }
