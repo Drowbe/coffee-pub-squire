@@ -158,16 +158,27 @@
 
         {{!-- Two buttons, not one and a switch. You know which of the two you
               are setting out to make before you start; the switch beside the
-              name is for changing your mind afterwards. --}}
+              name is for changing your mind afterwards.
+
+              WHICH of them shows follows the tab. On Builds the Costume button
+              would make a thing the list you are looking at cannot show — the
+              filter would have to give way for it, and a button that silently
+              moves you somewhere else is a worse offer than no button. On All
+              both apply, so both are there. The one that remains fills the strip
+              on its own; the buttons were always an equal share of it. --}}
         <div class="squire-build-rail-actions">
+            {{#unless (eq railFilter "costume")}}
             <button type="button" class="squire-build-rail-new" data-mode="gear"
                     data-tooltip="A set of gear to equip">
                 <i class="fa-solid fa-shirt"></i> Build
             </button>
+            {{/unless}}
+            {{#unless (eq railFilter "gear")}}
             <button type="button" class="squire-build-rail-new" data-mode="costume"
                     data-tooltip="A portrait and token to wear. Changes how the character LOOKS and touches no gear.">
                 <i class="fa-solid fa-masks-theater"></i> Costume
             </button>
+            {{/unless}}
         </div>
 
         {{!-- Options that belong to BUILDS, not to any one build. The rail is

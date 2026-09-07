@@ -325,10 +325,13 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         if (costume) await setBuildMode(this.actor, build.id, 'costume');
 
         this.buildId = build.id;
-        // Make sure the thing that was just made can be SEEN. Pressing New
-        // Costume while the rail is filtered to Builds would otherwise create
-        // it, select it, put it on the doll — and show an unchanged list that
-        // does not contain it, which reads as the button having done nothing.
+        // Make sure the thing that was just made can be SEEN, or it reads as the
+        // button having done nothing: created, selected, on the doll, and absent
+        // from an unchanged list.
+        //
+        // The rail's own buttons can no longer cause this — each tab offers only
+        // the one that makes something it can show. This is for the pair on the
+        // empty page, which offers both because there is nothing to filter yet.
         if (!this._passesFilter(costume ? 'costume' : 'gear')) this.railFilter = 'all';
         await this._refresh();
     }
@@ -936,6 +939,9 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                     { key: 'costume', label: 'Costumes', count: counts.costume },
                     { key: 'gear', label: 'Builds', count: counts.gear }
                 ].map(tab => ({ ...tab, active: this.railFilter === tab.key })),
+                // Which tab is on, for the New buttons below the list: only the
+                // one that makes something this tab can show is offered.
+                railFilter: this.railFilter,
                 railFiltered: rail.length === 0 && builds.length > 0,
                 railFilterLabel: this.railFilter === 'costume' ? 'costumes' : 'builds',
                 hasBuilds: builds.length > 0,
