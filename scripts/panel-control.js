@@ -77,18 +77,26 @@ const ACTION_BUCKETS = ['action', 'bonus', 'reaction', 'special', 'passive'];
 
 /**
  * The two availability questions: the flag that answers each, the row attribute
- * that carries the answer, and the value that fails when the flag is on.
+ * that carries the answer, and the value that means yes.
  *
- * `hideWhen` is the whole safety property of this feature. "Only equipped" means
- * hide rows that say `unequipped` -- NOT rows that fail to say `equipped`. A
- * spell carries no `data-equip-state` at all, so written the first way it is
- * untouched and written the second way your entire spell list disappears. Same
- * for a weapon under "only prepared". Where-applicable falls out of matching the
- * failing value rather than negating the passing one.
+ * A row PASSES a question by positively answering it. "Only equipped" shows what
+ * is equipped and hides everything else -- the unequipped, and the loot and
+ * feats that have no `data-equip-state` because they cannot be equipped at all.
+ * Somebody asking for their equipped gear is asking to see gear, and a list that
+ * answered with every trinket in the bag would not be the shorter list they
+ * pressed the button for.
+ *
+ * That is a REVERSAL. It used to hide only rows that positively declared the
+ * failing value, which left everything that could not answer standing --
+ * `where applicable` as the default. The safety that bought is real and is now
+ * bought a different way, by TAB_TOGGLES: a question is only asked on a tab that
+ * offers it. Under the old rule, "only equipped" simply did not apply to the
+ * Spells tab; under this one it would empty the tab outright, so it is not asked
+ * there. See `_activeAvailability`.
  */
 const AVAILABILITY = {
-    equipped: { attribute: 'equipState', hideWhen: 'unequipped' },
-    prepared: { attribute: 'prepareState', hideWhen: 'unprepared' }
+    equipped: { attribute: 'equipState', passes: 'equipped' },
+    prepared: { attribute: 'prepareState', passes: 'prepared' }
 };
 
 export class ControlPanel {
@@ -358,6 +366,26 @@ export class ControlPanel {
         this._applyFilters();
     }
 
+    /**
+     * The availability questions in force on the tab being shown.
+     *
+     * Both halves matter. The FLAG says the player asked it; TAB_TOGGLES says
+     * this tab is a place where it can be answered. The flags are global -- one
+     * `_onlyEquipped`, one `_onlyPrepared`, shared across tabs on purpose -- so
+     * without the second half, setting "only equipped" on Weapons would travel
+     * to Spells and empty it, with no visible control to explain why. A toggle
+     * you cannot see must not be filtering what you are looking at.
+     *
+     * On ALL, both can be in force at once, and a row passing EITHER survives.
+     * That is a union rather than an intersection because the two questions are
+     * asked of different things: no weapon is prepared and no spell is equipped,
+     * so requiring both would return an empty tray every time. "Show me what is
+     * equipped or prepared" is what pressing both actually means.
+     */
+    _activeAvailability() {
+        return (TAB_TOGGLES[this.activeTab] ?? []).filter(key => this._availabilityFlag(key));
+    }
+
     /** Read one availability flag by name. */
     _availabilityFlag(key) {
         return key === 'equipped' ? this._onlyEquipped : this._onlyPrepared;
@@ -371,11 +399,10 @@ export class ControlPanel {
      * equipped shows; failing any one of those hides it, and clearing that one
      * filter brings it back without disturbing the rest.
      *
-     * A predicate only judges rows that can answer it. `data-equip-state` is
-     * absent from a spell and `data-prepare-state` from a rope, and each
-     * availability flag matches the FAILING value rather than negating the
-     * passing one -- so "where applicable" is the default behaviour here rather
-     * than a case anyone has to remember to write. See AVAILABILITY.
+     * Search and the action buckets judge only rows that can answer them: a row
+     * with no name is not searched, a row listing no action types is not
+     * bucketed. Availability is the exception and deliberately so -- a row that
+     * cannot say it is equipped is not equipped. See AVAILABILITY.
      */
     _applyFilters() {
         // Only the sheet has anything to filter. Favourites carries no controls
@@ -388,6 +415,10 @@ export class ControlPanel {
         const activeTab = this.activeTab;
 
         const filtering = this.hasActiveFilters();
+
+        // Once for the whole pass rather than per row: it is the same answer for
+        // every row in every panel, and it depends on the tab, not the item.
+        const availability = this._activeAvailability();
 
         SHEET_PANELS.forEach(panelType => {
             const panelElement = this.element.querySelector(`[data-panel="${panelType}"]`);
@@ -407,12 +438,11 @@ export class ControlPanel {
                     rowActions.length > 0 && !rowActions.some(a => shownActions.has(a)));
 
                 // Availability is one reason covering two questions, so both are
-                // decided here rather than each overwriting the other. A row is
-                // hidden only when it positively declares the failing value, so
-                // a row that cannot answer is never judged.
-                setRowFilter(row, 'state', Object.entries(AVAILABILITY).some(
-                    ([key, { attribute, hideWhen }]) =>
-                        this._availabilityFlag(key) && row.dataset[attribute] === hideWhen
+                // decided here rather than each overwriting the other -- and a
+                // row survives by answering EITHER of them. See
+                // `_activeAvailability` for why that is a union.
+                setRowFilter(row, 'state', availability.length > 0 && !availability.some(
+                    key => row.dataset[AVAILABILITY[key].attribute] === AVAILABILITY[key].passes
                 ));
             });
 

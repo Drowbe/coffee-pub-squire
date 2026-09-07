@@ -109,6 +109,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **"Only equipped" and "only prepared" now hide what cannot answer them.** Pressing Equipped used to hide the *unequipped* and leave everything with no opinion standing — the loot, the trinkets, the feats — so the shorter list you pressed the button for still had the whole bag in it. A thing that cannot be equipped is not equipped, and it is now hidden too.
+  - **On All, both toggles together are an OR.** No weapon is prepared and no spell is equipped, so requiring both would empty the tray every time; pressing both means "show me what is equipped **or** prepared", and a row surviving either survives.
+  - **A question is only asked on a tab that offers it.** The flags are global by design — one Equipped, one Prepared, shared across tabs — and the old rule was safe against that by accident, since "only equipped" simply did not apply to a spell. Under the new rule it would empty the Spells tab from a control that is not on screen there, so `TAB_TOGGLES` now gates the filtering as well as the buttons. A toggle you cannot see must not be filtering what you are looking at.
+
 - **Wearing a costume no longer asks first.** Equipping a *build* still does, because it takes things off — everything the build does not name is unequipped, which is the correct rule and a genuinely destructive one worth naming before it happens. A costume changes artwork and how the token is drawn, touches no gear and no spells, and its toast already carries an undo, so the dialog was standing between somebody and the fast thing they came here to do in order to warn them about the safe one. Trying on three costumes cost three dialogs and six clicks.
   - The costume wording is gone rather than left unreachable, and with it the careful list of grid size, image fit and scale — good content for a question that should not have been asked.
 
