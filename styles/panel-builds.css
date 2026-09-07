@@ -65,14 +65,27 @@
     color: rgba(159, 146, 117, 0.8);
 }
 
-/* The runner marks these apart from favourites: a favourite is a thing you use,
-   a build is a thing you put on, and the strip has to say which is which. */
+/* The shirt or the masks, marking these apart from favourites: a favourite is a
+   thing you use, a build is a thing you put on, and the strip has to say which
+   is which.
+
+   CENTRED ON THE TILE, not tucked into its corner. In the corner it read as a
+   badge stuck to the artwork and it sat against two edges at once, which at
+   20px is most of the glyph's own width away from anything that would make it
+   look placed. Over the middle it reads as what it is: a mark ON this tile
+   saying what kind of thing it is.
+
+   Absolute inset rather than a flex parent, because the tile's child is the
+   artwork at 100% and this has to sit over it without being in its flow. */
 .squire-tray .handle-build-overlay {
     position: absolute;
-    right: 1px;
-    bottom: 1px;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #f4e7cd;
     font-size: 0.6em;
+    line-height: 1;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
     pointer-events: none;
 }
