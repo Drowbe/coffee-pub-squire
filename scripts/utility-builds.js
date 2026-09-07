@@ -1565,11 +1565,22 @@ const LOCATION_SLOTS = {
     ammunition: ['ammo']
 };
 
-/** Where a HELD item lands, by grip. The sheath is reachable from grip alone. */
+/**
+ * Where a HELD item lands, by grip. The sheath is reachable from grip alone.
+ *
+ * `off` is the interesting one, and it leads with the SHEATH. Blacksmith gives
+ * that grip to a light weapon and to a shield alike, and for the light weapon it
+ * is a dagger: the thing on your belt, not the thing in your other hand. Most
+ * characters carry one primary weapon and a sidearm; the off hand is for
+ * actually fighting with two, which nothing here can know.
+ *
+ * A shield gets the same grip and must never reach the sheath — it does not,
+ * because the sheath only accepts weapons and the placement now checks that.
+ */
 const GRIP_SLOTS = {
     both:   ['bothhands', 'mainhand'],
     main:   ['mainhand', 'offhand', 'sheath'],
-    off:    ['offhand', 'sheath', 'mainhand'],
+    off:    ['sheath', 'offhand', 'mainhand'],
     either: ['mainhand', 'offhand', 'sheath']
 };
 
@@ -1633,10 +1644,53 @@ function isContainer(item) {
  * Brightness has no obvious home and the importer says so rather than hiding it
  * — being unplaceable is not the same as being ignorable.
  */
+/**
+ * A weapon the character IS rather than one they carry.
+ *
+ * Claws, bites, slams, unarmed strikes. dnd5e types some of them `natural` and
+ * that is the answer where it is given — but the classic `items` pack types
+ * Unarmed Strike `simpleM`, exactly like a dagger, so the subtype alone gets it
+ * wrong in half the worlds in existence. Same pack-dependence that made the
+ * clothing rule wrong: which pack a world draws from decided the answer.
+ *
+ * The general signal is PHYSICALITY, and it is in the data for every pack:
+ *
+ *     Dagger          weight 1    price 2
+ *     Longsword       weight 3    price 15
+ *     Light Hammer    weight 2    price 2
+ *     Unarmed Strike  weight 0    price 0
+ *
+ * A thing you can carry has mass and a thing you can buy has a price. Something
+ * with neither is not an object at all, whatever the compendium typed it as.
+ * That reads on any weapon in any pack and needs no list of names.
+ *
+ * It is deliberately NOT `isUnplannable`. An unarmed strike is a real way to
+ * fight and belongs in a hand — it is simply the LAST thing that should get one,
+ * and it can never be sheathed, because a sheath is storage and there is nothing
+ * to store.
+ */
+export function isInnateWeapon(item) {
+    if (item?.type !== 'weapon') return false;
+    if (item.system?.type?.value === 'natural') return true;
+
+    const weight = item.system?.weight;
+    const price = item.system?.price;
+    const mass = Number(weight?.value ?? weight ?? 0);
+    const cost = Number(price?.value ?? price ?? 0);
+
+    return mass === 0 && cost === 0;
+}
+
 export function isUnplannable(item) {
     if (isContainer(item)) return true;
+    // Siege and improvised weapons only. A ballista is scenery and a thrown
+    // chair is a decision made once in a fight; neither is ever planned.
+    //
+    // Natural weapons used to be here and are NOT any more: an unarmed strike is
+    // a real way to fight and belongs in a hand. See isInnateWeapon for how it
+    // is ranked last instead of hidden.
     return item?.type === 'weapon'
-        && ['natural', 'siege', 'improv'].includes(item?.system?.type?.value);
+        && ['siege', 'improv'].includes(item?.system?.type?.value);
 }
 
 function slotClaim(item) {
@@ -1652,7 +1706,12 @@ function slotClaim(item) {
     // null — no idea. Named to the player so they can place it by hand.
     if (!location) return null;
 
-    if (location === 'held') return GRIP_SLOTS[grip] ?? GRIP_SLOTS.main;
+    if (location === 'held') {
+        const candidates = GRIP_SLOTS[grip] ?? GRIP_SLOTS.main;
+        // A fist cannot be sheathed. The sheath is storage — somewhere to put a
+        // thing you are not holding — and there is nothing to put.
+        return isInnateWeapon(item) ? candidates.filter(key => key !== 'sheath') : candidates;
+    }
 
     return LOCATION_SLOTS[location] ?? null;
 }
@@ -1712,6 +1771,12 @@ function itemMerit(item, { favorites, handle }) {
     if (item?.system?.rarity && item.system.rarity !== 'common') score += 2;
     if (item?.system?.attuned) score += 2;
 
+    // LAST, always. An unarmed strike is what you use when you have nothing, so
+    // it should take a hand only when nothing else wants one — and a negative
+    // score no real weapon can reach says that without a special case in the
+    // placement loop.
+    if (isInnateWeapon(item)) score = -1000;
+
     return score;
 }
 
@@ -1765,26 +1830,50 @@ export function planImport(actor, build) {
         const claim = slotClaim(item);
         if (!claim || claim === NOT_GEAR) continue;
 
-        const key = claim.find(candidate => slots.some(slot => slot.key === candidate) && !taken.has(candidate));
+        // The slot has to exist on this doll, be free, AND accept the item. That
+        // last test was missing, so a candidate list could propose something the
+        // doll itself would refuse — a shield in the sheath, which shares a grip
+        // with a dagger and must never share its home.
+        const key = claim.find(candidate => slots.some(slot => slot.key === candidate)
+            && !taken.has(candidate)
+            && !refuseSlotDrop(candidate, item));
         if (!key) continue;
 
         taken.add(key);
         proposed.set(item.id, key);
     }
 
-    const rows = ranked.map(item => ({
+    const api = equipLocations();
+
+    const rows = ranked.map(item => {
+        // The classifier's own answer, kept alongside the placement so a row
+        // that landed nowhere can say WHICH of the two reasons it was: nothing
+        // could name a home for it, or something could and the slot was taken.
+        // Guessing between those from the outside is what made an Amulet of
+        // Health an unanswerable question three times over.
+        const verdict = api?.resolve?.(item) ?? {};
+
+        return {
         id: item.id,
         name: item.name,
         img: item.img,
         uuid: item.uuid,
         slot: proposed.get(item.id) ?? '',
+        location: verdict.location ?? null,
+        matched: verdict.matched ?? null,
         // Legal homes only. An arrow cannot go in a ring slot and the dropdown
         // should not offer it — the doll refuses that drop already, and an
         // option that cannot be chosen is worse than one that is absent.
+        //
+        // The sheath goes too for an innate weapon, for the same reason it is
+        // not among its candidates: a sheath is somewhere to put a thing you are
+        // not holding, and a fist cannot be put anywhere.
         options: slots
             .filter(slot => !refuseSlotDrop(slot.key, item))
+            .filter(slot => !(slot.key === 'sheath' && isInnateWeapon(item)))
             .map(slot => ({ key: slot.key, label: slot.label }))
-    }));
+        };
+    });
 
     // Decisions first: anything we could not place, then everything else in
     // merit order, which is the order it was already reasoned about in.
@@ -1912,6 +2001,11 @@ export async function pullFromSheet(actor, buildId, { gear = false, prepared = f
 
         const place = (key, item) => {
             if (!key || !exists.has(key) || slots[key]) return false;
+            // The slot's own rule, checked here as well as at the dropdown. The
+            // proposal used to skip it, so a candidate list could put something
+            // in a slot the doll itself would refuse — a shield in the sheath,
+            // which shares a grip with a dagger and must never share its home.
+            if (refuseSlotDrop(key, item)) return false;
             slots[key] = item.id;
             return true;
         };

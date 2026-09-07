@@ -122,6 +122,7 @@ export const TEMPLATES = {
     PANEL_FEATURES: `modules/${MODULE.ID}/templates/panel-features.hbs`,
     PANEL_CHARACTER_SUMMARY: `modules/${MODULE.ID}/templates/panel-character-summary.hbs`,
     WINDOW_BUILD: `modules/${MODULE.ID}/templates/window-build.hbs`,
+    WINDOW_IMPORT: `modules/${MODULE.ID}/templates/window-import.hbs`,
     PANEL_PARTY: `modules/${MODULE.ID}/templates/panel-party.hbs`,
     PANEL_PARTY_HEADER: `modules/${MODULE.ID}/templates/panel-party-header.hbs`,
     PANEL_PARTY_STATS: `modules/${MODULE.ID}/templates/panel-party-stats.hbs`,

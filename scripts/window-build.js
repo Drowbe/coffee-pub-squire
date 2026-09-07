@@ -1,5 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
+import { ImportWindow } from './window-import.js';
 import { renderTemplate, showSquireToast, getBlacksmith } from './helpers.js';
 import {
     BUILD_SLOT_KEYS, getDollLayout,
@@ -8,7 +9,7 @@ import {
     getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
     resolveTokenSettings, setBuildTokenSetting, setBuildPreparation,
-    planImport, applyImportPlan,
+    applyImportPlan,
     estimateArmorClass, previewSlotChange, setBuildMode, convertBuildMode, revertBuild, damageLabel,
     setActiveBuildId, getActiveBuildId, ensureDefaultCostume, ensureDefaultBuild,
     moveBuild, resolveMainImage,
@@ -350,215 +351,17 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             return;
         }
 
-        const plan = planImport(this.actor, build);
-        if (!plan.rows.length && !plan.spells.length) {
-            ui.notifications.info(`${this.actor.name} has nothing equipped to take.`);
-            return;
-        }
-
-        const escape = foundry.utils.escapeHTML;
-
-        // ONE ROW PER SLOT, head to toe, and the items that landed nowhere after
-        // them. It was a row per item, which showed what the character owns and
-        // hid the thing you actually need to see — which slots are still EMPTY.
-        // A gap is invisible in a list of items and obvious in a list of slots.
-        //
-        // The dropdown is on the item, not the slot: it says where this thing is
-        // going, and moving it leaves the slot it came from showing as empty.
-        // Rows re-sort after every change, so the table always reads in doll
-        // order and an item you just moved appears where it now belongs.
-        const byId = new Map(plan.rows.map(item => [item.id, item]));
-
-        const renderRows = (assignment) => {
-            const occupant = new Map();
-            for (const [itemId, slotKey] of Object.entries(assignment)) {
-                if (slotKey) occupant.set(slotKey, itemId);
-            }
-
-            const slotRow = (slot) => {
-                const item = byId.get(occupant.get(slot.key));
-
-                // An empty slot still gets a row, greyed, with no control on it:
-                // there is nothing to decide here, only something to notice. You
-                // fill it from the item's own row further down.
-                // The flex lives in a DIV inside each cell, never on the cell.
-                // A `td` set to `display: flex` stops being a table cell — it
-                // leaves the column model, so widths, alignment and colspan all
-                // stop working and every column collapses to its content. That
-                // is what emptied this table: the names and icons were there and
-                // had nowhere to be.
-                const slotCell = `
-                    <td class="squire-plan-slot-cell">
-                        <div>
-                            <i class="fa-solid ${escape(slot.icon)}"></i>
-                            <span>${escape(slot.label)}</span>
-                        </div>
-                    </td>`;
-
-                if (!item) {
-                    return `
-                        <tr class="squire-plan-row is-empty">
-                            ${slotCell}
-                            <td class="squire-plan-name" colspan="2"><div><em>Nothing assigned</em></div></td>
-                        </tr>`;
-                }
-
-                return `
-                    <tr class="squire-plan-row" data-item-id="${item.id}">
-                        ${slotCell}
-                        <td class="squire-plan-name">
-                            <div>
-                                <img src="${escape(item.img ?? '')}" alt="">
-                                <span data-item-uuid="${escape(item.uuid ?? '')}">${escape(item.name)}</span>
-                            </div>
-                        </td>
-                        <td class="squire-plan-control">${select(item, assignment[item.id] ?? '')}</td>
-                    </tr>`;
-            };
-
-            const loose = plan.rows
-                .filter(item => !assignment[item.id])
-                .map(item => `
-                    <tr class="squire-plan-row is-loose" data-item-id="${item.id}">
-                        <td class="squire-plan-slot-cell"><div><i class="fa-solid fa-minus"></i></div></td>
-                        <td class="squire-plan-name">
-                            <div>
-                                <img src="${escape(item.img ?? '')}" alt="">
-                                <span data-item-uuid="${escape(item.uuid ?? '')}">${escape(item.name)}</span>
-                            </div>
-                        </td>
-                        <td class="squire-plan-control">${select(item, '')}</td>
-                    </tr>`);
-
-            return plan.order.map(slotRow).join('')
-                + (loose.length
-                    ? `<tr class="squire-plan-divider"><td colspan="3">Not equipped</td></tr>${loose.join('')}`
-                    : '');
-        };
-
-        const select = (item, chosen) => `
-            <select class="squire-plan-slot" data-item-id="${item.id}">
-                <option value=""${chosen ? '' : ' selected'}>&mdash; Not equipped &mdash;</option>
-                ${item.options.map(option => `
-                    <option value="${option.key}"${option.key === chosen ? ' selected' : ''}>
-                        ${escape(option.label)}
-                    </option>`).join('')}
-            </select>`;
-
-        const spellRow = (spell) => `
-            <tr class="squire-plan-row">
-                <td class="squire-plan-slot-cell"><div><i class="fa-solid fa-sparkles"></i></div></td>
-                <td class="squire-plan-name">
-                    <div>
-                        <img src="${escape(spell.img ?? '')}" alt="">
-                        <span data-item-uuid="${escape(spell.uuid ?? '')}">${escape(spell.name)}</span>
-                    </div>
-                </td>
-                <td class="squire-plan-control">
-                    <select class="squire-plan-prepared" data-spell-id="${spell.id}">
-                        <option value="1"${spell.prepared ? ' selected' : ''}>Prepared</option>
-                        <option value=""${spell.prepared ? '' : ' selected'}>Not prepared</option>
-                    </select>
-                </td>
-            </tr>`;
-
-        // The proposal, as a plain map of item id to slot key. Everything the
-        // table draws is derived from this, so a change is one write and a
-        // redraw rather than a hunt through the DOM for what moved.
-        const assignment = Object.fromEntries(plan.rows.map(item => [item.id, item.slot]));
-
-        const content = `
-            <div class="squire-plan">
-                <p>Where <strong>${escape(this.actor.name)}</strong>'s equipment would go in
-                   <strong>${escape(build.name)}</strong>. Anything left
-                   <em>Not equipped</em> is not part of the build.</p>
-                <div class="squire-plan-scroll">
-                    <table class="squire-plan-table"><tbody>${renderRows(assignment)}</tbody></table>
-                    ${plan.spells.length ? `
-                    <p class="squire-plan-heading">Prepared spells
-                       <span class="squire-plan-count">0 / ${plan.limit}</span></p>
-                    <table class="squire-plan-table"><tbody>${plan.spells.map(spellRow).join('')}</tbody></table>` : ''}
-                </div>
-            </div>`;
-
-        const controls = {
-            attach: (root) => {
-                // The FIRST table's body — the second one is the spells, which
-                // is not redrawn and must not be replaced by the gear rows.
-                const body = root.querySelector('.squire-plan-table tbody');
-                const counter = root.querySelector('.squire-plan-count');
-
-                // Declared before the listener that calls it, not after. It
-                // worked either way — the listener runs later — but a function
-                // referenced above its own declaration is a trap for whoever
-                // reorders this next.
-                const recount = () => {
-                    if (!counter) return;
-                    const chosen = [...root.querySelectorAll('.squire-plan-prepared')]
-                        .filter(control => control.value).length;
-                    counter.textContent = `${chosen} / ${plan.limit}`;
-                    counter.classList.toggle('is-over', chosen > plan.limit);
-                };
-
-                // Delegated, because the rows are replaced on every change.
-                root.addEventListener('change', (event) => {
-                    // NOT named `select`: that is the row-building function in
-                    // the enclosing scope, and shadowing it here would leave the
-                    // next person reading two different things with one name.
-                    const control = event.target.closest('.squire-plan-slot');
-                    if (control && body) {
-                        const itemId = control.dataset.itemId;
-                        const slotKey = control.value;
-
-                        // ONE ITEM PER SLOT. Taking a slot something else holds
-                        // turns that one loose rather than double-booking the
-                        // doll — and because the table is drawn from the map,
-                        // you watch it drop to the Not equipped list.
-                        if (slotKey) {
-                            for (const [other, key] of Object.entries(assignment)) {
-                                if (other !== itemId && key === slotKey) assignment[other] = '';
-                            }
-                        }
-                        assignment[itemId] = slotKey;
-                        body.innerHTML = renderRows(assignment);
-                        return;
-                    }
-
-                    if (event.target.closest('.squire-plan-prepared')) recount();
-                });
-
-                recount();
-            }
-        };
-
-        const { action, value } = await getBlacksmith().dialog.prompt({
-            title: 'Fill From Sheet',
-            content,
-            controls,
-            // Read from the map rather than the DOM: the map is what the table
-            // was drawn from, and it survives a row being replaced mid-edit.
-            getValue: (root) => ({
-                slots: { ...assignment },
-                spells: [...root.querySelectorAll('.squire-plan-prepared')]
-                    .filter(control => control.value)
-                    .map(control => control.dataset.spellId)
-            }),
-            submitLabel: 'Fill Build',
-            submitIcon: 'fa-solid fa-download',
-            // A stated width, because the table has three columns of known size
-            // and letting it size itself made the dropdowns land in a different
-            // place on every row. It also lifts the dialog API's automatic width
-            // cap, which is meant for a paragraph of prose rather than a table.
-            position: { width: 640 }
-        });
-        if (action !== 'submit' || !value) return;
+        // The whole table is a window's worth of screen and behaviour — see
+        // ImportWindow for why this stopped being a dialog.
+        const value = await ImportWindow.ask(this.actor, build);
+        if (!value) return;
 
         await applyImportPlan(this.actor, this.buildId, value);
 
         const placed = Object.values(value.slots).filter(Boolean).length;
         showSquireToast(build.name, {
             subtitle: `${placed} item${placed === 1 ? '' : 's'} placed`
-                + (plan.preparing ? `, ${value.spells.length} spell${value.spells.length === 1 ? '' : 's'} prepared` : ''),
+                + (build.includesPrepared ? `, ${value.spells.length} spell${value.spells.length === 1 ? '' : 's'} prepared` : ''),
             icon: 'fa-solid fa-download'
         });
 

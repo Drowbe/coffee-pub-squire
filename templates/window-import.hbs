@@ -1,0 +1,39 @@
+{{!--
+    WHERE A CHARACTER'S EQUIPPED GEAR WOULD GO, a row per SLOT, head to toe, with
+    whatever landed nowhere after them. A gap is invisible in a list of items and
+    obvious in a list of slots.
+
+    Built on `blacksmith-list` — thumbnail, title, meta, action — which is
+    exactly this row and already carries the hover, the ellipsis, the spacing and
+    the empty state. It was a hand-rolled table with fixed layout, stated column
+    widths and its own scrolling, all of which the API already had. The body it
+    sits in scrolls too; adding another scroller produced two nested scrollbars.
+
+    The rule this window keeps having to relearn: its chrome is Blacksmith's, and
+    the way to use it is to add nothing it already does.
+--}}
+<div class="squire-tool-content squire-import">
+
+    {{!-- What this screen IS, in the fewest words that prevent the two wrong
+          assumptions: that it reaches into the whole inventory, and that
+          whatever it decides is final. --}}
+    <div class="squire-import-intro">
+        <p>Taking <strong>{{actorName}}</strong>'s <strong>currently equipped</strong> gear into
+           <strong>{{buildName}}</strong>. Nothing else in their inventory is touched, and nothing
+           on the character changes — this only fills in the plan.</p>
+        <p>Every equipped item is below with the slot it would take. Anything left
+           <strong>Not mapped</strong> stays equipped on the character but is not part of this
+           build — so equipping the build later would take it off. Change any of them here, or
+           leave it and rearrange the figure afterwards by dragging.</p>
+    </div>
+
+    <div class="blacksmith-list" data-role="gear">{{{gearRows}}}</div>
+
+    {{#if hasSpells}}
+    <div class="squire-import-divider">
+        <span>Prepared spells</span>
+        <span class="squire-import-count">0 / {{limit}}</span>
+    </div>
+    <div class="blacksmith-list" data-role="spells">{{{spellRows}}}</div>
+    {{/if}}
+</div>

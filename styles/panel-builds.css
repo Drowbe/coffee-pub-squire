@@ -1208,160 +1208,109 @@
     position: relative;
 }
 
-/* ---------------- THE IMPORT PLAN ----------------
+/* ---------------- THE IMPORT WINDOW ----------------
 
-   A row per SLOT, head to toe, and the items that landed nowhere after them. It
-   was a row per item, which showed what the character owns and hid the thing you
-   actually need: which slots are still empty. A gap is invisible in a list of
-   items and obvious in a list of slots.
+   ALMOST NOTHING, and that is the point. The rows are `blacksmith-list` —
+   thumbnail, title, meta, action — which is exactly this screen's row and
+   already carries the hover, the ellipsis, the spacing, the dividers and an
+   empty state. The selects are `blacksmith-select`. The body scrolls itself.
+   `squire-tool-content` supplies the padding and the colour.
 
-   Every cell keeps `display: table-cell` and does its layout in a DIV inside.
-   The first version put `display: flex` on the cells themselves, which takes
-   them OUT of the table's column model — widths stop applying, colspan stops
-   working, and each column shrinks to its own content. The names and pictures
-   were rendering the whole time with nowhere to be. */
-.squire-plan {
+   What was here before: a table with fixed layout, stated column widths, its own
+   row height, its own hairline, its own scroller and its own ellipsis — every
+   one of which the API already did, and two of which actively fought it. Three
+   separate bugs came out of that (two nested scrollbars, `display: flex` on a
+   `td` emptying every column, and banding from opacity on a row).
+
+   These four rules are the only things genuinely particular to this screen. */
+
+/* THE SLOT COLUMN, first on every row and the same width on all of them.
+
+   The one structural thing `blacksmith-list-row` does not provide: its row has a
+   single image zone, and this screen needs two marks — what the slot IS, and
+   what is in it. So the slot leads, at a stated width, and the item's picture
+   keeps the API's own image zone behind it.
+
+   Fixed width rather than sized to the longest label, because the point of the
+   column is that the eye can run straight down it. */
+.squire-import-slot {
     display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-
-.squire-plan p {
-    flex: 0 0 auto;
-    margin: 0 0 8px;
-}
-
-/* The list scrolls, the heading and the buttons do not. A character with forty
-   equipped items produced a dialog taller than the screen with its own controls
-   pushed off the bottom. */
-.squire-plan-scroll {
-    flex: 1 1 auto;
-    min-height: 0;
-    max-height: 46vh;
-    overflow-x: hidden;
-    overflow-y: auto;
-    padding-right: 4px;
-}
-
-.squire-plan-heading {
-    display: flex;
-    flex: 0 0 auto;
-    gap: 8px;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-top: 12px !important;
-    font-weight: 700;
-}
-
-/* The prepared count, live. This is the one screen where the limit can be
-   exceeded, so it has to say when it has been. */
-.squire-plan-count {
-    font-variant-numeric: tabular-nums;
-    font-weight: 400;
-}
-
-.squire-plan-count.is-over {
-    color: #e0a52e;
-    font-weight: 700;
-}
-
-/* FIXED layout, so the columns are the same width in every row and a long item
-   name has something definite to be cut against. Automatic layout sizes columns
-   from their contents, which makes the widest name set the shape of the table
-   and the dropdowns land in a different place on every row. */
-.squire-plan-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-}
-
-.squire-plan-row td {
-    padding: 3px 0;
-    vertical-align: middle;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* The slot, with the same glyph the doll draws it with — so the row and the
-   figure name the same thing the same way. */
-.squire-plan-slot-cell {
-    width: 108px;
-}
-
-.squire-plan-slot-cell > div {
-    display: flex;
-    gap: 6px;
+    /* Sized to its own longest label — "BOTH HANDS" — and no wider. At 100px
+       every short label like HIP sat in a pool of empty space before the item's
+       picture, which read as a gap rather than as a column. */
+    flex: 0 0 88px;
+    gap: 5px;
     align-items: center;
     overflow: hidden;
     color: var(--blacksmith-tool-text-muted);
-    font-size: 0.72em;
+    font-size: 0.74em;
     letter-spacing: 0.02em;
     text-transform: uppercase;
     white-space: nowrap;
 }
 
-.squire-plan-slot-cell i {
+.squire-import-slot i {
     flex: 0 0 14px;
     text-align: center;
-    opacity: 0.75;
+    opacity: 0.8;
 }
 
-/* One line, cut with an ellipsis. A magic item's name runs long and wrapping it
-   would push the control it belongs to onto a second row. */
-.squire-plan-name > div {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    overflow: hidden;
+/* Holds the image column open on a row that has no image, so an empty slot does
+   not shunt its own name left of every filled one. */
+.squire-import-noimg {
+    flex: 0 0 36px;
+}
+
+/* Tighter than the list's default 10px. Four columns at that spacing put more
+   air between the slot and the picture than between the picture and the name,
+   which grouped the wrong pair. */
+.squire-import .blacksmith-list-row {
+    gap: 7px;
+}
+
+/* A row for a slot nobody filled. Quiet, and carrying words rather than a
+   control — there is nothing to decide on it, only something to notice.
+
+   Quietened by COLOUR, never by opacity on the row. Fading a whole row fades its
+   border with it, which drops every other line out of the list and reads as
+   banding — the same mistake this file has now made twice. */
+.squire-import-empty .blacksmith-list-row-title,
+.squire-import-empty .blacksmith-list-row-action {
+    color: var(--blacksmith-tool-text-muted);
+}
+
+.squire-import-empty .blacksmith-list-row-action {
+    font-size: 0.8em;
     white-space: nowrap;
 }
 
-.squire-plan-name span {
-    overflow: hidden;
-    text-overflow: ellipsis;
+/* Wide enough for its own longest option. "— Not equipped —" is the widest
+   thing any of these can say and it was being cut to "— NOT EQUII", which is the
+   one value you most need to read: it is what an item says when it is about to
+   be left out of the build. The name column shrinks instead, because a truncated
+   item name is still recognisable and a truncated instruction is not. */
+.squire-import-slot-select {
+    min-width: 170px;
 }
 
-.squire-plan-name img {
-    flex: 0 0 auto;
-    width: 20px;
-    height: 20px;
-    object-fit: cover;
-    border: none;
-    border-radius: 3px;
-}
-
-.squire-plan-control {
-    width: 150px;
-}
-
-/* A slot with nothing in it. Quiet, and carrying no control — there is nothing
-   to decide on this row, only something to notice. It is filled from the item's
-   own row further down. */
-.squire-plan-row.is-empty {
-    opacity: 0.45;
-}
-
-.squire-plan-row.is-empty .squire-plan-name {
-    font-size: 0.82em;
-}
-
-/* Everything that landed nowhere, under a rule that says so. */
-.squire-plan-divider td {
-    padding: 10px 0 4px;
+/* The break before the loose items, and the prepared heading. */
+.squire-import-divider {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 14px 0 6px;
     color: var(--blacksmith-tool-accent);
-    font-size: 0.72em;
+    font-size: 0.78em;
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }
 
-.squire-plan-row.is-loose .squire-plan-slot-cell {
-    opacity: 0.35;
-}
-
-.squire-plan-slot,
-.squire-plan-prepared {
-    width: 100%;
-    min-width: 0;
+/* The prepared count, live. This is the one screen where the limit can be
+   exceeded, so it has to say when it has been. */
+.squire-import-count.is-over {
+    color: #e0a52e;
 }
 
 /* ---------------- RARITY ----------------
