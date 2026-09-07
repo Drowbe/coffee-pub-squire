@@ -636,6 +636,27 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
      * it: the Builds panel has no hooks of its own, by design — a flag write
      * that fires `updateActor` would re-render the whole tray for a slot.
      */
+    /**
+     * Where the rail was scrolled to, kept across the redraw that is about to
+     * replace it.
+     *
+     * Every action in this window redraws the whole thing — selecting a build,
+     * renaming one, dropping an item — and a fresh DOM starts at the top. With
+     * a dozen builds that put the list back at the beginning on every click, so
+     * choosing two builds in a row meant scrolling down to the second one after
+     * having just been there.
+     *
+     * Read in `_preRender`, which every render path goes through, rather than in
+     * `_refresh`: the window also redraws from hooks and from the drag handlers,
+     * and a save that only some of those routes performed would work for most
+     * clicks and lose the position on the rest, which is worse than not doing it
+     * at all.
+     */
+    async _preRender(context, options) {
+        await super._preRender?.(context, options);
+        this._railScroll = this.element?.querySelector('.squire-build-rail-list')?.scrollTop ?? null;
+    }
+
     async _refresh() {
         // `rendered` guards the detached instance applyFromAnywhere() builds to
         // borrow the apply logic — it has no DOM and must not grow one.
@@ -861,6 +882,14 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
 
         const root = this.element;
         if (!root) return;
+
+        // Straight back to where it was. The new list is already in the document
+        // by the time this runs, so this lands before the browser paints and
+        // there is nothing to see; a rail that is now shorter clamps itself.
+        if (this._railScroll) {
+            const list = root.querySelector('.squire-build-rail-list');
+            if (list) list.scrollTop = this._railScroll;
+        }
 
         this._syncWidth();
 
