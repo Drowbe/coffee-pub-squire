@@ -54,6 +54,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`updateTray()` destroyed the handle and never rebuilt it.** The tray template renders the strip's structure; everything *in* it — health bar, conditions, build tiles — is put there by `HandleManager`, and the `replaceWith` at the end of `updateTray` threw all of that away. It went unnoticed because, as its own docblock records, the method had never once run; the `element` getter that made it reachable arrived later. It calls `updateHandle()` at the end now.
+
+- **The tray did not update when a build was equipped.** It took switching characters and back. Three things were wrong at once:
+  - **The build window never told the tray.** Applying refreshed the window and the handle; the tray's panels were left to the `updateItem` hook. They are now re-rendered once, explicitly, after the write — both correct and cheaper than the hook's per-item path, where a twelve-item build would rebuild the weapons panel twelve times. Only on apply and undo; editing a build writes a flag and changes nothing the tray shows.
+  - Through `renderPanels`, not `updateTray`. The latter re-renders the tray template and `replaceWith`s the whole element — handle included — so the first attempt at this fix wiped the health bar and the status icons off the handle every time a build was equipped. The panels are what changed, so the panels are what re-render.
+  - **The `updateItem` hook had no branch for spells.** `system.prepared` is in its visible-change list, so preparing a spell got all the way through and then found no panel to refresh. Spells now refresh the spells panel, and count towards the favourites panel like weapons and inventory already did.
+  - **Six actor-identity gates compared `.id`.** An unlinked token's synthetic actor shares the base actor's id, so with two copies of one prototype on a scene these let through edits belonging to the other token and rejected nothing — the tray refreshing from the wrong character's item, or refusing to refresh from the right one. All six now compare `uuid`: both item hooks, both effect hooks, the actor hook and the token hook.
+
 - **Equipping a build could only ever *unprepare* spells, never prepare them.** `applyBuild` gated on dnd5e's `system.countsPrepared`, read as "this spell can be prepared". It is not — it is *"is currently prepared, and so counts against the limit"*:
 
   ```js

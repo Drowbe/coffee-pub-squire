@@ -688,7 +688,13 @@ export class PanelManager {
         // Render all panels
         await this.renderPanels(PanelManager.element);
 
-
+        // And the HANDLE, which `replaceWith` above just threw away along with
+        // the rest of the old tray. The template renders the strip's structure;
+        // everything in it — the health bar, the conditions, the build tiles —
+        // is put there by HandleManager, so without this the handle comes back
+        // as an empty frame. Proven by making this method run for the first
+        // time: equipping a build wiped the health bar and the status icons.
+        await this.updateHandle();
     }
 
 

@@ -528,11 +528,17 @@ Hooks.once('ready', async () => {
 
                 const panelManager = getPanelManager();
                 // Only process if this item belongs to the actor currently being
-                // managed by Squire. `item.parent` first, for the same reason as
+                // managed by Squire.
+                //
+                // On UUID, not id. An unlinked token's synthetic actor shares the
+                // base actor's id, so with two copies of one prototype on a scene
+                // this gate let through edits to the OTHER token and rejected
+                // nothing — the tray refreshed from the wrong character's item,
+                // or refused to refresh from the right one. `item.parent` first, for the same reason as
                 // in deleteItem below: with no current actor and an unowned item,
                 // both sides are undefined and the gate lets it through.
                 if (!item.parent) return;
-                if (panelManager?.currentActor?.id !== item.parent.id) {
+                if (panelManager?.currentActor?.uuid !== item.parent.uuid) {
                     return;
                 }
                 
@@ -592,15 +598,24 @@ Hooks.once('ready', async () => {
                 // section stayed stale until something else rebuilt the panel.
                 const affectsInventory = ['equipment', 'consumable', 'tool', 'loot', ...CONTAINER_ITEM_TYPES].includes(item.type);
                 const affectsWeapons = item.type === 'weapon';
+                // Spells were missing entirely. `system.prepared` is in the
+                // visible-change list above, so preparing one got this far and
+                // then found no panel to refresh — the tray went on showing the
+                // old list until something else rebuilt it, which in practice
+                // meant switching characters and back.
+                const affectsSpells = item.type === 'spell';
 
                 if (affectsWeapons && panelManager.instance.weaponsPanel?.element) {
                     await panelManager.instance.weaponsPanel.render(panelManager.instance.weaponsPanel.element);
+                }
+                if (affectsSpells && panelManager.instance.spellsPanel?.element) {
+                    await panelManager.instance.spellsPanel.render(panelManager.instance.spellsPanel.element);
                 }
                 if (affectsInventory && panelManager.instance.inventoryPanel?.element) {
                     await panelManager.instance.inventoryPanel.render(panelManager.instance.inventoryPanel.element);
                 }
                 // Favorites panel only shows favorited items — skip the rerender otherwise
-                if ((affectsInventory || affectsWeapons)
+                if ((affectsInventory || affectsWeapons || affectsSpells)
                     && panelManager.instance.favoritesPanel?.element
                     && FavoritesPanel.getPanelFavorites(item.parent).includes(item.id)) {
                     await panelManager.instance.favoritesPanel.render(panelManager.instance.favoritesPanel.element);
@@ -632,7 +647,7 @@ Hooks.once('ready', async () => {
                 // are undefined, `undefined !== undefined` is false, and the gate
                 // waves through a delete with no actor behind it.
                 if (!item.parent) return;
-                if (panelManager?.currentActor?.id !== item.parent.id) {
+                if (panelManager?.currentActor?.uuid !== item.parent.uuid) {
                     return;
                 }
                 
@@ -681,7 +696,7 @@ Hooks.once('ready', async () => {
 
                 const panelManager = getPanelManager();
                 // Only process if this effect belongs to the actor currently being managed by Squire
-                if (panelManager?.currentActor?.id !== effect.parent?.id) {
+                if (panelManager?.currentActor?.uuid !== effect.parent?.uuid) {
                     return;
                 }
 
@@ -702,7 +717,7 @@ Hooks.once('ready', async () => {
             callback: async (effect, options, userId) => {
                 const panelManager = getPanelManager();
                 // Only process if this effect belongs to the actor currently being managed by Squire
-                if (panelManager?.currentActor?.id !== effect.parent?.id) {
+                if (panelManager?.currentActor?.uuid !== effect.parent?.uuid) {
                     return;
                 }
                 
@@ -723,7 +738,7 @@ Hooks.once('ready', async () => {
             callback: async (actor, changes) => {
                 const panelManager = getPanelManager();
                 // Only process if this is the actor currently being managed by Squire
-                if (panelManager?.currentActor?.id !== actor.id) {
+                if (panelManager?.currentActor?.uuid !== actor.uuid) {
                     return;
                 }
                 
@@ -852,7 +867,7 @@ Hooks.once('ready', async () => {
             priority: 2,
             callback: async (token) => {
                 const panelManager = getPanelManager();
-                if (panelManager?.currentActor?.id !== token.actor?.id) return;
+                if (panelManager?.currentActor?.uuid !== token.actor?.uuid) return;
 
                 // Coalesce deletion bursts (GM removing several tokens at once) into ONE rebuild.
                 // The old per-event path reassigned panel actors directly and raced against

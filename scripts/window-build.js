@@ -690,13 +690,16 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                         // clearing it empties the strip without a second write.
                         if (!costume) await setActiveBuildId(this.actor, previousActive);
                         showSquireToast(`${build.name} undone`, { icon: 'fa-solid fa-rotate-left' });
-                        await this._refresh();
+                        // Undo moves the same items apply did.
+                        await this._refresh({ tray: true });
                     }
                     : undefined
             }
         );
 
-        await this._refresh();
+        // The tray as well: this just equipped, unequipped and prepared things
+        // it is showing.
+        await this._refresh({ tray: true });
     }
 
     /**
@@ -745,7 +748,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         if (list && saved?.rail != null) list.scrollTop = saved.rail;
     }
 
-    async _refresh() {
+    async _refresh({ tray = false } = {}) {
         // `rendered` guards the detached instance applyFromAnywhere() builds to
         // borrow the apply logic — it has no DOM and must not grow one.
         if (this.rendered) await this.render(false);
@@ -753,6 +756,32 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // The handle can carry builds, and their armour class and item pictures
         // come from the same build this just changed.
         await PanelManager.instance?.handleManager?.updateHandle();
+
+        // The TRAY's panels, but only when something on the character moved.
+        //
+        // Editing a build writes a flag and changes nothing the tray shows, so
+        // the common refresh has no business re-rendering six panels. Applying
+        // one equips and prepares in a single `updateEmbeddedDocuments` call,
+        // and that is the case the tray has to be told about.
+        //
+        // Told explicitly rather than left to the `updateItem` hook. That hook
+        // re-renders per item type and had no branch for spells at all, so a
+        // build that prepared six spells refreshed nothing — and even where it
+        // works, a twelve-item build would rebuild the weapons panel once per
+        // weapon. One pass after the write is both correct and cheaper.
+        //
+        // `renderPanels`, NOT `updateTray`. The latter re-renders the tray
+        // TEMPLATE and calls `replaceWith` on the whole element — handle
+        // included — and never rebuilds the handle afterwards, so the health bar
+        // and the conditions came back empty and the strip lost everything
+        // HandleManager had put there. Its own docblock records that it had
+        // never once run; calling it here made a never-executed method execute,
+        // which is not a thing to discover during a bug fix. The panels are what
+        // changed, so the panels are what re-render.
+        if (tray) {
+            const manager = PanelManager.instance;
+            if (manager?.element) await manager.renderPanels(manager.element);
+        }
     }
 
     /**
