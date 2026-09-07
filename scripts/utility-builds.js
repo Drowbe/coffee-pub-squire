@@ -352,6 +352,16 @@ export function getBuilds(actor) {
         // game does not have. Read tolerantly, because the earlier shape is
         // still sitting in flags.
         spells: flattenSpellList(build.spells),
+        // FAVOURITE: one of the ones you actually use, in a list that grows to
+        // twenty. A field on the build rather than a list of ids in a second
+        // flag, so deleting a build takes its heart with it and the two can never
+        // disagree about what exists.
+        //
+        // Not the same thing as being on the tray handle, though both mean "one
+        // I reach for". The handle is a strip with room for a few and costs
+        // screen space; this is a filter on a list and costs nothing, so a
+        // player can favourite a dozen without consequence.
+        favorite: !!build.favorite,
         // How the token is DRAWN, as opposed to what it is drawn with. Only a
         // costume sets these — a build is gear, and gear does not change how big
         // a character's token is on the map. Every one of them is nullable and
@@ -572,6 +582,10 @@ export async function duplicateBuild(actor, buildId) {
         // Copied rather than shared, or editing one build's list would edit
         // the other's.
         spells: [...(source.spells ?? [])],
+        // A copy of a favourite is a new build, not a second favourite. You
+        // duplicated it to change it; whether the variant earns a heart is a
+        // decision to make after seeing it.
+        favorite: false,
         token: { ...(source.token ?? {}) }
     };
 
@@ -639,11 +653,32 @@ export async function convertBuildMode(actor, buildId, mode) {
             mode: next,
             slots: Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null])),
             spells: [],
+        favorite: false,
             // A costume's token geometry is as much a costume thing as its
             // pictures are, and means nothing on a build.
             token: next === 'costume' ? build.token : normaliseTokenSettings(null)
         }
         : build));
+}
+
+/**
+ * Favourite a build, or take the heart off.
+ *
+ * The Favourites tab is the whole feature: an easy way back to the two or three
+ * you actually use, in a rail that fills up with costumes and one-off kits.
+ * Nothing else reads this — it does not equip, it does not reach the handle, and
+ * it changes nothing about the character.
+ */
+export async function toggleBuildFavorite(actor, buildId) {
+    const builds = getBuilds(actor);
+    const target = builds.find(build => build.id === buildId);
+    if (!target) return null;
+
+    const next = !target.favorite;
+    await saveBuilds(actor, builds.map(build => build.id === buildId
+        ? { ...build, favorite: next }
+        : build));
+    return next;
 }
 
 /** Switch a build between dressing the character and equipping it. */

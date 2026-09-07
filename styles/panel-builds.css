@@ -539,6 +539,12 @@
 }
 
 .squire-build-rail-name {
+    /* Takes all the slack, so the row's `space-between` has none left to put
+       between the heart and the name. With three children and nothing growing,
+       that gap was shared out evenly and the heart ended up adrift at the far
+       left. `min-width: 0` keeps the ellipsis working while it grows. */
+    flex: 1 1 auto;
+    min-width: 0;
     overflow: hidden;
     /* Fixed light, not the theme's text colour: this sits on artwork under a
        dark scrim, not on the window's own surface, so a theme colour would be a
@@ -674,6 +680,21 @@
 /* Worn is not selected. The rail marks both, and they are often different. */
 /* Its own line under the counts. It was a third chip in the stats row, which put
    a fact about the CHARACTER in among two facts about the build. */
+/* The heart, in the tile's head beside the name. Small: it is a mark on a thing
+   rather than a fact about it, so it does not get a line of its own the way WORN
+   and DEFAULT do.
+
+   The tray's own favourite red, and the tray's own glyph. A favourite is a
+   favourite wherever it appears in this module, and a star here would have
+   invented a second mark for the idea the heart already carries on every item
+   row, in the panel heading and on the mode toggle. */
+.squire-build-rail-favorite {
+    flex: 0 0 auto;
+    color: #ff4444;
+    font-size: 0.66em;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
 /* WORN and DEFAULT share a shape because they are the same kind of mark — a
    one-line fact about this entry that is not a count — and differ only in
    colour, which is the one thing that has to tell them apart at a glance.

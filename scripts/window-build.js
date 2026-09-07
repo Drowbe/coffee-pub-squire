@@ -8,7 +8,7 @@ import {
     renameBuild, setBuildSlot, moveBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
-    resolveTokenSettings, setBuildTokenSetting,
+    resolveTokenSettings, setBuildTokenSetting, toggleBuildFavorite,
     applyImportPlan,
     estimateArmorClass, previewSlotChange, setBuildMode, convertBuildMode, revertBuild, damageLabel,
     setActiveBuildId, getActiveBuildId, ensureDefaultCostume, ensureDefaultBuild,
@@ -114,11 +114,15 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         this.actor = options.actor ?? null;
         this.buildId = options.buildId ?? null;
 
-        // Which tab the rail is on: 'all', 'costume' or 'gear'. Per window and
-        // not remembered between openings — a filter that survived would mean
-        // opening the builder one day and finding builds you own missing, with
-        // the reason a tab you last pressed weeks ago.
-        this.railFilter = 'all';
+        // Which tab the rail is on: 'favorite', 'costume' or 'gear'. Per window
+        // and not remembered between openings — a filter that survived would
+        // mean opening the builder one day and finding builds you own missing,
+        // with the reason a tab you last pressed weeks ago.
+        //
+        // Opens on Favourites, which is where All used to be. Empty until you
+        // favourite something, and it says so; the other two tabs are one
+        // click away and hold everything.
+        this.railFilter = 'favorite';
     }
 
     /**
@@ -333,13 +337,26 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // The rail's own buttons can no longer cause this — each tab offers only
         // the one that makes something it can show. This is for the pair on the
         // empty page, which offers both because there is nothing to filter yet.
-        if (!this._passesFilter(costume ? 'costume' : 'gear')) this.railFilter = 'all';
+        if (!this._passesFilter(build)) this.railFilter = costume ? 'costume' : 'gear';
         await this._refresh();
     }
 
-    /** Would the rail's current tab show an entry of this mode? */
-    _passesFilter(mode) {
-        return this.railFilter === 'all' || this.railFilter === mode;
+    /** Would the rail's current tab show this entry? */
+    _passesFilter(build) {
+        if (this.railFilter === 'favorite') return !!build?.favorite;
+        return this.railFilter === (build?.mode === 'costume' ? 'costume' : 'gear');
+    }
+
+    /**
+     * Favourite this entry, or take the heart off.
+     *
+     * No confirmation: it is a filter on a list, it changes nothing about the
+     * character, and it undoes itself by being pressed again.
+     */
+    async toggleFavorite(buildId) {
+        const favourited = await toggleBuildFavorite(this.actor, buildId);
+        if (favourited === null) return;
+        await this._refresh();
     }
 
     /**
@@ -865,12 +882,12 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // Counted before the filter, so a tab can say how many it would show
         // and an empty one is visibly empty rather than merely missing.
         const counts = {
-            all: builds.length,
+            favorite: builds.filter(entry => entry.favorite).length,
             costume: builds.filter(entry => entry.mode === 'costume').length
         };
-        counts.gear = counts.all - counts.costume;
+        counts.gear = builds.length - counts.costume;
 
-        const rail = builds.filter(entry => this._passesFilter(entry.mode === 'costume' ? 'costume' : 'gear')).map(entry => {
+        const rail = builds.filter(entry => this._passesFilter(entry)).map(entry => {
             const summary = buildSummary(this.actor, entry);
             // Its own picture as the tile's face, and the two images wearing it
             // would produce as the marks on it. The gear thumbnails that were
@@ -904,6 +921,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 // evidence.
                 drifted: entry.id === activeId && !!drift && !drift.matches,
                 driftCount: entry.id === activeId ? (drift?.count ?? 0) : 0,
+                favorite: !!entry.favorite,
                 isDefault: artwork.isDefault,
                 defaultDrifted: artwork.drifted,
                 costume: entry.mode === 'costume',
@@ -986,7 +1004,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 // than three flags in the template: they are one control, and a
                 // list is what a loop over them wants.
                 railTabs: [
-                    { key: 'all', label: 'All', count: counts.all },
+                    { key: 'favorite', label: 'Favorites', count: counts.favorite },
                     { key: 'costume', label: 'Costumes', count: counts.costume },
                     { key: 'gear', label: 'Builds', count: counts.gear }
                 ].map(tab => ({ ...tab, active: this.railFilter === tab.key })),
@@ -994,7 +1012,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 // one that makes something this tab can show is offered.
                 railFilter: this.railFilter,
                 railFiltered: rail.length === 0 && builds.length > 0,
-                railFilterLabel: this.railFilter === 'costume' ? 'costumes' : 'builds',
+                railFilterLabel: { favorite: 'favourites', costume: 'costumes' }[this.railFilter] ?? 'builds',
                 hasBuilds: builds.length > 0,
                 isCostume: build?.mode === 'costume',
                 // Named rather than left as an array the costume view would have
@@ -1248,6 +1266,16 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                                  callback: () => this.applySelected(buildId) }]
                             : [{ name: 'Equip This Build', icon: 'fa-solid fa-shirt',
                                  callback: () => this.applySelected(buildId) }]),
+                        // First, and on everything. It is the cheapest thing in
+                        // this menu — one field, no confirmation, undone by
+                        // pressing it again — and it is the entry somebody opens
+                        // this menu for once they have twenty builds.
+                        ...(getBuild(this.actor, buildId)?.favorite
+                            ? [{ name: 'Remove from Favorites', icon: 'fa-solid fa-heart-crack',
+                                 callback: () => this.toggleFavorite(buildId) }]
+                            : [{ name: 'Add to Favorites', icon: 'fa-solid fa-heart',
+                                 callback: () => this.toggleFavorite(buildId) }]),
+                        { separator: true },
                         { name: 'Duplicate', icon: 'fa-solid fa-clone',
                           callback: () => this.duplicateSelected(buildId) },
                         ...(moves.length ? [{ separator: true }, ...moves] : []),
