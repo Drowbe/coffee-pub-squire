@@ -1060,7 +1060,13 @@ export async function recaptureDefaultImages(actor) {
 
     const captured = {
         portrait: actor.img ?? null,
-        token: actor.prototypeToken?.texture?.src ?? null
+        token: actor.prototypeToken?.texture?.src ?? null,
+        // Read from the sheet, so there is no build image to read and no costume
+        // this came from. Both are cleared rather than left standing: a stale
+        // sourceId would keep a Default badge on a costume that no longer has
+        // anything to do with the answer.
+        main: null,
+        sourceId: null
     };
 
     await actor.setFlag(MODULE.ID, DEFAULT_IMAGES_FLAG, captured);
@@ -1077,37 +1083,41 @@ export async function captureDefaultImages(actor) {
 }
 
 /**
- * The character's own artwork, as captured before any build touched it.
+ * THE DEFAULT ARTWORK: what this character looks like when nothing says otherwise.
+ *
+ * It starts as their own artwork, captured before any build could touch it, and
+ * it is the fallback behind every unset image slot in every build. A build that
+ * sets no portrait shows this one, and equipping it changes no portrait.
+ *
+ * It is not frozen. `adoptCostumeAsDefault` writes a costume over it, which is
+ * the point of that action — "this is what they actually look like now" has to
+ * be sayable, or the answer stays whatever they happened to look like the first
+ * time this window opened. The way back to their real face is the Default
+ * Costume build, which is a thing a player can see and click, rather than a flag
+ * nobody can point at.
+ *
+ * THREE images, not two. `main` has no actor field to live in — it is the
+ * picture at the centre of the doll — so the flag is the only place it can be
+ * remembered, and leaving it out would mean a new build fell back to the adopted
+ * portrait for its face while the costume it came from showed something else.
+ *
+ * `sourceId` is the build the current default was taken from, or null when it
+ * was read off the sheet. It exists so the rail can say which one is the
+ * default; nothing resolves through it.
  *
  * Falls back to what the actor currently shows when nothing has been captured —
- * which is correct precisely because nothing has been applied in that case, so
- * current and original are the same thing.
+ * correct precisely because nothing has been applied in that case, so current
+ * and original are the same thing.
  */
 export function getDefaultImages(actor) {
     const stored = actor?.getFlag(MODULE.ID, DEFAULT_IMAGES_FLAG);
 
     return {
         portrait: stored?.portrait ?? actor?.img ?? null,
-        token: stored?.token ?? actor?.prototypeToken?.texture?.src ?? null
+        token: stored?.token ?? actor?.prototypeToken?.texture?.src ?? null,
+        main: stored?.main ?? null,
+        sourceId: stored?.sourceId ?? null
     };
-}
-
-/**
- * Put the character's own portrait and token back.
- *
- * Not wired to anything yet — applying a build is a later step — but it is the
- * other half of the capture above and belongs beside it. Deliberately does NOT
- * clear the flag: the defaults are the character's identity, not a one-shot
- * undo, and a second build applied later needs them just as much.
- */
-export async function restoreDefaultImages(actor) {
-    const defaults = getDefaultImages(actor);
-    if (!defaults.portrait && !defaults.token) return;
-
-    await actor.update({
-        ...(defaults.portrait ? { img: defaults.portrait } : {}),
-        ...(defaults.token ? { 'prototypeToken.texture.src': defaults.token } : {})
-    });
 }
 
 /**
@@ -1140,7 +1150,10 @@ export function resolveMainImage(actor, build) {
     return {
         key: 'main',
         label: 'Build Image',
-        path: chosen ?? portrait ?? defaults.portrait,
+        // The default's own main picture sits AHEAD of its portrait: a costume
+        // adopted as the default recorded a face for the centre of the doll, and
+        // falling past it to the portrait would ignore the more specific answer.
+        path: chosen ?? portrait ?? defaults.main ?? defaults.portrait,
         isDefault: !chosen
     };
 }
@@ -1397,6 +1410,124 @@ export async function applyBuild(actor, build) {
         tokensChanged,
         undo
     };
+}
+
+/**
+ * A costume's three pictures, as they would actually be seen.
+ *
+ * RESOLVED, not raw: a slot the costume leaves unset resolves to the current
+ * default, which is the honest answer to "what does wearing this look like" —
+ * an unset portrait means the character keeps the one they have. That also
+ * makes the value stable to compare against later, which is what the Default
+ * badge needs.
+ */
+function resolvedArtwork(actor, build) {
+    const slots = resolveImageSlots(actor, build);
+    return {
+        portrait: slots.find(slot => slot.key === 'portrait')?.path ?? null,
+        token: slots.find(slot => slot.key === 'token')?.path ?? null,
+        main: resolveMainImage(actor, build).path ?? null
+    };
+}
+
+/**
+ * Write a costume's look onto the character's PROTOTYPE TOKEN, without wearing it.
+ *
+ * The prototype token is the stamp for tokens made LATER, so this decides what
+ * this character will look like the next time one is dropped on a scene, and
+ * leaves the ones already standing on the map exactly as they are. Applying the
+ * costume is the other action: that changes what they look like NOW, repaints
+ * every token of theirs on the canvas, and offers an undo.
+ *
+ * NOT the same thing as setting the default artwork, which is the entry below
+ * it in the menu. That one is about this TOOL — what a new build or costume
+ * starts out with — and touches nothing Foundry can see. This one is about the
+ * ACTOR, and touches nothing about how the builder behaves. Keeping them
+ * separate is the point: adopting a face for the next scene's token and deciding
+ * what your next costume starts from are two unrelated intentions.
+ *
+ * TWO IMAGES, and nothing else. The costume's size, fit and scale are NOT
+ * written, even though they live on the prototype token and it would be tidy to
+ * carry them along. Changing how big somebody's token is drawn is a different
+ * decision from changing what it is a picture of, and this action asks about the
+ * second — an entry called "update prototype token" quietly resizing every
+ * future token is a surprise, and the way to set that deliberately is to wear
+ * the costume or edit the token itself.
+ *
+ * Writes only what the costume actually sets. An unset image means "no change"
+ * here exactly as it does everywhere else.
+ */
+export async function adoptCostumeAsDefault(actor, build) {
+    if (!actor || !build || build.mode !== 'costume') return null;
+
+    const update = {};
+    if (build.images?.portrait) update.img = build.images.portrait;
+    if (build.images?.token) update['prototypeToken.texture.src'] = build.images.token;
+
+    if (!Object.keys(update).length) return null;
+
+    await actor.update(update);
+    return { portrait: !!update.img, token: !!update['prototypeToken.texture.src'] };
+}
+
+/**
+ * Make this entry's three pictures the DEFAULT ARTWORK for the builder.
+ *
+ * Where a new build or costume starts. Every image slot a build leaves unset
+ * resolves through the default, so this is the answer they all inherit — make a
+ * costume, and its portrait, token and centre picture are already these rather
+ * than whatever the character happened to look like the first time this window
+ * was opened.
+ *
+ * IT TOUCHES NOTHING FOUNDRY CAN SEE. Not `actor.img`, not the prototype token,
+ * not a token on the canvas. This is a setting for this tool, stored in a module
+ * flag, and a player who presses it has said something about their next build
+ * rather than about their character. Updating the prototype token is the
+ * separate entry above it, and the two are deliberately not wired together.
+ *
+ * THREE pictures, where the prototype token can only take two: `main` — the
+ * picture at the centre of the doll — has no actor field to live in, so the flag
+ * is the only place it can be remembered at all, and it is exactly the one a new
+ * build most obviously starts from.
+ *
+ * The values stored are RESOLVED rather than raw, so a slot this entry leaves
+ * unset stores the default already in force. "Unset" means "no opinion", and an
+ * entry with no opinion about its token should not blank the default's.
+ */
+export async function setDefaultArtwork(actor, build) {
+    if (!actor || !build) return null;
+
+    const artwork = resolvedArtwork(actor, build);
+    if (!artwork.portrait && !artwork.token && !artwork.main) return null;
+
+    await actor.setFlag(MODULE.ID, DEFAULT_IMAGES_FLAG, { ...artwork, sourceId: build.id });
+    return { ...artwork, sourceId: build.id };
+}
+
+/**
+ * Is this build the one the default artwork came from, and does it still match?
+ *
+ * Two facts, for the same reason the worn mark carries two. The default is a
+ * SNAPSHOT taken when the button was pressed, so editing that costume's pictures
+ * afterwards leaves the badge describing something that is no longer true —
+ * and the badge should say so rather than quietly lie.
+ *
+ * Drifted is not an error and needs no repair prompt. It means "the default came
+ * from here and this has moved on since"; pressing the entry again is the fix,
+ * and doing nothing is a perfectly good choice.
+ */
+export function defaultArtworkState(actor, build) {
+    const stored = getDefaultImages(actor);
+    if (!build || !stored.sourceId || stored.sourceId !== build.id) {
+        return { isDefault: false, drifted: false };
+    }
+
+    const current = resolvedArtwork(actor, build);
+    const drifted = current.portrait !== stored.portrait
+        || current.token !== stored.token
+        || current.main !== stored.main;
+
+    return { isDefault: true, drifted };
 }
 
 /**

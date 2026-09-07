@@ -604,7 +604,12 @@
 /* Worn is not selected. The rail marks both, and they are often different. */
 /* Its own line under the counts. It was a third chip in the stats row, which put
    a fact about the CHARACTER in among two facts about the build. */
-.squire-build-rail-worn {
+/* WORN and DEFAULT share a shape because they are the same kind of mark — a
+   one-line fact about this entry that is not a count — and differ only in
+   colour, which is the one thing that has to tell them apart at a glance.
+   Green is "right now"; the muted tone below is "underneath, always". */
+.squire-build-rail-worn,
+.squire-build-rail-default {
     display: flex;
     flex: 0 0 auto;
     gap: 4px;
@@ -1105,8 +1110,16 @@
    Amber rather than red throughout. Drifting from a plan is a normal thing to
    do — you picked up a torch — and a red window would be crying about a
    character behaving perfectly reasonably. */
-.squire-build-rail-worn.is-drifted {
+.squire-build-rail-worn.is-drifted,
+.squire-build-rail-default.is-drifted {
     color: #e0a52e;
+}
+
+/* Quieter than the worn mark deliberately. The default is a standing fact that
+   is true every time you open this window, and painting it as loudly as "what
+   they have on right now" would make the louder thing harder to find. */
+.squire-build-rail-default {
+    color: var(--blacksmith-tool-text-muted, #b9b2a6);
 }
 
 /* On the slot's picture, opposite the attunement gem: the two never appear

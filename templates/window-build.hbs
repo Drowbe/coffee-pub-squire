@@ -66,6 +66,32 @@
                         {{/unless}}
                     </div>
 
+                    {{#if this.isDefault}}
+                    {{!-- The character's DEFAULT ARTWORK came from this entry:
+                          what they look like when nothing says otherwise, which
+                          is what a build with no image of its own falls back to
+                          and what the next token placed will be stamped with.
+
+                          A third kind of fact again. Selected is what this window
+                          shows, worn is what they have on, and this is what they
+                          look like underneath both — so it sits above the worn
+                          line, since it outlasts it.
+
+                          It is a SNAPSHOT, so it can go stale: editing this
+                          costume's pictures afterwards leaves the default
+                          describing something this no longer looks like. Said
+                          rather than hidden, with the same warning triangle the
+                          worn mark uses for the same situation. --}}
+                    <div class="squire-build-rail-default{{#if this.defaultDrifted}} is-drifted{{/if}}"
+                         data-tooltip="{{#if this.defaultDrifted}}New builds start from this entry's artwork, and its pictures have changed since.<br><em>Set it as the default again to catch up</em>{{else}}What a new build or costume starts from in this tool. The character is not affected{{/if}}">
+                        {{#if this.defaultDrifted}}
+                        <i class="fa-solid fa-triangle-exclamation"></i> Default (changed)
+                        {{else}}
+                        <i class="fa-solid fa-user-circle"></i> Default
+                        {{/if}}
+                    </div>
+                    {{/if}}
+
                     {{#if this.worn}}
                     {{!-- Its own line under the counts, because it is a different
                           KIND of fact from them. Selected is what this window is

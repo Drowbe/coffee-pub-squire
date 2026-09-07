@@ -14,7 +14,8 @@ import {
     setActiveBuildId, getActiveBuildId, ensureDefaultCostume, ensureDefaultBuild,
     moveBuild, resolveMainImage,
     resolveTileImage,
-    equippedState, buildDrift, recaptureDefaultImages, canPrepareSpells
+    equippedState, buildDrift, recaptureDefaultImages, canPrepareSpells,
+    adoptCostumeAsDefault, defaultArtworkState, setDefaultArtwork
 } from './utility-builds.js';
 
 /**
@@ -186,6 +187,44 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         return win;
     }
 
+    /**
+     * The two things this window is a view OF, reachable from its title bar.
+     *
+     * A build is a plan about a character and a plan about their token, and both
+     * of those are edited somewhere else — so the two places you end up going
+     * from here are the character sheet and the prototype token. Putting them in
+     * the title bar is what Blacksmith's tool windows do with actions that leave
+     * the window rather than change it; the merchant's config window uses the
+     * same rail for the same reason.
+     */
+    getToolHeaderActions() {
+        if (!this.actor) return [];
+
+        return [
+            {
+                id: 'squire-build-sheet',
+                icon: 'fa-solid fa-user',
+                label: 'Open Character Sheet',
+                onClick: () => this.actor.sheet?.render(true)
+            },
+            {
+                id: 'squire-build-token',
+                icon: 'fa-solid fa-user-circle',
+                label: 'Open Prototype Token',
+                // Through `CONFIG.Token.prototypeSheetClass`, which is how the
+                // system registers its own: dnd5e replaces it with
+                // PrototypeTokenConfig5e (dnd5e.mjs:82549), so constructing
+                // Foundry's base class directly would open a plainer window than
+                // the same button on the character sheet does.
+                onClick: () => {
+                    const Sheet = CONFIG.Token.prototypeSheetClass
+                        ?? foundry.applications.sheets.PrototypeTokenConfig;
+                    new Sheet({ document: this.actor.prototypeToken }).render(true);
+                }
+            }
+        ];
+    }
+
     /** The build this window is showing, re-read every time rather than cached. */
     get build() {
         return getBuild(this.actor, this.buildId);
@@ -263,19 +302,19 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
      */
     async recaptureDefaults() {
         const confirmed = await getBlacksmith().dialog.confirm({
-            title: 'Set Artwork as Default',
-            content: `<p>Record <strong>${foundry.utils.escapeHTML(this.actor.name)}</strong>'s current portrait and token as their default artwork?</p>`
-                + '<p>Every build and costume that does not set its own image falls back to these, and undoing a costume returns to them.</p>'
+            title: 'Reset Default Artwork',
+            content: `<p>Take the builder's default artwork back from <strong>${foundry.utils.escapeHTML(this.actor.name)}</strong>'s character sheet?</p>`
+                + '<p>Their current portrait and token become what a new build or costume starts from, and any entry set as the default stops being it. The character is not touched either way — this only changes what this tool starts from.</p>'
                 + '<p><strong>Make sure they are wearing their own face.</strong> This reads what they look like right now, so doing it while a costume is on would record the costume as the original.</p>',
-            confirmLabel: 'Set as Default',
-            confirmIcon: 'fa-solid fa-camera'
+            confirmLabel: 'Reset',
+            confirmIcon: 'fa-solid fa-rotate-left'
         });
         if (!confirmed) return;
 
         const captured = await recaptureDefaultImages(this.actor);
-        showSquireToast('Default artwork updated', {
-            subtitle: captured?.portrait ? 'Portrait and token recorded' : 'Recorded',
-            icon: 'fa-solid fa-camera'
+        showSquireToast('Default artwork reset', {
+            subtitle: captured?.portrait ? 'Taken from the character sheet' : 'Recorded',
+            icon: 'fa-solid fa-rotate-left'
         });
         await this._refresh();
     }
@@ -368,6 +407,95 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // No leftovers report: nothing was left over. Every item was on the
         // table and every one of them has an answer the player chose.
         this._importReport = null;
+        await this._refresh();
+    }
+
+    /**
+     * Make a costume the character's DEFAULT look, without wearing it.
+     *
+     * Wearing a costume changes how they look now and repaints every token of
+     * theirs on the canvas. This changes what a token made LATER will look like
+     * and leaves the map alone — which is the difference between dressing a
+     * character for a scene and deciding what they actually look like.
+     *
+     * It asks first and names that difference, because the two are easy to
+     * confuse and only one of them is undoable from a toast.
+     */
+    async adoptSelected(buildId) {
+        const build = getBuild(this.actor, buildId);
+        if (!build || build.mode !== 'costume') return;
+
+        const name = foundry.utils.escapeHTML(build.name);
+        const who = foundry.utils.escapeHTML(this.actor.name);
+
+        const confirmed = await getBlacksmith().dialog.confirm({
+            title: 'Update Prototype Token',
+            content: `<p>Put <strong>${name}</strong>'s artwork onto <strong>${who}</strong>'s prototype token?</p>`
+                + '<p>This writes its portrait and its token picture onto the character, so any token '
+                + 'placed from now on uses them. Nothing else about the token changes.</p>'
+                + '<p><strong>Tokens already on the canvas are not touched</strong>, and this is not '
+                + 'the same as wearing the costume — there is no undo on the toast for it.</p>',
+            confirmLabel: 'Update Prototype Token',
+            confirmIcon: 'fa-solid fa-user-circle'
+        });
+        if (!confirmed) return;
+
+        const result = await adoptCostumeAsDefault(this.actor, build);
+        if (!result) {
+            ui.notifications.info(`${build.name} sets no artwork, so there was nothing to adopt.`);
+            return;
+        }
+
+        const parts = [];
+        if (result.portrait) parts.push('portrait');
+        if (result.token) parts.push('token');
+
+        showSquireToast(build.name, {
+            subtitle: `Prototype token ${parts.join(' and ')} updated`,
+            icon: 'fa-solid fa-user-circle'
+        });
+        await this._refresh();
+    }
+
+    /**
+     * Make this entry's pictures what a NEW build or costume starts from.
+     *
+     * A setting for this tool and nothing else. It is next to Update Prototype
+     * Token in the menu and is not the same action: that one writes onto the
+     * character so Foundry uses the art, this one decides what the builder
+     * offers next time. Saying so in the dialog is most of the dialog's job,
+     * since the two sit together and sound alike.
+     */
+    async setDefaultsFrom(buildId) {
+        const build = getBuild(this.actor, buildId);
+        if (!build) return;
+
+        const name = foundry.utils.escapeHTML(build.name);
+
+        const confirmed = await getBlacksmith().dialog.confirm({
+            title: 'Set As Default Artwork',
+            content: `<p>Start every new build and costume from <strong>${name}</strong>'s artwork?</p>`
+                + '<p>Its portrait, token picture and build image become the defaults here, so anything '
+                + 'made from now on begins with them — and any existing build that sets no image of its '
+                + 'own shows them too.</p>'
+                + '<p><strong>The character is not touched.</strong> Their portrait, their prototype '
+                + 'token and every token on the canvas stay exactly as they are; this only changes what '
+                + 'this tool starts from. Use <em>Update Prototype Token</em> for the other one.</p>',
+            confirmLabel: 'Set As Default',
+            confirmIcon: 'fa-solid fa-images'
+        });
+        if (!confirmed) return;
+
+        const result = await setDefaultArtwork(this.actor, build);
+        if (!result) {
+            ui.notifications.info(`${build.name} has no artwork to make the default.`);
+            return;
+        }
+
+        showSquireToast(build.name, {
+            subtitle: 'New builds now start from this artwork',
+            icon: 'fa-solid fa-images'
+        });
         await this._refresh();
     }
 
@@ -604,6 +732,11 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             // full the moment you select it — and five item icons at 20px is a
             // row of smudges, not a summary.
             const images = resolveImageSlots(this.actor, entry);
+            // Which entry the character's default artwork came from, and whether
+            // it still looks like it. Same two-fact shape as the worn mark below
+            // it, and for the same reason: a badge that cannot say it has gone
+            // stale is a badge that quietly lies.
+            const artwork = defaultArtworkState(this.actor, entry);
 
             return {
                 mainImage: resolveMainImage(this.actor, entry).path,
@@ -625,6 +758,8 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 // evidence.
                 drifted: entry.id === activeId && !!drift && !drift.matches,
                 driftCount: entry.id === activeId ? (drift?.count ?? 0) : 0,
+                isDefault: artwork.isDefault,
+                defaultDrifted: artwork.drifted,
                 costume: entry.mode === 'costume',
                 armorClass: summary.armorClass.value,
                 gearCount: summary.gearCount
@@ -881,12 +1016,26 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                           callback: () => this.duplicateSelected(buildId) },
                         ...(moves.length ? [{ separator: true }, ...moves] : []),
                         { separator: true },
+                        // Costume only: a build has no artwork to put on a
+                        // prototype token, and its gear is not something a
+                        // prototype token knows about.
                         ...(getBuild(this.actor, buildId)?.mode === 'costume'
-                            ? [{ name: 'Convert to Build', icon: 'fa-solid fa-shirt',
+                            ? [{ name: 'Update Prototype Token', icon: 'fa-solid fa-user-circle',
+                                 callback: () => this.adoptSelected(buildId) },
+                               { name: 'Convert to Build', icon: 'fa-solid fa-shirt',
                                  callback: () => this.convertSelected(buildId, 'gear') }]
                             : [{ name: 'Convert to Costume', icon: 'fa-solid fa-masks-theater',
                                  callback: () => this.convertSelected(buildId, 'costume') }]),
-                        { name: 'Set Artwork as Default', icon: 'fa-solid fa-camera',
+                        // THREE separate things, and the separation is the
+                        // point. The one above writes the character's prototype
+                        // token, so Foundry uses the art. These two are about
+                        // this TOOL — what a new build or costume starts from —
+                        // and differ only in where they read it: this entry
+                        // takes the selected build, Reset takes the character
+                        // sheet. Nothing here touches the actor.
+                        { name: 'Set As Default Artwork', icon: 'fa-solid fa-images',
+                          callback: () => this.setDefaultsFrom(buildId) },
+                        { name: 'Reset Default Artwork', icon: 'fa-solid fa-rotate-left',
                           callback: () => this.recaptureDefaults() },
                         { separator: true },
                         { name: 'Delete Build', icon: 'fa-solid fa-trash',
