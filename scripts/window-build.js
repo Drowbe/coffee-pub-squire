@@ -707,24 +707,41 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
      * that fires `updateActor` would re-render the whole tray for a slot.
      */
     /**
-     * Where the rail was scrolled to, kept across the redraw that is about to
-     * replace it.
+     * The rail's scroll position, kept across a redraw along with the body's.
      *
      * Every action in this window redraws the whole thing — selecting a build,
-     * renaming one, dropping an item — and a fresh DOM starts at the top. With
-     * a dozen builds that put the list back at the beginning on every click, so
-     * choosing two builds in a row meant scrolling down to the second one after
-     * having just been there.
+     * renaming one, dropping an item — and a fresh DOM starts at the top. With a
+     * dozen builds that put the list back at the beginning on every click, so
+     * choosing two in a row meant scrolling back down to a spot you had just
+     * been looking at.
      *
-     * Read in `_preRender`, which every render path goes through, rather than in
-     * `_refresh`: the window also redraws from hooks and from the drag handlers,
-     * and a save that only some of those routes performed would work for most
-     * clicks and lose the position on the rest, which is worse than not doing it
-     * at all.
+     * These two are the base class's own hooks: `window-base.js` calls
+     * `this._saveScrollPositions()` before rendering and restores inside a
+     * `requestAnimationFrame` afterwards, and the tool base overrides them to
+     * carry `.blacksmith-window-tool-body`. Both calls are on `this`, so a grep
+     * for either name finds no caller and they look dead — they are not, and the
+     * first version of this fix hand-rolled the same behaviour in `_preRender`
+     * beside them for exactly that reason.
+     *
+     * The rail needs its own entry because it is a SECOND scroller inside that
+     * body, and the base's selector cannot see it. Restoring through the base
+     * also buys the `requestAnimationFrame` the hand-rolled version did not
+     * have, which is the difference between writing `scrollTop` after layout and
+     * writing it before.
      */
-    async _preRender(context, options) {
-        await super._preRender?.(context, options);
-        this._railScroll = this.element?.querySelector('.squire-build-rail-list')?.scrollTop ?? null;
+    _saveScrollPositions() {
+        const saved = super._saveScrollPositions?.() ?? {};
+        return {
+            ...saved,
+            rail: this.element?.querySelector('.squire-build-rail-list')?.scrollTop ?? 0
+        };
+    }
+
+    _restoreScrollPositions(saved) {
+        super._restoreScrollPositions?.(saved);
+
+        const list = this.element?.querySelector('.squire-build-rail-list');
+        if (list && saved?.rail != null) list.scrollTop = saved.rail;
     }
 
     async _refresh() {
@@ -1002,14 +1019,6 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
 
         const root = this.element;
         if (!root) return;
-
-        // Straight back to where it was. The new list is already in the document
-        // by the time this runs, so this lands before the browser paints and
-        // there is nothing to see; a rail that is now shorter clamps itself.
-        if (this._railScroll) {
-            const list = root.querySelector('.squire-build-rail-list');
-            if (list) list.scrollTop = this._railScroll;
-        }
 
         this._syncWidth();
 
