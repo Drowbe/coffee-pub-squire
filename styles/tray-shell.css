@@ -21,7 +21,7 @@
     --squire-tray-top-offset: 10px;
     --squire-tray-bottom-offset: 10px;
     --squire-tray-pinned-offset: 10px;
-    --squire-tray-banner-image: url('../images/banner-character-dark.webp');
+    --squire-tray-banner-image: url('../assets/images/banner-character-dark.webp');
 }
 
 /* Hidden class for view toggling */

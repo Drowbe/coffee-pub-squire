@@ -171,6 +171,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`images/` moved to `assets/images/`.** The module now keeps everything it ships under one `assets/` folder — sounds and images together — which is where a Foundry module is expected to put them. Two references updated: the tray banner in `tray-shell.css`, and the release zip, where `assets/` now covers what `images/` used to.
+  - **This breaks any saved path pointing into the old folder.** Squire itself stores none, but a world where somebody browsed to one of these files with a file picker — a scene background, a journal image, a token — is holding `modules/coffee-pub-squire/images/…` and will show a broken image after upgrading. Re-pick the file from `assets/images/`.
+
 - **Switching rail tabs now clears a selection the new tab cannot show**, dropping the workspace to its empty page. The opposite was tried first and argued for — filtering a list is a smaller request than moving the selection — but in use it meant standing on the Builds tab looking at a costume, with nothing in the list to explain where it came from. A workspace showing something the rail beside it says does not exist reads as a bug, whatever the reasoning behind it.
   - It does not jump to whatever is first in the new tab. Clearing says "you are looking at Builds now, pick one"; selecting for you would be a choice made on your behalf, and the empty page already invites the next click.
 
