@@ -84,6 +84,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A costume snapshot recorded no image fit when the token had none.** Width, height and scale all fell back to a real value; `fit` alone fell back to null, so taking "what this character looks like now" produced three answers and a shrug. It now falls back to Foundry's own token default, `contain` — the value the prototype token sheet shows on a token nobody has changed. Both snapshot sites: the costume import and the auto-created Default Costume.
+  - This changes only what a snapshot *captures*. An unset fit on a costume still writes nothing when worn, leaving the token's own — "no opinion" and "set it back to standard" remain different things.
+
 - **Converting a build to a costume silently un-favourited it.** A `favorite: false` reset landed in `convertBuildMode` instead of `createBuild` when favourites were added. Converting changes what kind of thing an entry is, not which thing it is — it keeps its name and its pictures for exactly that reason, and its heart and its sound now survive too.
 
 - **`updateTray()` destroyed the handle and never rebuilt it.** The tray template renders the strip's structure; everything *in* it — health bar, conditions, build tiles — is put there by `HandleManager`, and the `replaceWith` at the end of `updateTray` threw all of that away. It went unnoticed because, as its own docblock records, the method had never once run; the `element` getter that made it reachable arrived later. It calls `updateHandle()` at the end now.

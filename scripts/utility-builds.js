@@ -1059,6 +1059,18 @@ export async function setBuildImage(actor, buildId, key, path) {
  * libraries, so it is there on a fresh install and cannot be moved out from
  * under a build by somebody tidying a shared folder.
  */
+/**
+ * Foundry's own default fit for a token's texture — what the prototype token
+ * sheet shows as "Contain" on a token nobody has changed.
+ *
+ * Named rather than left as a bare string at two call sites, and used ONLY when
+ * taking a snapshot: it is the answer to "what is this token's fit" for a token
+ * whose schema field somehow reads empty, not a value Squire ever imposes on a
+ * costume that has no opinion. An unset fit on a costume stays unset and writes
+ * nothing — see tokenGeometryUpdate.
+ */
+const FOUNDRY_DEFAULT_FIT = 'contain';
+
 export const DEFAULT_BUILD_SOUND = `modules/${MODULE.ID}/assets/sounds/build-changeoutfit.mp3`;
 
 /**
@@ -1694,7 +1706,12 @@ export async function pullCostumeFromSheet(actor, buildId) {
             token: {
                 width: Number(actor.prototypeToken?.width) || 1,
                 height: Number(actor.prototypeToken?.height) || 1,
-                fit: actor.prototypeToken?.texture?.fit ?? null,
+                // Falls back the way width, height and scale do. A SNAPSHOT of
+                // what a character looks like now should hold four answers, not
+                // three answers and a shrug — and Foundry's schema gives every
+                // token a fit, so an empty one here is a malformed document
+                // rather than a deliberate silence.
+                fit: actor.prototypeToken?.texture?.fit ?? FOUNDRY_DEFAULT_FIT,
                 scale: Number(actor.prototypeToken?.texture?.scaleX) || 1
             }
         }
@@ -2747,7 +2764,12 @@ export async function ensureDefaultCostume(actor) {
                 token: {
                     width: Number(actor.prototypeToken?.width) || 1,
                     height: Number(actor.prototypeToken?.height) || 1,
-                    fit: actor.prototypeToken?.texture?.fit ?? null,
+                    // Falls back the way width, height and scale do. A SNAPSHOT of
+                // what a character looks like now should hold four answers, not
+                // three answers and a shrug — and Foundry's schema gives every
+                // token a fit, so an empty one here is a malformed document
+                // rather than a deliberate silence.
+                fit: actor.prototypeToken?.texture?.fit ?? FOUNDRY_DEFAULT_FIT,
                     scale: Number(actor.prototypeToken?.texture?.scaleX) || 1
                 }
             }
