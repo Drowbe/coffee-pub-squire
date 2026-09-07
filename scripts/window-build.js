@@ -1,6 +1,7 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
 import { ImportWindow } from './window-import.js';
+import { askToApply } from './manager-build-approval.js';
 import { renderTemplate, showSquireToast, getBlacksmith } from './helpers.js';
 import {
     BUILD_SLOT_KEYS, getDollLayout,
@@ -669,6 +670,18 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             });
             if (!confirmed) return;
         }
+
+        // THE GM, if the table asks for it. After the player's own confirmation
+        // and before anything is written: asking a GM about a change the player
+        // then cancels would spend their attention on nothing, and asking after
+        // the write would be asking about something already done.
+        //
+        // Costumes reach here too and are asked about separately — the setting
+        // is per-kind because equipping a build and putting a hat on are not the
+        // same size of act. A GM is never asked, since they would be asking
+        // themselves. See manager-build-approval.js.
+        if (!await askToApply(this.actor, build)) return;
+
 
         const result = await applyBuild(this.actor, build);
         if (!result) return;

@@ -1,4 +1,5 @@
 import { MODULE, SQUIRE, getHandleWidth } from './const.js';
+import { registerBuildApproval } from './manager-build-approval.js';
 import { PanelManager, _updateTrayFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings, migrateCompendiumAccessSetting } from './settings.js';
@@ -120,6 +121,17 @@ Hooks.once('ready', async () => {
         } else {
             console.error(
                 'Coffee Pub Squire | Failed to register SQUIRE with Blacksmith: registerModule not available (is coffee-pub-blacksmith active?)'
+            );
+        }
+
+        // The build-approval op, on EVERY client rather than only a GM's. Any
+        // client can become the answering GM, and one that registered nothing
+        // answers UNKNOWN_OP — so a player promoted mid-session, or a second GM
+        // logging in, would otherwise be the one election picks and the one that
+        // cannot answer.
+        if (!registerBuildApproval()) {
+            console.warn(
+                'Coffee Pub Squire | Build approval is unavailable: this Blacksmith has no gmRequest API.'
             );
         }
 

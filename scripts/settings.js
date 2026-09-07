@@ -809,6 +809,53 @@ export const registerSettings = function() {
 
 
     // ================================
+    // ===       GEAR BUILDS        ===
+    // ================================
+    game.settings.register(MODULE.ID, "headingH2GearBuilds", {
+        name: 'Gear Builds',
+        hint: 'Whether a player has to ask before changing what their character is wearing.',
+        scope: "world",
+        config: true,
+        default: "",
+        type: String,
+    });
+
+    // WORLD scope, both of them, and that is the whole point.
+    //
+    // A `user` setting here would be a checkbox the person being asked about
+    // gets to untick, which is not a gate — it is a suggestion with a switch on
+    // it. World scope means only a GM can set it and it applies to the table.
+    //
+    // It is still not a permission system, and nothing here pretends otherwise:
+    // a player owns their actor and can equip anything from their own sheet
+    // without going near this window. What this stops is re-kitting through
+    // Squire in one click mid-combat, which is the thing that actually happens.
+    // See manager-build-approval.js.
+    game.settings.register(MODULE.ID, 'buildsGMApprovesBuilds', {
+        name: 'GM Approves Build Changes',
+        hint: 'A player equipping a build has to be approved by the GM first. Swapping gear costs an action, so doing it mid-combat is a table decision rather than a click.',
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        // ON. Equipping a build changes what a character can DO in a fight, and
+        // it also unequips everything the build does not name — the one action
+        // here with consequences for anybody but its owner.
+        default: true
+    });
+
+    game.settings.register(MODULE.ID, 'buildsGMApprovesCostumes', {
+        name: 'GM Approves Costume Changes',
+        hint: 'A player wearing a costume has to be approved by the GM first. A costume changes portrait and token artwork and touches no gear, so this is off unless your table cares who looks like what.',
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        // OFF. A costume changes how somebody looks and nothing else. Asking
+        // permission to put a hat on is the kind of gate that gets the whole
+        // feature turned off.
+        default: false
+    });
+
+    // ================================
     // ===          CANVAS          ===
     // ================================
     game.settings.register(MODULE.ID, "headingH2Canvas", {
