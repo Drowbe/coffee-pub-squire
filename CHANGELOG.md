@@ -84,6 +84,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Editing the costume you are wearing and putting it back on said "was already on".** Two faults stacked. The token's **size, fit and scale** were applied all along and never counted as a change, so a costume whose only edit was its scale wrote the token, visibly resized it, and then reported that nothing had happened — the toast contradicting the thing the player was looking at. Geometry is counted now.
+  - **And it says it is an update.** Re-applying something already on now reads *"<name> updated — Re-applied with your changes: …"* rather than the plain name, which read as a fresh change of kit. The test differs by kind because "currently on" means different things: a build *is* the worn build, which the active-build flag records; a costume never becomes that flag, so the evidence is that its pictures needed no changing and whatever else moved is the edit landing.
+  - "Was already on" now means what it says: nothing at all changed.
+
 - **A costume snapshot recorded no image fit when the token had none.** Width, height and scale all fell back to a real value; `fit` alone fell back to null, so taking "what this character looks like now" produced three answers and a shrug. It now falls back to Foundry's own token default, `contain` — the value the prototype token sheet shows on a token nobody has changed. Both snapshot sites: the costume import and the auto-created Default Costume.
   - This changes only what a snapshot *captures*. An unset fit on a costume still writes nothing when worn, leaving the token's own — "no opinion" and "set it back to standard" remain different things.
 

@@ -775,6 +775,11 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         if (result.unprepared) changes.push(`unprepared ${result.unprepared}`);
         if (result.images?.portrait) changes.push('changed portrait');
         if (result.images?.token) changes.push('changed token');
+        // The token's SIZE, FIT and SCALE. Applied all along and never counted,
+        // so editing a worn costume's scale and putting it back on wrote the
+        // token, visibly resized it, and reported "was already on" — the toast
+        // contradicting the thing the player was looking at.
+        if (result.geometryChanged) changes.push('resized token');
 
         // Undo is the toast's single click, not a pair of buttons: Blacksmith's
         // toast has one `onClick` and no button row, so "keep" is what happens
@@ -782,11 +787,28 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // anyway. The subtitle has to say so, since an actionable toast that
         // does not announce its action is just a toast that eats a click.
         const undoable = changes.length > 0;
+
+        // Putting back on something already being worn, and it did something:
+        // they edited it and are applying the edit. "Alternate Gear" alone reads
+        // as a fresh change of kit, so it says which of the two this was.
+        //
+        // The test differs by kind because "currently on" means different things.
+        // A build IS the worn build, which the active-build flag records. A
+        // costume never becomes that flag — wearing one changes how somebody
+        // looks, not what they are wearing — so the evidence is that its artwork
+        // needed no changing: the pictures already matched, and whatever else
+        // moved is the edit being applied.
+        const reapplied = undoable && (costume
+            ? !result.images?.portrait && !result.images?.token
+            : previousActive === build.id);
+
         showSquireToast(
-            undoable ? build.name : `${build.name} was already on`,
+            undoable
+                ? (reapplied ? `${build.name} updated` : build.name)
+                : `${build.name} was already on`,
             {
                 subtitle: undoable
-                    ? `${changes.join(', ')}. Click to undo.`
+                    ? `${reapplied ? 'Re-applied with your changes: ' : ''}${changes.join(', ')}. Click to undo.`
                     : undefined,
                 icon: costume ? 'fa-solid fa-masks-theater' : 'fa-solid fa-shirt',
                 duration: undoable ? 12 : 6,
