@@ -2375,16 +2375,38 @@ export async function setActiveBuildId(actor, buildId) {
 }
 
 /**
- * What the applied build puts on the handle.
+ * What the applied build puts on the handle: the BIG THREE, whatever they are.
  *
- * The three weapon slots and the two quick-use slots — everything on the doll
- * you CLICK TO USE. Armour, rings and a belt are not here, because they would be
- * icons that do nothing when pressed; ammunition is not either, because it is
- * spent by the weapon that fires it rather than used on its own.
+ * A martial's are Main Hand, Both Hands and Off Hand; a caster's are their
+ * Primary, Secondary and Tertiary spells. Same three slots the doll gives that
+ * character, so the strip shows what their build is actually built around
+ * instead of a fixed idea of what a build is for — and a wizard, who has no
+ * business keeping a greatsword to hand, gets the three things they will
+ * actually reach for.
+ *
+ * `layout.big` and NOTHING ELSE, for two reasons that happen to agree.
+ *
+ * THREE IS THE BUDGET. The handle is a narrow vertical strip that also carries
+ * health, conditions and hand-placed favourites, and five or more build icons on
+ * it is more than it should be asked to hold — the key items are enough, and a
+ * strip that lists everything usable stops being a strip you can read at a
+ * glance. That is a decision about the handle, not about builds, so adding
+ * "just one more" slot here later is reopening it rather than extending it.
+ *
+ * It also fixes a bug. This used to add every body slot that accepted a weapon
+ * or an ability, which sounds like the same idea and behaved like a different
+ * one: a caster's Main Hand and Off Hand carry no `accepts` at all — they are on
+ * the doll's small row and take what the layout says — so those two were
+ * silently dropped while the sheath was kept. Three predictable icons beat five
+ * that vary by a property nobody reading the strip can see.
+ *
+ * Armour, rings and a belt were never here: they would be icons that do nothing
+ * when pressed. Ammunition is not either, being spent by the weapon that fires
+ * it rather than used on its own.
  *
  * DERIVED, never stored. The alternative is a second list that has to be kept in
  * step with the build, and would go stale the moment somebody edited the build
- * it was copied from. Recomputing costs five map lookups.
+ * it was copied from. Recomputing costs three map lookups.
  */
 export function getHandleBuildActions(actor) {
     if (!game.settings.get(MODULE.ID, 'buildsUpdateHandle')) return [];
@@ -2392,8 +2414,7 @@ export function getHandleBuildActions(actor) {
     const build = getBuild(actor, getActiveBuildId(actor));
     if (!build || build.mode === 'costume') return [];
 
-    const layout = getDollLayout(actor);
-    return [...layout.big, ...layout.body.filter(slot => slot.accepts === 'ability' || slot.accepts === 'weapon')]
+    return getDollLayout(actor).big
         .map(slot => actor?.items?.get(build.slots?.[slot.key]))
         .filter(Boolean)
         .map(item => ({ id: item.id, name: item.name, img: item.img }));

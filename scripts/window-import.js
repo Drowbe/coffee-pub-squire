@@ -30,6 +30,28 @@ import { BlacksmithToolWindowBaseV2, BLACKSMITH_TOOL_THEMES } from '/modules/cof
  * ONE PROMISE, kept in the wording and in the code: this reads what is EQUIPPED
  * and writes only the build's flag. Nothing on the character changes here.
  */
+/**
+ * The two controls this window listens to, named once.
+ *
+ * Both were spelled out at every site instead, and they drifted: the slot
+ * dropdown was renamed to `-slot-select` in the markup to stop it colliding with
+ * `.squire-import-slot`, the row's leading icon column, and the handler was left
+ * matching the old name. `closest()` then walked past a SIBLING it could never
+ * reach and returned null, so every change to a slot was dropped on the floor.
+ *
+ * That failed quietly and in the worst possible direction. The window kept
+ * showing the value you picked, because a `select` displays its own selection
+ * with or without a listener — but `answer()` reads `this.assignment`, which the
+ * dead handler never wrote to, so Fill Build imported the original plan and
+ * discarded every correction made to it. A visibly broken dropdown would have
+ * been better; this looked like it worked.
+ *
+ * Constants because the markup and the listener have to agree and there is no
+ * way to notice when they stop.
+ */
+const SLOT_CONTROL = 'squire-import-slot-select';
+const PREPARED_CONTROL = 'squire-import-prepared';
+
 export class ImportWindow extends BlacksmithToolWindowBaseV2 {
 
     static DEFAULT_OPTIONS = foundry.utils.mergeObject(
@@ -114,7 +136,7 @@ export class ImportWindow extends BlacksmithToolWindowBaseV2 {
     answer() {
         return {
             slots: { ...this.assignment },
-            spells: [...(this.element?.querySelectorAll('.squire-import-prepared') ?? [])]
+            spells: [...(this.element?.querySelectorAll(`.${PREPARED_CONTROL}`) ?? [])]
                 .filter(control => control.value)
                 .map(control => control.dataset.spellId)
         };
@@ -128,7 +150,7 @@ export class ImportWindow extends BlacksmithToolWindowBaseV2 {
     _select(item, chosen) {
         const escape = foundry.utils.escapeHTML;
         return `
-            <select class="blacksmith-select squire-import-slot-select" data-item-id="${item.id}">
+            <select class="blacksmith-select ${SLOT_CONTROL}" data-item-id="${item.id}">
                 <option value=""${chosen ? '' : ' selected'}>&mdash; Not mapped &mdash;</option>
                 ${item.options.map(option => `
                     <option value="${option.key}"${option.key === chosen ? ' selected' : ''}>
@@ -258,7 +280,7 @@ export class ImportWindow extends BlacksmithToolWindowBaseV2 {
                     <div class="blacksmith-list-row-title">${escape(spell.name)}</div>
                 </div>
                 <div class="blacksmith-list-row-action">
-                    <select class="blacksmith-select squire-import-prepared" data-spell-id="${spell.id}">
+                    <select class="blacksmith-select ${PREPARED_CONTROL}" data-spell-id="${spell.id}">
                         <option value="1"${spell.prepared ? ' selected' : ''}>Prepared</option>
                         <option value=""${spell.prepared ? '' : ' selected'}>Not prepared</option>
                     </select>
@@ -318,7 +340,7 @@ export class ImportWindow extends BlacksmithToolWindowBaseV2 {
     /** The one change handler, attached to the root exactly once. */
     _bindChanges(root) {
         root.addEventListener('change', (event) => {
-            const control = event.target.closest('.squire-import-slot');
+            const control = event.target.closest(`.${SLOT_CONTROL}`);
             if (control) {
                 const itemId = control.dataset.itemId;
                 const slotKey = control.value;
@@ -343,7 +365,7 @@ export class ImportWindow extends BlacksmithToolWindowBaseV2 {
                 return;
             }
 
-            if (event.target.closest('.squire-import-prepared')) this._recount();
+            if (event.target.closest(`.${PREPARED_CONTROL}`)) this._recount();
         });
     }
 
@@ -385,7 +407,7 @@ export class ImportWindow extends BlacksmithToolWindowBaseV2 {
         const counter = this.element?.querySelector('.squire-import-count');
         if (!counter) return;
 
-        const chosen = [...this.element.querySelectorAll('.squire-import-prepared')]
+        const chosen = [...this.element.querySelectorAll(`.${PREPARED_CONTROL}`)]
             .filter(control => control.value).length;
 
         counter.textContent = `${chosen} / ${this.plan.limit}`;

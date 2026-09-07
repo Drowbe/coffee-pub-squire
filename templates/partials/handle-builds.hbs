@@ -7,6 +7,7 @@
       Clicking one EQUIPS it, which is the whole point of a build being on the
       handle: switching kit without opening anything. It confirms first, like
       every other path to applying does. --}}
+{{#if (getHandleBuilds actor)}}
 <div class="handle-builds">
     {{#each (getHandleBuilds actor)}}
         <div draggable="true"
@@ -27,8 +28,9 @@
         </div>
     {{/each}}
 </div>
+{{/if}}
 
-{{!-- WEAPONS FROM THE APPLIED BUILD
+{{!-- WHAT THE WORN BUILD PUTS ON THE HANDLE
 
       Derived from whichever build is currently worn, never stored — a second
       list would go stale the moment somebody edited the build it was copied
@@ -38,8 +40,11 @@
       take, and the only honest answer to "who put this here" is to have
       recorded it.
 
-      Three slots only — Main, Both and Off Hand. The handle is for things you
-      click to use, and a belt would be an icon that does nothing when pressed. --}}
+      THREE, and which three depends on the character: a martial gets Main Hand,
+      Both Hands and Off Hand, a caster gets their Primary, Secondary and
+      Tertiary spells. Those are the same three big slots the doll gives them, so
+      the handle shows whatever that character's build is actually built around
+      rather than a fixed idea of what a build is for. --}}
 {{#if (getHandleBuildActions actor)}}
 <div class="handle-build-weapons">
     {{#each (getHandleBuildActions actor)}}

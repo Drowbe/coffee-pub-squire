@@ -187,9 +187,14 @@
               currently on the doll. --}}
         <div class="squire-build-rail-global">
             <div class="squire-build-rail-global-label">Options</div>
+            {{!-- Named for what THIS character would get. The setting is one
+                  global switch, but the three things it puts on the handle are
+                  the doll's big row — weapons for a martial, spells for a caster
+                  — and a wizard reading "weapons on handle" would reasonably
+                  conclude the option was not for them and leave it off. --}}
             <div class="blacksmith-toggle-row squire-build-rail-option"
-                 data-tooltip="Equipping a build also puts its Main Hand, Both Hands and Off Hand weapons on the tray handle, replacing whatever the last build put there. Items you dragged onto the handle yourself are never touched.">
-                <span class="blacksmith-toggle-label">Weapons on handle</span>
+                 data-tooltip="Equipping a build also puts its {{#if dollIsCaster}}Primary, Secondary and Tertiary spells{{else}}Main Hand, Both Hands and Off Hand weapons{{/if}} on the tray handle, replacing whatever the last build put there. Items you dragged onto the handle yourself are never touched.">
+                <span class="blacksmith-toggle-label">{{#if dollIsCaster}}Spells{{else}}Weapons{{/if}} on handle</span>
                 <label class="blacksmith-toggle">
                     <input type="checkbox" class="blacksmith-toggle-input squire-build-handle-input"
                            {{#if updatesHandle}}checked{{/if}}>

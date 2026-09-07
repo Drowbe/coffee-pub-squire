@@ -31,7 +31,12 @@
     {{!-- BUILDS. Above favourites: switching your whole kit is a bigger, rarer
           act than reaching for one item, and it should not be at the end of a
           list that can grow past the strip's height. --}}
-    {{#if (getHandleBuilds actor)}}
+    {{!-- EITHER half is reason enough to draw it. The partial holds two
+          independent things — the builds you dragged here, and the actions from
+          the build you are WEARING — and gating both on the first meant a player
+          who had never dragged a build got no action strip either, however the
+          option was set. Each block inside has its own condition. --}}
+    {{#if (or (getHandleBuilds actor) (getHandleBuildActions actor))}}
         {{> handle-builds}}
     {{/if}}
 

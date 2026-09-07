@@ -974,6 +974,13 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 // says which of the two it is showing.
                 tokenSettings: resolveTokenSettings(this.actor, build),
                 updatesHandle: game.settings.get(MODULE.ID, 'buildsUpdateHandle'),
+                // The DOLL's idea of a caster, which is the class's spellcasting
+                // progression — deliberately not `isCaster` below, which asks
+                // whether this build plans prepared spells. The handle strip is
+                // the doll's big row, so the label has to follow the same
+                // question the layout does or it will promise weapons to a
+                // wizard whose build happens not to plan a spell list.
+                dollIsCaster: layout.caster,
                 build,
                 actorName: this.actor?.name ?? '',
                 // The BUILD's own picture, not the actor's. `actor.img` moves
