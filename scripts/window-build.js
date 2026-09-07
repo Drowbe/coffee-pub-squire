@@ -8,7 +8,7 @@ import {
     renameBuild, setBuildSlot, moveBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
-    resolveTokenSettings, setBuildTokenSetting, setBuildPreparation,
+    resolveTokenSettings, setBuildTokenSetting,
     applyImportPlan,
     estimateArmorClass, previewSlotChange, setBuildMode, convertBuildMode, revertBuild, damageLabel,
     setActiveBuildId, getActiveBuildId, ensureDefaultCostume, ensureDefaultBuild,
@@ -60,12 +60,13 @@ const CHROME = RAIL_WIDTH + 10 + 1 + 10 + 16 + 22;
  * down rather than leaving it stretched around empty space.
  */
 function widthFor(actor, build) {
-    // The column, not the doll: what widens the window is planning a prepared
-    // list, which a martial who casts can do and a caster who is not doing it
-    // cannot.
-    const needsPack = build?.mode !== 'costume'
-        && !!build?.includesPrepared
-        && canPrepareSpells(actor);
+    // The column, not the doll: what widens the window is having a prepared list
+    // to plan, which a martial who casts has and a sorcerer does not.
+    //
+    // No longer conditional on the build having opted in. The column is drawn
+    // for anyone who can prepare, so the width has to follow the same rule or
+    // the window would be the wrong size for its own contents.
+    const needsPack = build?.mode !== 'costume' && canPrepareSpells(actor);
 
     return CHROME + DOLL_WIDTH + (needsPack ? PACK_WIDTH : 0);
 }
@@ -472,7 +473,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const placed = Object.values(value.slots).filter(Boolean).length;
         showSquireToast(build.name, {
             subtitle: `${placed} item${placed === 1 ? '' : 's'} placed`
-                + (build.includesPrepared ? `, ${value.spells.length} spell${value.spells.length === 1 ? '' : 's'} prepared` : ''),
+                + (value.spells.length ? `, ${value.spells.length} spell${value.spells.length === 1 ? '' : 's'} prepared` : ''),
             icon: 'fa-solid fa-download'
         });
 
@@ -911,8 +912,12 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // and can still plan a prepared list; a sorcerer gets a caster's doll and
         // may be planning gear alone. The two questions are asked separately —
         // see canPrepareSpells — and only this one decides the column.
-        const canPrepare = canPrepareSpells(this.actor);
-        const plansPrepared = canPrepare && !!build?.includesPrepared;
+        // Drawn for anyone who CAN prepare, full stop. It used to need the build
+        // to have opted in first, which meant a caster opened a new build to no
+        // column at all and had to find a switch before they could plan the
+        // thing the window exists to plan. The column standing there empty is
+        // the invitation; filling it is what makes the build plan a list.
+        const plansPrepared = canPrepareSpells(this.actor);
         const pack = plansPrepared ? resolvePreparedSpells(this.actor, build, shownDrift) : null;
 
         // THE ACTION BAR. The two things you do to the entry on the doll, in the
@@ -1005,8 +1010,6 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 isCaster: plansPrepared,
                 // The switch shows for a caster whether or not it is on; the
                 // column is what the switch controls.
-                canPrepare,
-                includesPrepared: !!build?.includesPrepared,
                 // Cantrips are gone from this window. They are always available,
                 // never prepared and never chosen, so there was nothing anybody
                 // could do with the row — it was a strip of pictures that only
@@ -1268,14 +1271,6 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 `<section class="loading" data-uuid="${uuid}"><i class="fas fa-spinner fa-spin-pulse"></i></section>`;
             element.dataset.tooltipClass = 'dnd5e2 dnd5e-tooltip item-tooltip themed theme-light';
             element.dataset.tooltipDirection ??= 'LEFT';
-        });
-
-        // Prepared spells in or out, per build. Writes the build rather than a
-        // setting: one character plans their spells with their kit and another
-        // never does, and both are right.
-        root.querySelector('.squire-build-prep-input')?.addEventListener('change', async (event) => {
-            await setBuildPreparation(this.actor, this.buildId, event.currentTarget.checked);
-            await this._refresh();
         });
 
         root.querySelector('.squire-build-pull')?.addEventListener('click', async () => {

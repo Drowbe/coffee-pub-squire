@@ -222,9 +222,18 @@
     padding: 4px;
     overflow: hidden;
     text-align: center;
-    /* Dashed while empty, solid once filled: an empty slot is an invitation and
-       a filled one is a statement, and the border is the cheapest way to say
-       which without adding a word to a 62px box. */
+    /* DASHED MEANS NOTHING IS HERE. One meaning, everywhere in this window: an
+       empty slot, an empty prepared cell, a spell rank this character cannot
+       cast, an image the build does not set. An empty slot is an invitation and
+       a filled one is a statement, and the border says which without spending a
+       word on a 62px box.
+
+       It used to mean a second thing as well. Drift and over-limit — both facts
+       about a slot that IS filled — were drawn dashed amber, so the same stroke
+       carried "the build says nothing here" and "the build says something and it
+       is not being met", which are near opposites, told apart only by colour.
+       Those are solid amber now. Amber alone is loud enough, and it is already
+       what drift means everywhere else in the tray. */
     border: 1px dashed var(--blacksmith-tool-divider);
     border-radius: 4px;
     background: var(--blacksmith-tool-surface-sunken);
@@ -1001,14 +1010,19 @@
    window you could not interact with. */
 .squire-build-pack-cell.is-beyond:not(.is-filled):not(.is-missing) {
     opacity: 0.22;
-    border-style: dotted;
+    /* It keeps the dashed stroke it already had as an empty cell — this is
+       empty, and dashed is what empty looks like. It was dotted, which was a
+       fourth stroke saying the same thing as the third; at 22% opacity nobody
+       could tell them apart anyway, and the dimming is what says "and you
+       cannot reach this one". */
     pointer-events: none;
 }
 
 /* Filled but past the limit: kept fully legible and fully live, marked with the
-   same amber the rest of the window uses for "this wants your attention". */
+   same amber the rest of the window uses for "this wants your attention".
+   Solid, like drift and for the same reason — there is a spell in this cell. */
 .squire-build-pack-cell.is-beyond.is-filled {
-    border-style: dashed;
+    border-style: solid;
     border-color: #e0a52e;
 }
 
@@ -1196,12 +1210,16 @@
     text-shadow: 0 1px 3px rgba(8, 6, 4, 0.95);
 }
 
-/* A dashed amber edge on the slot itself. The slot keeps its artwork and its
+/* A SOLID amber edge on the slot itself. The slot keeps its artwork and its
    border weight — the plan still says this item — and the colour is what says
-   the plan is not being met here. */
+   the plan is not being met here.
+
+   Solid, because the slot is filled and dashed is reserved for empty. It was
+   dashed, which made a drifted slot and an empty one wear the same stroke while
+   meaning opposite things. */
 .squire-build-slot.is-drifted.is-filled,
 .squire-build-pack-cell.is-drifted.is-filled {
-    border-style: dashed;
+    border-style: solid;
     border-color: #e0a52e;
     box-shadow: 0 0 7px rgba(224, 165, 46, 0.35);
 }
@@ -2001,15 +2019,7 @@
 
 /* ---------------- THE TITLE BAND'S CONTROLS ----------------
 
-   Both fixed; the name takes whatever is left between them. */
-.squire-build-title-row .squire-build-prep {
-    flex: 0 0 auto;
-}
-
-.squire-build-title-row .squire-build-prep .blacksmith-toggle-label {
-    font-size: 0.66em;
-    letter-spacing: 0.04em;
-}
+   The name takes whatever is left beside them. */
 
 /* Square and quiet. Filling a build from the sheet is a useful thing to reach
    for and not one anybody presses twice in a session, so it does not take the

@@ -54,6 +54,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Equipping a build could only ever *unprepare* spells, never prepare them.** `applyBuild` gated on dnd5e's `system.countsPrepared`, read as "this spell can be prepared". It is not — it is *"is currently prepared, and so counts against the limit"*:
+
+  ```js
+  get countsPrepared() {
+    return !!CONFIG.DND5E.spellcasting[this.method]?.prepares
+      && (this.level > 0)
+      && (this.prepared === CONFIG.DND5E.spellPreparationStates.prepared.value);
+  }
+  ```
+
+  An unprepared spell fails that last clause, so every spell a build wanted to prepare was skipped. A build naming six spells the character had not prepared changed nothing at all, and the window went on marking them drifted because they genuinely were.
+  - Replaced with `canBuildPrepare()` — the same getter with the state clause dropped and always-prepared excluded explicitly, since a domain or subclass spell is granted rather than chosen and nothing here should be able to take it away. Cantrips stay out: always available, never chosen, which is why they are not in this window at all.
+  - The other three `countsPrepared` reads in the file are correct and unchanged. They mean the state — the importer reads what a character *has* prepared, and drift compares against it.
+
 - **The worn build never put anything on the tray handle.** The whole builds section of the handle was drawn only `{{#if (getHandleBuilds actor)}}` — the builds you have *dragged there by hand* — so a player who had never dragged one got no action strip either, however the option was set. Two independent features behind one gate. Each half now has its own condition and the section appears if either has something to show.
 
 - **A caster's Main Hand and Off Hand were silently dropped from the handle strip.** It collected the big row plus every body slot that `accepts` a weapon or an ability, and a caster's Main Hand and Off Hand declare no `accepts` at all — they sit on the doll's small row and take what the layout says — so those two were skipped while the sheath was kept. See the strip's new rule below, which makes the property irrelevant rather than patching around it.
@@ -116,6 +130,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Which slot each item lands in is cosmetic, deliberately.** Applying equips exactly the set the build names and unequips everything else, so any arrangement of the same items reproduces the same character — the placement only has to look sensible. It is a light heuristic (weapons to the hands, a shield to the off hand, armour to the chest, rings to the rings) and anything it cannot guess goes in the next free body slot rather than being dropped: a build missing the item you were looking at is worse than a build with a lantern in the neck slot, and the second is one drag from fixed.
 
 ### Changed
+
+- **The Prep switch is gone. The list is the plan.** A build with spells in its prepared column prepares exactly those and unprepares the rest; a build with an empty column does not touch a single spell. That was always the intent, and it needed no switch to express it — a gear-only build has an empty column, so the empty list already said everything the switch was saying.
+  - What the switch cost was a second thing to get right. The column and the switch could disagree, only one of them was visible on the doll, and a caster opening a new build got no column at all until they found the toggle — so the window that exists to plan a spell list opened without the place to plan it.
+  - **The prepared column is now drawn for anyone who can prepare spells**, standing empty as the invitation. Filling it is what makes the build plan a list.
+  - The importer offers the prepared list to anyone who can prepare, too. It used to check the switch first, so it silently skipped spells for every build that had not been told in advance to expect them.
+  - Drift follows the same rule from the same place — a build naming no spells has no opinion about the character's list — so apply and drift can never disagree about whether a build plans preparation.
+  - The one case this cannot express is a build that deliberately prepares *nothing* and enforces it. Nobody prepares zero spells on purpose.
+
+- **A dashed border now means exactly one thing: nothing is here.** An empty gear slot, an empty prepared cell, a spell rank this character cannot cast, an image the build does not set — an empty slot is an invitation and a filled one is a statement, and the border says which without spending a word on a 62px box.
+  - **Drift and over-limit are solid amber now.** Both are facts about a slot that *is* filled, and both were drawn dashed amber — so the same stroke carried "the build says nothing here" and "the build says something and it is not being met", which are near opposites, told apart only by colour. Amber alone is loud enough, and it is already what drift means everywhere else in the tray.
+  - An empty cell past the prepared limit was `dotted` — a fourth stroke saying the same thing as the third, and indistinguishable from it at 22% opacity. It keeps the dashed stroke it already had; the dimming is what says "and you cannot reach this one".
 
 - **The handle strip is the doll's big three, and nothing else.** A martial gets Main Hand, Both Hands and Off Hand; a caster gets their Primary, Secondary and Tertiary spells. Same three slots the doll gives that character, so the strip shows what their build is actually built around rather than a fixed idea of what a build is for — a wizard has no business keeping a greatsword to hand, and now gets the three things they will actually reach for.
   - **Three is the budget, deliberately.** The handle is a narrow strip that already carries health, conditions and hand-placed favourites; five or more build icons is more than it should hold, and the key items are enough. What this drops: a sheathed weapon, and a martial's two quick-cast spell slots from the small row. Adding "just one more" slot here later is reopening that decision rather than extending it.

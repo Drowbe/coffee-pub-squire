@@ -233,24 +233,6 @@
         </button>
         {{/unless}}
 
-        {{#if canPrepare}}{{#unless isCostume}}
-        {{!-- Prepared spells in or out, per build.
-
-              OFF by default, and that is the point: gear and preparation are two
-              decisions on two rhythms, and a build that silently unprepared a
-              caster's whole list because it was written before they picked one
-              is this module overreaching. Off, the column is not drawn and
-              applying does not touch a single spell. --}}
-        <div class="blacksmith-toggle-row squire-build-prep"
-             data-tooltip="<strong>On</strong> &mdash; this build plans prepared spells, and equipping it prepares them and unprepares the rest.<br><strong>Off</strong> &mdash; it plans gear only and leaves the character's prepared list exactly as it is.">
-            <span class="blacksmith-toggle-label">Prep</span>
-            <label class="blacksmith-toggle">
-                <input type="checkbox" class="blacksmith-toggle-input squire-build-prep-input"
-                       {{#if includesPrepared}}checked{{/if}}>
-                <span class="blacksmith-toggle-slider"></span>
-            </label>
-        </div>
-        {{/unless}}{{/if}}
     </div>
 
     {{#if isCaster}}{{#unless isCostume}}

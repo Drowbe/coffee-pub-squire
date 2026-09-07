@@ -352,19 +352,6 @@ export function getBuilds(actor) {
         // game does not have. Read tolerantly, because the earlier shape is
         // still sitting in flags.
         spells: flattenSpellList(build.spells),
-        // Whether this build has an opinion about PREPARED SPELLS at all.
-        //
-        // Off by default, and that is the point of it: most people plan gear and
-        // prepare spells as two separate acts on two different rhythms, and a
-        // build that silently unprepared a caster's whole list because it was
-        // written before they picked one is the module overreaching. Off, the
-        // column is not drawn and applying does not touch a single spell.
-        //
-        // A build that already HAS a prepared list defaults to on, so nothing
-        // built before this existed quietly stops working.
-        includesPrepared: typeof build.includesPrepared === 'boolean'
-            ? build.includesPrepared
-            : flattenSpellList(build.spells).some(Boolean),
         // How the token is DRAWN, as opposed to what it is drawn with. Only a
         // costume sets these — a build is gear, and gear does not change how big
         // a character's token is on the map. Every one of them is nullable and
@@ -554,7 +541,6 @@ export async function createBuild(actor, name = 'New Build') {
         slots: Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null])),
         images: Object.fromEntries(BUILD_IMAGE_KEYS.map(key => [key, null])),
         spells: [],
-        includesPrepared: false,
         token: normaliseTokenSettings(null)
     };
     await saveBuilds(actor, [...getBuilds(actor), build]);
@@ -586,7 +572,6 @@ export async function duplicateBuild(actor, buildId) {
         // Copied rather than shared, or editing one build's list would edit
         // the other's.
         spells: [...(source.spells ?? [])],
-        includesPrepared: !!source.includesPrepared,
         token: { ...(source.token ?? {}) }
     };
 
@@ -658,13 +643,6 @@ export async function convertBuildMode(actor, buildId, mode) {
             // pictures are, and means nothing on a build.
             token: next === 'costume' ? build.token : normaliseTokenSettings(null)
         }
-        : build));
-}
-
-/** Whether this build plans prepared spells as well as gear. */
-export async function setBuildPreparation(actor, buildId, included) {
-    await saveBuilds(actor, getBuilds(actor).map(build => build.id === buildId
-        ? { ...build, includesPrepared: !!included }
         : build));
 }
 
@@ -1282,6 +1260,47 @@ export function buildSummary(actor, build) {
  * Returns a count of what actually changed, so the caller can report a result
  * rather than a shrug.
  */
+/**
+ * Can a build DECIDE whether this spell is prepared?
+ *
+ * Not the same question as `system.countsPrepared`, and the difference is the
+ * whole of a bug. dnd5e's getter is:
+ *
+ *     get countsPrepared() {
+ *       return !!CONFIG.DND5E.spellcasting[this.method]?.prepares
+ *         && (this.level > 0)
+ *         && (this.prepared === CONFIG.DND5E.spellPreparationStates.prepared.value);
+ *     }
+ *
+ * That last clause makes it "IS currently prepared, and so counts against the
+ * limit" — a fact about the spell's state, not about whether the state is ours
+ * to set. Reading it as "preparable" meant `applyBuild` skipped every spell that
+ * was not already prepared, so equipping a build could only ever UNPREPARE. A
+ * build naming six spells the character had not prepared changed nothing, and
+ * the window went on showing all six as drifted because they genuinely were.
+ *
+ * This is that getter with the state clause dropped and always-prepared put back
+ * explicitly. A domain or subclass spell is granted rather than chosen; nothing
+ * here should be able to take it away, and the getter excluded it for free only
+ * because 2 is not 1.
+ *
+ * Everywhere else in this file that asks `countsPrepared` means the state and is
+ * right to ask it — the import reads what a character HAS prepared, and drift
+ * compares against it.
+ */
+function canBuildPrepare(item) {
+    if (item?.type !== 'spell') return false;
+
+    // Cantrips are always available and never chosen, which is why they are not
+    // in this window at all.
+    if (!(Number(item.system?.level) > 0)) return false;
+
+    // 2 is always-prepared: granted by a class feature, not a choice.
+    if (Number(item.system?.prepared) === 2) return false;
+
+    return !!CONFIG.DND5E?.spellcasting?.[item.system?.method]?.prepares;
+}
+
 export async function applyBuild(actor, build) {
     if (!actor || !build) return null;
 
@@ -1309,12 +1328,24 @@ export async function applyBuild(actor, build) {
     const costume = build.mode === 'costume';
 
     const gearIds = new Set(Object.values(build.slots ?? {}).filter(Boolean));
-    const spellIds = new Set((build.spells ?? []).filter(Boolean));
 
-    // A build that does not plan preparation leaves every spell alone — not
-    // "prepares an empty list", which would unprepare the character's whole
-    // list on the way past.
-    const touchesSpells = !costume && build.includesPrepared;
+    // THE LIST IS THE PLAN. A build with spells in its prepared column prepares
+    // exactly those and unprepares everything else; a build with an empty column
+    // does not touch a single spell.
+    //
+    // Derived from the list rather than from a switch beside it. There WAS a
+    // switch — "Prep" — and it existed to stop a gear-only build unpreparing a
+    // caster's whole list on the way past. It never earned that: a gear-only
+    // build has an empty column, so the empty list already says everything the
+    // switch was saying. What it cost was a second thing to get right, in a
+    // window where the column and the switch could disagree and only one of them
+    // was visible on the doll.
+    //
+    // The one case this cannot express is a build that deliberately prepares
+    // NOTHING and enforces it. Nobody prepares zero spells on purpose.
+    const plannedSpells = (build.spells ?? []).filter(Boolean);
+    const touchesSpells = !costume && plannedSpells.length > 0;
+    const spellIds = new Set(plannedSpells);
 
     const updates = [];
     let equipped = 0;
@@ -1342,10 +1373,11 @@ export async function applyBuild(actor, build) {
             }
         }
 
-        if (touchesSpells && item.type === 'spell' && item.system?.countsPrepared) {
+        if (touchesSpells && canBuildPrepare(item)) {
             const shouldPrepare = spellIds.has(item.id);
             // dnd5e models `prepared` as a number: 0 unprepared, 1 prepared,
-            // 2 always prepared. Only 0 and 1 are ours to set.
+            // 2 always prepared. Only 0 and 1 are ours to set, and 2 never
+            // reaches here — see canBuildPrepare.
             const isPrepared = Number(item.system.prepared) > 0;
             if (isPrepared !== shouldPrepare) {
                 updates.push({ _id: item.id, 'system.prepared': shouldPrepare ? 1 : 0 });
@@ -2010,10 +2042,15 @@ export function planImport(actor, build) {
     // merit order, which is the order it was already reasoned about in.
     rows.sort((a, b) => (a.slot ? 1 : 0) - (b.slot ? 1 : 0));
 
-    // Prepared spells, if this build plans them. Two states rather than a slot
-    // list, and the limit is a real ceiling the player can exceed here, which is
-    // why the window has to say how many they have chosen.
-    const preparing = build?.includesPrepared && canPrepareSpells(actor);
+    // Prepared spells, offered to anyone who can prepare them. Two states rather
+    // than a slot list, and the limit is a real ceiling the player can exceed
+    // here, which is why the window has to say how many they have chosen.
+    //
+    // It no longer asks whether the build already plans preparation. Taking the
+    // list is what makes it plan one — there is nothing to opt into first, and
+    // gating the offer on a switch meant the importer silently skipped spells
+    // for every build that had not been told in advance to expect them.
+    const preparing = canPrepareSpells(actor);
     const limit = preparedLimit(actor);
     const spells = preparing
         ? (actor?.items ?? [])
@@ -2183,10 +2220,10 @@ export async function pullFromSheet(actor, buildId, { gear = false, prepared = f
             .slice(0, PACK_GRID_SIZE)
             .map(item => item.id);
 
+        // Taking the character's prepared list is all it takes to make this a
+        // build that plans one. There is no switch to set as well — see
+        // applyBuild: the list IS the plan.
         next.spells = list;
-        // Taking the character's prepared list is a statement that this build
-        // has one, so the switch follows rather than leaving the list invisible.
-        next.includesPrepared = true;
         spellCount = list.length;
     }
 
@@ -2338,12 +2375,13 @@ export function buildDrift(actor, build, state = null) {
     const { gear, spells } = state ?? equippedState(actor);
 
     const wantGear = new Set(Object.values(build?.slots ?? {}).filter(Boolean));
-    // Only if the build claims to plan them. One that does not has no opinion
-    // about the character's prepared list, so there is nothing to have drifted
-    // from and every prepared spell would otherwise count as an extra.
-    const wantSpells = build?.includesPrepared
-        ? new Set((build?.spells ?? []).filter(Boolean))
-        : null;
+    // Only if the build names any. One that names none has no opinion about the
+    // character's prepared list, so there is nothing to have drifted from and
+    // every prepared spell would otherwise count as an extra. The empty list
+    // says that by itself — same rule applyBuild uses to decide whether to touch
+    // spells at all, so the two can never disagree.
+    const planned = (build?.spells ?? []).filter(Boolean);
+    const wantSpells = planned.length ? new Set(planned) : null;
 
     // Slotted, but not on the character: either taken off, or gone from the
     // sheet entirely. Both mean the plan is not being met.
