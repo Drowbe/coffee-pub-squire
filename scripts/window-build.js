@@ -112,6 +112,31 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         super(options);
         this.actor = options.actor ?? null;
         this.buildId = options.buildId ?? null;
+
+        // Which tab the rail is on: 'all', 'costume' or 'gear'. Per window and
+        // not remembered between openings — a filter that survived would mean
+        // opening the builder one day and finding builds you own missing, with
+        // the reason a tab you last pressed weeks ago.
+        this.railFilter = 'all';
+    }
+
+    /**
+     * The application id for one actor's builder.
+     *
+     * On the actor's UUID, not its id. An unlinked token's synthetic actor
+     * shares the base actor's id, so two copies of the same prototype standing
+     * on a scene would ask for the same window — the second click would find the
+     * first token's builder already open, bring it to the front and show that
+     * token's builds while the player was looking at a different token. Builds
+     * live in an actor flag, so those two genuinely have separate lists.
+     *
+     * Punctuated down to something usable as a DOM id: a uuid is full of dots
+     * and dots are a class separator in a CSS selector, so `#squire-builds-Actor.x`
+     * would never match the element it named.
+     */
+    static idFor(actor) {
+        const key = (actor?.uuid ?? actor?.id ?? 'none').replace(/[^A-Za-z0-9]+/g, '-');
+        return `squire-builds-${key}`;
     }
 
     /**
@@ -129,7 +154,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
     static async open(actor, buildId = null) {
         if (!actor) return null;
 
-        const id = `squire-builds-${actor.id}`;
+        const id = BuildWindow.idFor(actor);
         const existing = foundry.applications.instances.get(id);
         if (existing) {
             if (buildId) await existing.selectBuild(buildId);
@@ -213,13 +238,31 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 label: 'Open Prototype Token',
                 // Through `CONFIG.Token.prototypeSheetClass`, which is how the
                 // system registers its own: dnd5e replaces it with
-                // PrototypeTokenConfig5e (dnd5e.mjs:82549), so constructing
-                // Foundry's base class directly would open a plainer window than
-                // the same button on the character sheet does.
+                // PrototypeTokenConfig5e, so constructing Foundry's base class
+                // directly would open a plainer window than the same button on
+                // the character sheet does.
+                //
+                // The option is `prototype`, NOT `document`. A PrototypeToken is
+                // a DataModel rather than a Document, and this sheet reads the
+                // actor off it as `options.prototype.parent` while it is still
+                // building its options — so `document` threw before the window
+                // existed, with a stack that named Foundry's constructor and
+                // nothing of ours. Same call the merchant makes.
                 onClick: () => {
-                    const Sheet = CONFIG.Token.prototypeSheetClass
-                        ?? foundry.applications.sheets.PrototypeTokenConfig;
-                    new Sheet({ document: this.actor.prototypeToken }).render(true);
+                    const prototype = this.actor.prototypeToken;
+                    const sheetClass = CONFIG.Token?.prototypeSheetClass;
+
+                    // `parent` as well as the object itself. The sheet reaches
+                    // for it while assembling its options, before any of its own
+                    // code runs, so a parentless PrototypeToken throws inside
+                    // Foundry's constructor with a stack naming nothing of ours
+                    // — which is a bad way to learn that this actor had nothing
+                    // to open. Cheaper to ask here.
+                    if (!prototype?.parent || !sheetClass) {
+                        ui.notifications.warn(`${this.actor.name} has no prototype token to open.`);
+                        return;
+                    }
+                    new sheetClass({ prototype }).render(true);
                 }
             }
         ];
@@ -239,7 +282,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
      * anything else gets a detached instance that never renders.
      */
     static async applyFromAnywhere(actor, buildId) {
-        const open = foundry.applications.instances.get(`squire-builds-${actor.id}`);
+        const open = foundry.applications.instances.get(BuildWindow.idFor(actor));
         if (open) return open.applySelected(buildId);
 
         const detached = new BuildWindow({ id: `squire-builds-apply-${foundry.utils.randomID()}`, actor });
@@ -282,6 +325,32 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         if (costume) await setBuildMode(this.actor, build.id, 'costume');
 
         this.buildId = build.id;
+        // Make sure the thing that was just made can be SEEN. Pressing New
+        // Costume while the rail is filtered to Builds would otherwise create
+        // it, select it, put it on the doll — and show an unchanged list that
+        // does not contain it, which reads as the button having done nothing.
+        if (!this._passesFilter(costume ? 'costume' : 'gear')) this.railFilter = 'all';
+        await this._refresh();
+    }
+
+    /** Would the rail's current tab show an entry of this mode? */
+    _passesFilter(mode) {
+        return this.railFilter === 'all' || this.railFilter === mode;
+    }
+
+    /**
+     * Which kinds of entry the rail lists.
+     *
+     * The SELECTION is deliberately left alone, even when the tab that was just
+     * chosen hides it. Switching a filter is asking to see less of the list, not
+     * asking to look at a different build — and quietly moving the doll to
+     * whatever happened to be first in the filtered set would be a much larger
+     * thing to do than what was asked for. So the entry stays on the doll and
+     * simply is not listed; picking another one is still a click away.
+     */
+    async setRailFilter(filter) {
+        if (this.railFilter === filter) return;
+        this.railFilter = filter;
         await this._refresh();
     }
 
@@ -525,41 +594,36 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
     }
 
     /**
-     * Equip the selected build, after asking.
+     * Equip the selected build, after asking — unless it is a costume.
      *
-     * The confirmation names what will happen rather than asking "are you sure",
-     * which is the weakest form of the question — nobody can evaluate a prompt
-     * that does not say what it will do. Same reasoning as the cleanup window.
+     * A BUILD is asked about because it takes things off. Equipping one
+     * unequips everything it does not name, which is the correct rule and a
+     * genuinely destructive one: the confirmation names what will happen rather
+     * than asking "are you sure", since nobody can evaluate a prompt that does
+     * not say what it will do.
+     *
+     * A COSTUME goes straight through. It changes artwork and how the token is
+     * drawn, touches no gear and no spells, and the toast it produces carries an
+     * undo — so the dialog was standing between somebody and the fast thing they
+     * came here to do, to warn them about the safe one. Trying on three costumes
+     * meant three dialogs and six clicks.
      */
     async applySelected(buildId) {
         const build = getBuild(this.actor, buildId);
         if (!build) return;
 
         const costume = build.mode === 'costume';
-        const summary = buildSummary(this.actor, build);
-        const name = foundry.utils.escapeHTML(build.name);
-        const who = foundry.utils.escapeHTML(this.actor.name);
 
-        // A costume promises far less, and the confirmation has to say so — the
-        // wording is most of what stops somebody applying a wardrobe change and
-        // finding their armour on the floor.
-        // What this costume actually sets about how the token is drawn. Named
-        // rather than folded into "and nothing else", because resizing somebody
-        // on the map is the most visible thing in here and the least expected
-        // from something called a costume.
-        const geometry = costume
-            ? [
-                (build.token?.width || build.token?.height)
-                    ? `<li>Set the token to ${build.token?.width ?? '&mdash;'} &times; ${build.token?.height ?? '&mdash;'} grid space(s).</li>` : '',
-                build.token?.fit ? `<li>Set the image fit to <strong>${build.token.fit}</strong>.</li>` : '',
-                build.token?.scale ? `<li>Set the token scale to <strong>${build.token.scale}</strong>.</li>` : ''
-            ].filter(Boolean)
-            : [];
+        // Captured before applying, so undo can put the previous build back as
+        // the worn one rather than simply forgetting there was one.
+        const previousActive = getActiveBuildId(this.actor);
 
-        const lines = costume
-            ? ['<li>Change the portrait and token artwork.</li>', ...geometry,
-               geometry.length ? '' : '<li>Leave everything else alone.</li>'].filter(Boolean)
-            : [
+        // All of it inside the branch, the summary included: nothing here is
+        // wanted for a costume, and walking a build to count gear it does not
+        // have to describe a dialog nobody will see is work done for nobody.
+        if (!costume) {
+            const summary = buildSummary(this.actor, build);
+            const lines = [
                 `<li>Equip the ${summary.gearCount} item${summary.gearCount === 1 ? '' : 's'} in this build, and unequip everything else.</li>`,
                 summary.spellCount
                     ? `<li>Prepare its ${summary.spellCount} spell${summary.spellCount === 1 ? '' : 's'}, and unprepare everything else that counts against a limit.</li>`
@@ -568,19 +632,17 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                     ? '<li>Change the portrait or token artwork.</li>' : ''
             ];
 
-        // Captured before applying, so undo can put the previous build back as
-        // the worn one rather than simply forgetting there was one.
-        const previousActive = getActiveBuildId(this.actor);
-
-        const confirmed = await getBlacksmith().dialog.confirm({
-            title: costume ? 'Wear Costume' : 'Equip Build',
-            content: `<p>${costume ? 'Dress' : 'Equip'} <strong>${who}</strong> as <strong>${name}</strong>?</p>`
-                + '<p>This will:</p><ul>' + lines.join('') + '</ul>'
-                + (costume ? '' : '<p>Attunement is not changed.</p>'),
-            confirmLabel: costume ? 'Wear Costume' : 'Equip Build',
-            confirmIcon: costume ? 'fa-solid fa-masks-theater' : 'fa-solid fa-shirt'
-        });
-        if (!confirmed) return;
+            const confirmed = await getBlacksmith().dialog.confirm({
+                title: 'Equip Build',
+                content: `<p>Equip <strong>${foundry.utils.escapeHTML(this.actor.name)}</strong> as `
+                    + `<strong>${foundry.utils.escapeHTML(build.name)}</strong>?</p>`
+                    + '<p>This will:</p><ul>' + lines.join('') + '</ul>'
+                    + '<p>Attunement is not changed.</p>',
+                confirmLabel: 'Equip Build',
+                confirmIcon: 'fa-solid fa-shirt'
+            });
+            if (!confirmed) return;
+        }
 
         const result = await applyBuild(this.actor, build);
         if (!result) return;
@@ -745,7 +807,15 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const worn = activeId ? getBuild(this.actor, activeId) : null;
         const drift = worn && worn.mode !== 'costume' ? buildDrift(this.actor, worn, state) : null;
 
-        const rail = builds.map(entry => {
+        // Counted before the filter, so a tab can say how many it would show
+        // and an empty one is visibly empty rather than merely missing.
+        const counts = {
+            all: builds.length,
+            costume: builds.filter(entry => entry.mode === 'costume').length
+        };
+        counts.gear = counts.all - counts.costume;
+
+        const rail = builds.filter(entry => this._passesFilter(entry.mode === 'costume' ? 'costume' : 'gear')).map(entry => {
             const summary = buildSummary(this.actor, entry);
             // Its own picture as the tile's face, and the two images wearing it
             // would produce as the marks on it. The gear thumbnails that were
@@ -824,6 +894,16 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             appId: this.id,
             bodyContent: await renderTemplate(TEMPLATES.WINDOW_BUILD, {
                 rail,
+                // The tabs, and what each of them would show. Built here rather
+                // than three flags in the template: they are one control, and a
+                // list is what a loop over them wants.
+                railTabs: [
+                    { key: 'all', label: 'All', count: counts.all },
+                    { key: 'costume', label: 'Costumes', count: counts.costume },
+                    { key: 'gear', label: 'Builds', count: counts.gear }
+                ].map(tab => ({ ...tab, active: this.railFilter === tab.key })),
+                railFiltered: rail.length === 0 && builds.length > 0,
+                railFilterLabel: this.railFilter === 'costume' ? 'costumes' : 'builds',
                 hasBuilds: builds.length > 0,
                 isCostume: build?.mode === 'costume',
                 // Named rather than left as an array the costume view would have
@@ -962,6 +1042,14 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const rail = root.querySelector('.squire-build-rail');
         if (rail) {
             rail.addEventListener('click', async (event) => {
+                // Before the entry check: the tabs sit inside the rail and a tab
+                // is not a build.
+                const tab = event.target.closest('.squire-build-rail-tab');
+                if (tab) {
+                    await this.setRailFilter(tab.dataset.filter);
+                    return;
+                }
+
                 const create = event.target.closest('.squire-build-rail-new');
                 if (create) {
                     await this.createAndSelect(create.dataset.mode);

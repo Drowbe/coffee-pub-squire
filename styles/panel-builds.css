@@ -385,6 +385,38 @@
     border-right: 1px solid var(--blacksmith-tool-divider);
 }
 
+/* Blacksmith's tab bar, sized for a 170px rail and otherwise left alone: the
+   colours, the border, the active accent and the hover are all the primitive's,
+   which is the point of using it. Three equal tracks share the width, and the
+   horizontal padding comes off because at this size the tabs are icon-and-count
+   rather than icon-and-word. */
+.squire-build-rail-tabs {
+    flex: 0 0 auto;
+    gap: 3px;
+    flex-wrap: nowrap;
+}
+
+.squire-build-rail-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    padding: 4px 2px;
+    overflow: hidden;
+    /* Slightly tighter than the primitive's, which is what buys the third
+       label its room. Everything else about the type is left alone. */
+    letter-spacing: 0.01em;
+    text-overflow: ellipsis;
+}
+
+/* A filter with nothing behind it. */
+.squire-build-rail-none {
+    padding: 10px 4px;
+    color: var(--blacksmith-tool-text-muted);
+    font-size: 0.78em;
+    font-style: italic;
+    text-align: center;
+}
+
 /* The only part of the rail that scrolls. The buttons and the options stay
    put — a New Build button you have to scroll to find is a New Build button
    nobody presses. */
