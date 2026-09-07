@@ -254,6 +254,17 @@ const ALL_SLOT_DEFINITIONS = [
     ...BUILD_CORE_SLOTS, ...ROW_SIX_MARTIAL, ...ROW_SIX_CASTER, ...BIG_MARTIAL, ...BIG_CASTER
 ];
 
+/**
+ * The slot keys that hold a SPELL rather than a piece of gear.
+ *
+ * A caster's big three are Primary, Secondary and Tertiary; a martial gets two
+ * of the same on the small row. They take an item like every other slot and the
+ * thing they take cannot be equipped, which is a distinction the drift check has
+ * to make or it asks the wrong question about three slots in six.
+ */
+const SPELL_SLOT_KEYS = new Set(
+    ALL_SLOT_DEFINITIONS.filter(slot => slot.accepts === 'ability').map(slot => slot.key));
+
 /** Every slot key, for validating what arrives from a dataset or a stored flag. */
 export const BUILD_SLOT_KEYS = [...new Set(ALL_SLOT_DEFINITIONS.map(slot => slot.key))];
 
@@ -826,7 +837,15 @@ export function resolveSlots(actor, build, slotDefinitions, drift = null) {
             // character. Passed in rather than looked up, because the marking is
             // only meaningful for the worn build — every slot of every other
             // build would be "not equipped" and the mark would mean nothing.
-            drifted: !!itemId && !!drift?.notEquipped?.has(itemId)
+            // Asked of the set that applies to THIS slot. A spell slot reads
+            // notPrepared; everything else reads notEquipped.
+            drifted: !!itemId && !!(SPELL_SLOT_KEYS.has(definition.key)
+                ? drift?.notPrepared?.has(itemId)
+                : drift?.notEquipped?.has(itemId)),
+            // What went wrong, for the tooltip. "Not equipped" is nonsense about
+            // a spell — there is nothing to equip — and a mark that misnames its
+            // own reason teaches the wrong lesson about the window.
+            driftReason: SPELL_SLOT_KEYS.has(definition.key) ? 'prepared' : 'equipped'
         };
     });
 }
@@ -2598,7 +2617,16 @@ export function equippedState(actor) {
 export function buildDrift(actor, build, state = null) {
     const { gear, spells } = state ?? equippedState(actor);
 
-    const wantGear = new Set(Object.values(build?.slots ?? {}).filter(Boolean));
+    // SPLIT BY WHAT THE SLOT HOLDS. Every slot id used to go into one set and be
+    // compared against the equipped items, so a spell in a quick-cast slot could
+    // never satisfy it — a caster's big three were permanently marked drifted,
+    // and each one added to the "N differences" count. The question a spell slot
+    // asks is whether the spell is PREPARED.
+    const slotEntries = Object.entries(build?.slots ?? {}).filter(([, id]) => id);
+    const wantGear = new Set(
+        slotEntries.filter(([key]) => !SPELL_SLOT_KEYS.has(key)).map(([, id]) => id));
+    const slotSpells = new Set(
+        slotEntries.filter(([key]) => SPELL_SLOT_KEYS.has(key)).map(([, id]) => id));
     // Only if the build names any. One that names none has no opinion about the
     // character's prepared list, so there is nothing to have drifted from and
     // every prepared spell would otherwise count as an extra. The empty list
@@ -2610,11 +2638,23 @@ export function buildDrift(actor, build, state = null) {
     // Slotted, but not on the character: either taken off, or gone from the
     // sheet entirely. Both mean the plan is not being met.
     const notEquipped = [...wantGear].filter(id => !gear.has(id));
-    const notPrepared = wantSpells ? [...wantSpells].filter(id => !spells.has(id)) : [];
+
+    // Two sources, one answer. A spell named by the prepared column is checked
+    // only when that column is in use; a spell put in a doll slot is checked
+    // ALWAYS, because putting it there is itself the statement that this build
+    // means to cast it — and it cannot be cast unprepared.
+    const notPrepared = [...new Set([
+        ...(wantSpells ? [...wantSpells].filter(id => !spells.has(id)) : []),
+        ...[...slotSpells].filter(id => !spells.has(id))
+    ])];
     // On the character, but not in the plan. These have no slot to be marked in,
     // so they are counted rather than located.
     const extraGear = [...gear].filter(id => !wantGear.has(id));
-    const extraSpells = wantSpells ? [...spells].filter(id => !wantSpells.has(id)) : [];
+    // A spell in a doll slot is named by this build, so it is not an extra even
+    // when the prepared column does not list it.
+    const extraSpells = wantSpells
+        ? [...spells].filter(id => !wantSpells.has(id) && !slotSpells.has(id))
+        : [];
 
     return {
         notEquipped: new Set(notEquipped),

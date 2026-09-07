@@ -89,6 +89,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A caster's three spell slots were permanently marked as drifted.** Drift compared *every* filled slot against the character's equipped items, and a spell can never be equipped — so a caster wearing exactly the build they had on saw a warning triangle on all three of their spells, each one adding to the "N differences" count beside **Last worn**. The check was asking the wrong question about three slots in six.
+  - A spell slot now asks whether the spell is **prepared**, which is the thing that decides whether it can be cast, and the tooltip says so: *"Flame Blade is not prepared…"*. "Not equipped" is nonsense about a spell, and a mark that misnames its own reason teaches the wrong lesson about the window.
+  - A spell sitting in a doll slot is checked **always**, not only when the build plans a prepared list — putting it there is itself the statement that this build means to cast it. It is also no longer counted as an *extra* prepared spell, since the build does name it.
+
 - **Editing the costume you are wearing and putting it back on said "was already on".** Two faults stacked. The token's **size, fit and scale** were applied all along and never counted as a change, so a costume whose only edit was its scale wrote the token, visibly resized it, and then reported that nothing had happened — the toast contradicting the thing the player was looking at. Geometry is counted now.
   - **And it says it is an update.** Re-applying something already on now reads *"<name> updated — Re-applied with your changes: …"* rather than the plain name, which read as a fresh change of kit. The test differs by kind because "currently on" means different things: a build *is* the worn build, which the active-build flag records; a costume never becomes that flag, so the evidence is that its pictures needed no changing and whatever else moved is the edit landing.
   - "Was already on" now means what it says: nothing at all changed.

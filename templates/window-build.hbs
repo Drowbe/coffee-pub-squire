@@ -490,7 +490,7 @@
                   mark says the plan is not being met here. --}}
             {{#if this.drifted}}
             <i class="fa-solid fa-triangle-exclamation squire-build-slot-drift"
-               data-tooltip="{{this.name}} is not equipped, though this build is being worn"></i>
+               data-tooltip="{{this.name}} is not {{this.driftReason}}, though this build is being worn"></i>
             {{/if}}
             {{!-- Attunement, as a gem in the corner. Lit when attuned, hollow and
                   warned when the item requires it and has not got it — the
@@ -626,7 +626,7 @@
                   mark says the plan is not being met here. --}}
             {{#if this.drifted}}
             <i class="fa-solid fa-triangle-exclamation squire-build-slot-drift"
-               data-tooltip="{{this.name}} is not equipped, though this build is being worn"></i>
+               data-tooltip="{{this.name}} is not {{this.driftReason}}, though this build is being worn"></i>
             {{/if}}
             {{!-- Attunement, as a gem in the corner. Lit when attuned, hollow and
                   warned when the item requires it and has not got it — the

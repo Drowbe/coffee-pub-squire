@@ -434,7 +434,8 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
 
         showSquireToast(build.name, {
             subtitle: on ? 'Taken off the tray handle' : 'Added to the tray handle',
-            icon: on ? 'fa-solid fa-circle-minus' : 'fa-solid fa-grip-lines-vertical'
+            // The same dagger the button carries, for the same reason.
+            icon: 'fa-solid fa-dagger'
         });
         await this._refresh();
     }
@@ -1144,8 +1145,13 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 // A button reading "Add to Handle" on something already there
                 // either lies or does nothing, and both are worse than a label
                 // that changes.
+                // ONE glyph for both directions, and it is the dagger the suite
+                // already uses for the handle. The label carries the direction;
+                // the icon says which THING is being acted on, and swapping it
+                // for a minus made the button look like a different control
+                // depending on state rather than the same one reading its own.
                 toolFooterRight: '<button type="button" class="blacksmith-window-btn-secondary squire-build-footer-handle">'
-                    + `<i class="fa-solid ${onHandle ? 'fa-circle-minus' : 'fa-grip-lines-vertical'}"></i> `
+                    + '<i class="fa-solid fa-dagger"></i> '
                     + `${onHandle ? 'Remove from Handle' : 'Add to Handle'}</button>`
                     + '<button type="button" class="blacksmith-window-btn-primary squire-build-footer-apply">'
                     + `<i class="fa-solid ${build.mode === 'costume' ? 'fa-masks-theater' : 'fa-shirt'}"></i> `
