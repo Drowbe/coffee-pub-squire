@@ -235,16 +235,20 @@
         <input type="text" class="squire-build-name" value="{{build.name}}"
                maxlength="60" spellcheck="false" aria-label="Build name">
 
-        {{#unless isCostume}}
-        {{!-- Fill this build from what the character is wearing NOW. The answer
-              to having set a kit up on the sheet before finding this window, and
-              to the commoner case of changing something there and wanting the
-              build to catch up. --}}
+        {{!-- Fill this entry from the character AS THEY ARE NOW. On BOTH kinds:
+              the answer to having set something up on the sheet before finding
+              this window, and to the commoner case of changing it there and
+              wanting this to catch up. Same idea either way — it is only what
+              gets taken that differs, so it is the same button with the same
+              glyph rather than two that look alike.
+
+              A build takes the gear and asks where each piece goes; a costume
+              takes the three pictures and the token's geometry, which needs no
+              questions and so gets a plain confirmation instead of a window. --}}
         <button type="button" class="squire-build-pull"
-                data-tooltip="Fill from currently equipped &mdash; takes what the character is wearing now into this build">
+                data-tooltip="{{#if isCostume}}Fill from their current look &mdash; takes the character's portrait, token and full-body image, and how their token is drawn{{else}}Fill from currently equipped &mdash; takes what the character is wearing now into this build{{/if}}">
             <i class="fa-solid fa-download"></i>
         </button>
-        {{/unless}}
 
         {{!-- BOTH kinds, unlike the import button beside it. A costume changes
               how somebody looks and that is exactly the moment a sound is worth

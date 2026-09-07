@@ -27,13 +27,21 @@ on-screen name: what it does, who it affects, and whether it is yours alone or t
 [The architecture map](architecture/architecture-squire.md) is the entry point: how the tray is
 assembled, which class owns what, and where Squire ends and Blacksmith begins. The two tabs then have
 their own documents -- [the Character tab](architecture/architecture-character.md) and
-[the Party tab](architecture/architecture-party.md).
+[the Party tab](architecture/architecture-party.md). [Gear Builds](architecture/architecture-builds.md)
+is its own feature and its own document: how a build is stored, applied and approved.
 
 Squire exposes no API to other modules; it is a leaf consumer of Blacksmith rather than a provider.
 For the surfaces it builds on -- the core utilities, chat cards, inventory, campaign context,
 compendiums, windows and the hook manager -- see the
 [Blacksmith wiki](https://github.com/Drowbe/coffee-pub-blacksmith/wiki). That is the source of truth;
 Squire does not keep its own copy of it.
+
+There is one exception, and it is data rather than an API: Squire stores a character's **full-body
+image** in the `fullbody` flag, as a plain path, so that anything else in the suite can show a
+standing figure without calling Squire or knowing it is there. Nothing has to be registered and there
+is no handshake -- read the flag, fall back to `actor.img` when it is absent. It is written by the
+builder's *Update Prototype Token*. See
+[Gear Builds](architecture/architecture-builds.md#shared-data-the-fullbody-flag).
 
 ## Where Quests, the Codex and Notes went
 

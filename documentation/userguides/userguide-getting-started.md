@@ -178,24 +178,40 @@ uses now, and right-clicking one puts it back to that. **Anything that will actu
 carries an amber warning triangle**, so a costume with no mark on it changes nothing but the picture. Equipping a gear build never touches any of it. Your **Default Costume**
 records your token's own size and framing when it is made, so it is the one that puts everything back.
 
-The **download** button beside a build's name fills it from what your character is wearing *right
-now* -- useful if you set a kit up on the sheet before finding this window, or changed something there
-and want the build to catch up. It offers three tick boxes: equipment, prepared spells, and *empty the
-build first*, which clears the parts you did not tick as well.
+The **download** button beside a build's name fills it from your character *right now* -- useful if you
+set something up on the sheet before finding this window, or changed it there and want this to catch
+up. It is on builds and costumes both; what it takes is what differs.
 
-**It will not guess.** Where an item goes is worked out from what the system actually knows -- weapons,
-ammunition, shields, armour, rings, containers, tools -- and then from the item's name for the things
-the system has no opinion about, like a Cloak of Protection. Anything it cannot work out is left out
-and named back to you, rather than dropped into whichever slot happened to be free: a build with two
-things missing tells you exactly what to fix, and a build with two things in the wrong holes tells you
-nothing. It says which of two reasons applied -- nothing could say where the item goes, or it knew and
-the slot was already taken, which is what happens when a character has two amulets equipped and one
-neck to wear them on.
+On a **build** it opens a screen listing every slot from head to toe with what would land in each, and
+a dropdown on every row to move it somewhere else. Nothing is written until you press **Fill Build**,
+and a slot can only hold one thing -- give a slot to something else and whatever held it drops to the
+**Not mapped** list at the bottom, where you can watch it happen. Hover any row's picture for the full
+item card, because "where should a Rod of Lordly Might go" is not a question anybody can answer from
+the name.
 
-Beside a build's name is a **Build / Costume** switch. A **Costume** changes only your portrait and
-token when applied and leaves your gear and spells completely alone -- useful for a disguise, a
-wild shape, or a change of clothes. Switch to it and the window changes with it: no slots, no spells,
-just the costume's picture and the two images it will actually set. A **Build** does the lot.
+**It will not guess.** Where an item goes is decided from what the system actually knows about it, and
+anything that cannot be worked out is left unmapped and shown to you rather than dropped into whichever
+slot happened to be free. A build with two things missing tells you exactly what to fix; a build with
+two things in the wrong holes tells you nothing. Each unmapped row says which of two reasons applied --
+nothing could say where it goes, or it knew and the slot was already taken, which is what happens when
+a character has two amulets and one neck.
+
+Items left **Not mapped** stay equipped on your character. They are simply not part of this build, so
+equipping the build later would take them off.
+
+On a **costume** there is nothing to map, so it asks once and takes a snapshot: your portrait, your
+token picture, your full-body image, and the size, fit and scale your token is drawn at. If you have no
+full-body image set, it uses your portrait and the message says so.
+
+A **Costume** changes only your portrait and token when applied and leaves your gear and spells
+completely alone -- useful for a disguise, a wild shape, or a change of clothes. The window changes
+with it: no slots, no spells, just the pictures it will set and how the token should be drawn. A
+**Build** does the lot.
+
+You choose which you are making when you make it -- there are two buttons under the list -- and the
+right-click menu has **Convert to Costume** / **Convert to Build** for changing your mind afterwards.
+Converting clears the other mode's contents and says so first: what carries over is the name, the
+pictures, the heart and the sound.
 
 Each entry in the rail shows its estimated armour class and how many slots are filled. The **runner**
 button equips it: everything in the build goes on, everything else comes off,
@@ -224,6 +240,49 @@ actually wearing get an amber warning, and a badge on the portrait counts anythi
 that the build never mentioned. Equipping the build again puts it all back. None of this is an error:
 picking up a torch is a perfectly reasonable thing to do, and the marks are only there so the window
 never claims you are wearing something you are not.
+
+**Find the one you want.** The list has three tabs -- **Favorites**, **Costumes** and **Builds** --
+and the window opens on Favorites. Right-click any entry and **Add to Favorites** puts a red heart on
+it and lists it there; it is nothing more than that, and it is the way back to the two or three you
+actually use once you have twenty. Switching tabs clears what is on the figure, so you are never
+looking at a costume while standing on the Builds tab.
+
+**The two buttons along the bottom** act on whatever is showing: **Equip Build** or **Wear Costume** on
+the right, **Delete** on the far left. They are at opposite ends on purpose.
+
+**Every entry can have its own sound**, played when you put it on. The speaker button beside the
+download button opens a file browser; right-click it to go back to the one the module ships with. A
+build that has chosen its own sound shows a full speaker rather than a low one.
+
+### The three pictures
+
+A build carries up to three: your **portrait**, your **token**, and a **full-body** picture that fills
+the middle of the figure. Click any of them to choose a file, right-click to clear it. A picture you
+have not set is drawn with a dashed edge and shows what your character already has -- meaning this
+entry changes nothing there. Everywhere in this window, **a dashed edge means nothing is set here**.
+
+Two entries on the right-click menu deal with pictures, and they are not the same thing:
+
+- **Set As Default Artwork** decides what a *new* build or costume starts from. It changes nothing
+  about your character -- only what this tool offers you next time. The entry it came from is marked
+  **Default** in the list, and says **Default (changed)** if you edit its pictures afterwards.
+- **Update Prototype Token** (costumes only) writes the pictures onto your *character*: the portrait,
+  the token art that every token placed from now on will use, and the full-body image. Tokens already
+  on the map are left alone, and nothing about the token's size changes.
+
+**Reset Default Artwork** puts the builder's defaults back to whatever is on your character sheet.
+
+### When the GM has to say yes
+
+Your GM can require approval before you change kit -- swapping gear costs an action and a prepared list
+needs a rest, so at some tables that is a decision to make together rather than a click. If it is
+switched on, equipping shows a message while your GM is asked, and a dialog appears on their screen
+with what you are asking for. Approve and it goes ahead exactly as normal; deny and you are told, and
+nothing changes.
+
+Builds and costumes are set separately, so a table can require approval for a change of gear and not
+for a change of clothes. If no GM is online, or they close the dialog without answering, the change
+does not happen and you are told which it was.
 
 **Until you equip it, a build is a plan, not a state.** Nothing in it changes what your character is actually wearing --
 it is somewhere to work out a set of gear, not a switch that puts it on. Only items already on your

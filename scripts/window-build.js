@@ -10,6 +10,7 @@ import {
     getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
     resolveTokenSettings, setBuildTokenSetting, toggleBuildFavorite, setBuildSound,
+    pullCostumeFromSheet,
     DEFAULT_BUILD_SOUND,
     applyImportPlan,
     estimateArmorClass, previewSlotChange, setBuildMode, convertBuildMode, revertBuild, damageLabel,
@@ -350,6 +351,45 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
     }
 
     /**
+     * Fill a costume from the character's current look.
+     *
+     * Asks first, because it overwrites pictures somebody chose — and unlike the
+     * gear import, which lays every decision out in a window before writing
+     * anything, this one has nothing to show and would otherwise replace four
+     * things on one click with no warning.
+     */
+    async pullCostumeImages() {
+        const build = this.build;
+        if (!build || build.mode !== 'costume') return;
+
+        const confirmed = await getBlacksmith().dialog.confirm({
+            title: 'Fill From Current Look',
+            content: `<p>Fill <strong>${foundry.utils.escapeHTML(build.name)}</strong> from what `
+                + `<strong>${foundry.utils.escapeHTML(this.actor.name)}</strong> looks like right now?</p>`
+                + '<p>Takes their portrait, their token picture and their full-body image, along with '
+                + 'the size, fit and scale their token is drawn at.</p>'
+                + '<p><strong>Whatever this costume is showing now is replaced.</strong> Nothing on the '
+                + 'character changes.</p>',
+            confirmLabel: 'Fill Costume',
+            confirmIcon: 'fa-solid fa-download'
+        });
+        if (!confirmed) return;
+
+        const result = await pullCostumeFromSheet(this.actor, build.id);
+        if (!result) return;
+
+        showSquireToast(build.name, {
+            // Named rather than counted: there are only ever three, and which
+            // one stood in for another is the part worth saying.
+            subtitle: result.usedPortraitForBody
+                ? 'Filled from the character — portrait used for the full body'
+                : 'Filled from the character',
+            icon: 'fa-solid fa-download'
+        });
+        await this._refresh();
+    }
+
+    /**
      * Choose what this build sounds like going on.
      *
      * Foundry's own file picker, started at the sound already set so the common
@@ -497,7 +537,13 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
      */
     async pullSelectedFromSheet() {
         const build = this.build;
-        if (!build || build.mode === 'costume') return;
+        if (!build) return;
+
+        // A COSTUME takes a different route entirely. There is no gear to place,
+        // so there is nothing to map and no window to ask in — it is a snapshot
+        // of what the character looks like right now, and the only question
+        // worth asking is whether to overwrite what the costume already holds.
+        if (build.mode === 'costume') return this.pullCostumeImages();
 
         // Classification lives in Blacksmith. Squire only maps a body location
         // onto a slot on this doll, so without that API there is nothing to map
@@ -552,8 +598,9 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const confirmed = await getBlacksmith().dialog.confirm({
             title: 'Update Prototype Token',
             content: `<p>Put <strong>${name}</strong>'s artwork onto <strong>${who}</strong>'s prototype token?</p>`
-                + '<p>This writes its portrait and its token picture onto the character, so any token '
-                + 'placed from now on uses them. Nothing else about the token changes.</p>'
+                + '<p>This writes its portrait, its token picture and its full-body image onto the '
+                + 'character, so any token placed from now on uses them. Nothing else about the token '
+                + 'changes.</p>'
                 + '<p><strong>Tokens already on the canvas are not touched</strong>, and this is not '
                 + 'the same as wearing the costume — there is no undo on the toast for it.</p>',
             confirmLabel: 'Update Prototype Token',
@@ -570,6 +617,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const parts = [];
         if (result.portrait) parts.push('portrait');
         if (result.token) parts.push('token');
+        if (result.fullbody) parts.push('full body');
 
         showSquireToast(build.name, {
             subtitle: `Prototype token ${parts.join(' and ')} updated`,

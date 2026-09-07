@@ -14,6 +14,11 @@ through a sliding tray that follows the selected token: spells, weapons, invento
 favourites, health and conditions, plus a party view and item transfers. Notes, the Codex and Quests
 were Squire's until 13.7.0; they are Librarian's and Blacksmith's now.
 
+**Gear Builds** is the one feature that is not a tray panel: a window of its own for planning what a
+character wears and prepares, reachable from the Character Sheet strip and from the handle. It has its
+own document -- [architecture-builds.md](architecture-builds.md) -- which also covers the `fullbody`
+flag, the only piece of Squire data another module is meant to read.
+
 ## Project Structure
 
 ```

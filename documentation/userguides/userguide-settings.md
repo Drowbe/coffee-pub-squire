@@ -15,8 +15,8 @@ changing things for.
   appearance settings.
 - **This browser's.** Saved against the browser you are sitting at, so the same account on a different
   machine gets its own value. Tray Width is the only one.
-- **The world's.** Set once by the GM and applied to everyone. Every setting under Run the Game and
-  Canvas.
+- **The world's.** Set once by the GM and applied to everyone. Every setting under Run the Game, Gear
+  Builds and Canvas.
 
 Only a GM sees the world settings. If a control described below is not on your page, it is a GM one.
 
@@ -140,6 +140,31 @@ it off, a transfer between characters someone has permission over happens direct
 
 **Transfer Request Timeout (seconds)** -- how long a transfer request stays valid before it expires on
 its own.
+
+## Gear Builds
+
+Whether a player has to ask before changing what their character is wearing. Both of these are the
+world's, and only a GM sees them -- a setting the person being asked about could switch off would not
+be a gate.
+
+**GM Approves Build Changes** -- on by default. A player equipping a build has to be approved by you
+first. A dialog appears on your screen naming the character, the build and exactly what it would do,
+with Approve and Deny; the player waits and is told either way. Closing the dialog without answering
+counts as a denial, so nothing happens by accident.
+
+It is on by default because equipping a build takes things *off*: everything the build does not name is
+unequipped. Swapping gear also costs an action, so mid-combat it is a table decision rather than a
+click.
+
+**GM Approves Costume Changes** -- off by default. The same thing for costumes, which change portrait
+and token artwork and touch no gear. Turn it on if your table cares who looks like what; most do not,
+and asking permission to put a hat on is the kind of gate that gets the whole feature switched off.
+
+**Neither is a permission system, and neither should be relied on as one.** A player owns their own
+character and can equip anything from their sheet without going near Squire. What these stop is
+re-kitting through the builder in one click, which is the thing that actually happens at a table.
+
+If no GM is online when a player tries, the change is refused and they are told why.
 
 ## Canvas
 

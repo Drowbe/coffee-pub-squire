@@ -1061,6 +1061,39 @@ export async function setBuildImage(actor, buildId, key, path) {
  */
 export const DEFAULT_BUILD_SOUND = `modules/${MODULE.ID}/assets/sounds/build-changeoutfit.mp3`;
 
+/**
+ * THE CHARACTER'S FULL-BODY IMAGE — a third picture beside the portrait and the
+ * token, on the ACTOR rather than on any one build.
+ *
+ * A portrait is a face and a token is a piece seen from above. Neither is what a
+ * character looks like standing there, which is the picture a paper doll wants
+ * behind it and the one a party roster or a chat card would want too. dnd5e has
+ * no field for it, so it lives in a module flag.
+ *
+ * Deliberately readable from outside: it is a plain path under a documented flag
+ * key, so anything else in the suite can show it without asking Squire. That is
+ * the whole reason it is on the actor rather than staying the build-only picture
+ * it started as.
+ *
+ * NOT the same field as a build's `images.main`, though they hold the same kind
+ * of picture. `main` is what THIS BUILD looks like and lives on the build;
+ * `fullbody` is what the CHARACTER looks like and lives on the actor. A build's
+ * unset `main` falls back to it, and "Update Prototype Token" pushes a costume's
+ * `main` up into it — the same relationship the portrait and token already have.
+ */
+const FULLBODY_FLAG = 'fullbody';
+
+/** The character's standing figure, or null. */
+export function getFullBodyImage(actor) {
+    const stored = actor?.getFlag(MODULE.ID, FULLBODY_FLAG);
+    return typeof stored === 'string' && stored ? stored : null;
+}
+
+/** Set it, or clear it with null. */
+export async function setFullBodyImage(actor, path) {
+    await actor?.setFlag(MODULE.ID, FULLBODY_FLAG, path || null);
+}
+
 /** Where the character's own, pre-build portrait and token are kept. */
 const DEFAULT_IMAGES_FLAG = 'defaultImages';
 
@@ -1196,10 +1229,12 @@ export function resolveMainImage(actor, build) {
     return {
         key: 'main',
         label: 'Build Image',
-        // The default's own main picture sits AHEAD of its portrait: a costume
-        // adopted as the default recorded a face for the centre of the doll, and
-        // falling past it to the portrait would ignore the more specific answer.
-        path: chosen ?? portrait ?? defaults.main ?? defaults.portrait,
+        // Most specific first. The build's own choice, then its portrait, then
+        // the CHARACTER's full-body picture — which is the right answer for a
+        // build that never set one, because it is what this character looks like
+        // standing there — then the default's main, then a face as the last
+        // resort. Every step down is a broader answer to the same question.
+        path: chosen ?? portrait ?? getFullBodyImage(actor) ?? defaults.main ?? defaults.portrait,
         isDefault: !chosen
     };
 }
@@ -1605,10 +1640,73 @@ export async function adoptCostumeAsDefault(actor, build) {
     if (build.images?.portrait) update.img = build.images.portrait;
     if (build.images?.token) update['prototypeToken.texture.src'] = build.images.token;
 
-    if (!Object.keys(update).length) return null;
+    // The third picture, alongside the other two. A costume that set a standing
+    // figure is describing what this character looks like as much as its face
+    // is, and adopting two of the three would leave the character half dressed
+    // in a way nothing on screen would explain.
+    //
+    // A separate write because it is a module flag rather than an actor field —
+    // there is nowhere in dnd5e to put it. See FULLBODY_FLAG.
+    const fullbody = build.images?.main ?? null;
 
-    await actor.update(update);
-    return { portrait: !!update.img, token: !!update['prototypeToken.texture.src'] };
+    if (!Object.keys(update).length && !fullbody) return null;
+
+    if (Object.keys(update).length) await actor.update(update);
+    if (fullbody) await setFullBodyImage(actor, fullbody);
+
+    return {
+        portrait: !!update.img,
+        token: !!update['prototypeToken.texture.src'],
+        fullbody: !!fullbody
+    };
+}
+
+/**
+ * Fill a COSTUME from what the character looks like right now.
+ *
+ * The costume half of "Fill From Currently Equipped". A build's version walks
+ * the gear and has to ask where each piece goes; a costume has no gear, so this
+ * is a snapshot and needs no mapping window and no questions.
+ *
+ * Takes the token's geometry along with the pictures, which the gear import has
+ * no equivalent of: a costume that recorded a face but not the size it was drawn
+ * at would put a large character back at 1x1 the moment it was worn.
+ *
+ * The FULL-BODY image falls back to the portrait. A character who has never had
+ * one set would otherwise get a costume with an empty middle, and a face is a
+ * true-if-incomplete answer to "what do they look like" where blank is no
+ * answer at all.
+ */
+export async function pullCostumeFromSheet(actor, buildId) {
+    const build = getBuild(actor, buildId);
+    if (!actor || !build || build.mode !== 'costume') return null;
+
+    const images = {
+        portrait: actor.img ?? null,
+        token: actor.prototypeToken?.texture?.src ?? null,
+        main: getFullBodyImage(actor) ?? actor.img ?? null
+    };
+
+    await saveBuilds(actor, getBuilds(actor).map(entry => entry.id === buildId
+        ? {
+            ...entry,
+            images: { ...entry.images, ...images },
+            token: {
+                width: Number(actor.prototypeToken?.width) || 1,
+                height: Number(actor.prototypeToken?.height) || 1,
+                fit: actor.prototypeToken?.texture?.fit ?? null,
+                scale: Number(actor.prototypeToken?.texture?.scaleX) || 1
+            }
+        }
+        : entry));
+
+    return {
+        ...images,
+        // Said out loud, because "your full-body picture is your portrait" is a
+        // thing the player should know rather than discover when the doll looks
+        // wrong. See the toast in pullSelectedFromSheet.
+        usedPortraitForBody: !getFullBodyImage(actor) && !!actor.img
+    };
 }
 
 /**
