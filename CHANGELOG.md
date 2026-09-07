@@ -11,7 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`All | Costumes | Builds` tabs above the build selector.** Two different kinds of thing share one rail, and past a handful of each, finding the costume you wanted meant reading past every build to get to it. Blacksmith's own `blacksmith-tabs` bar, so the shape, the hover and the active accent are the suite's; the only thing set here is the track, because three tabs have 170px of rail to share and the primitive is built for a full-width window.
+- **An action bar along the bottom of the builder.** The two things you do to the entry on the doll, in the window's own footer rather than only in a right-click menu nobody discovers and on a button the size of a fingernail in the rail. **Wear Costume** or **Equip Build** on the right, whichever applies, in the primary colour; **Delete** on the left in Blacksmith's `critical` colour, which exists for exactly this and stops a destructive act from looking like the cautious one.
+  - Opposite ends because they are opposite kinds of act. A delete beside an equip is a delete that eventually gets pressed instead of it.
+  - Both vanish rather than grey out when there is no entry selected. A disabled pair says "there is something here you cannot have"; an empty bar says the truth.
+
+- **`All | Costumes | Builds` tabs above the build selector.** Two different kinds of thing share one rail, and past a handful of each, finding the costume you wanted meant reading past every build to get to it. Styled as the tray's section tabs — flat, underlined, an equal share of the width each — because this is the same *kind* of choice the character sheet's All / Weapons / Spells strip makes, and the two are read minutes apart in the same session. Blacksmith's `blacksmith-tab` was tried first and is wrong for the job: it is a chip, and three chips read as three buttons rather than as one control with three positions.
   - **Switching a tab does not change what is on the doll.** Asking to see less of the list is not asking to look at a different build, and quietly moving the selection to whatever came first in the filtered set would be a far larger thing to do than what was asked. The selected entry stays on the doll even when the tab it belongs to is not the one showing.
   - **New Build and New Costume switch the tab if they have to.** Pressing New Costume while filtered to Builds would otherwise make it, select it, put it on the doll and show an unchanged list without it in — which reads as the button having done nothing.
   - Each tab's count is in its tooltip rather than on its face; the three labels only just fit across the rail as it is.
@@ -48,6 +52,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - There are no leftovers to report any more, by construction: every item is on the table with an answer the player chose. The one exception is the automatic first-run snapshot, which still cannot ask, so what it could not place is shown on the doll when the window opens.
 
 ### Fixed
+
+- **The delete confirmation appeared twice.** ApplicationV2 replaces the *contents* of `this.element` on a redraw and keeps the element itself, so a listener bound to the root survives — and every render added another copy. The second dialog was not the first one reappearing: the first delete had already run and selected the next entry, and the second copy of the handler was offering to delete *that*. Everything bound to the root is now bound once; anything delegated from the rail or the workspace was always safe, because those elements really are replaced and take their listeners with them.
+  - The same latent bug was in the empty page's New Build / New Costume buttons, which are also delegated from the root — two renders in, one click would have made two builds.
+  - And in the import window, where the existing guard returned out of `_onRender` entirely rather than around the binding, so a redraw skipped the item cards and the prepared count with it.
+
+- **The delete dialog said "Delete Build" for a costume**, while the footer button beside it said "Delete Costume" — which reads as a different question about a different thing. It names what it is deleting now.
 
 - **Two unlinked tokens of the same prototype shared one build window.** The builder was keyed on `actor.id`, and a synthetic actor shares the base actor's id — so opening builds for the second of two copy-pasted tokens found the first one's window already open, brought it to the front and showed the wrong token's builds. Keyed on `uuid` now, punctuated down to something usable as a DOM id, since a uuid is full of dots and a dot is a class separator in a CSS selector. Same class of bug as the seven fixed in the tray; this one was in the window's own identity rather than in a lookup, which is why the earlier sweep did not reach it.
 

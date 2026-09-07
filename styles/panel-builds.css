@@ -385,27 +385,56 @@
     border-right: 1px solid var(--blacksmith-tool-divider);
 }
 
-/* Blacksmith's tab bar, sized for a 170px rail and otherwise left alone: the
-   colours, the border, the active accent and the hover are all the primitive's,
-   which is the point of using it. Three equal tracks share the width, and the
-   horizontal padding comes off because at this size the tabs are icon-and-count
-   rather than icon-and-word. */
+/* The tray's section tabs, wearing the same rules. Flat, no shoulders, an
+   underline on the open one — see `.control-tab` in tray-controls.css, which
+   these deliberately mirror. Those selectors are scoped to the tray so they
+   cannot simply be reused, but the values are the same values and any change to
+   the look belongs in both.
+
+   Blacksmith's `blacksmith-tab` was here first and was wrong for the job: it is
+   a chip, and three chips read as three buttons rather than as one control with
+   three positions. The suite's primitive is the right answer for a window's own
+   navigation; this is a filter on a list inside one. */
 .squire-build-rail-tabs {
     flex: 0 0 auto;
-    gap: 3px;
-    flex-wrap: nowrap;
+    display: flex;
+    width: 100%;
+    gap: 2px;
+    margin-bottom: 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .squire-build-rail-tab {
     flex: 1 1 0;
     min-width: 0;
-    justify-content: center;
-    padding: 4px 2px;
+    padding: 3px 2px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    box-shadow: none;
+    outline: none;
+    cursor: pointer;
+    color: rgba(159, 146, 117, 0.7);
+    font-size: 0.78em;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0;
+    white-space: nowrap;
     overflow: hidden;
-    /* Slightly tighter than the primitive's, which is what buys the third
-       label its room. Everything else about the type is left alone. */
-    letter-spacing: 0.01em;
     text-overflow: ellipsis;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.squire-build-rail-tab:hover {
+    color: var(--squire-color-hover);
+}
+
+/* The open tab is the one lit thing in the strip. A tab you are not on is not
+   "off", so the others keep their resting colour. */
+.squire-build-rail-tab.active {
+    color: rgba(255, 255, 255, 0.95);
+    border-bottom-color: rgba(159, 146, 117, 0.9);
 }
 
 /* A filter with nothing behind it. */

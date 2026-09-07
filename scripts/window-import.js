@@ -296,9 +296,27 @@ export class ImportWindow extends BlacksmithToolWindowBaseV2 {
 
         // Delegated from the root, because the gear rows are replaced wholesale
         // on every change and per-row listeners would die with them.
-        if (root.dataset.importBound === 'true') return;
-        root.dataset.importBound = 'true';
+        //
+        // Bound ONCE. ApplicationV2 replaces the contents of `this.element` on a
+        // redraw and keeps the element, so a listener added here survives and a
+        // second render adds a second copy — one change firing twice.
+        //
+        // The guard wraps the BINDING alone and does not return out of the
+        // method, which it used to. Everything after it is per-render work: the
+        // item cards attach to rows that were just drawn, so skipping it on
+        // every render after the first would leave a redrawn list with no
+        // tooltips and a stale count.
+        if (root.dataset.importBound !== 'true') {
+            root.dataset.importBound = 'true';
+            this._bindChanges(root);
+        }
 
+        this._applyCards();
+        this._recount();
+    }
+
+    /** The one change handler, attached to the root exactly once. */
+    _bindChanges(root) {
         root.addEventListener('change', (event) => {
             const control = event.target.closest('.squire-import-slot');
             if (control) {
@@ -327,9 +345,6 @@ export class ImportWindow extends BlacksmithToolWindowBaseV2 {
 
             if (event.target.closest('.squire-import-prepared')) this._recount();
         });
-
-        this._applyCards();
-        this._recount();
     }
 
     /**

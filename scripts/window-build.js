@@ -578,10 +578,15 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const build = getBuild(this.actor, buildId);
         if (!build) return;
 
+        // Named for what it is. The footer button beside it says "Delete
+        // Costume", and a dialog answering it with "Delete Build" reads as a
+        // different question about a different thing.
+        const what = build.mode === 'costume' ? 'Costume' : 'Build';
+
         const confirmed = await getBlacksmith().dialog.confirm({
-            title: 'Delete Build',
+            title: `Delete ${what}`,
             content: `<p>Delete <strong>${foundry.utils.escapeHTML(build.name)}</strong>?</p><p>This cannot be undone.</p>`,
-            confirmLabel: 'Delete Build',
+            confirmLabel: `Delete ${what}`,
             confirmIcon: 'fa-solid fa-trash',
             destructive: true
         });
@@ -890,8 +895,37 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const plansPrepared = canPrepare && !!build?.includesPrepared;
         const pack = plansPrepared ? resolvePreparedSpells(this.actor, build, shownDrift) : null;
 
+        // THE ACTION BAR. The two things you do to the entry on the doll, in the
+        // window's own footer rather than only in a right-click menu nobody
+        // discovers and on a button the size of a fingernail in the rail.
+        //
+        // Opposite ends, because they are opposite kinds of act: the one you
+        // came here for on the right where a primary action goes, and the
+        // irreversible one as far from it as the bar allows. A delete sitting
+        // next to an equip is a delete that eventually gets pressed instead of
+        // it — the rail's own apply button is already close enough to a tile's
+        // context menu to be worth separating from here.
+        //
+        // Both are hidden outright rather than disabled when there is no build
+        // to act on. A disabled pair says "there is something here you cannot
+        // have"; an empty bar says the truth, which is that there is nothing to
+        // act on yet.
+        const footer = build
+            ? {
+                // `critical`, not `secondary`. Blacksmith has a third button
+                // colour for exactly this and using the neutral one would make
+                // the destructive act look like the cautious choice.
+                toolFooterLeft: '<button type="button" class="blacksmith-window-btn-critical squire-build-footer-delete">'
+                    + `<i class="fa-solid fa-trash"></i> Delete ${build.mode === 'costume' ? 'Costume' : 'Build'}</button>`,
+                toolFooterRight: '<button type="button" class="blacksmith-window-btn-primary squire-build-footer-apply">'
+                    + `<i class="fa-solid ${build.mode === 'costume' ? 'fa-masks-theater' : 'fa-shirt'}"></i> `
+                    + `${build.mode === 'costume' ? 'Wear Costume' : 'Equip Build'}</button>`
+            }
+            : {};
+
         return {
             appId: this.id,
+            ...footer,
             bodyContent: await renderTemplate(TEMPLATES.WINDOW_BUILD, {
                 rail,
                 // The tabs, and what each of them would show. Built here rather
@@ -1028,14 +1062,45 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             });
         }
 
-        // The empty page offers the same two buttons the rail does, and they are
-        // not inside the rail — so the create handler is delegated from the root
-        // rather than from the strip. One binding, either place.
-        root.addEventListener('click', async (event) => {
-            const create = event.target.closest('.squire-build-rail-new');
-            if (!create || create.closest('.squire-build-rail')) return;
-            await this.createAndSelect(create.dataset.mode);
-        });
+        // EVERYTHING BOUND TO THE ROOT IS BOUND ONCE, and this guard is why.
+        //
+        // ApplicationV2 replaces the CONTENTS of `this.element` on a redraw and
+        // keeps the element itself, so a listener added here survives — and a
+        // second render adds a second copy of it, a third adds a third. Two
+        // copies of the delete handler meant one click asking twice: the first
+        // dialog deleted the build and selected the next one, then the second
+        // copy fired and offered to delete THAT. It looked like the dialog
+        // reappearing; it was a different build being offered up.
+        //
+        // Anything delegated from the rail or the workspace is safe without
+        // this, because those elements ARE replaced and take their listeners
+        // with them. Only the root persists.
+        if (this._boundRoot !== root) {
+            this._boundRoot = root;
+
+            root.addEventListener('click', async (event) => {
+                // The empty page offers the same two buttons the rail does, and
+                // they are not inside the rail — so the create handler is
+                // delegated from here. One binding, either place.
+                const create = event.target.closest('.squire-build-rail-new');
+                if (create && !create.closest('.squire-build-rail')) {
+                    await this.createAndSelect(create.dataset.mode);
+                    return;
+                }
+
+                // The footer is the base class's markup and sits outside the
+                // body this window renders, so it is reachable only from here.
+                if (!this.buildId) return;
+
+                if (event.target.closest('.squire-build-footer-apply')) {
+                    await this.applySelected(this.buildId);
+                    return;
+                }
+                if (event.target.closest('.squire-build-footer-delete')) {
+                    await this.deleteSelected(this.buildId);
+                }
+            });
+        }
 
         // The rail. Delegated on the strip, because its rows are rebuilt on every
         // selection and per-row listeners would die with them.

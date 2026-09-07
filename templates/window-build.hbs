@@ -18,25 +18,28 @@
           reachable with the tray shut. --}}
     <div class="squire-build-rail">
 
-        {{!-- Which kinds of entry the list shows. Blacksmith's own tab bar, so
-              the shape, the states and the accent are the suite's rather than
-              this window's; the only thing set here is the track, because three
-              tabs have 170px of rail to share and the primitive is built for a
-              full-width window.
+        {{!-- Which kinds of entry the list shows.
+
+              The tray's section tabs, not Blacksmith's chip-shaped ones: this is
+              the same KIND of choice the character sheet's All / Weapons /
+              Spells strip makes — which part of a list to look at — and the two
+              are read minutes apart in the same session. Flat, underlined, an
+              equal share of the width each, sentence case. Boxes made three
+              buttons out of what is one control.
 
               Words, and no icons. The three labels only just fit across the rail
               and an icon beside each would push them onto a second line — and of
               the two, the word is the half that says which is which. The count
               rides in the tooltip for the same reason. --}}
-        <nav class="blacksmith-tabs squire-build-rail-tabs">
+        <div class="squire-build-rail-tabs">
             {{#each railTabs}}
-            <button type="button" class="blacksmith-tab squire-build-rail-tab{{#if this.active}} is-active{{/if}}"
+            <button type="button" class="squire-build-rail-tab{{#if this.active}} active{{/if}}"
                     data-filter="{{this.key}}"
                     data-tooltip="{{this.count}} {{#if (eq this.count 1)}}entry{{else}}entries{{/if}}">
                 {{this.label}}
             </button>
             {{/each}}
-        </nav>
+        </div>
 
         <div class="squire-build-rail-list">
             {{#each rail}}
