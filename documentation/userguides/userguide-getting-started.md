@@ -247,8 +247,11 @@ it and lists it there; it is nothing more than that, and it is the way back to t
 actually use once you have twenty. Switching tabs clears what is on the figure, so you are never
 looking at a costume while standing on the Builds tab.
 
-**The two buttons along the bottom** act on whatever is showing: **Equip Build** or **Wear Costume** on
-the right, **Delete** on the far left. They are at opposite ends on purpose.
+**The buttons along the bottom** act on whatever is showing: **Equip Build** or **Wear Costume** on the
+far right, **Add to Handle** beside it, and **Delete** at the opposite end on purpose.
+
+**Add to Handle** is the button version of dragging a tile onto the handle -- the same thing, without
+having to know that dragging does it. Once an entry is there the button reads **Remove from Handle**. New entries join the end of the strip.
 
 **Every entry can have its own sound**, played when you put it on. The speaker button beside the
 download button opens a file browser; right-click it to go back to the one the module ships with. A

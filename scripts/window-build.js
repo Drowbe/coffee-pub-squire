@@ -10,6 +10,7 @@ import {
     getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
     resolveTokenSettings, setBuildTokenSetting, toggleBuildFavorite, setBuildSound,
+    getHandleBuildIds, addBuildToHandle, removeBuildFromHandle,
     pullCostumeFromSheet,
     DEFAULT_BUILD_SOUND,
     applyImportPlan,
@@ -410,6 +411,32 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             }
         });
         picker.render(true);
+    }
+
+    /**
+     * Put this entry on the tray handle, or take it off.
+     *
+     * The same thing dragging a rail tile onto the handle does, reachable
+     * without knowing that dragging does it. No confirmation: it costs a strip
+     * of screen and undoes itself by being pressed again.
+     *
+     * NOT the same as favouriting, though both mean "one I reach for". The
+     * handle is a narrow strip with room for a few; the Favorites tab is a
+     * filter on a list and costs nothing.
+     */
+    async toggleOnHandle(buildId) {
+        const build = getBuild(this.actor, buildId);
+        if (!build) return;
+
+        const on = getHandleBuildIds(this.actor).includes(buildId);
+        if (on) await removeBuildFromHandle(this.actor, buildId);
+        else await addBuildToHandle(this.actor, buildId);
+
+        showSquireToast(build.name, {
+            subtitle: on ? 'Taken off the tray handle' : 'Added to the tray handle',
+            icon: on ? 'fa-solid fa-circle-minus' : 'fa-solid fa-grip-lines-vertical'
+        });
+        await this._refresh();
     }
 
     /**
@@ -1095,6 +1122,8 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // to act on. A disabled pair says "there is something here you cannot
         // have"; an empty bar says the truth, which is that there is nothing to
         // act on yet.
+        const onHandle = build ? getHandleBuildIds(this.actor).includes(build.id) : false;
+
         const footer = build
             ? {
                 // `critical`, not `secondary`. Blacksmith has a third button
@@ -1102,7 +1131,23 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 // the destructive act look like the cautious choice.
                 toolFooterLeft: '<button type="button" class="blacksmith-window-btn-critical squire-build-footer-delete">'
                     + `<i class="fa-solid fa-trash"></i> Delete ${build.mode === 'costume' ? 'Costume' : 'Build'}</button>`,
-                toolFooterRight: '<button type="button" class="blacksmith-window-btn-primary squire-build-footer-apply">'
+                // SECONDARY FIRST, PRIMARY LAST. The rightmost button is the one
+                // the window is for, and every other footer in the suite reads
+                // that way — a secondary sitting to the right of it outranks it
+                // by position while denying it by colour.
+                //
+                // Keeping this entry within reach of a shut tray, without having
+                // to know that dragging the tile there does it. A drag is not
+                // discoverable, and it was the only way to it.
+                //
+                // It TOGGLES rather than only adding, and says which it will do.
+                // A button reading "Add to Handle" on something already there
+                // either lies or does nothing, and both are worse than a label
+                // that changes.
+                toolFooterRight: '<button type="button" class="blacksmith-window-btn-secondary squire-build-footer-handle">'
+                    + `<i class="fa-solid ${onHandle ? 'fa-circle-minus' : 'fa-grip-lines-vertical'}"></i> `
+                    + `${onHandle ? 'Remove from Handle' : 'Add to Handle'}</button>`
+                    + '<button type="button" class="blacksmith-window-btn-primary squire-build-footer-apply">'
                     + `<i class="fa-solid ${build.mode === 'costume' ? 'fa-masks-theater' : 'fa-shirt'}"></i> `
                     + `${build.mode === 'costume' ? 'Wear Costume' : 'Equip Build'}</button>`
             }
@@ -1287,6 +1332,10 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 }
                 if (event.target.closest('.squire-build-footer-delete')) {
                     await this.deleteSelected(this.buildId);
+                    return;
+                }
+                if (event.target.closest('.squire-build-footer-handle')) {
+                    await this.toggleOnHandle(this.buildId);
                 }
             });
         }

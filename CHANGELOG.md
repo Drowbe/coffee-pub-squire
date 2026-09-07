@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **An `Add to Handle` button in the builder's action bar**, beside Equip. Keeping an entry within reach of a shut tray previously meant dragging its tile onto the handle — which works, and which nobody discovers, because a drag target announces nothing.
+  - **It toggles**, and the label says which it will do: `Remove from Handle` once the entry is there. A button reading "Add to Handle" on something already on it either lies or does nothing, and both are worse than a label that changes.
+  - Secondary styling and placed to the LEFT of Equip: the rightmost button is the one the window is for, and a secondary sitting right of the primary outranks it by position while denying it by colour. New entries join the end of the handle's strip. No confirmation: it costs a strip of screen and undoes itself by being pressed again.
+  - Still **not** the same as favouriting, though both mean "one I reach for". The handle is a narrow strip with room for a few; the Favorites tab is a filter on a list and costs nothing.
+
 - **A full-body image on the character**, a third picture beside the portrait and the token. A portrait is a face and a token is a piece seen from above; neither is what a character looks like *standing there*, which is the picture a paper doll wants behind it — and a party roster or a chat card would want too. dnd5e has no field for it, so it lives in a documented module flag (`fullbody`) as a plain path, readable from outside Squire without asking Squire. That is the whole reason it is on the actor rather than staying the build-only picture it started as.
   - **Update Prototype Token writes it**, alongside the portrait and the token. A costume that set a standing figure is describing what this character looks like as much as its face is, and adopting two of the three would leave them half dressed in a way nothing on screen would explain.
   - It is **not** the same field as a build's `images.main`, though they hold the same kind of picture: `main` is what *this build* looks like and lives on the build; `fullbody` is what the *character* looks like and lives on the actor. A build with no `main` of its own now falls back through it.
