@@ -36,6 +36,7 @@ jobs:
             lang/ \
             images/ \
             prompts/ \
+            assets/ \
             -x "*.git*" -x "*.github*" -x "*node_modules*" -x "*dist*" -x "*.vscode*"
 
       # GitHub release bodies are capped at 125000 characters; full CHANGELOG exceeds that.

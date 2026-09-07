@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A sound plays when a build or costume goes on**, with a speaker button beside the import button to choose your own. Foundry's file picker, opened at whatever is already set so the common edit is a neighbour of the current choice rather than a walk from the root; right-click puts it back to the default. The glyph says which state it is in without a word — a full speaker for a sound this build chose, a low one for the default it falls back to.
+  - **On both kinds**, unlike the import button beside it. A costume changes how somebody looks, which is arguably a better moment for a sound than a gear swap is.
+  - **The default ships with the module** — `assets/sounds/build-changeoutfit.mp3` — rather than pointing at Foundry's or Blacksmith's libraries, so it is there on a fresh install and cannot be moved out from under a build by somebody tidying a shared folder. `assets/` is now in the release zip; without it the shipped default would install broken.
+  - Played through Blacksmith's `utils.playSound` at **normal volume** (0.5) and **broadcast**, not local: everyone at the table hears a character change kit for the same reason everyone sees the token repaint. That is also why it lives in `applyBuild` rather than the window — applying from the tray handle with the builder shut is still the character changing. Normal rather than the soft 0.3 every other Squire sound uses: those are interface sounds acknowledging your own click and are quiet on purpose, where this announces a thing that happened in the scene, and at 0.3 across a table of clients with their own volume sliders it does not land.
+  - Fired after the gear actually moves, so it reports something that happened rather than something about to; and failure is swallowed, because a wrong path in one build must not stop the gear being equipped.
+  - A duplicate keeps the sound. It is part of what the build *is*, the way its name and pictures are, and a copy that fell silent would be a copy of something else.
+
 - **The GM can be asked before a player changes what their character is wearing.** Two world-scoped settings in a new **Gear Builds** section: **GM Approves Build Changes** (on by default) and **GM Approves Costume Changes** (off). Equipping a build changes what a character can do in a fight and unequips everything the build does not name; a costume changes how they look. Different sizes of act, so different defaults.
   - **A dialog decides, a toast informs.** The GM gets Blacksmith's `dialog.wait()` with Approve and Deny as two peers, carrying the same breakdown the player just saw — two descriptions of one act, differing in wording, is how a GM ends up approving something other than what was asked. The player gets a toast while waiting and a toast with the answer. Nothing goes to chat: a busy log swallows an approval, and one nobody sees is a player blocked with no signal that anything is waiting.
   - **Built on Blacksmith's `gmRequest`**, which gives the handler a **caller identity the requester could not have forged** — the thing Foundry does not hand to query handlers and that every consumer had been faking by putting a claimed user id in its own payload. The handler re-resolves the actor from its uuid and checks that the *verified* caller owns it, so one player cannot put another's build up for approval.
@@ -68,6 +75,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - There are no leftovers to report any more, by construction: every item is on the table with an answer the player chose. The one exception is the automatic first-run snapshot, which still cannot ask, so what it could not place is shown on the doll when the window opens.
 
 ### Fixed
+
+- **Converting a build to a costume silently un-favourited it.** A `favorite: false` reset landed in `convertBuildMode` instead of `createBuild` when favourites were added. Converting changes what kind of thing an entry is, not which thing it is — it keeps its name and its pictures for exactly that reason, and its heart and its sound now survive too.
 
 - **`updateTray()` destroyed the handle and never rebuilt it.** The tray template renders the strip's structure; everything *in* it — health bar, conditions, build tiles — is put there by `HandleManager`, and the `replaceWith` at the end of `updateTray` threw all of that away. It went unnoticed because, as its own docblock records, the method had never once run; the `element` getter that made it reachable arrived later. It calls `updateHandle()` at the end now.
 
@@ -153,6 +162,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Which slot each item lands in is cosmetic, deliberately.** Applying equips exactly the set the build names and unequips everything else, so any arrangement of the same items reproduces the same character — the placement only has to look sensible. It is a light heuristic (weapons to the hands, a shield to the off hand, armour to the chest, rings to the rings) and anything it cannot guess goes in the next free body slot rather than being dropped: a build missing the item you were looking at is worse than a build with a lantern in the neck slot, and the second is one drag from fixed.
 
 ### Changed
+
+- **Switching rail tabs now clears a selection the new tab cannot show**, dropping the workspace to its empty page. The opposite was tried first and argued for — filtering a list is a smaller request than moving the selection — but in use it meant standing on the Builds tab looking at a costume, with nothing in the list to explain where it came from. A workspace showing something the rail beside it says does not exist reads as a bug, whatever the reasoning behind it.
+  - It does not jump to whatever is first in the new tab. Clearing says "you are looking at Builds now, pick one"; selecting for you would be a choice made on your behalf, and the empty page already invites the next click.
 
 - **The `All` tab is now `Favorites`, and the builder opens on it.** Every entry is still one click away — a build is on Builds and a costume is on Costumes, so nothing is hidden by losing the everything-view — and the tab that replaced it answers the question that actually gets asked of a long list: *which of these do I use?* It is empty until you star something, and says so.
 

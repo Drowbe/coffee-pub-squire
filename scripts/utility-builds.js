@@ -362,6 +362,11 @@ export function getBuilds(actor) {
         // screen space; this is a filter on a list and costs nothing, so a
         // player can favourite a dozen without consequence.
         favorite: !!build.favorite,
+        // What this one sounds like going on. Null means "no opinion", which
+        // plays the default — the same rule every image slot here follows, and
+        // for the same reason: unset and set-to-the-default-value are different
+        // intentions, and only the second should survive the default changing.
+        sound: typeof build.sound === 'string' && build.sound ? build.sound : null,
         // How the token is DRAWN, as opposed to what it is drawn with. Only a
         // costume sets these — a build is gear, and gear does not change how big
         // a character's token is on the map. Every one of them is nullable and
@@ -550,6 +555,8 @@ export async function createBuild(actor, name = 'New Build') {
         mode: 'gear',
         slots: Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null])),
         images: Object.fromEntries(BUILD_IMAGE_KEYS.map(key => [key, null])),
+        favorite: false,
+        sound: null,
         spells: [],
         token: normaliseTokenSettings(null)
     };
@@ -586,6 +593,10 @@ export async function duplicateBuild(actor, buildId) {
         // duplicated it to change it; whether the variant earns a heart is a
         // decision to make after seeing it.
         favorite: false,
+        // The sound DOES carry over: it is part of what this build is, the way
+        // its name and its pictures are, and a copy that fell silent would be a
+        // copy of something else.
+        sound: source.sound ?? null,
         token: { ...(source.token ?? {}) }
     };
 
@@ -653,11 +664,24 @@ export async function convertBuildMode(actor, buildId, mode) {
             mode: next,
             slots: Object.fromEntries(BUILD_SLOT_KEYS.map(key => [key, null])),
             spells: [],
-        favorite: false,
+            // The heart and the sound are NOT reset. Converting changes what
+            // kind of thing this is, not which thing it is — it keeps its name
+            // and its pictures for exactly that reason, and a favourite that
+            // fell off the Favourites tab because you switched it to a costume
+            // would be the same surprise.
             // A costume's token geometry is as much a costume thing as its
             // pictures are, and means nothing on a build.
             token: next === 'costume' ? build.token : normaliseTokenSettings(null)
         }
+        : build));
+}
+
+/**
+ * What this build sounds like going on. Null clears it back to the default.
+ */
+export async function setBuildSound(actor, buildId, path) {
+    await saveBuilds(actor, getBuilds(actor).map(build => build.id === buildId
+        ? { ...build, sound: path || null }
         : build));
 }
 
@@ -1028,6 +1052,15 @@ export async function setBuildImage(actor, buildId, key, path) {
             : build));
 }
 
+/**
+ * What putting a build on sounds like, when it does not say.
+ *
+ * Shipped with the module rather than pointed at Foundry's or Blacksmith's
+ * libraries, so it is there on a fresh install and cannot be moved out from
+ * under a build by somebody tidying a shared folder.
+ */
+export const DEFAULT_BUILD_SOUND = `modules/${MODULE.ID}/assets/sounds/build-changeoutfit.mp3`;
+
 /** Where the character's own, pre-build portrait and token are kept. */
 const DEFAULT_IMAGES_FLAG = 'defaultImages';
 
@@ -1336,6 +1369,42 @@ function canBuildPrepare(item) {
     return !!CONFIG.DND5E?.spellcasting?.[item.system?.method]?.prepares;
 }
 
+/**
+ * The sound of putting this on.
+ *
+ * Broadcast, not local. Everyone at the table hears a character change kit for
+ * the same reason everyone sees the token repaint — it is a thing that happened
+ * in the scene, not a thing that happened in one person's interface. That is
+ * also why it is here rather than in the window: applying from the tray handle
+ * with the builder shut is still the character changing.
+ *
+ * Failure is swallowed. A missing file is a wrong path in one build, and it must
+ * not stop the gear being equipped — the sound is the flourish, not the act.
+ */
+function playBuildSound(build) {
+    // Read straight off the module rather than importing helpers.js, which
+    // already imports THIS file — the cycle would work in ESM right up until the
+    // day it did not, and a failed module evaluation is cached for the session.
+    // It is a one-line lookup; the import is not worth the coupling.
+    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+    if (!blacksmith?.utils?.playSound) return;
+
+    const sound = build?.sound ?? DEFAULT_BUILD_SOUND;
+
+    try {
+        // NORMAL (0.5), not the SOFT (0.3) every other sound in this module
+        // uses. Those are interface sounds — a click acknowledging your own
+        // action, deliberately quiet. This one is broadcast to the whole table
+        // to announce something that happened in the scene, which is a different
+        // job: at 0.3, across five clients with their own volume sliders in
+        // play, it does not land. The fallback matches rather than being louder
+        // than the constant it stands in for.
+        blacksmith.utils.playSound(sound, blacksmith.BLACKSMITH?.SOUNDVOLUMENORMAL ?? 0.5, false, true);
+    } catch (error) {
+        console.warn('Coffee Pub Squire | Could not play the build sound:', { sound, error });
+    }
+}
+
 export async function applyBuild(actor, build) {
     if (!actor || !build) return null;
 
@@ -1425,6 +1494,11 @@ export async function applyBuild(actor, build) {
     // One write for every item rather than one per item: sixteen separate
     // updates would each re-render the sheet and every panel watching it.
     if (updates.length) await actor.updateEmbeddedDocuments('Item', updates);
+
+    // After the gear moves, so the sound reports something that happened rather
+    // than something about to. Not awaited: it is a flourish, and the artwork
+    // below should not queue behind an audio file loading.
+    playBuildSound(build);
 
     // Portrait and token are written SEPARATELY, and the result of each is read
     // back rather than assumed.

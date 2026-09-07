@@ -9,7 +9,8 @@ import {
     renameBuild, setBuildSlot, moveBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
     refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
-    resolveTokenSettings, setBuildTokenSetting, toggleBuildFavorite,
+    resolveTokenSettings, setBuildTokenSetting, toggleBuildFavorite, setBuildSound,
+    DEFAULT_BUILD_SOUND,
     applyImportPlan,
     estimateArmorClass, previewSlotChange, setBuildMode, convertBuildMode, revertBuild, damageLabel,
     setActiveBuildId, getActiveBuildId, ensureDefaultCostume, ensureDefaultBuild,
@@ -349,6 +350,29 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
     }
 
     /**
+     * Choose what this build sounds like going on.
+     *
+     * Foundry's own file picker, started at the sound already set so the common
+     * edit is a neighbour of the current choice rather than a walk from the
+     * root — the same reasoning the image slots use, and the same right-click to
+     * put it back to the default.
+     */
+    async pickSound() {
+        const build = this.build;
+        if (!build) return;
+
+        const picker = new foundry.applications.apps.FilePicker.implementation({
+            type: 'audio',
+            current: build.sound ?? DEFAULT_BUILD_SOUND,
+            callback: async (path) => {
+                await setBuildSound(this.actor, build.id, path);
+                await this._refresh();
+            }
+        });
+        picker.render(true);
+    }
+
+    /**
      * Favourite this entry, or take the heart off.
      *
      * No confirmation: it is a filter on a list, it changes nothing about the
@@ -363,16 +387,22 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
     /**
      * Which kinds of entry the rail lists.
      *
-     * The SELECTION is deliberately left alone, even when the tab that was just
-     * chosen hides it. Switching a filter is asking to see less of the list, not
-     * asking to look at a different build — and quietly moving the doll to
-     * whatever happened to be first in the filtered set would be a much larger
-     * thing to do than what was asked for. So the entry stays on the doll and
-     * simply is not listed; picking another one is still a click away.
+     * Changing tab CLEARS a selection the new tab cannot show, dropping the
+     * workspace to its empty state rather than leaving the last thing on the
+     * doll. The alternative was tried: keeping the selection meant standing on
+     * the Builds tab looking at a costume, with nothing in the list to explain
+     * where it came from — a workspace showing something the rail beside it says
+     * does not exist reads as a bug, whatever the reasoning behind it.
+     *
+     * It does NOT jump to whatever is first in the new tab. Clearing says "you
+     * are looking at Builds now, pick one"; selecting for you would be a choice
+     * made on your behalf, and the empty page already invites the next click.
      */
     async setRailFilter(filter) {
         if (this.railFilter === filter) return;
         this.railFilter = filter;
+
+        if (this.build && !this._passesFilter(this.build)) this.buildId = null;
         await this._refresh();
     }
 
@@ -1046,6 +1076,10 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 // question the layout does or it will promise weapons to a
                 // wizard whose build happens not to plan a spell list.
                 dollIsCaster: layout.caster,
+                // The file's own name, not its path. A tooltip is not the place
+                // for `modules/whatever/assets/sounds/...`, and the last segment
+                // is the part somebody chose.
+                buildSoundName: build?.sound ? build.sound.split('/').pop() : null,
                 build,
                 actorName: this.actor?.name ?? '',
                 // The BUILD's own picture, not the actor's. `actor.img` moves
@@ -1341,6 +1375,17 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 `<section class="loading" data-uuid="${uuid}"><i class="fas fa-spinner fa-spin-pulse"></i></section>`;
             element.dataset.tooltipClass = 'dnd5e2 dnd5e-tooltip item-tooltip themed theme-light';
             element.dataset.tooltipDirection ??= 'LEFT';
+        });
+
+        // Left picks, right resets. Same pair the image slots use, so the two
+        // controls in this row behave the same way.
+        const soundButton = root.querySelector('.squire-build-sound');
+        soundButton?.addEventListener('click', () => this.pickSound());
+        soundButton?.addEventListener('contextmenu', async (event) => {
+            event.preventDefault();
+            if (!this.build?.sound) return;
+            await setBuildSound(this.actor, this.buildId, null);
+            await this._refresh();
         });
 
         root.querySelector('.squire-build-pull')?.addEventListener('click', async () => {

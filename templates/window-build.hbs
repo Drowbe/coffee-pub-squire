@@ -246,6 +246,18 @@
         </button>
         {{/unless}}
 
+        {{!-- BOTH kinds, unlike the import button beside it. A costume changes
+              how somebody looks and that is exactly the moment a sound is worth
+              having — arguably more than a gear swap is.
+
+              The glyph says which state it is in without a word: a full speaker
+              for a sound this build chose, a struck-through one for silence, and
+              a low speaker for the default it falls back to. --}}
+        <button type="button" class="squire-build-sound{{#if build.sound}} has-sound{{/if}}"
+                data-tooltip="{{#if build.sound}}Plays <strong>{{buildSoundName}}</strong> when worn.<br><em>Click to change &middot; right-click to reset</em>{{else}}Plays the default sound when worn.<br><em>Click to choose another</em>{{/if}}">
+            <i class="fa-solid {{#if build.sound}}fa-volume-high{{else}}fa-volume-low{{/if}}"></i>
+        </button>
+
     </div>
 
     {{#if isCaster}}{{#unless isCostume}}

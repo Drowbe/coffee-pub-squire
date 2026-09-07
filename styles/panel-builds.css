@@ -2058,6 +2058,12 @@
 /* Square and quiet. Filling a build from the sheet is a useful thing to reach
    for and not one anybody presses twice in a session, so it does not take the
    primary colour the rail's apply buttons carry. */
+/* The sound button wears the import button's shape exactly — same box, same
+   border, same hover — because they are the same kind of control sitting side by
+   side, and two square buttons in a row that differ by two pixels look like a
+   mistake rather than a distinction. Only the glyph tells them apart, which is
+   the only thing that should. */
+.squire-build-sound,
 .squire-build-pull {
     display: flex;
     flex: 0 0 auto;
@@ -2076,7 +2082,16 @@
     transition: all 0.15s ease;
 }
 
+.squire-build-sound:hover,
 .squire-build-pull:hover {
+    border-color: var(--blacksmith-color-brand-accent, var(--blacksmith-tool-accent));
+    color: var(--blacksmith-tool-text);
+}
+
+/* A build that chose its own sound says so at rest, not only on hover: the
+   difference between "this plays something you picked" and "this plays whatever
+   the module ships with" is worth a glance rather than a tooltip. */
+.squire-build-sound.has-sound {
     border-color: var(--blacksmith-color-brand-accent, var(--blacksmith-tool-accent));
     color: var(--blacksmith-tool-text);
 }
