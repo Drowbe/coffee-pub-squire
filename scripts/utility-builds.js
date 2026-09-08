@@ -71,6 +71,22 @@ const SLOT_RULES = {
         test: item => item.type === 'weapon',
         refusal: item => `${item.name} is not a weapon.`
     },
+    // STRICT, unlike the hand slots. This slot is not "a weapon you happen to
+    // throw" — it is the one that earns dnd5e's `thrown` attack mode, and a
+    // weapon without the Thrown property will not be offered that mode however
+    // it is planned. A slot that let you plan a greatsword here would be
+    // planning a roll the system refuses to make.
+    thrown: {
+        test: item => item.type === 'weapon' && !!item.system?.properties?.has?.('thr'),
+        refusal: item => `${item.name} cannot be thrown — it has no Thrown property.`
+    },
+    // A potion, a scroll, an elixir. dnd5e types ammunition as a consumable too,
+    // and it has its own slot beside this one, so it is excluded here rather
+    // than left to land in whichever the player reached first.
+    consumable: {
+        test: item => item.type === 'consumable' && item.system?.type?.value !== 'ammo',
+        refusal: item => `${item.name} is not something you drink, read or use up.`
+    },
     // The doll's two quick-use slots. A spell OR a feature: the question they
     // ask is "what do you reach for", and for half the party the answer is Rage
     // or Second Wind rather than anything from a spell list. Restricting them to
@@ -97,12 +113,21 @@ const SLOT_RULES = {
  * `row` and `column` are 1-based CSS grid lines. The portrait sits in the middle
  * of rows 2–4, which is why the side columns skip column 2–4 entirely.
  *
- *              HEAD
- *      FACE   [       ]   NECK
- *      BACK   [portrait]  CHEST
- *      ARMS   [       ]   HANDS
- *   RING1  HIP1  WAIST  HIP2  RING2
- *              FEET
+ *   FACE  (portrait)  HEAD  (token)  NECK
+ *   BACK   [                    ]   CHEST
+ *   ARMS   [     portrait       ]   HANDS
+ *   RING1  [                    ]   RING2
+ *   HIP1   WAIST   FEET   CONSUM   HIP2
+ *
+ * The side columns run the WHOLE height now, Face and Neck included: they used
+ * to start a row lower, which left row 1 holding a lone helmet between two
+ * picture circles and pushed everything below it down. Bringing them up freed
+ * the middle of row 5 for the two slots that had nowhere to be — a consumable,
+ * and (in row six) a thrown weapon — without widening the doll by a column.
+ *
+ * The pairs sit at the EDGES and that is the rule the eye reads the doll by:
+ * Ring and Ring, then Hip and Hip. Waist and Feet fill the middle because
+ * neither has a twin.
  *
  * `icon` is what an EMPTY slot shows. A word alone in a small box is a label
  * with nothing to label; a glyph says what belongs there at a glance and the
@@ -115,6 +140,21 @@ const SLOT_RULES = {
  * strap), and `fa-backpack` for the back, which is at least a thing worn there
  * even when what goes in the slot is a cloak.
  */
+/* The hints for the slots that DO enforce something. Worded as the rule they
+   actually apply, because here a refusal is possible and "why did nothing
+   happen" is a real question. */
+const HINTS = {
+    consumable: 'A potion, scroll or elixir you mean to reach for. One slot, deliberately — the hips beside it take anything.',
+    thrown: 'A weapon you throw: a javelin, a handaxe, a dagger. Only weapons with the Thrown property.',
+    weapon: 'A dagger, hand axe or other sidearm — anything you would draw without thinking.',
+    ammo: 'Arrows, bolts, bullets, darts — whatever your weapons spend.',
+    ability: 'A spell or a feature you reach for first: Fire Bolt, Rage, Second Wind. Cantrips welcome.',
+    mainhand: 'The weapon you lead with. Any weapon, or a shield if that is how you fight.',
+    offhand: 'A shield, a second weapon, or a torch.',
+    bothhands: 'A two-handed weapon. Nothing stops you filling the other hands as well — this is a plan, not a rules engine.'
+};
+
+
 /*
  * `hint` is what an EMPTY slot says it is for. Every one of these body slots
  * accepts any physical object — see SLOT_RULES, and the note above about a pair
@@ -124,32 +164,28 @@ const SLOT_RULES = {
  * their bandolier, they just want to know what people normally put there.
  */
 export const BUILD_CORE_SLOTS = [
+    { key: 'face',  label: 'Face',  icon: 'fa-mask',              row: 1, column: 1, hint: 'Masks, goggles, spectacles, veils.' },
     { key: 'head',  label: 'Head',  icon: 'fa-helmet-battle',     row: 1, column: 3, hint: 'Helms, hats, circlets, crowns.' },
-    { key: 'face',  label: 'Face',  icon: 'fa-mask',              row: 2, column: 1, hint: 'Masks, goggles, spectacles, veils.' },
-    { key: 'neck',  label: 'Neck',  icon: 'fa-gem',               row: 2, column: 5, hint: 'Amulets, necklaces, periapts, holy symbols.' },
-    { key: 'back',  label: 'Back',  icon: 'fa-backpack',          row: 3, column: 1, hint: 'Cloaks, capes, mantles, packs.' },
-    { key: 'chest', label: 'Chest', icon: 'fa-vest',              row: 3, column: 5, hint: 'Armour, robes, tunics — the thing your AC comes from.' },
-    { key: 'arms',  label: 'Arms',  icon: 'fa-shirt-long-sleeve', row: 4, column: 1, hint: 'Bracers, vambraces, sleeves.' },
-    { key: 'hands', label: 'Hands', icon: 'fa-mitten',            row: 4, column: 5, hint: 'Gloves, gauntlets, mitts.' },
-    { key: 'ring1', label: 'Ring',  icon: 'fa-ring',              row: 5, column: 1, hint: 'A ring. Most characters may attune to two at once.' },
-    { key: 'hip1',  label: 'Hip',   icon: 'fa-sack',              row: 5, column: 2, hint: 'Pouches, quivers, horns, sheathed oddments.' },
-    { key: 'waist', label: 'Waist', icon: 'fa-grip-lines',        row: 5, column: 3, hint: 'Belts, girdles, sashes.' },
-    { key: 'hip2',  label: 'Hip',   icon: 'fa-sack',              row: 5, column: 4, hint: 'Pouches, quivers, horns, sheathed oddments.' },
-    { key: 'ring2', label: 'Ring',  icon: 'fa-ring',              row: 5, column: 5, hint: 'A ring. Most characters may attune to two at once.' },
-    { key: 'feet',  label: 'Feet',  icon: 'fa-boot',              row: 6, column: 3, hint: 'Boots, shoes, sandals, greaves.' }
+    { key: 'neck',  label: 'Neck',  icon: 'fa-gem',               row: 1, column: 5, hint: 'Amulets, necklaces, periapts, holy symbols.' },
+    { key: 'back',  label: 'Back',  icon: 'fa-backpack',          row: 2, column: 1, hint: 'Cloaks, capes, mantles, packs.' },
+    { key: 'chest', label: 'Chest', icon: 'fa-vest',              row: 2, column: 5, hint: 'Armour, robes, tunics — the thing your AC comes from.' },
+    { key: 'arms',  label: 'Arms',  icon: 'fa-shirt-long-sleeve', row: 3, column: 1, hint: 'Bracers, vambraces, sleeves.' },
+    { key: 'hands', label: 'Hands', icon: 'fa-mitten',            row: 3, column: 5, hint: 'Gloves, gauntlets, mitts.' },
+    { key: 'ring1', label: 'Ring',  icon: 'fa-ring',              row: 4, column: 1, hint: 'A ring. Most characters may attune to two at once.' },
+    { key: 'ring2', label: 'Ring',  icon: 'fa-ring',              row: 4, column: 5, hint: 'A ring. Most characters may attune to two at once.' },
+    { key: 'hip1',  label: 'Hip',   icon: 'fa-sack',              row: 5, column: 1, hint: 'Pouches, quivers, horns, sheathed oddments.' },
+    { key: 'waist', label: 'Waist', icon: 'fa-grip-lines',        row: 5, column: 2, hint: 'Belts, girdles, sashes.' },
+    { key: 'feet',  label: 'Feet',  icon: 'fa-boot',              row: 5, column: 3, hint: 'Boots, shoes, sandals, greaves.' },
+    // TYPED, and the only slot in the core grid that is. The two Hips beside it
+    // stay generic on purpose: a typed slot buys intent and spends capacity, so
+    // ONE is right. Look at what a character carries with nowhere to put it — a
+    // potion, a holy symbol, a component pouch, thieves' tools, a wand — and
+    // exactly one of those is a consumable. A second consumable slot would take
+    // a slot that could have held any of the others.
+    { key: 'consumable', label: 'Consumable', icon: 'fa-flask-round-potion', row: 5, column: 4, accepts: 'consumable', hint: HINTS.consumable },
+    { key: 'hip2',  label: 'Hip',   icon: 'fa-sack',              row: 5, column: 5, hint: 'Pouches, quivers, horns, sheathed oddments.' }
 ];
 
-/* The hints for the slots that DO enforce something. Worded as the rule they
-   actually apply, because here a refusal is possible and "why did nothing
-   happen" is a real question. */
-const HINTS = {
-    weapon: 'A dagger, hand axe or other sidearm — anything you would draw without thinking.',
-    ammo: 'Arrows, bolts, bullets, darts — whatever your weapons spend.',
-    ability: 'A spell or a feature you reach for first: Fire Bolt, Rage, Second Wind. Cantrips welcome.',
-    mainhand: 'The weapon you lead with. Any weapon, or a shield if that is how you fight.',
-    offhand: 'A shield, a second weapon, or a torch.',
-    bothhands: 'A two-handed weapon. Nothing stops you filling the other hands as well — this is a plan, not a rules engine.'
-};
 
 /*
  * THE LAST ROW AND THE BIG THREE, WHICH DEPEND ON WHO IS WEARING THE DOLL.
@@ -159,11 +195,15 @@ const HINTS = {
  * A wizard's three most important choices are spells, and their weapons are an
  * afterthought — so the two zones SWAP.
  *
- *   MARTIAL   row 6:  Primary  Sheath  Feet  Ammo  Secondary
+ *   MARTIAL   row 6:  Primary  Sheath  Thrown  Ammo  Secondary
  *             big:    Main Hand   Both Hands   Off Hand
  *
- *   CASTER    row 6:  Main  Sheath  Feet  Ammo  Off Hand
+ *   CASTER    row 6:  Main  Sheath  Thrown  Ammo  Off Hand
  *             big:    Primary   Secondary   Tertiary
+ *
+ * THROWN sits in the middle, between the sheath and the ammunition, which is the
+ * company it keeps: three things that are carried rather than worn, and spent or
+ * drawn rather than wielded. Feet moved up to row 5 to make room.
  *
  * The keys are the same set in both; only their size and place change. A caster
  * has no Both Hands slot and a martial has no Tertiary — five columns is five
@@ -180,6 +220,7 @@ const HINTS = {
 const ROW_SIX_MARTIAL = [
     { key: 'spell1', label: 'Primary',   icon: 'fa-bolt',       row: 6, column: 1, accepts: 'ability', hint: HINTS.ability },
     { key: 'sheath', label: 'Sheath',    icon: 'fa-dagger',     row: 6, column: 2, round: true, accepts: 'weapon', hint: HINTS.weapon },
+    { key: 'thrown', label: 'Thrown',    icon: 'fa-bullseye-arrow', row: 6, column: 3, round: true, accepts: 'thrown', hint: HINTS.thrown },
     { key: 'ammo',   label: 'Ammo',      icon: 'fa-bow-arrow',  row: 6, column: 4, round: true, accepts: 'ammo', hint: HINTS.ammo },
     { key: 'spell2', label: 'Secondary', icon: 'fa-bolt',       row: 6, column: 5, accepts: 'ability', hint: HINTS.ability }
 ];
@@ -187,6 +228,7 @@ const ROW_SIX_MARTIAL = [
 const ROW_SIX_CASTER = [
     { key: 'mainhand', label: 'Main Hand', icon: 'fa-sword',          row: 6, column: 1, hint: HINTS.mainhand },
     { key: 'sheath',   label: 'Sheath',    icon: 'fa-dagger',         row: 6, column: 2, round: true, accepts: 'weapon', hint: HINTS.weapon },
+    { key: 'thrown',   label: 'Thrown',    icon: 'fa-bullseye-arrow', row: 6, column: 3, round: true, accepts: 'thrown', hint: HINTS.thrown },
     { key: 'ammo',     label: 'Ammo',      icon: 'fa-bow-arrow',      row: 6, column: 4, round: true, accepts: 'ammo', hint: HINTS.ammo },
     { key: 'offhand',  label: 'Off Hand',  icon: 'fa-shield-halved',  row: 6, column: 5, hint: HINTS.offhand }
 ];
@@ -855,6 +897,22 @@ export function resolveSlots(actor, build, slotDefinitions, drift = null) {
         const unplanned = !!item && SPELL_SLOT_KEYS.has(definition.key)
             && plansSpells && canBuildPrepare(item) && !plannedSet.has(itemId);
 
+        // A slot holding something the rules would now refuse — a greatsword in
+        // one hand, a shield in a sheath, a build made before those rules
+        // existed. MARKED, NEVER MOVED: nothing here rearranges a plan somebody
+        // made, and every other problem in this window is reported rather than
+        // fixed. The refusal text is the same string a drop would have shown, so
+        // the two can never explain it differently.
+        //
+        // TWO ways to be illegal, and the second only exists in a saved build: a
+        // hand slot can be filled at the same time as one it excludes. A drop
+        // can never produce that — it evicts — but a build written before the
+        // rule can, and so can one edited on two clients at once.
+        const illegal = !item ? null : (refuseSlotDrop(definition.key, item, build)
+            || (handConflicts(definition.key, build).length
+                ? `${item.name} cannot be held at the same time as what is in your other ${definition.key === 'bothhands' ? 'hands' : 'hand'}.`
+                : null));
+
         const rarity = item ? itemRarity(item) : null;
 
         return {
@@ -880,13 +938,15 @@ export function resolveSlots(actor, build, slotDefinitions, drift = null) {
             // Two marks from two questions, and only one of them needs the
             // character. `unplanned` is about the build alone and shows always;
             // the drift check is about the worn build and shows only then.
-            drifted: !!itemId && (unplanned || !!(SPELL_SLOT_KEYS.has(definition.key)
+            drifted: !!itemId && (!!illegal || unplanned || !!(SPELL_SLOT_KEYS.has(definition.key)
                 ? drift?.notPrepared?.has(itemId)
                 : drift?.notEquipped?.has(itemId))),
             // The tooltip's whole sentence. "Not equipped" is nonsense about a
             // spell, and a mark that misnames its own reason teaches the wrong
             // lesson about the window.
-            driftReason: unplanned
+            driftReason: illegal
+                ? `${illegal} It stays where you put it &mdash; move it when you like.`
+                : unplanned
                 ? 'is not in this build&rsquo;s prepared spells &mdash; equipping it would leave this slot uncastable'
                 : (SPELL_SLOT_KEYS.has(definition.key)
                     ? 'is not prepared, though this build is being worn'
@@ -1132,7 +1192,72 @@ export async function setBuildSpell(actor, buildId, index, itemId) {
  * nothing-non-physical rule applies everywhere without being written sixteen
  * times.
  */
-export function refuseSlotDrop(slotKey, item) {
+/**
+ * YOU HAVE TWO HANDS, and the three hand slots have to add up.
+ *
+ * Both Hands is the whole of them. Main and Off are one each. So Both excludes
+ * the other two and either of the other two excludes Both, while Main and Off
+ * together are the ordinary way to fight.
+ *
+ * Stated as a map rather than three ifs so the rule can be read in one line and
+ * cannot drift between the places that ask it.
+ */
+export const HAND_CONFLICTS = {
+    bothhands: ['mainhand', 'offhand'],
+    mainhand: ['bothhands'],
+    offhand: ['bothhands']
+};
+
+/**
+ * Which hand slots a WEAPON may occupy, from dnd5e's own answer.
+ *
+ * `item.system.attackModes` is the system's per-weapon list, computed from its
+ * properties, and it is the list the roll dialog will offer. Reading it here
+ * means the doll and the dice cannot disagree about what a weapon can do.
+ *
+ * TWO deliberate looseness rules:
+ *
+ * 1. THE LIGHT PROPERTY IS NOT ENFORCED HERE. dnd5e gates the `offhand` attack
+ *    MODE on Light, and that is right — two-weapon fighting needs it. But the
+ *    Off Hand SLOT means "what is in your other hand", and it takes a torch, a
+ *    lantern, a holy symbol, a shield. You can hold a longsword in your left
+ *    hand; you simply cannot two-weapon-fight with it. Light decides the mode,
+ *    not the slot. See buildAttackMode.
+ *
+ * 2. A WEAPON WITH NO HAND MODES IS NOT RESTRICTED. A dart is thrown-and-ranged,
+ *    and dnd5e gives it `thrown` and `thrown-offhand` only — no `oneHanded` at
+ *    all. Read strictly, a dart could not be held. Silence there means the
+ *    system has not modelled the question, not that the answer is no.
+ *
+ * What it DOES catch is the physical impossibility: a greatsword needs both
+ * hands, so it cannot be in one of them.
+ */
+function weaponRefusesHand(item, slotKey) {
+    if (item?.type !== 'weapon') return false;
+
+    const modes = item.system?.attackModes;
+    if (!Array.isArray(modes) || !modes.length) return false;
+
+    const has = value => modes.some(mode => mode.value === value);
+    const oneHanded = has('oneHanded');
+    const twoHanded = has('twoHanded');
+
+    // Nothing said about hands at all — see rule 2 above.
+    if (!oneHanded && !twoHanded) return false;
+
+    if (slotKey === 'bothhands') return !twoHanded;
+    if (slotKey === 'mainhand' || slotKey === 'offhand') return !oneHanded;
+    return false;
+}
+
+/**
+ * Why this slot will not take this item, or null.
+ *
+ * Takes the BUILD as well as the slot, which it did not used to: "Both Hands is
+ * unavailable because Main Hand is full" is a fact about the whole loadout, and
+ * a function given one item and one slot could never express it.
+ */
+export function refuseSlotDrop(slotKey, item, build = null) {
     if (!item) return null;
 
     // The first definition wins, and every duplicate key across the two layouts
@@ -1141,7 +1266,30 @@ export function refuseSlotDrop(slotKey, item) {
     if (!definition) return null;
 
     const rule = SLOT_RULES[definition.accepts ?? 'gear'];
-    return rule.test(item) ? null : rule.refusal(item);
+    if (!rule.test(item)) return rule.refusal(item);
+
+    if (weaponRefusesHand(item, slotKey)) {
+        return slotKey === 'bothhands'
+            ? `${item.name} is not a two-handed weapon.`
+            : `${item.name} needs both hands.`;
+    }
+
+    return null;
+}
+
+/**
+ * What filling this slot would displace, as a list of slot keys.
+ *
+ * EVICTS rather than refuses, which is the choice this window made for the
+ * importer and now keeps everywhere: taking a slot something else holds turns
+ * that one loose so you can see it happen, rather than refusing the drop and
+ * leaving you to work out which of three slots was in the way.
+ *
+ * Returns only slots that ARE filled, so the caller can ask "is anything going
+ * to move" without checking twice, and can name what moved.
+ */
+export function handConflicts(slotKey, build) {
+    return (HAND_CONFLICTS[slotKey] ?? []).filter(key => build?.slots?.[key]);
 }
 
 /** Set or clear one of a build's image paths. */
@@ -1554,6 +1702,73 @@ function playBuildSound(build) {
     }
 }
 
+/**
+ * Which dnd5e attack mode a slot means.
+ *
+ * The whole reason the Thrown slot earns its place: with it, every hand slot
+ * maps onto exactly one of the system's modes, and a weapon's position in the
+ * build says how it is being used. Before it, Main Hand meant "one-handed, or
+ * thrown, or the only weapon I own" and nothing could tell which.
+ */
+const SLOT_ATTACK_MODES = {
+    mainhand: 'oneHanded',
+    bothhands: 'twoHanded',
+    offhand: 'offhand',
+    thrown: 'thrown'
+};
+
+/**
+ * Tell dnd5e how each weapon in this build is being held.
+ *
+ * dnd5e remembers the last attack mode per activity in `dnd5e.last.<id>.attackMode`
+ * and reads it as the ROLL DIALOG'S DEFAULT. Writing it when a build is equipped
+ * means the dialog opens on One-Handed, Two-Handed, Offhand or Thrown to match
+ * the slot — from the tray, from the sheet, from a macro, because the memory
+ * belongs to the item rather than to whoever rolled it.
+ *
+ * Passing the mode at roll time was the alternative and it is worse twice over:
+ * it would only work from Squire's own buttons, and it would mean calling
+ * `activity.rollAttack()` instead of `item.use()`, losing ammunition
+ * consumption, templates and the rest of the usage flow.
+ *
+ * SELF-CORRECTING, which is what makes it safe to write: dnd5e validates the
+ * remembered mode against the weapon's own `attackModes` when it builds the
+ * dialog, and falls back to the first valid one. A mode we get wrong is a
+ * default that is quietly ignored, not a broken weapon.
+ *
+ * It writes a `dnd5e.*` flag — another module's namespace, not Squire's — which
+ * is a deliberate exception to this module's usual rule and worth knowing about.
+ * It is the identical value dnd5e writes when a player picks a mode by hand.
+ */
+async function writeAttackModes(actor, build) {
+    const updates = [];
+
+    for (const [slotKey, mode] of Object.entries(SLOT_ATTACK_MODES)) {
+        const item = actor?.items?.get(build?.slots?.[slotKey]);
+        if (item?.type !== 'weapon') continue;
+
+        // Per ACTIVITY, because that is where dnd5e keeps it — a weapon with two
+        // attack activities has two memories and setting one says nothing about
+        // the other.
+        for (const activity of item.system?.activities ?? []) {
+            if (activity?.type !== 'attack') continue;
+            updates.push({ _id: item.id, [`flags.dnd5e.last.${activity.id}.attackMode`]: mode });
+        }
+    }
+
+    // Merged by item id: one weapon with two activities is one update carrying
+    // two keys, not two updates racing to write the same document.
+    if (!updates.length) return 0;
+
+    const byItem = new Map();
+    for (const update of updates) {
+        byItem.set(update._id, { ...(byItem.get(update._id) ?? {}), ...update });
+    }
+
+    await actor.updateEmbeddedDocuments('Item', [...byItem.values()]);
+    return byItem.size;
+}
+
 export async function applyBuild(actor, build) {
     if (!actor || !build) return null;
 
@@ -1643,6 +1858,11 @@ export async function applyBuild(actor, build) {
     // One write for every item rather than one per item: sixteen separate
     // updates would each re-render the sheet and every panel watching it.
     if (updates.length) await actor.updateEmbeddedDocuments('Item', updates);
+
+    // How each weapon is being held, so the roll dialog opens on the right mode.
+    // After the equip rather than with it: a weapon that is not equipped has no
+    // business claiming a grip, and this write is about the ones that are.
+    if (!costume) await writeAttackModes(actor, build);
 
     // After the gear moves, so the sound reports something that happened rather
     // than something about to. Not awaited: it is a flourish, and the artwork
@@ -2170,6 +2390,36 @@ export function isInnateWeapon(item) {
     return mass === 0 && cost === 0;
 }
 
+/**
+ * A weapon you throw. The Thrown property, and nothing else.
+ *
+ * Strict on purpose: this is the slot that earns dnd5e's `thrown` attack mode,
+ * and a weapon without the property will never be offered that mode however it
+ * is planned. Planning one here would be planning a roll the system refuses.
+ */
+export function isThrownWeapon(item) {
+    return item?.type === 'weapon' && !!item.system?.properties?.has?.('thr');
+}
+
+/**
+ * A shield. Held, but never a weapon and never sheathed.
+ *
+ * dnd5e types it as equipment with an armour type of `shield`, which is the only
+ * reliable test — the name is not, and `equipment` alone covers half the game.
+ */
+export function isShield(item) {
+    return item?.type === 'equipment' && item.system?.type?.value === 'shield';
+}
+
+/**
+ * Something you drink, read or use up. Ammunition excluded — it has its own slot
+ * beside this one, and letting it land in either would make which one it got
+ * depend on the order the importer happened to try them.
+ */
+export function isConsumable(item) {
+    return item?.type === 'consumable' && item.system?.type?.value !== 'ammo';
+}
+
 export function isUnplannable(item) {
     if (isContainer(item)) return true;
     // Siege and improvised weapons only. A ballista is scenery and a thrown
@@ -2185,6 +2435,12 @@ export function isUnplannable(item) {
 function slotClaim(item) {
     if (isUnplannable(item)) return NOT_GEAR;
 
+    // BEFORE asking Blacksmith, because these two are about the slot rather than
+    // about the body location, and Blacksmith answers the second question. A
+    // potion is `carried` to it, which is true and lands it on a hip; the
+    // consumable slot is the better home and it exists now.
+    if (isConsumable(item)) return ['consumable', 'hip1', 'hip2'];
+
     const api = equipLocations();
     if (!api) return null;
 
@@ -2196,7 +2452,21 @@ function slotClaim(item) {
     if (!location) return null;
 
     if (location === 'held') {
-        const candidates = GRIP_SLOTS[grip] ?? GRIP_SLOTS.main;
+        let candidates = GRIP_SLOTS[grip] ?? GRIP_SLOTS.main;
+
+        // A THROWN weapon leads with the thrown slot. It is the whole reason
+        // that slot exists: a javelin is not a sidearm on your belt and not the
+        // thing in your off hand, and putting it in either was the best either
+        // of them could do before there was somewhere to say "I throw this".
+        if (isThrownWeapon(item)) candidates = ['thrown', ...candidates];
+
+        // A SHIELD is not a weapon, and a sheath holds weapons. Blacksmith gives
+        // a shield the same `off` grip it gives a dagger, and that grip leads
+        // with the sheath for the dagger's sake — so a shield went into a sheath,
+        // which is the bug this line exists to stop. Off hand first, as the
+        // sketch has it; main hand is legal and rare.
+        if (isShield(item)) return ['offhand', 'mainhand'];
+
         // A fist cannot be sheathed. The sheath is storage — somewhere to put a
         // thing you are not holding — and there is nothing to put.
         return isInnateWeapon(item) ? candidates.filter(key => key !== 'sheath') : candidates;
@@ -2404,9 +2674,9 @@ export function planImport(actor, build) {
     // apart on a figure.
     const READING_ORDER = [
         'head', 'face', 'neck', 'back', 'chest', 'arms', 'hands',
-        'ring1', 'ring2', 'hip1', 'hip2', 'waist', 'feet',
+        'ring1', 'ring2', 'hip1', 'hip2', 'waist', 'feet', 'consumable',
         // The things held rather than worn, after everything worn.
-        'mainhand', 'offhand', 'bothhands', 'sheath', 'ammo',
+        'mainhand', 'offhand', 'bothhands', 'sheath', 'thrown', 'ammo',
         'spell1', 'spell2', 'spell3'
     ];
 
@@ -2499,7 +2769,20 @@ export async function pullFromSheet(actor, buildId, { gear = false, prepared = f
             // proposal used to skip it, so a candidate list could put something
             // in a slot the doll itself would refuse — a shield in the sheath,
             // which shares a grip with a dagger and must never share its home.
-            if (refuseSlotDrop(key, item)) return false;
+            //
+            // The build it is given is the PROPOSAL SO FAR, not the saved build,
+            // which is what makes the hand rules work here: a greatsword placed
+            // into Both Hands has to see the Main Hand this same loop filled a
+            // moment ago, and the saved build knows nothing about either.
+            if (refuseSlotDrop(key, item, { slots })) return false;
+
+            // YOU HAVE TWO HANDS. A proposal must not hand somebody a loadout
+            // the doll would then refuse to let them edit — so rather than
+            // evicting (which is right for a deliberate drop and wrong for a
+            // guess) the automatic placer simply declines the slot and tries the
+            // item's next candidate.
+            if (handConflicts(key, { slots }).length) return false;
+
             slots[key] = item.id;
             return true;
         };

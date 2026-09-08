@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { renderTemplate } from './helpers.js';
-import { planImport } from './utility-builds.js';
+import { planImport, HAND_CONFLICTS } from './utility-builds.js';
 
 /**
  * The base class comes from Blacksmith's bridge module, not from `module.api` —
@@ -349,9 +349,15 @@ export class ImportWindow extends BlacksmithToolWindowBaseV2 {
                 // that one loose rather than double-booking the doll — and
                 // because the table is drawn from the map, you watch it drop
                 // into the unmapped list as it happens.
+                //
+                // AND TWO HANDS. Both Hands turns Main and Off loose; either of
+                // those turns Both loose. Same eviction, same visible result —
+                // the displaced item drops to Not mapped where you can see it —
+                // so the rule needs no second idiom to express itself here.
+                const freed = new Set([slotKey, ...(HAND_CONFLICTS[slotKey] ?? [])]);
                 if (slotKey) {
                     for (const [other, key] of Object.entries(this.assignment)) {
-                        if (other !== itemId && key === slotKey) this.assignment[other] = '';
+                        if (other !== itemId && freed.has(key)) this.assignment[other] = '';
                     }
                 }
                 this.assignment[itemId] = slotKey;

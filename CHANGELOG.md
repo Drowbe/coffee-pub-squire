@@ -11,6 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Two new slots, and the doll's rows shift up to make room.** Face and Neck join the top row beside the portrait and token circles, so the side columns run the whole height; the Hips move to the edges beside the Rings, and Waist and Feet fill the middle they vacated. Five columns still, so the window does not change size.
+  - **Consumable**, at the end of row five. A potion, a scroll, an elixir — ammunition excluded, since it has its own slot beside it. **One slot, not two**: a typed slot buys intent and spends capacity, and of the things a character carries with nowhere to put them — a potion, a holy symbol, a component pouch, thieves' tools, a wand — exactly one is a consumable. The two Hips beside it stay generic, which is what makes them worth having two of.
+  - **Thrown**, in the middle of row six between the sheath and the ammunition — the company it keeps, three things carried rather than worn. **Strict**: only weapons with the Thrown property, because this is the slot that earns dnd5e's `thrown` attack mode and a weapon without it will never be offered that mode however it is planned.
+
+- **The build tells dnd5e how each weapon is being held.** Equipping writes `dnd5e.last.<activity>.attackMode` per weapon to match its slot, which is what the roll dialog reads as its default — so **Attack Mode** opens on One-Handed, Two-Handed, Offhand or Thrown to match the build, from the tray, the sheet or a macro.
+  - This is what the Thrown slot buys beyond tidiness: with it, every hand slot maps onto exactly one of the system's modes. Main Hand used to mean "one-handed, or thrown, or the only weapon I own" and nothing could tell which.
+  - Written per **activity**, since that is where dnd5e keeps it, and merged per item so a weapon with two attack activities is one update rather than two racing writes.
+  - Safe because it is self-correcting: dnd5e validates the remembered mode against the weapon's own `attackModes` and falls back to the first valid one, so a mode we get wrong is a default quietly ignored rather than a broken weapon. It is a deliberate exception to this module's usual rule of writing only its own flags, and it writes the identical value dnd5e writes when a player picks a mode by hand.
+
+- **You have two hands, and the three hand slots now add up.** Both Hands excludes Main and Off; either of those excludes Both; Main and Off together are the ordinary way to fight.
+  - **It evicts and says so first**, rather than refusing. The importer already worked this way and one window with two idioms for the same event would be worse than either — and a refusal is the less useful answer anyway: you dropped a greatsword on Both Hands, so putting down the sword and shield is what you meant.
+  - The automatic placer **declines instead of evicting**, and tries the item's next candidate slot. Evicting is right for a deliberate drop and wrong for a guess.
+  - Enforced in all three paths that place an item — the drop, the importer's placement, the import window's dropdowns — from **one exported map**. Those paths diverging once already produced a shield in a sheath.
+
+- **Weapon eligibility comes from dnd5e's own `attackModes`.** A greatsword cannot go in one hand; a dagger cannot go in Both. That list is what the roll dialog offers, so the doll and the dice cannot disagree about what a weapon can do.
+  - **The Light property is deliberately not enforced on the slot.** dnd5e gates the `offhand` *mode* on Light, and rightly — two-weapon fighting needs it. But the Off Hand *slot* means "what is in your other hand", and it takes a torch, a lantern, a holy symbol, a shield. You can hold a longsword in your left hand; you simply cannot two-weapon-fight with it. Light decides the mode, not the slot.
+  - **A weapon with no hand modes is not restricted.** A dart is thrown-and-ranged, and dnd5e gives it `thrown` and `thrown-offhand` only — no `oneHanded` at all. Silence there means the system has not modelled the question, not that the answer is no.
+
 - **A quick-cast slot warns when the build does not prepare the spell in it.** Take a spell out of the prepared column while a doll slot still asks for it and the slot is marked straight away — equipping the build would leave that slot uncastable, the column being what does the preparing.
   - **It shows while you are building, not after you equip.** This asks nothing about the character: it compares a build's slots against a build's own prepared list, so it needs no actor and appears on any build you are looking at. The first version routed it through drift, which exists only for the build being *worn* — meaning the one moment you could not see a broken build was while you were building it, and the warning arrived after equipping, which is exactly too late.
   - **A different fault from drift, and it says so.** Drift means the character has moved away from the plan; this means the plan does not agree with itself. The tooltip reads *"Fireball is not in this build's prepared spells — equipping it would leave this slot uncastable"* rather than borrowing drift's wording.
@@ -94,6 +112,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - There are no leftovers to report any more, by construction: every item is on the table with an answer the player chose. The one exception is the automatic first-run snapshot, which still cannot ask, so what it could not place is shown on the doll when the window opens.
 
 ### Fixed
+
+- **A shield could be put in a sheath.** Blacksmith gives a shield the same `off` grip it gives a dagger, and that grip leads with the sheath for the dagger's sake — so the automatic placer sheathed shields. A shield is now recognised on its own (`equipment` with an armour type of `shield`), goes to the Off Hand first and the Main Hand second, and is refused by the sheath outright, which only ever wanted weapons.
+
+- **A slot holding something the rules now refuse is marked, never moved.** A greatsword in one hand, a shield in a sheath, or a build written before any of this existed keeps exactly what its author put there and gets the same amber warning a drifted slot gets, saying why and that it will stay put. Nothing in this window rearranges a plan somebody made. It catches both kinds of fault: an item a slot would refuse, and two hand slots filled that exclude each other — the second of which a drop can no longer produce but a saved build can still contain.
 
 - **Transparent token art showed the picture behind it.** A token image usually has an alpha channel, and on a build tile it sat directly on the tile's own artwork — so the figure read as a hole cut in the tile rather than as a token. The preview circles in the rail and the build tiles on the tray handle now have a ground of their own.
   - The portrait circle gets it too. It is normally opaque, but a pair of circles that match only until one of them happens to have an alpha channel is worse than two that always agree.

@@ -8,7 +8,7 @@ import {
     getBuilds, getBuild, createBuild, deleteBuild, duplicateBuild, applyBuild, buildSummary,
     renameBuild, setBuildSlot, moveBuildSlot, resolveSlots, attunementSummary,
     getPreparingClasses, getSpellSlots, resolvePreparedSpells, setBuildSpell,
-    refuseSlotDrop, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
+    refuseSlotDrop, handConflicts, gearWeight, resolveImageSlots, setBuildImage, captureDefaultImages,
     resolveTokenSettings, setBuildTokenSetting, toggleBuildFavorite, setBuildSound,
     getHandleBuildIds, addBuildToHandle, removeBuildFromHandle,
     pullCostumeFromSheet,
@@ -1716,7 +1716,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const item = itemId ? this.actor?.items?.get(itemId) : null;
         // Silent on an item this slot would refuse: promising an AC change for a
         // drop that is about to be turned down would be a lie.
-        if (!item || refuseSlotDrop(slotKey, item)) return;
+        if (!item || refuseSlotDrop(slotKey, item, this.build)) return;
 
         const now = {
             ac: estimateArmorClass(this.actor, this.build).value,
@@ -1841,8 +1841,8 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             const moving = this.actor?.items?.get(this.build.slots?.[from]);
             const displaced = this.actor?.items?.get(this.build.slots?.[slot.dataset.slot]);
 
-            const refusal = (moving && refuseSlotDrop(slot.dataset.slot, moving))
-                || (displaced && refuseSlotDrop(from, displaced));
+            const refusal = (moving && refuseSlotDrop(slot.dataset.slot, moving, this.build))
+                || (displaced && refuseSlotDrop(from, displaced, this.build));
             if (refusal) {
                 ui.notifications.warn(refusal);
                 return;
@@ -1882,10 +1882,42 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             // non-physical anywhere, plus rings, ammo, and hands. See
             // SLOT_RULES. A refusal always says what the slot wanted, because
             // "nothing happened" is the least useful answer to a failed drag.
-            const refusal = refuseSlotDrop(slotKey, item);
+            const refusal = refuseSlotDrop(slotKey, item, this.build);
             if (refusal) {
                 ui.notifications.warn(refusal);
                 return;
+            }
+
+            // YOU HAVE TWO HANDS. Filling Both Hands empties Main and Off, and
+            // filling either of those empties Both.
+            //
+            // It EVICTS rather than refuses, and says so before it does. The
+            // importer already works this way — take a slot something holds and
+            // you watch the loser drop out — and one window with two idioms for
+            // the same event would be worse than either. A refusal here would
+            // also be the less useful answer: you dropped a greatsword on Both
+            // Hands, so putting down the sword and shield is what you meant.
+            const conflicts = handConflicts(slotKey, this.build);
+            if (conflicts.length) {
+                const names = conflicts
+                    .map(key => this.actor?.items?.get(this.build.slots[key])?.name)
+                    .filter(Boolean);
+
+                const confirmed = await getBlacksmith().dialog.confirm({
+                    title: 'Free Up Your Hands',
+                    content: `<p>Put <strong>${foundry.utils.escapeHTML(item.name)}</strong> in `
+                        + `<strong>${slotKey === 'bothhands' ? 'Both Hands' : (slotKey === 'mainhand' ? 'Main Hand' : 'Off Hand')}</strong>?</p>`
+                        + `<p>You only have two hands, so ${names.length === 1 ? 'this comes out' : 'these come out'}: `
+                        + `<strong>${names.map(n => foundry.utils.escapeHTML(n)).join('</strong>, <strong>')}</strong>.</p>`
+                        + '<p>They stay in the build&rsquo;s other slots if you have room, or you can place them again afterwards.</p>',
+                    confirmLabel: 'Free the Hands',
+                    confirmIcon: 'fa-solid fa-hand-fist'
+                });
+                if (!confirmed) return;
+
+                for (const key of conflicts) {
+                    await setBuildSlot(this.actor, this.buildId, key, null);
+                }
             }
 
             // Measured before and after, so a swap can say whether it was an
