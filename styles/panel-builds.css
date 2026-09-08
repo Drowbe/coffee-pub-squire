@@ -1499,10 +1499,79 @@
     box-shadow: 0 0 11px rgba(212, 85, 58, 0.6);
 }
 
-/* Portrait and token. Round like the ammo slots, and a click rather than a drop:
-   they hold an image path, so there is nothing on the sheet to drag into them. */
+/* THE THREE PICTURES. A click rather than a drop: they hold an image path, so
+   there is nothing on the sheet to drag into them.
+
+   That is why they carry a border the gear slots do not. A slot is a drop
+   target and these are not, and until they had a mark of their own the only
+   thing distinguishing them was being round — which the ammunition slot is too.
+   The ring is faint on purpose: it separates them from their neighbours without
+   competing with the artwork inside them. */
 .squire-build-image-slot {
     cursor: pointer;
+    box-shadow: 0 0 0 1px rgba(244, 231, 205, 0.35);
+}
+
+.squire-build-image-slot:hover {
+    box-shadow: 0 0 0 1px var(--blacksmith-color-brand-accent, var(--blacksmith-tool-accent));
+}
+
+/* PORTRAIT AND TOKEN, ON THE MAIN IMAGE.
+
+   They were in the grid flanking the head, where they looked like two more
+   slots and nothing said they belonged with the picture in the middle. On the
+   image, left and right, they read as what they are: three views of one
+   character, edited together.
+
+   Vertically centred and NOT in the corners — those carry the armour class, the
+   attunement count and the weight, and they are the most readable places in this
+   window. The middle of each edge is the quietest spot that is still obviously
+   part of the same object.
+
+   Sized off the image rather than fixed, so they stay in proportion at any
+   window width; 22% is small enough to leave the figure readable behind them. */
+.squire-build-image-float {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 50%;
+    background: rgb(8, 6, 4);
+    z-index: 2;
+}
+
+/* Close to the edge, not against it: the inset is small enough that they read as
+   sitting ON the picture rather than floating in the middle of it, and large
+   enough that the ring is not clipped by the image's own rounded corner. */
+.squire-build-image-float-portrait { left: 3%; }
+.squire-build-image-float-token { right: 3%; }
+
+.squire-build-image-float img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 0;
+}
+
+/* The hint glyph and the "this build sets it" dot, scaled to the smaller
+   circle — at the grid slot's size they filled it. */
+.squire-build-image-float .squire-build-slot-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.1em;
+    opacity: 0.5;
+}
+
+.squire-build-image-float .squire-build-image-change {
+    position: absolute;
+    right: 4%;
+    bottom: 4%;
+    font-size: 0.6em;
 }
 
 /* Solid once the BUILD has chosen one. Dashed while it is only showing the

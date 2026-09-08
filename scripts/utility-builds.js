@@ -113,17 +113,21 @@ const SLOT_RULES = {
  * `row` and `column` are 1-based CSS grid lines. The portrait sits in the middle
  * of rows 2–4, which is why the side columns skip column 2–4 entirely.
  *
- *   FACE  (portrait)  HEAD  (token)  NECK
+ *          FACE  HEAD  NECK
  *   BACK   [                    ]   CHEST
  *   ARMS   [     portrait       ]   HANDS
  *   RING1  [                    ]   RING2
  *   HIP1   WAIST   FEET   CONSUM   HIP2
  *
- * The side columns run the WHOLE height now, Face and Neck included: they used
- * to start a row lower, which left row 1 holding a lone helmet between two
- * picture circles and pushed everything below it down. Bringing them up freed
- * the middle of row 5 for the two slots that had nowhere to be — a consumable,
- * and (in row six) a thrown weapon — without widening the doll by a column.
+ * Face and Neck came up from row 2, which freed the middle of row 5 for the two
+ * slots that had nowhere to be — a consumable, and (in row six) a thrown weapon
+ * — without widening the doll by a column.
+ *
+ * They sit BESIDE the head rather than at the ends of the row. The portrait and
+ * token circles used to fill columns 2 and 4; once those moved onto the main
+ * picture, leaving Face and Neck at the far edges left two holes with a helmet
+ * marooned between them. Three together read as a head, and the empty corners
+ * read as air rather than as slots that failed to draw.
  *
  * The pairs sit at the EDGES and that is the rule the eye reads the doll by:
  * Ring and Ring, then Hip and Hip. Waist and Feet fill the middle because
@@ -164,9 +168,9 @@ const HINTS = {
  * their bandolier, they just want to know what people normally put there.
  */
 export const BUILD_CORE_SLOTS = [
-    { key: 'face',  label: 'Face',  icon: 'fa-mask',              row: 1, column: 1, hint: 'Masks, goggles, spectacles, veils.' },
+    { key: 'face',  label: 'Face',  icon: 'fa-mask',              row: 1, column: 2, hint: 'Masks, goggles, spectacles, veils.' },
     { key: 'head',  label: 'Head',  icon: 'fa-helmet-battle',     row: 1, column: 3, hint: 'Helms, hats, circlets, crowns.' },
-    { key: 'neck',  label: 'Neck',  icon: 'fa-gem',               row: 1, column: 5, hint: 'Amulets, necklaces, periapts, holy symbols.' },
+    { key: 'neck',  label: 'Neck',  icon: 'fa-gem',               row: 1, column: 4, hint: 'Amulets, necklaces, periapts, holy symbols.' },
     { key: 'back',  label: 'Back',  icon: 'fa-backpack',          row: 2, column: 1, hint: 'Cloaks, capes, mantles, packs.' },
     { key: 'chest', label: 'Chest', icon: 'fa-vest',              row: 2, column: 5, hint: 'Armour, robes, tunics — the thing your AC comes from.' },
     { key: 'arms',  label: 'Arms',  icon: 'fa-shirt-long-sleeve', row: 3, column: 1, hint: 'Bracers, vambraces, sleeves.' },
@@ -326,19 +330,22 @@ const SPELL_SLOT_KEYS = new Set(
 export const BUILD_SLOT_KEYS = [...new Set(ALL_SLOT_DEFINITIONS.map(slot => slot.key))];
 
 /**
- * The two image slots, flanking the head.
+ * The two image slots, drawn ON the main picture rather than in the grid.
  *
  * Not gear. They hold an image PATH rather than an item id, and they are the
  * part of a build that describes the character rather than what the character is
  * carrying: applying a build sets the actor's portrait and its token artwork
  * from these.
  *
- * Round, like the ammunition slot, and for the same reason — a circle marks "not
- * the same kind of thing as its neighbours" without spending a word on it.
+ * NO ROW OR COLUMN, and that is the change. They used to flank the head as two
+ * more cells of the doll, which made them look like slots — and a slot is a drop
+ * target, which these are not. They are positioned by CSS on the left and right
+ * of the main image now, so the three pictures read as what they are: three
+ * views of one character, edited together.
  */
 export const BUILD_IMAGE_SLOTS = [
-    { key: 'portrait', label: 'Portrait', icon: 'fa-image-portrait', row: 1, column: 2 },
-    { key: 'token',    label: 'Token',    icon: 'fa-chess-pawn',     row: 1, column: 4 }
+    { key: 'portrait', label: 'Portrait', icon: 'fa-image-portrait' },
+    { key: 'token',    label: 'Token',    icon: 'fa-chess-pawn' }
 ];
 
 /**

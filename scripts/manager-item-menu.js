@@ -25,7 +25,7 @@
 // ============================================================================
 
 import { MODULE } from './const.js';
-import { getBlacksmith, isContainerItem, getContainedItems } from './helpers.js';
+import { getBlacksmith, isContainerItem, getContainedItems, showSquireToast } from './helpers.js';
 // A CYCLE, and a deliberate one: panel-favorites.js imports `buildItemMenu`
 // from here so its own right-click menu can begin with the shared entries.
 //
@@ -148,13 +148,55 @@ export function buildItemMenu(actor, item) {
     const noun = itemNoun(item);
     const entries = [];
 
-    // FIRST, because it is the one that only reads. The row's title does the
-    // same thing on a click; this is here for the reader who came to the menu
-    // looking for it rather than knowing the title was live.
+    // WHAT YOU RIGHT-CLICKED, said at the top.
+    //
+    // A context menu opens near the cursor but not on it, and with nine entries
+    // it is tall enough to drift a long way from the row that opened it — so by
+    // the time you have read down to Delete, the thing you are about to delete
+    // is off the top of your attention. The heading is the answer to "delete
+    // WHAT", asked at the moment it matters.
+    //
+    // `information` rather than a disabled row: a disabled entry dims itself and
+    // shows a not-allowed cursor, which says an action was taken away from you
+    // rather than that you are reading a statement.
+    entries.push({
+        information: true,
+        name: item.name,
+        description: noun,
+        icon: `<img class="context-menu-item-portrait" src="${foundry.utils.escapeHTML(item.img ?? '')}" alt="">`
+    });
+
+    entries.push({ separator: true });
+
+    // FIRST of the actions, because it is the one that only reads. The row's
+    // title does the same thing on a click; this is here for the reader who came
+    // to the menu looking for it rather than knowing the title was live.
     entries.push({
         name: `View ${noun} Details`,
         icon: 'fa-solid fa-feather',
         callback: () => item.sheet?.render(true)
+    });
+
+    // Grouped with View Details because neither changes anything: one shows the
+    // item, the other hands you a reference to it. Sending it to chat used to
+    // sit here too and has moved down to join sending it to a person — the two
+    // are one idea with two destinations, which is what a flyout is for.
+    entries.push({
+        name: 'Copy UUID Link',
+        icon: 'fa-solid fa-link',
+        callback: async () => {
+            // `item.link` is the enricher form — `@UUID[...]{Name}` — which is
+            // what you paste into a journal or a chat message and get a working
+            // link with a readable name. The bare uuid is the fallback for a
+            // document that has no link getter; it still resolves, it just
+            // arrives as a wall of ids.
+            const link = item.link ?? `@UUID[${item.uuid}]{${item.name}}`;
+            await game.clipboard.copyPlainText(link);
+            showSquireToast(item.name, {
+                subtitle: 'Link copied to the clipboard',
+                icon: 'fa-solid fa-link'
+            });
+        }
     });
 
     entries.push({ separator: true });
@@ -195,13 +237,39 @@ export function buildItemMenu(actor, item) {
         }
     });
 
-    // MOVE, SEND, DELETE — the three that change where a thing IS, fenced off
-    // from the four above that only change how it is marked.
+    // SEND, MOVE, DELETE — the three that change where a thing IS, fenced off
+    // from the ones above that only change how it is marked.
     const containers = physical && owns ? containerOptions(actor, item) : [];
     const inContainer = !!item.system?.container;
 
+    entries.push({ separator: true });
+
+    // ONE IDEA, TWO DESTINATIONS. "Send to Chat" and "Send Item…" were separate
+    // rows at opposite ends of the menu, which made two halves of the same
+    // sentence look like unrelated features. Chat is always available — anything
+    // with a card can be shown to the table — and a person is not, since a
+    // feature cannot be handed over.
+    const destinations = [];
+    if (physical && owns) {
+        destinations.push({
+            name: 'A character…',
+            icon: 'fa-solid fa-user',
+            callback: () => sendItem(actor, item)
+        });
+    }
+    destinations.push({
+        name: 'The chat',
+        icon: 'fa-solid fa-comment',
+        callback: () => item.displayCard?.()
+    });
+
+    entries.push({
+        name: 'Send to',
+        icon: 'fa-solid fa-share',
+        submenu: destinations
+    });
+
     if (containers.length || inContainer) {
-        entries.push({ separator: true });
 
         const submenu = containers.map(container => ({
             name: container.name,
@@ -225,14 +293,6 @@ export function buildItemMenu(actor, item) {
             name: 'Move to Container',
             icon: 'fa-solid fa-backpack',
             submenu
-        });
-    }
-
-    if (physical && owns) {
-        entries.push({
-            name: `Send ${noun}…`,
-            icon: 'fa-solid fa-share',
-            callback: () => sendItem(actor, item)
         });
     }
 

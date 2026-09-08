@@ -1585,8 +1585,17 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
             });
         });
 
+        // NESTED, since the portrait and token circles sit ON the main image and
+        // the main image is an image slot too. Without stopping the event, a
+        // click on a circle bubbles to its parent and both handlers run — so
+        // choosing a token opened the file picker for the build's own picture
+        // instead, which looked like the click had simply gone to the wrong
+        // place. It had gone to both.
         root.querySelectorAll('.squire-build-image-slot').forEach(slot => {
-            slot.addEventListener('click', () => this._pickImage(slot.dataset.image));
+            slot.addEventListener('click', (event) => {
+                event.stopPropagation();
+                this._pickImage(slot.dataset.image);
+            });
             slot.addEventListener('contextmenu', async (event) => {
                 event.preventDefault();
                 event.stopPropagation();

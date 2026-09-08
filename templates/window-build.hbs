@@ -512,30 +512,6 @@
         </div>
         {{/each}}
 
-        {{!-- Portrait and token, flanking the head. Not gear: these hold an image
-              path, not an item, so they take a click rather than a drop. Round,
-              like the ammo slots, because a circle marks "different kind of
-              thing" without spending a word. --}}
-        {{#each imageSlots}}
-        <div class="squire-build-slot is-round squire-build-image-slot{{#unless this.isDefault}} is-set{{/unless}}"
-             style="grid-row: {{this.row}}; grid-column: {{this.column}};"
-             data-image="{{this.key}}"
-             data-tooltip="{{this.label}}{{#if this.isDefault}} — this build does not change it, so the character's own stays<br><em>Click to choose an image</em>{{else}} — this build sets it when applied<br><em>Click to change, right-click to reset</em>{{/if}}">
-            {{#if this.path}}
-            <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}" data-image-kind="{{this.key}}">
-            {{/if}}
-            <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
-            {{!-- An unset slot shows the character's CURRENT artwork, which made
-                  it look chosen when it was not — and a build only writes the
-                  images it actually sets, so an unset portrait silently changes
-                  nothing on apply. The dashed border said that already; this
-                  says it in a word. --}}
-            {{#unless this.isDefault}}
-            <i class="fa-solid fa-circle-dot squire-build-image-change"
-               data-tooltip="<strong>On.</strong> Wearing this sets the character's {{this.label}}.<br>Right-click the picture to switch it off, and the character keeps their own."></i>
-            {{/unless}}
-        </div>
-        {{/each}}
 
         {{!-- The portrait, filling the middle of the doll. Not a slot and not
               droppable: it is there so the ring of slots reads as a body rather
@@ -602,6 +578,41 @@
                 <span>{{attunement.unattuned}}</span>
             </div>
             {{/if}}
+            {{!-- THE THREE PICTURES ARE ONE SYSTEM, so they are drawn as one.
+
+                  Portrait and token used to sit in the grid flanking the head, which
+                  made them look like two more slots — and a slot is a drop target,
+                  which these are not: they hold an image PATH and take a click.
+                  Nothing said they belonged with the picture in the middle.
+
+                  They are on the main image now, left and right, vertically centred.
+                  Deliberately not in its corners: those carry the armour class, the
+                  attunement count and the weight, and they are the most readable
+                  places in this window. Middle of each edge is the quietest spot
+                  that still reads as part of the same object.
+
+                  They keep a border the gear slots do not have, which is the second
+                  half of saying they are a different kind of control. --}}
+            {{#each imageSlots}}
+            <div class="squire-build-image-float squire-build-image-float-{{this.key}} squire-build-image-slot{{#unless this.isDefault}} is-set{{/unless}}"
+                 data-image="{{this.key}}"
+                 data-tooltip="{{this.label}}{{#if this.isDefault}} — this build does not change it, so the character's own stays<br><em>Click to choose an image</em>{{else}} — this build sets it when applied<br><em>Click to change, right-click to reset</em>{{/if}}">
+                {{#if this.path}}
+                <img class="squire-build-slot-image" src="{{this.path}}" alt="{{this.label}}" data-image-kind="{{this.key}}">
+                {{/if}}
+                <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
+                {{!-- An unset slot shows the character's CURRENT artwork, which made
+                      it look chosen when it was not — and a build only writes the
+                      images it actually sets, so an unset portrait silently changes
+                      nothing on apply. The dashed border said that already; this
+                      says it in a word. --}}
+                {{#unless this.isDefault}}
+                <i class="fa-solid fa-circle-dot squire-build-image-change"
+                   data-tooltip="<strong>On.</strong> Wearing this sets the character's {{this.label}}.<br>Right-click the picture to switch it off, and the character keeps their own."></i>
+                {{/unless}}
+            </div>
+            {{/each}}
+
         </div>
     </div>
 
