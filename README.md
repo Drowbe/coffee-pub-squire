@@ -26,6 +26,10 @@ with item transfers, reputation, and the GM's party tools.
   as a list or as a wall of tiles you can size and sort.
 - **Filters that answer a question.** Section tabs pick what you are looking at; five chips ask what
   it costs to use; two switches narrow to what is equipped or prepared right now.
+- **Gear builds and costumes.** Plan a set of gear on a paper doll, prepare the spells that go with
+  it, and put the whole thing on in one click -- with a sound, and optionally with the GM's approval.
+  Costumes are the same idea for a portrait and a token: a disguise, a wild shape, a change of
+  clothes, changing how a character looks and touching no gear.
 - **Item transfers between characters.** Drag an item onto a party member, or use the send arrow.
   Optionally routed through the GM for approval, with chat cards carrying each step.
 - **A party view.** Everyone on the scene with their health, plus per-scene party reputation and, for

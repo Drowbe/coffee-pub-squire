@@ -76,7 +76,20 @@ switch to opt in — an empty list already says everything a switch would.
 `system.countsPrepared`. That getter includes `prepared === prepared.value`, making it *"is currently
 prepared"* rather than *"may be prepared"* — reading it the second way meant applying a build could
 only ever unprepare. Cantrips and always-prepared spells are excluded: the first are never chosen, the
-second are granted.
+second are granted. It reads `CONFIG.DND5E.spellcasting[method].prepares` rather than a list of method
+names kept here, which is the same table the system consults and the same one the tray's Spells panel
+asks — so all three agree by construction.
+
+**Whether the column appears** is `canPrepareSpells()`, and its three clauses go from inference to
+fact: a class that prepares, any spell slot, or — the one that matters — owning a spell
+`canBuildPrepare` accepts. The first two ask what *kind* of character this is and both miss the same
+case, a fighter handed a spell by their GM with neither the class nor the slots to explain it.
+
+**How many** is `preparedLimit()`, in the same spirit. dnd5e's `preparation.max` where the system has
+an answer; otherwise the number of preparable spells the character owns. That second source
+constrains nothing they could have done anyway, and it beats the alternatives: `0` put every cell past
+the limit and left the column visible but unusable, and no ceiling at all showed 26 live cells to a
+character with two spells.
 
 ## Applying
 
@@ -112,6 +125,27 @@ rail says **Last worn** with a warning triangle rather than "modified".
 
 A build naming no spells has no opinion about the prepared list, so it cannot drift from it. That test
 reads the list from the same place `applyBuild` does, so the two can never disagree.
+
+**Slots are split by what they hold.** `SPELL_SLOT_KEYS` marks the quick-cast slots, and their
+contents are compared against what is *prepared* rather than what is *equipped*. Comparing every slot
+against the equipped items meant a caster's big three were permanently drifted — a spell can never be
+equipped — and each one inflated the difference count beside **Last worn**.
+
+### A build that disagrees with itself
+
+Separate from drift, and the distinction is the point. Drift asks *has the character moved away from
+this plan*, so it exists only for the build being **worn**. `resolveSlots` also asks *does this plan
+agree with itself*: a quick-cast slot holding a spell the build's own prepared column does not list
+will be uncastable once equipped.
+
+That question needs no actor, so it is answered in `resolveSlots` from the build alone and shows for
+whatever build is on screen. Routing it through `buildDrift` — where it started — meant the one moment
+you could not see a broken build was while you were building it.
+
+It is deliberately **out** of `count` and `matches`. Those answer how far the character has moved from
+the plan, and a fault in the plan itself would put a number there that no amount of equipping could
+clear. It also checks `canBuildPrepare` first: an innate or at-will spell in a quick-cast slot is
+exactly where it belongs and needs no preparing.
 
 ## Importing
 

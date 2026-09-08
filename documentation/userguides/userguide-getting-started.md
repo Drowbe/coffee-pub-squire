@@ -106,6 +106,14 @@ do not have to open a sheet to read what something does. Middle-click the card t
 
 The Spells section groups by level and shows the slots you have left on each.
 
+Spells that are **not** cast from a slot get sections of their own above the levels. **At-Will** is for
+the ones with no limit at all, marked with an infinity sign. **Innate** is for the ones a feature, a
+racial trait or an item granted you -- a fighter's Misty Step, a tiefling's Hellish Rebuke. They are
+kept apart from the levelled spells because nothing prepares them: they are yours whatever your
+prepared list says, and the sun that toggles Prepared does not appear on them. Any limit on their uses
+belongs to the spell rather than the group, so the Innate heading claims nothing about how often you
+can cast them.
+
 ![The Spells section: cantrips and levelled spells, with the remaining slots shown against each level](../assets/userguide-spells.webp)
 
 Inventory can be read as a flat list or grouped by container. The toggle is on the Inventory section's
@@ -138,12 +146,15 @@ slot at each end, a **sheath** for the dagger or hand axe you draw without think
 ammunition. If you do prepare spells the emphasis flips: the big three become quick-cast slots for the
 spell or feature you reach for first, second and third, and your weapons move up into the smaller row. **The picture in the middle is the build's own.** Click it to choose one, right-click to reset. Until you set one it borrows the build's portrait, or your character's own face -- and once set it stays put no matter what outfit you put on, because it belongs to the build rather than the character. The two circles beside the head hold a **portrait** and a **token** image. Click either to pick a picture, right-click to reset it. Until you set one, each shows what your character already uses. Right-click a gear slot to empty it; right-click a build's tile to open, duplicate or delete it. Duplicating is the quick way to try a variant -- the same set with one thing swapped -- without building it again from nothing. The foot of the window totals what the gear weighs.
 
-**If your character prepares spells**, a column of twenty-six small squares runs down the right of the
-doll, past a dividing rule, starting level with the top of the neck slot. That is your prepared list
+**If your character has any spell worth preparing**, a column of twenty-six small squares runs down
+the right of the doll, past a dividing rule, starting level with the top of the neck slot. That is your prepared list
 -- drag spells into it the same way you drag gear. An empty square shows a glyph and its number, so
 you can see at a glance which are open and how far down the list you are; both go once there is a
 spell in it. All twenty-six squares are always drawn, and the ones past what you can prepare are
-dimmed and will not take a spell -- they are there to show what levelling up will buy. A multiclass
+dimmed and will not take a spell -- they are there to show what levelling up will buy. How many you
+can prepare comes from your class where D&D 5e can work it out. Where it cannot -- a fighter handed a
+spell by the GM, say -- the limit is simply the number of preparable spells you own, so you can plan
+every one of them and no more. A multiclass
 caster gets one list rather than one per class, because preparing a spell in this game is a fact about
 the spell rather than about the class that taught it. Your spell slots sit in the square at the top of
 the column: a three by three of all nine ranks, first in the corner and ninth in the far one, with the
@@ -152,8 +163,15 @@ not tied to a particular slot in this game, so they are something to read rather
 fill in. Cantrips are not shown at all, being always available and never
 prepared.
 
-A character who prepares nothing has no such column, and their window is narrower by exactly that
-much. Their build is the doll.
+A character with nothing to prepare has no such column, and their window is narrower by exactly that
+much. Their build is the doll. Cantrips, innate and at-will spells do not count towards this -- none
+of them is ever prepared, so having only those is the same as having none.
+
+**A quick-cast slot warns if the build does not prepare the spell in it.** Put a spell in one of the
+big three and then leave it out of the prepared column, and the slot is marked straight away: equipping
+the build would prepare the column and leave that slot uncastable. The warning shows while you are
+building rather than after you equip, and it does not appear for a spell that needs no preparing --
+an innate spell in a quick-cast slot is exactly where it belongs.
 
 The column is sized off the doll rather than chosen: four of its squares, with the gaps between them,
 come to exactly one gear slot -- you could drop them into the neck box and they would fit it. That is
@@ -213,11 +231,15 @@ right-click menu has **Convert to Costume** / **Convert to Build** for changing 
 Converting clears the other mode's contents and says so first: what carries over is the name, the
 pictures, the heart and the sound.
 
-Each entry in the rail shows its estimated armour class and how many slots are filled. The **runner**
-button equips it: everything in the build goes on, everything else comes off,
-its spells are prepared and anything else that counts against a preparation limit is unprepared. It
-asks first and tells you exactly what it will do. Attunement is never changed for you -- that is a
-decision for your table. Tokens already on the map are repainted too, not just the portrait. If you
+Each entry in the rail shows its estimated armour class and how many slots are filled. The **shirt**
+button on it equips it -- a **masks** button on a costume, the same two glyphs used everywhere in this
+window for the two kinds of thing. Equipping puts everything in the build on and takes everything else
+off, prepares its spells, and unprepares anything else that counts against a preparation limit.
+
+**A build asks first and tells you exactly what it will do; a costume does not.** Equipping takes
+things off, which is worth naming before it happens. A costume changes artwork and touches no gear, so
+the question stood between you and the fast thing you came to do -- and the toast still carries the
+undo either way. Attunement is never changed for you -- that is a decision for your table. Tokens already on the map are repainted too, not just the portrait. If you
 change your mind, the toast that appears afterwards can be clicked to undo the whole thing; ignore it
 and the change stays.
 
