@@ -915,6 +915,14 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // come from the same build this just changed.
         await PanelManager.instance?.handleManager?.updateHandle();
 
+        // The tray's Builds panel, ALWAYS — not behind the `tray` flag below.
+        // Its whole visibility rule is "are any builds favourited", and
+        // favouriting one is a flag write that changes nothing else in the tray,
+        // so it would never reach the heavier refresh. Renaming, deleting and
+        // converting are the same. It reads one flag and draws a few rows.
+        const manager = PanelManager.instance;
+        if (manager?.element) await manager.buildsPanel?.render(manager.element);
+
         // The TRAY's panels, but only when something on the character moved.
         //
         // Editing a build writes a flag and changes nothing the tray shows, so
@@ -936,10 +944,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // never once run; calling it here made a never-executed method execute,
         // which is not a thing to discover during a bug fix. The panels are what
         // changed, so the panels are what re-render.
-        if (tray) {
-            const manager = PanelManager.instance;
-            if (manager?.element) await manager.renderPanels(manager.element);
-        }
+        if (tray && manager?.element) await manager.renderPanels(manager.element);
     }
 
     /**

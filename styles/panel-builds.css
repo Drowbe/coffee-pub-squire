@@ -112,6 +112,103 @@
     border-bottom: 1px solid rgba(159, 146, 117, 0.25);
 }
 
+/* ==========================================================================
+   THE FAVOURITE BUILDS, IN THE TRAY
+
+   A ROW, not a tile. The builder's rail uses squares because it is a gallery you
+   browse; this sits in a column of item lists that are all rows, and matching
+   its neighbours is worth more here than matching the window it came from.
+   ========================================================================== */
+.squire-tray .squire-tray-builds {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.squire-tray .squire-tray-build {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 4px 6px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.squire-tray .squire-tray-build:hover {
+    border-color: var(--squire-color-hover);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* The one the character has ON. A left edge rather than a background wash: the
+   rows carry artwork, and a tint behind one of them fights the picture it is
+   trying to mark. */
+.squire-tray .squire-tray-build.is-worn {
+    border-left-color: #7fd97f;
+}
+
+.squire-tray .squire-tray-build-image {
+    position: relative;
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    overflow: hidden;
+    border-radius: 4px;
+    /* A ground of its own, because a token image is usually transparent. */
+    background: rgb(8, 6, 4);
+}
+
+.squire-tray .squire-tray-build-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 0;
+}
+
+/* Build or costume, on the corner of the picture — the same two glyphs the
+   builder uses for the same two ideas. */
+.squire-tray .squire-tray-build-kind {
+    position: absolute;
+    right: 2px;
+    bottom: 1px;
+    color: #f4e7cd;
+    font-size: 0.6em;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+}
+
+.squire-tray .squire-tray-build-text {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+    gap: 1px;
+}
+
+.squire-tray .squire-tray-build-name {
+    overflow: hidden;
+    color: var(--squire-color-text, #f4e7cd);
+    font-size: 0.82em;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.squire-tray .squire-tray-build-meta {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    color: rgba(159, 146, 117, 0.9);
+    font-size: 0.7em;
+}
+
+.squire-tray .squire-tray-build-worn {
+    flex: 0 0 auto;
+    color: #7fd97f;
+    font-size: 0.7em;
+}
+
 /* ---------------- THE PAPER DOLL ---------------- */
 
 /* No background image here, deliberately.

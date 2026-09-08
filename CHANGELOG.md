@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A Builds panel in the tray**, under the item favourites, listing the builds and costumes you have favourited. Click one to put it on; right-click to open the builder on it. A build was planned in a window and worn from one, which is fine for making them and wrong for using them — the thing you actually do at a table is put a kit on, and that was three clicks behind a window nobody has open.
+  - **It is not there until you star something.** Most characters never make a build, and a permanent empty panel would be a standing question put to every one of them. The container is emptied rather than hidden, so it costs no space and leaves no gap.
+  - **Not the same list as the builds on the tray handle.** The handle is a narrow strip with room for two or three and costs screen space whether the tray is open or not; this is a panel in a column that already scrolls. A build can be in both, one, or neither.
+  - Applying from here goes through the same path the window uses, so the confirmation, the GM approval, the sound, the undo toast and the tray refresh all behave identically. A second way in must not mean a second set of rules.
+  - A row rather than a tile: the builder's rail uses squares because it is a gallery you browse, and this sits in a column of item lists that are all rows. The one being worn is marked with a green left edge rather than a background tint, which would fight the artwork it is trying to mark.
+  - It refreshes on **every** build change rather than only when gear moves — favouriting is a flag write that changes nothing else in the tray, and it is precisely what makes this panel appear or vanish.
+
 - **Two Utility slots, in the corners of the doll's top row.** They take anything, and they are the only slots here named for what they are *for* rather than where they go — everything else is a place on a body, and these two admit that a character carries things a body has no place for: a spellbook, a lantern, an instrument, a bag of tricks.
   - A **pair at the edges**, which is the doll's rule throughout — Ring and Ring, Hip and Hip. One would have left a corner filled and its opposite empty, which reads as an accident rather than a decision.
 

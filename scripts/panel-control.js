@@ -17,10 +17,24 @@ import { trackModuleTimeout } from './timer-utils.js';
 const MODES = ['sheet', 'favorites'];
 
 /** Every stacked panel, in tray order. */
-const PANEL_TYPES = ['favorites', 'weapons', 'spells', 'features', 'inventory'];
+const PANEL_TYPES = ['favorites', 'builds', 'weapons', 'spells', 'features', 'inventory'];
 
 /** The panels the favourites view shows. */
 const FAVORITES_VIEW_PANELS = ['favorites'];
+
+/**
+ * The panels that belong to NEITHER view and show in both.
+ *
+ * Builds is the only one. It is not a section of the character sheet — there is
+ * no tab for it and the filter bar means nothing to it — and it is not a
+ * favourites-only thing either: a player switching kit wants it whichever view
+ * they happen to be in. So it opts out of the mode question rather than being
+ * assigned an arbitrary answer to it.
+ *
+ * It draws nothing when no build is favourited, so being always visible costs
+ * nothing to the characters that never make one.
+ */
+const ALWAYS_VISIBLE_PANELS = ['builds'];
 
 /**
  * The panels the section tabs and the filter bar govern.
@@ -329,9 +343,11 @@ export class ControlPanel {
         // Favourites shows in its own view and nowhere else; the four sheet
         // panels show in the sheet view, one per tab or all together on All.
         PANEL_TYPES.forEach(panel => {
-            const isVisible = FAVORITES_VIEW_PANELS.includes(panel)
-                ? this._mode === 'favorites'
-                : this._mode === 'sheet' && (activeTab === 'all' || panel === activeTab);
+            const isVisible = ALWAYS_VISIBLE_PANELS.includes(panel)
+                ? true
+                : FAVORITES_VIEW_PANELS.includes(panel)
+                    ? this._mode === 'favorites'
+                    : this._mode === 'sheet' && (activeTab === 'all' || panel === activeTab);
 
             const container = this.element
                 .querySelector(`.panel-containers.stacked .panel-container[data-panel="${panel}"]`);

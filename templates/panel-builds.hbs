@@ -1,0 +1,50 @@
+{{!--
+    THE FAVOURITE BUILDS.
+
+    Drawn only when there are some — see BuildsPanel.render, which empties the
+    container rather than hiding it, so an unused feature costs no space and
+    leaves no gap.
+
+    A row rather than a tile. The builder's rail uses square tiles because it is
+    a gallery you browse; this is a list you act on, and it sits in a column of
+    other lists that are all rows. Matching them is worth more here than matching
+    the window this came from.
+--}}
+<div class="panel-container-inner">
+    <div class="tray-title-small">
+        <span><i class="fa-solid fa-shirt"></i> Builds</span>
+    </div>
+
+    <div class="squire-tray-builds">
+        {{#each builds}}
+        <div class="squire-tray-build{{#if this.worn}} is-worn{{/if}}"
+             data-build-id="{{this.id}}"
+             data-tooltip="<strong>{{this.name}}</strong><br>{{#if this.costume}}Costume &mdash; changes the portrait and token only{{else}}AC {{this.armorClass}} &middot; {{this.gearCount}} items{{/if}}<br><em>Click to {{#if this.costume}}wear{{else}}equip{{/if}} &middot; right-click to open the builder</em>">
+            <div class="squire-tray-build-image">
+                <img draggable="false" src="{{this.img}}" alt="{{this.name}}">
+                {{!-- The same two glyphs the builder uses everywhere for the two
+                      kinds of thing, so one mark means one thing wherever it
+                      appears in this module. --}}
+                <i class="fa-solid {{#if this.costume}}fa-masks-theater{{else}}fa-shirt{{/if}} squire-tray-build-kind"></i>
+            </div>
+
+            <div class="squire-tray-build-text">
+                <span class="squire-tray-build-name">{{this.name}}</span>
+                <span class="squire-tray-build-meta">
+                    {{#if this.costume}}
+                    <i class="fa-solid fa-masks-theater"></i> Costume
+                    {{else}}
+                    <i class="fa-solid fa-shield"></i> {{this.armorClass}}
+                    <i class="fa-solid fa-shirt"></i> {{this.gearCount}}
+                    {{/if}}
+                </span>
+            </div>
+
+            {{#if this.worn}}
+            <i class="fa-solid fa-check squire-tray-build-worn"
+               data-tooltip="This is what the character is wearing"></i>
+            {{/if}}
+        </div>
+        {{/each}}
+    </div>
+</div>

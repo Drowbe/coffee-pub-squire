@@ -11,6 +11,7 @@ import { SpellsPanel } from './panel-spells.js';
 import { WeaponsPanel } from './panel-weapons.js';
 import { InventoryPanel } from './panel-inventory.js';
 import { FavoritesPanel } from './panel-favorites.js';
+import { BuildsPanel } from './panel-builds.js';
 import { syncFavorites } from './manager-favorites-sync.js';
 import { ControlPanel } from './panel-control.js';
 import { FeaturesPanel } from './panel-features.js';
@@ -286,6 +287,7 @@ export class PanelManager {
             }
             this.controlPanel = new ControlPanel(actor);
             this.favoritesPanel = new FavoritesPanel(actor);
+            this.buildsPanel = new BuildsPanel(actor);
             this.spellsPanel = new SpellsPanel(actor);
             this.weaponsPanel = new WeaponsPanel(actor);
             this.inventoryPanel = new InventoryPanel(actor);
@@ -663,6 +665,7 @@ export class PanelManager {
         this.characterPanel = new CharacterPanel(this.actor);
         this.controlPanel = new ControlPanel(this.actor);
         this.favoritesPanel = new FavoritesPanel(this.actor);
+        this.buildsPanel = new BuildsPanel(this.actor);
         this.spellsPanel = new SpellsPanel(this.actor);
         this.weaponsPanel = new WeaponsPanel(this.actor);
         this.inventoryPanel = new InventoryPanel(this.actor);
@@ -679,6 +682,7 @@ export class PanelManager {
         }
         this.controlPanel.element = PanelManager.element;
         this.favoritesPanel.element = PanelManager.element;
+        this.buildsPanel.element = PanelManager.element;
         this.spellsPanel.element = PanelManager.element;
         this.weaponsPanel.element = PanelManager.element;
         this.inventoryPanel.element = PanelManager.element;
@@ -720,6 +724,7 @@ export class PanelManager {
             }
             this.controlPanel?.render(element);
             this.favoritesPanel?.render(element);
+            this.buildsPanel?.render(element);
             this.spellsPanel?.render(element);
             this.weaponsPanel?.render(element);
             this.inventoryPanel?.render(element);
