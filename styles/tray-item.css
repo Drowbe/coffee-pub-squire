@@ -287,6 +287,36 @@
     color: #ff4444;
 }
 
+/* THE ROW MENU, last in the strip and quiet until you want it.
+   
+   The rows carried a control per action and most of them were pressed once a
+   session; the rare ones live in this menu now and the toggles you flip every
+   fight stayed outside it. Dimmer than its neighbours at rest because it is a
+   way IN to actions rather than an action — a glyph that shouted would be
+   competing with the ones that actually do something. */
+.tray-buttons .squire-item-menu {
+    opacity: 0.55;
+}
+
+.tray-buttons .squire-item-menu:hover {
+    opacity: 1;
+    color: var(--squire-color-hover);
+}
+
+/* THE NAME OPENS THE SHEET, which the feather used to do. No underline and no
+   link colour at rest: every row would then look like a page of hyperlinks, and
+   the name is still first and foremost the thing that says what this is. The
+   cursor and the hover say it is live, at the moment somebody is asking. */
+.panel-item-label.squire-item-open {
+    cursor: pointer;
+}
+
+.panel-item-label.squire-item-open:hover {
+    color: var(--squire-color-hover);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
 .tray-buttons .fa-heart.faded {
     color: #9f9275;
 }

@@ -63,7 +63,7 @@
                     <i class="fa-solid fa-dice-d20 squire-roll-overlay panel-item-roll-overlay"></i>
                 </div>
                 <div class="panel-item-name">
-                    <span class="panel-item-label">{{this.name}}</span>
+                    <span class="panel-item-label squire-item-open" data-tooltip="Open the item sheet">{{this.name}}</span>
                     {{~#if this.isNew}}<span class="new-tag">NEW</span>{{/if~}}
                     {{!-- Kind and weight. Drawn only by the tile layout, which
                           hides the rest of the row's context behind a clipped
@@ -97,7 +97,7 @@
                     <i class="fa-solid fa-shield-alt {{#unless this.system.equipped}}faded{{/unless}}" title="Equipped"></i>
                     {{/if}}
                     <i class="fa-solid fa-heart" title="Remove from Favorites"></i>
-                    <i class="fa-solid fa-feather"></i>
+                    <i class="fa-solid fa-ellipsis squire-item-menu" data-tooltip="More &mdash; view, favourite, move, send, delete"></i>
                 </div>
             </div>
         </div>

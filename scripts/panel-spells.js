@@ -3,6 +3,7 @@ import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
 import { getNativeElement, renderTemplate, isSpellPrepared, applyItemTooltips, setRowFilter, getActionType, getActionTypes} from './helpers.js';
 import { StatblockUtility } from './utility-statblock.js';
+import { activateItemMenu } from './manager-item-menu.js';
 
 export class SpellsPanel {
     constructor(actor) {
@@ -310,6 +311,10 @@ export class SpellsPanel {
         this._listenerController = new AbortController();
         const listenerSignal = this._listenerController.signal;
 
+        // The row's ⋯ menu, and the same menu on right-click. One builder for
+        // every panel — see manager-item-menu.js.
+        activateItemMenu(panel, this.actor, listenerSignal);
+
         // Statblock warning badge — click to repair
         StatblockUtility.activateBadgeListener(panel, this.actor, listenerSignal);
 
@@ -324,10 +329,10 @@ export class SpellsPanel {
             }
         }, { signal: listenerSignal });
 
-        // Spell info click (feather icon)
+        // Open the item sheet from its NAME. See manager-item-menu.js.
         // v13: Use native DOM event delegation
         panel.addEventListener('click', async (event) => {
-            const featherIcon = event.target.closest('.tray-buttons .fa-feather');
+            const featherIcon = event.target.closest('.squire-item-open');
             if (!featherIcon) return;
             
             const spellItem = featherIcon.closest('.panel-item');

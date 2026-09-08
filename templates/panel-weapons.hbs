@@ -6,7 +6,7 @@
             <i class="fa-solid fa-dice-d20 squire-roll-overlay panel-item-roll-overlay"></i>
         </div>
         <div class="panel-item-name">
-            <span class="panel-item-label">{{name}}</span>
+            <span class="panel-item-label squire-item-open" data-tooltip="Open the item sheet">{{name}}</span>
             {{~#if isNew}}<span class="new-tag">NEW</span>{{/if~}}
             <span class="panel-item-context">
                 {{> action-badge actionType=actionType}}
@@ -27,8 +27,7 @@
             {{/if}}
             <i class="fa-solid fa-shield-alt {{#unless system.equipped}}faded{{/unless}}" title="Toggle Equipped"></i>
             <i class="fa-solid fa-heart {{#unless isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-            <i class="fa-solid fa-share weapons-send-item" title="Send Weapon" data-item-id="{{id}}"></i>
-            <i class="fa-solid fa-feather"></i>
+            <i class="fa-solid fa-ellipsis squire-item-menu" data-tooltip="More &mdash; view, favourite, move, send, delete"></i>
         </div>
     </div>
 </div>

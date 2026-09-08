@@ -2,6 +2,7 @@ import { MODULE, TEMPLATES } from './const.js';
 import { FavoritesPanel } from './panel-favorites.js';
 import { PanelManager } from './manager-panel.js';
 import { getNativeElement, renderTemplate, applyItemTooltips, setRowFilter, getActionType, getActionTypes} from './helpers.js';
+import { activateItemMenu } from './manager-item-menu.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -197,6 +198,10 @@ export class FeaturesPanel {
         this._listenerController = new AbortController();
         const listenerSignal = this._listenerController.signal;
 
+        // The row's ⋯ menu, and the same menu on right-click. One builder for
+        // every panel — see manager-item-menu.js.
+        activateItemMenu(panel, this.actor, listenerSignal);
+
         // Category filter toggles
         // v13: Use native DOM event delegation
         panel.addEventListener('click', (event) => {
@@ -208,10 +213,10 @@ export class FeaturesPanel {
             }
         }, { signal: listenerSignal });
 
-        // Feature info click (feather icon)
+        // Open the item sheet from its NAME. See manager-item-menu.js.
         // v13: Use native DOM event delegation
         panel.addEventListener('click', async (event) => {
-            const featherIcon = event.target.closest('.tray-buttons .fa-feather');
+            const featherIcon = event.target.closest('.squire-item-open');
             if (!featherIcon) return;
             
             try {

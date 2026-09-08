@@ -4,6 +4,7 @@ import { getNativeElement, renderTemplate, getActivityList, isSpellPrepared, get
 import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { QuantityEditor } from './utility-quantity.js';
+import { buildItemMenu } from './manager-item-menu.js';
 
 // Universal actions every creature can take — the core-rules set plus common
 // table extras. When an actions compendium drops these onto NPC sheets they
@@ -560,7 +561,14 @@ export class FavoritesPanel {
     _buildMenuItems(itemId) {
         const favorites = this.actor.getFlag(MODULE.ID, 'favoritePanel') || [];
         const index = favorites.indexOf(itemId);
-        const items = [];
+
+        // The same seven entries every other panel's rows offer, first, so a row
+        // does not mean something different here than it does two panels up.
+        // What follows is what only THIS panel can do: reorder the list, and set
+        // the tile size. Splitting `buildItemMenu` out from `showItemMenu` is
+        // what makes appending to it possible.
+        const items = [...buildItemMenu(this.actor, this.actor?.items?.get(itemId))];
+        if (items.length) items.push({ separator: true });
 
         // Moving is manual-order only. The move entries write positions into the
         // flag, and under a sort those positions are not what you are looking
@@ -983,6 +991,11 @@ export class FavoritesPanel {
         this._removeEventListeners(panel);
         this._listenerController = new AbortController();
         const listenerSignal = this._listenerController.signal;
+
+        // NOT activateItemMenu here. This panel already answers right-click with
+        // a menu of its own, and that menu now BEGINS with the shared entries —
+        // see _buildMenuItems. Binding the shared handler as well would put two
+        // menus in a race for one gesture. The ⋯ glyph is wired below instead.
         
         // The right-click menu, from Blacksmith rather than from Foundry.
         //
@@ -992,7 +1005,7 @@ export class FavoritesPanel {
         // menu was being clipped to nothing on every tile while still working
         // in the list. Blacksmith's appends to `document.body` at the pointer,
         // which no ancestor can clip, and brings flyouts and zones with it.
-        panel.addEventListener('contextmenu', (event) => {
+        const openRowMenu = (event) => {
             const row = event.target.closest('.panel-item[data-item-id]');
             if (!row) return;
 
@@ -1009,6 +1022,12 @@ export class FavoritesPanel {
                 zones: items,
                 className: 'squire-favorite-context-menu'
             });
+        };
+
+        // Two ways in, one menu: right-click anywhere on the row, or the ⋯.
+        panel.addEventListener('contextmenu', openRowMenu, { signal: listenerSignal });
+        panel.addEventListener('click', (event) => {
+            if (event.target.closest('.squire-item-menu')) openRowMenu(event);
         }, { signal: listenerSignal });
 
         // Roll/Use item — delegated to the panel (one listener regardless of list size)
@@ -1023,9 +1042,9 @@ export class FavoritesPanel {
             await useOrOpenItem(this.actor.items.get(itemId), event);
         }, { signal: listenerSignal });
 
-        // View item details — delegated
+        // Open the item sheet from its NAME — delegated. See manager-item-menu.js.
         panel.addEventListener('click', async (event) => {
-            const featherIcon = event.target.closest('.panel-item .fa-feather');
+            const featherIcon = event.target.closest('.squire-item-open');
             if (!featherIcon) return;
             event.preventDefault();
             event.stopPropagation();

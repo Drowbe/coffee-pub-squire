@@ -54,7 +54,7 @@
                             <i class="fa-solid fa-dice-d20 squire-roll-overlay panel-item-roll-overlay"></i>
                         </div>
                         <div class="panel-item-name">
-                            <span class="panel-item-label">{{spell.name}}</span>
+                            <span class="panel-item-label squire-item-open" data-tooltip="Open the item sheet">{{spell.name}}</span>
                             {{~#if spell.isNew}}<span class="new-tag">NEW</span>{{/if~}}
                             <span class="panel-item-context">
                                 {{> action-badge actionType=spell.actionType}}
@@ -63,7 +63,7 @@
                         </div>
                         <div class="tray-buttons">
                             <i class="fa-solid fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                            <i class="fa-solid fa-feather"></i>
+                            <i class="fa-solid fa-ellipsis squire-item-menu" data-tooltip="More &mdash; view, favourite, move, send, delete"></i>
                         </div>
                     </div>
                 </div>
@@ -102,7 +102,7 @@
                             <i class="fa-solid fa-dice-d20 squire-roll-overlay panel-item-roll-overlay"></i>
                         </div>
                         <div class="panel-item-name">
-                            <span class="panel-item-label">{{spell.name}}</span>
+                            <span class="panel-item-label squire-item-open" data-tooltip="Open the item sheet">{{spell.name}}</span>
                             {{~#if spell.isNew}}<span class="new-tag">NEW</span>{{/if~}}
                             <span class="panel-item-context">
                                 {{> action-badge actionType=spell.actionType}}
@@ -114,7 +114,7 @@
                             <i class="fa-solid fa-triangle-exclamation statblock-warning {{#unless spell.statblockIssue.canFix}}no-fix{{/unless}}" data-tooltip="{{{spell.statblockIssue.tooltip}}}"></i>
                             {{/if}}
                             <i class="fa-solid fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                            <i class="fa-solid fa-feather"></i>
+                            <i class="fa-solid fa-ellipsis squire-item-menu" data-tooltip="More &mdash; view, favourite, move, send, delete"></i>
                         </div>
                     </div>
                 </div>
@@ -139,7 +139,7 @@
                             <i class="fa-solid fa-dice-d20 squire-roll-overlay panel-item-roll-overlay"></i>
                         </div>
                         <div class="panel-item-name">
-                            <span class="panel-item-label">{{spell.name}}</span>
+                            <span class="panel-item-label squire-item-open" data-tooltip="Open the item sheet">{{spell.name}}</span>
                             {{~#if spell.isNew}}<span class="new-tag">NEW</span>{{/if~}}
                             <span class="panel-item-context">
                                 {{> action-badge actionType=spell.actionType}}
@@ -148,7 +148,7 @@
                         </div>
                         <div class="tray-buttons">
                             <i class="fa-solid fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                            <i class="fa-solid fa-feather"></i>
+                            <i class="fa-solid fa-ellipsis squire-item-menu" data-tooltip="More &mdash; view, favourite, move, send, delete"></i>
                         </div>
                     </div>
                 </div>
@@ -180,7 +180,7 @@
                                 <i class="fa-solid fa-dice-d20 squire-roll-overlay panel-item-roll-overlay"></i>
                             </div>
                             <div class="panel-item-name">
-                                <span class="panel-item-label">{{spell.name}}</span>
+                                <span class="panel-item-label squire-item-open" data-tooltip="Open the item sheet">{{spell.name}}</span>
                                 {{~#if spell.isNew}}<span class="new-tag">NEW</span>{{/if~}}
                                 <span class="panel-item-context">
                                     {{> action-badge actionType=spell.actionType}}
@@ -199,7 +199,7 @@
                                 <i class="fa-solid fa-sun {{#unless spell.system.prepared}}faded{{/unless}}" title="Prepared"></i>
                                 {{/if}}
                                 <i class="fa-solid fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
-                                <i class="fa-solid fa-feather"></i>
+                                <i class="fa-solid fa-ellipsis squire-item-menu" data-tooltip="More &mdash; view, favourite, move, send, delete"></i>
                             </div>
                         </div>
                     </div>

@@ -5,6 +5,7 @@ import { getNativeElement, renderTemplate, getContainerInfo, activateContainerLi
 import { TransferUtils } from './transfer-utils.js';
 import { LightUtility } from './utility-lights.js';
 import { QuantityEditor } from './utility-quantity.js';
+import { activateItemMenu } from './manager-item-menu.js';
 
 /**
  * Normalise an item type to the category it belongs to.
@@ -510,14 +511,18 @@ export class InventoryPanel {
 
         // Open the container an item is stored inside
         const containerHandler = activateContainerListener(panel, this.actor);
+
+        // The row's ⋯ menu, and the same menu on right-click. One builder for
+        // every panel — see manager-item-menu.js.
+        this._eventHandlers.push(...activateItemMenu(panel, this.actor));
         if (containerHandler) {
             this._eventHandlers.push({ element: panel, event: 'click', handler: containerHandler });
         }
 
-        // Item info click (feather icon)
+        // Open the item sheet from its NAME. See manager-item-menu.js.
         // v13: Use native DOM event delegation
         const featherIconHandler = async (event) => {
-            const featherIcon = event.target.closest('.tray-buttons .fa-feather');
+            const featherIcon = event.target.closest('.squire-item-open');
             if (!featherIcon) return;
             
             const inventoryItem = featherIcon.closest('.panel-item');
@@ -584,28 +589,6 @@ export class InventoryPanel {
         };
         panel.addEventListener('click', shieldIconHandler);
         this._eventHandlers.push({ element: panel, event: 'click', handler: shieldIconHandler });
-
-        // Send item (share icon)
-        // v13: Use native DOM event delegation
-        const sendButtonHandler = async (event) => {
-            const sendButton = event.target.closest('.inventory-send-item');
-            if (!sendButton) return;
-            
-            // Prevent multiple dialogs from opening
-            if (this._transferDialogOpen) {
-                event.stopPropagation();
-                return;
-            }
-            
-            const itemId = sendButton.dataset.itemId;
-            const item = this.actor.items.get(itemId);
-            if (item) {
-                // Open character selection window
-                await this._openCharacterSelection(item);
-            }
-        };
-        panel.addEventListener('click', sendButtonHandler);
-        this._eventHandlers.push({ element: panel, event: 'click', handler: sendButtonHandler });
 
         // Light source click (light icon)
         // v13: Use native DOM event delegation
@@ -763,36 +746,6 @@ export class InventoryPanel {
         }
     }
 
-    async _openCharacterSelection(item) {
-        if (this._transferDialogOpen) return;
-        this._transferDialogOpen = true;
-
-        try {
-            const { openItemTransferTool } = await import('./window-transfer-tool.js');
-            await openItemTransferTool({
-                item,
-                sourceActor: this.actor,
-                onSubmit: async ({ targetActor, quantity }) => {
-                    const liveItem = this.actor?.items?.get(item.id);
-                    if (!liveItem) throw new Error(`${item.name} is no longer available.`);
-                    const completed = await TransferUtils.executeTransfer({
-                        sourceActor: this.actor,
-                        targetActor,
-                        item: liveItem,
-                        quantity,
-                        hasQuantity: liveItem.system.quantity !== undefined && liveItem.system.quantity > 1
-                    });
-                    if (completed === false) throw new Error('The transfer could not be started.');
-                },
-                onClose: () => {
-                    this._transferDialogOpen = false;
-                }
-            });
-        } catch (error) {
-            this._transferDialogOpen = false;
-            throw error;
-        }
-    }
 }
 
 

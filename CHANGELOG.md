@@ -228,6 +228,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Every list row has a `⋯` menu, and the rows got quieter.** A row used to carry a control per action — a feather to read the item, a share to send it, a heart, a shield, a sun, a lightbulb, a sack, a warning. Eight glyphs on a narrow row, most pressed once a session, with the two pressed constantly buried among them.
+  - **The rare ones moved into the menu; the toggles stayed out.** The test is how *often* a thing is done rather than how important it is: a toggle you flip every fight is worth a click, an action you take twice an evening is not. Favourite, equip and prepared keep their glyphs; the feather and the send-to are gone from the row.
+  - **The item's NAME now opens its sheet** — what the feather did. It underlines on hover rather than at rest, because a page of rows that all look like hyperlinks is worse than a page that says so when you ask.
+  - **Seven entries**: view details, favourite, equip or prepare, add to handle, move to container, send, delete. Each is conditional on the item answering for it — a spell has no container and a feature cannot be sent, and an entry that does nothing is worse than one that is absent.
+  - **Move to Container is new**, as a flyout of the containers this character carries plus *Not in a container*. A container is never offered itself as a destination: dnd5e will let you do it and the result is a bag that has vanished into its own mouth.
+  - **Delete is new**, for owners, and asks first — naming the item, and warning when a container's contents will come out rather than go with it. It is the one entry here with no undo, in a list where everything else has one.
+  - **Right-click the row opens the same menu.** The `⋯` is the discoverable route and right-click is the fast one; two ways in that offered different things would be worse than one.
+  - **One builder for all five panels.** Weapons, Spells, Inventory, Features and Favourites show the same entries in the same order with the same words, from `manager-item-menu.js`. Five copies would be five things to keep in step, and this module has already paid for that lesson twice.
+  - Favourites keeps its own reorder and tile-size entries — they now follow the shared seven rather than replacing them, so a row does not mean something different there than two panels up.
+  - Deleted with the glyphs: the two send-to handlers and the two copies of `_openCharacterSelection` they called, plus a transfer guard left with nothing to guard.
+
 - **`images/` moved to `assets/images/`.** The module now keeps everything it ships under one `assets/` folder — sounds and images together — which is where a Foundry module is expected to put them. Two references updated: the tray banner in `tray-shell.css`, and the release zip, where `assets/` now covers what `images/` used to.
   - **This breaks any saved path pointing into the old folder.** Squire itself stores none, but a world where somebody browsed to one of these files with a file picker — a scene background, a journal image, a token — is holding `modules/coffee-pub-squire/images/…` and will show a broken image after upgrading. Re-pick the file from `assets/images/`.
 

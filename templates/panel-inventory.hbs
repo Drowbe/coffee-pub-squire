@@ -28,7 +28,7 @@
             <i class="fa-solid fa-dice-d20 squire-roll-overlay panel-item-roll-overlay"></i>
         </div>
         <div class="panel-item-name">
-            <span class="panel-item-label">{{{name}}}</span>
+            <span class="panel-item-label squire-item-open" data-tooltip="Open the item sheet">{{{name}}}</span>
             {{~#if isNew}}<span class="new-tag">NEW</span>{{/if~}}
             <span class="panel-item-context">
                 {{> action-badge actionType=actionType}}
@@ -59,13 +59,12 @@
                 <i class="fa-solid fa-shield-alt faded" title="Toggle Equipped"></i>
                 {{/if}}
             {{/if}}
-            <i class="fa-solid fa-share inventory-send-item" title="Send Item" data-item-id="{{id}}"></i>
             {{#if isFavorite}}
             <i class="fa-solid fa-heart" title="Toggle Favorite"></i>
             {{else}}
             <i class="fa-solid fa-heart faded" title="Toggle Favorite"></i>
             {{/if}}
-            <i class="fa-solid fa-feather"></i>
+            <i class="fa-solid fa-ellipsis squire-item-menu" data-tooltip="More &mdash; view, favourite, move, send, delete"></i>
         </div>
     </div>
 </div>
@@ -105,7 +104,7 @@
                     <img draggable="false" class="panel-item-image" src="{{this.img}}" alt="{{this.name}}"/>
                 </div>
                 <div class="panel-item-name">
-                    <span class="panel-item-label">{{this.name}}</span>
+                    <span class="panel-item-label squire-item-open" data-tooltip="Open the item sheet">{{this.name}}</span>
                     <span class="panel-item-context">
                         <span class="panel-item-badge context-count" title="Coins">x{{this.quantity}}</span>
                     </span>
