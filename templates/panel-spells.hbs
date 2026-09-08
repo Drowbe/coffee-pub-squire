@@ -19,6 +19,9 @@
         {{#if (lookup spellsByType "atwill")}}
         <i class="fa-solid fa-square-a spell-level-filter active" data-filter-id="category-spell-at-will" title="Toggle At-Will Spells"></i>
         {{/if}}
+        {{#if (lookup spellsByType "innate")}}
+        <i class="fa-solid fa-square-i spell-level-filter active" data-filter-id="category-spell-innate" title="Toggle Innate Spells"></i>
+        {{/if}}
         {{#if (lookup spellsByLevel 0)}} 
         <i class="fa-solid fa-square-c spell-level-filter active" data-filter-id="category-spell-level-0" title="Toggle Cantrips"></i>
         {{/if}}
@@ -59,6 +62,57 @@
                             </span>
                         </div>
                         <div class="tray-buttons">
+                            <i class="fa-solid fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
+                            <i class="fa-solid fa-feather"></i>
+                        </div>
+                    </div>
+                </div>
+                {{/if}}
+            {{/each}}
+            {{/if}}
+
+            {{!-- INNATE SPELLS
+
+                  Their own section rather than their spell level. An innate
+                  spell sat among the ones a caster prepares, which is a
+                  different kind of thing: a feature or a racial grants it,
+                  nothing prepares it, and it is castable whatever the prepared
+                  list says.
+
+                  NOT folded into At-Will above, which would have been the
+                  smaller change and would have been false: an innate spell
+                  commonly has limited uses a day, and "at will" says the
+                  opposite. That is also why this header carries no infinity
+                  mark — the uses belong to each spell, not to the group.
+
+                  No sun either. There is nothing here to prepare. --}}
+            {{#if spells}}
+            <div class="category-header" data-category-id="category-spell-innate">
+                <span>Innate</span>
+                <div class="slot-pips">
+                    <i class="fa-solid fa-wand-sparkles" title="Granted rather than prepared. Any limit on uses belongs to the spell itself."></i>
+                </div>
+            </div>
+            {{#each spells as |spell|}}
+                {{#if (eq spell.system.method "innate")}}
+                <div draggable="true" class="panel-item prepared" data-item-id="{{spell.id}}" data-item-type="spell" data-category-id="category-spell-innate" data-action-types="{{spell.actionTypes}}" data-prepare-state="{{#if spell.isPrepared}}prepared{{else}}unprepared{{/if}}">
+                    <div class="panel-item-row">
+                        <div class="panel-item-image-container">
+                            <img draggable="false" class="panel-item-image" src="{{spell.img}}" alt="{{spell.name}}"/>
+                            <i class="fa-solid fa-dice-d20 squire-roll-overlay panel-item-roll-overlay"></i>
+                        </div>
+                        <div class="panel-item-name">
+                            <span class="panel-item-label">{{spell.name}}</span>
+                            {{~#if spell.isNew}}<span class="new-tag">NEW</span>{{/if~}}
+                            <span class="panel-item-context">
+                                {{> action-badge actionType=spell.actionType}}
+                                {{> spell-components properties=spell.system.properties}}
+                            </span>
+                        </div>
+                        <div class="tray-buttons">
+                            {{#if spell.statblockIssue}}
+                            <i class="fa-solid fa-triangle-exclamation statblock-warning {{#unless spell.statblockIssue.canFix}}no-fix{{/unless}}" data-tooltip="{{{spell.statblockIssue.tooltip}}}"></i>
+                            {{/if}}
                             <i class="fa-solid fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                             <i class="fa-solid fa-feather"></i>
                         </div>
@@ -137,7 +191,13 @@
                                 {{#if spell.statblockIssue}}
                                 <i class="fa-solid fa-triangle-exclamation statblock-warning {{#unless spell.statblockIssue.canFix}}no-fix{{/unless}}" data-tooltip="{{{spell.statblockIssue.tooltip}}}"></i>
                                 {{/if}}
+                                {{!-- Only where preparing is a thing that can be
+                                      done. See `canPrepare`: on a spell nobody
+                                      prepares this wrote a field that changed
+                                      nothing visible. --}}
+                                {{#if spell.canPrepare}}
                                 <i class="fa-solid fa-sun {{#unless spell.system.prepared}}faded{{/unless}}" title="Prepared"></i>
+                                {{/if}}
                                 <i class="fa-solid fa-heart {{#unless spell.isFavorite}}faded{{/unless}}" title="Toggle Favorite"></i>
                                 <i class="fa-solid fa-feather"></i>
                             </div>

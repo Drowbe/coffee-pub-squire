@@ -28,7 +28,18 @@ export class SpellsPanel {
         const mappedSpells = spells.map(spell => {
             const isFavorite = favorites.includes(spell.id);
             const level = spell.system.level;
-            const isAtWill = spell.system.method === 'atwill';
+            const method = spell.system.method;
+            const isAtWill = method === 'atwill';
+            // INNATE gets its own section rather than falling into its spell
+            // level. It was landing in "Level 2" beside the spells a caster
+            // prepares, which is a different kind of thing: a feature or a
+            // racial grants it, nothing prepares it, and it is castable whatever
+            // the prepared list says.
+            //
+            // NOT merged into At-Will, which would be the smaller change and
+            // would be false — an innate spell commonly has limited uses a day,
+            // and "at will" says the opposite.
+            const isInnate = method === 'innate';
             
             return {
                 id: spell.id,
@@ -43,7 +54,22 @@ export class SpellsPanel {
                 // because that is exactly what the old filter tested.
                 isPrepared: level === 0 || isSpellPrepared(spell),
                 isFavorite: isFavorite,
-                categoryId: isAtWill ? 'category-spell-at-will' : `category-spell-level-${level}`,
+                // Whether preparing is a thing that can be done to this spell.
+                // The sun toggle writes `system.prepared`, and on a spell nobody
+                // prepares that changes nothing anybody can see — a control that
+                // does not control.
+                //
+                // Read from dnd5e's own table rather than a list of methods kept
+                // here. `CONFIG.DND5E.spellcasting[method].prepares` is what the
+                // system's `countsPrepared` consults and what utility-builds.js
+                // asks in `canBuildPrepare`, so all three agree by construction.
+                // A hand-written list would have said pact spells do not prepare,
+                // which dnd5e says they do.
+                canPrepare: level > 0
+                    && !!CONFIG.DND5E?.spellcasting?.[method]?.prepares,
+                categoryId: isAtWill
+                    ? 'category-spell-at-will'
+                    : (isInnate ? 'category-spell-innate' : `category-spell-level-${level}`),
                 statblockIssue: StatblockUtility.getBadge(issueMap.get(spell.id), this.actor),
                 isNew: !!(spell.getFlag(MODULE.ID, 'isNew') || PanelManager.newlyAddedItems?.has(spell.id))
             };
@@ -72,14 +98,21 @@ export class SpellsPanel {
 
         // Group spells by level and sort each group alphabetically
         const spellsByLevel = {};
+        // The methods that get a section of their own instead of a level. Both
+        // are cast without preparing and neither belongs among the spells a
+        // caster chooses each day.
+        const OWN_SECTION = ['atwill', 'innate'];
+        const byMethod = method => this.spells
+            .filter(s => s.system.method === method)
+            .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+
         const spellsByType = {
-            atwill: this.spells
-                .filter(s => s.system.method === 'atwill')
-                .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+            atwill: byMethod('atwill'),
+            innate: byMethod('innate')
         };
 
         this.spells.forEach(spell => {
-            if (spell.system.method !== 'atwill') {
+            if (!OWN_SECTION.includes(spell.system.method)) {
                 const level = spell.system.level;
                 if (!spellsByLevel[level]) {
                     spellsByLevel[level] = [];
