@@ -56,6 +56,14 @@
     border: 0;
 }
 
+/* Same reason as the rail's preview circles: a transparent token on the handle
+   showed the strip's own background through the figure. The tile is what the
+   image is ON, so the ground belongs to the tile rather than to the image —
+   which also covers the blank-glyph case without a second rule. */
+.squire-tray .handle-build-icon {
+    background: rgb(8, 6, 4);
+}
+
 .squire-tray .handle-build-blank {
     display: flex;
     align-items: center;
@@ -625,6 +633,18 @@
     min-width: 0;
     aspect-ratio: 1;
     object-fit: cover;
+    /* A GROUND OF ITS OWN, because a token image is usually transparent and this
+       sits directly on the tile's artwork — so the picture behind showed through
+       the figure, and a token read as a hole cut in the tile rather than as a
+       token. The portrait gets the same treatment: it is normally opaque, and a
+       pair of circles that differ only when one of them happens to have an alpha
+       channel is worse than two that always match.
+
+       A fixed colour, not a theme token: this is over artwork under a dark
+       scrim rather than on the window's own surface, which is the same reason
+       the tile's caption fixes its colour. It is the scrim's own value at full
+       opacity, so the circles read as cut from the tile rather than laid on it. */
+    background: rgb(8, 6, 4);
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 50%;
 }

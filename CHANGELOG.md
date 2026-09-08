@@ -95,6 +95,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Transparent token art showed the picture behind it.** A token image usually has an alpha channel, and on a build tile it sat directly on the tile's own artwork — so the figure read as a hole cut in the tile rather than as a token. The preview circles in the rail and the build tiles on the tray handle now have a ground of their own.
+  - The portrait circle gets it too. It is normally opaque, but a pair of circles that match only until one of them happens to have an alpha channel is worse than two that always agree.
+  - A fixed colour rather than a theme token, and the same value as the tile's own scrim at full opacity: these sit on artwork rather than on the window's surface, which is the same reason the tile's caption fixes its colour instead of inheriting one.
+
 - **Innate spells were listed among the ones a caster prepares.** The Spells panel gave At-Will a section of its own and nothing else, so a spell granted by a feature or a racial fell into its spell level — a fighter's Misty Step sat under **Level 2** as though it were a spell he chose each day, complete with a Prepared toggle he could press.
   - **Innate now has its own section**, with a wand mark rather than the infinity At-Will carries. It is deliberately *not* folded into At-Will, which would have been the smaller change and would have been false: an innate spell commonly has limited uses a day, and "at will" says the opposite. Any limit belongs to the spell rather than the group, which is why the header claims nothing about uses.
   - **The Prepared toggle only appears where preparing is a thing that can be done.** On a spell nobody prepares it wrote `system.prepared`, which changes nothing anybody can see — a control that does not control.
