@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Two Utility slots, in the corners of the doll's top row.** They take anything, and they are the only slots here named for what they are *for* rather than where they go — everything else is a place on a body, and these two admit that a character carries things a body has no place for: a spellbook, a lantern, an instrument, a bag of tricks.
+  - A **pair at the edges**, which is the doll's rule throughout — Ring and Ring, Hip and Hip. One would have left a corner filled and its opposite empty, which reads as an accident rather than a decision.
+
 - **Two new slots, and the doll's rows shift up to make room.** Face and Neck join the top row beside the portrait and token circles, so the side columns run the whole height; the Hips move to the edges beside the Rings, and Waist and Feet fill the middle they vacated. Five columns still, so the window does not change size.
   - **Consumable**, at the end of row five. A potion, a scroll, an elixir — ammunition excluded, since it has its own slot beside it. **One slot, not two**: a typed slot buys intent and spends capacity, and of the things a character carries with nowhere to put them — a potion, a holy symbol, a component pouch, thieves' tools, a wand — exactly one is a consumable. The two Hips beside it stay generic, which is what makes them worth having two of.
   - **Thrown**, in the middle of row six between the sheath and the ammunition — the company it keeps, three things carried rather than worn. **Strict**: only weapons with the Thrown property, because this is the slot that earns dnd5e's `thrown` attack mode and a weapon without it will never be offered that mode however it is planned.
@@ -232,7 +235,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Not in the corners.** Those carry the armour class, the attunement count and the weight, and they are the most readable places in this window. The middle of each edge is the quietest spot that is still obviously part of the same object.
   - **All three now carry a faint ring** the gear slots do not. Being round was the only thing marking them out before, and the ammunition slot is round too.
   - Sized as a share of the image rather than in pixels, so they hold their proportion at any window width, and small enough to leave the figure readable behind them.
-  - Row one is `Face · Head · Neck`, grouped in the middle with the corners left empty. Leaving Face and Neck at the far edges was tried first and left a helmet marooned between two holes; three together read as a head, and a gap at the end of a row reads as air rather than as a slot that failed to draw.
+  - Row one is `Utility · Face · Head · Neck · Utility`. Face and Neck grouped beside the head — leaving them at the far edges left a helmet marooned between two holes, where three together read as a head — and the corners they vacated took a new **Utility** pair.
 
 - **Every list row has a `⋯` menu, and the rows got quieter.** A row used to carry a control per action — a feather to read the item, a share to send it, a heart, a shield, a sun, a lightbulb, a sack, a warning. Eight glyphs on a narrow row, most pressed once a session, with the two pressed constantly buried among them.
   - **The rare ones moved into the menu; the toggles stayed out.** The test is how *often* a thing is done rather than how important it is: a toggle you flip every fight is worth a click, an action you take twice an evening is not. Favourite, equip and prepared keep their glyphs; the feather and the send-to are gone from the row.

@@ -113,7 +113,7 @@ const SLOT_RULES = {
  * `row` and `column` are 1-based CSS grid lines. The portrait sits in the middle
  * of rows 2–4, which is why the side columns skip column 2–4 entirely.
  *
- *          FACE  HEAD  NECK
+ *   UTIL   FACE  HEAD  NECK   UTIL
  *   BACK   [                    ]   CHEST
  *   ARMS   [     portrait       ]   HANDS
  *   RING1  [                    ]   RING2
@@ -126,8 +126,8 @@ const SLOT_RULES = {
  * They sit BESIDE the head rather than at the ends of the row. The portrait and
  * token circles used to fill columns 2 and 4; once those moved onto the main
  * picture, leaving Face and Neck at the far edges left two holes with a helmet
- * marooned between them. Three together read as a head, and the empty corners
- * read as air rather than as slots that failed to draw.
+ * marooned between them. Three together read as a head — and the corners those
+ * three vacated are where the Utility pair went.
  *
  * The pairs sit at the EDGES and that is the rule the eye reads the doll by:
  * Ring and Ring, then Hip and Hip. Waist and Feet fill the middle because
@@ -149,6 +149,7 @@ const SLOT_RULES = {
    happen" is a real question. */
 const HINTS = {
     consumable: 'A potion, scroll or elixir you mean to reach for. One slot, deliberately — the hips beside it take anything.',
+    utility: 'Anything at all. A spellbook, a lantern, an instrument, a tool — the things a character carries that a body has no place for.',
     thrown: 'A weapon you throw: a javelin, a handaxe, a dagger. Only weapons with the Thrown property.',
     weapon: 'A dagger, hand axe or other sidearm — anything you would draw without thinking.',
     ammo: 'Arrows, bolts, bullets, darts — whatever your weapons spend.',
@@ -168,9 +169,19 @@ const HINTS = {
  * their bandolier, they just want to know what people normally put there.
  */
 export const BUILD_CORE_SLOTS = [
+    // The corners of row one, and the only slots on the doll named for what they
+    // are FOR rather than where they go. Everything else here is a place on a
+    // body; these are the two that admit a character carries things a body has
+    // no place for — a spellbook, a lantern, an instrument, a bag of tricks.
+    //
+    // A PAIR, at the edges, because that is the doll's rule: Ring and Ring,
+    // Hip and Hip. One would have left a corner empty and the other filled,
+    // which reads as an accident rather than a decision.
+    { key: 'utility1', label: 'Utility', icon: 'fa-toolbox',       row: 1, column: 1, hint: HINTS.utility },
     { key: 'face',  label: 'Face',  icon: 'fa-mask',              row: 1, column: 2, hint: 'Masks, goggles, spectacles, veils.' },
     { key: 'head',  label: 'Head',  icon: 'fa-helmet-battle',     row: 1, column: 3, hint: 'Helms, hats, circlets, crowns.' },
     { key: 'neck',  label: 'Neck',  icon: 'fa-gem',               row: 1, column: 4, hint: 'Amulets, necklaces, periapts, holy symbols.' },
+    { key: 'utility2', label: 'Utility', icon: 'fa-toolbox',       row: 1, column: 5, hint: HINTS.utility },
     { key: 'back',  label: 'Back',  icon: 'fa-backpack',          row: 2, column: 1, hint: 'Cloaks, capes, mantles, packs.' },
     { key: 'chest', label: 'Chest', icon: 'fa-vest',              row: 2, column: 5, hint: 'Armour, robes, tunics — the thing your AC comes from.' },
     { key: 'arms',  label: 'Arms',  icon: 'fa-shirt-long-sleeve', row: 3, column: 1, hint: 'Bracers, vambraces, sleeves.' },
