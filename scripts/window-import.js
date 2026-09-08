@@ -410,7 +410,11 @@ export class ImportWindow extends BlacksmithToolWindowBaseV2 {
         const chosen = [...this.element.querySelectorAll(`.${PREPARED_CONTROL}`)]
             .filter(control => control.value).length;
 
-        counter.textContent = `${chosen} / ${this.plan.limit}`;
-        counter.classList.toggle('is-over', chosen > this.plan.limit);
+        // No limit means nothing to count against, so it says how many rather
+        // than how many of what. `chosen > null` is false in JavaScript, which
+        // would have been the right answer by accident — said properly instead.
+        const limit = this.plan.limit;
+        counter.textContent = limit === null ? `${chosen}` : `${chosen} / ${limit}`;
+        counter.classList.toggle('is-over', limit !== null && chosen > limit);
     }
 }

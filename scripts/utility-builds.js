@@ -225,16 +225,31 @@ function isCasterClass(actor) {
 }
 
 /**
- * Whether this character can plan a prepared list at all, for the switch.
+ * Whether this character has a prepared list worth planning.
  *
  * A DIFFERENT question from the one above, and deliberately a looser one. The
- * doll's shape is about what they lead with; this is about whether there is
- * anything to plan — so a ranger, a paladin and an eldritch knight all get the
- * switch on a martial's doll, which is the correct answer for every one of them.
+ * doll's shape is about what they LEAD with; this is about whether there is
+ * anything to plan — so a ranger, a paladin and an eldritch knight get the
+ * column on a martial's doll, which is the correct answer for every one of them.
+ *
+ * THREE clauses, and the third is the one that matters. The first two ask about
+ * the character's SHAPE: do they have a class that prepares, or spell slots to
+ * cast with. Both are inferences, and both miss the same case — a character who
+ * simply HAS a preparable spell without the class or the slots to explain it.
+ * A fighter carrying Misty Step from a subclass, an item or a feat had no way to
+ * plan it, because nothing about their sheet said they were the sort of person
+ * who prepares anything.
+ *
+ * So the third clause stops inferring and looks: does this character own a spell
+ * that a build could prepare? `canBuildPrepare` is the same test `applyBuild`
+ * uses to decide what it may set, so the column appears exactly when there is
+ * something it could put in it and never when there is not — a cantrip or an
+ * innate spell answers no, because neither is ever chosen.
  */
 export function canPrepareSpells(actor) {
     return getPreparingClasses(actor).length > 0
-        || Object.values(actor?.system?.spells ?? {}).some(slot => Number(slot?.max ?? 0) > 0);
+        || Object.values(actor?.system?.spells ?? {}).some(slot => Number(slot?.max ?? 0) > 0)
+        || (actor?.items ?? []).some(item => canBuildPrepare(item));
 }
 
 /**
@@ -830,9 +845,15 @@ export function resolveSlots(actor, build, slotDefinitions, drift = null) {
 
     return slotDefinitions.map(definition => {
         const itemId = build?.slots?.[definition.key] ?? null;
-        const unplanned = !!itemId && SPELL_SLOT_KEYS.has(definition.key)
-            && plansSpells && !plannedSet.has(itemId);
         const item = itemId ? actor?.items?.get(itemId) : null;
+        // Only a spell that NEEDS preparing can be missing from the prepared
+        // list. An innate spell, an at-will one or a cantrip is always available
+        // and is never in that column by design, so flagging it would be telling
+        // somebody to fix a thing that is already right — and a quick-cast slot
+        // is exactly where such a spell belongs, since it is about having it to
+        // hand rather than about preparing it.
+        const unplanned = !!item && SPELL_SLOT_KEYS.has(definition.key)
+            && plansSpells && canBuildPrepare(item) && !plannedSet.has(itemId);
 
         const rarity = item ? itemRarity(item) : null;
 
@@ -998,8 +1019,44 @@ export const PACK_GRID_SIZE = 26;
  * does not have, which is the same mistake as making Both Hands lock Main and
  * Off.
  */
+/**
+ * How many spells this character may prepare.
+ *
+ * TWO SOURCES, in order.
+ *
+ * 1. THE SYSTEM'S ANSWER. dnd5e computes `preparation.max` per class and
+ *    summing it is the whole calculation — this module does not re-derive
+ *    "ability modifier plus level", a rule with a decade of exceptions the
+ *    system already owns. Where dnd5e has an opinion it is the only one that
+ *    counts.
+ *
+ * 2. WHAT THEY ACTUALLY HAVE. A character with no preparing class — a fighter
+ *    handed a spell by their GM — has no computable maximum, and that is not
+ *    the same as a maximum of zero. Returning 0 there made all twenty-six cells
+ *    "beyond the limit": dimmed to a fifth and refusing drops, so the column
+ *    appeared and could not be used.
+ *
+ *    So the ceiling becomes the number of spells they own that a build could
+ *    prepare. It constrains nothing they could have done anyway — it is exactly
+ *    what they have — and it is the more useful of the two honest answers: the
+ *    grid then shows as many live cells as there are spells to put in them,
+ *    rather than twenty-six empty ones for a character with two spells. The GM
+ *    decided this number by handing the spells over; this reads it back rather
+ *    than inventing one.
+ *
+ * Null only when neither source can answer, which is a character with nothing to
+ * prepare — and the column does not appear for them at all. See
+ * canPrepareSpells, whose third clause is the same test as this one.
+ *
+ * Capped at the grid, because a limit larger than the number of cells is a limit
+ * the window cannot show and nobody could reach.
+ */
 function preparedLimit(actor) {
-    return getPreparingClasses(actor).reduce((total, cls) => total + cls.max, 0);
+    const classes = getPreparingClasses(actor);
+    if (classes.length) return classes.reduce((total, cls) => total + cls.max, 0);
+
+    const owned = (actor?.items ?? []).filter(item => canBuildPrepare(item)).length;
+    return owned ? Math.min(owned, PACK_GRID_SIZE) : null;
 }
 
 /**
@@ -1027,7 +1084,9 @@ export function resolvePreparedSpells(actor, build, drift = null) {
             // and keeping both is cheaper than remembering which is which.
             position: index + 1,
             itemId,
-            beyond: index >= limit,
+            // Only where a limit is known. See preparedLimit: an unknown one
+            // must not lock the grid a character has just been given.
+            beyond: limit !== null && index >= limit,
             filled: !!item,
             missing: !!itemId && !item,
             name: item?.name ?? null,

@@ -32,7 +32,10 @@
     {{#if hasSpells}}
     <div class="squire-import-divider">
         <span>Prepared spells</span>
-        <span class="squire-import-count">0 / {{limit}}</span>
+        {{!-- Overwritten by _recount() the moment the window renders; this is
+              only what it says before that runs. No limit means no ceiling to
+              count against, so it counts instead. --}}
+        <span class="squire-import-count">{{#if limit}}0 / {{limit}}{{else}}0{{/if}}</span>
     </div>
     <div class="blacksmith-list" data-role="spells">{{{spellRows}}}</div>
     {{/if}}
