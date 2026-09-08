@@ -811,8 +811,27 @@ export async function setBuildSlot(actor, buildId, slotKey, itemId) {
  * needing it dragged back.
  */
 export function resolveSlots(actor, build, slotDefinitions, drift = null) {
+    // WHAT THIS BUILD WOULD PREPARE. A quick-cast slot asking for a spell the
+    // prepared column does not list is a broken plan — equip it and that slot is
+    // uncastable, because the column is what does the preparing.
+    //
+    // Checked here rather than in `buildDrift`, and that is the fix: drift is
+    // "has the character moved away from this plan", so it exists only for the
+    // build being WORN. This question needs no character at all, and gating it
+    // behind drift meant the one moment you could not see a broken build was
+    // while you were building it — the warning arriving only after equipping,
+    // which is exactly too late.
+    //
+    // Only when the column is in use: a build that plans no preparation is not
+    // failing to prepare anything.
+    const plannedSpells = (build?.spells ?? []).filter(Boolean);
+    const plansSpells = plannedSpells.length > 0;
+    const plannedSet = new Set(plannedSpells);
+
     return slotDefinitions.map(definition => {
         const itemId = build?.slots?.[definition.key] ?? null;
+        const unplanned = !!itemId && SPELL_SLOT_KEYS.has(definition.key)
+            && plansSpells && !plannedSet.has(itemId);
         const item = itemId ? actor?.items?.get(itemId) : null;
 
         const rarity = item ? itemRarity(item) : null;
@@ -837,15 +856,20 @@ export function resolveSlots(actor, build, slotDefinitions, drift = null) {
             // character. Passed in rather than looked up, because the marking is
             // only meaningful for the worn build — every slot of every other
             // build would be "not equipped" and the mark would mean nothing.
-            // Asked of the set that applies to THIS slot. A spell slot reads
-            // notPrepared; everything else reads notEquipped.
-            drifted: !!itemId && !!(SPELL_SLOT_KEYS.has(definition.key)
+            // Two marks from two questions, and only one of them needs the
+            // character. `unplanned` is about the build alone and shows always;
+            // the drift check is about the worn build and shows only then.
+            drifted: !!itemId && (unplanned || !!(SPELL_SLOT_KEYS.has(definition.key)
                 ? drift?.notPrepared?.has(itemId)
-                : drift?.notEquipped?.has(itemId)),
-            // What went wrong, for the tooltip. "Not equipped" is nonsense about
-            // a spell — there is nothing to equip — and a mark that misnames its
-            // own reason teaches the wrong lesson about the window.
-            driftReason: SPELL_SLOT_KEYS.has(definition.key) ? 'prepared' : 'equipped'
+                : drift?.notEquipped?.has(itemId))),
+            // The tooltip's whole sentence. "Not equipped" is nonsense about a
+            // spell, and a mark that misnames its own reason teaches the wrong
+            // lesson about the window.
+            driftReason: unplanned
+                ? 'is not in this build&rsquo;s prepared spells &mdash; equipping it would leave this slot uncastable'
+                : (SPELL_SLOT_KEYS.has(definition.key)
+                    ? 'is not prepared, though this build is being worn'
+                    : 'is not equipped, though this build is being worn')
         };
     });
 }
@@ -2656,13 +2680,15 @@ export function buildDrift(actor, build, state = null) {
         ? [...spells].filter(id => !wantSpells.has(id) && !slotSpells.has(id))
         : [];
 
+    const count = notEquipped.length + notPrepared.length + extraGear.length + extraSpells.length;
+
     return {
         notEquipped: new Set(notEquipped),
         notPrepared: new Set(notPrepared),
         extraGear: extraGear.length,
         extraSpells: extraSpells.length,
-        count: notEquipped.length + notPrepared.length + extraGear.length + extraSpells.length,
-        matches: !notEquipped.length && !notPrepared.length && !extraGear.length && !extraSpells.length
+        count,
+        matches: count === 0
     };
 }
 

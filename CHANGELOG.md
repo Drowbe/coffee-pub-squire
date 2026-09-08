@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A quick-cast slot warns when the build does not prepare the spell in it.** Take a spell out of the prepared column while a doll slot still asks for it and the slot is marked straight away — equipping the build would leave that slot uncastable, the column being what does the preparing.
+  - **It shows while you are building, not after you equip.** This asks nothing about the character: it compares a build's slots against a build's own prepared list, so it needs no actor and appears on any build you are looking at. The first version routed it through drift, which exists only for the build being *worn* — meaning the one moment you could not see a broken build was while you were building it, and the warning arrived after equipping, which is exactly too late.
+  - **A different fault from drift, and it says so.** Drift means the character has moved away from the plan; this means the plan does not agree with itself. The tooltip reads *"Fireball is not in this build's prepared spells — equipping it would leave this slot uncastable"* rather than borrowing drift's wording.
+  - Not counted in the "N differences" beside **Last worn**. That number answers how far the character has moved from the plan, and a fault in the plan itself would put a count there that no amount of equipping could clear.
+  - Only when the build plans a prepared list at all. One that plans none is not failing to prepare anything.
+
 - **An `Add to Handle` button in the builder's action bar**, beside Equip. Keeping an entry within reach of a shut tray previously meant dragging its tile onto the handle — which works, and which nobody discovers, because a drag target announces nothing.
   - **It toggles**, and the label says which it will do: `Remove from Handle` once the entry is there. A button reading "Add to Handle" on something already on it either lies or does nothing, and both are worse than a label that changes.
   - Secondary styling and placed to the LEFT of Equip: the rightmost button is the one the window is for, and a secondary sitting right of the primary outranks it by position while denying it by colour. New entries join the end of the handle's strip. No confirmation: it costs a strip of screen and undoes itself by being pressed again.
