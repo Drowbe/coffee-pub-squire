@@ -696,6 +696,17 @@ export const registerSettings = function() {
     // Defaults to list because that is what favourites has always looked like
     // and a layout is not a thing to change under someone. Remembered per user
     // from the first time they press the other one.
+    // How the tray's Builds panel draws its rows: 'list' or 'tiles'. Its own
+    // setting rather than sharing the favourites one — they are two lists a
+    // player reads for different reasons, and being forced to view both the same
+    // way is a coupling nobody asked for.
+    game.settings.register(MODULE.ID, 'buildsLayout', {
+        scope: 'user',
+        config: false,
+        type: String,
+        default: 'list'
+    });
+
     game.settings.register(MODULE.ID, 'favoritesLayout', {
         scope: 'user',
         config: false,

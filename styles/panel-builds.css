@@ -115,98 +115,65 @@
 /* ==========================================================================
    THE FAVOURITE BUILDS, IN THE TRAY
 
-   A ROW, not a tile. The builder's rail uses squares because it is a gallery you
-   browse; this sits in a column of item lists that are all rows, and matching
-   its neighbours is worth more here than matching the window it came from.
+   ALMOST NOTHING HERE, and that is the point. The rows are `panel-item` with
+   `panel-item-row`, an image container, a name and a `tray-buttons` strip —
+   the same markup every other list in this tray uses — so the hover, the
+   spacing, the truncation and the image treatment all arrive for free.
+
+   It had a shape of its own at first, which meant a second set of rules for
+   every one of those, and a second set is a set that drifts.
    ========================================================================== */
-.squire-tray .squire-tray-builds {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.squire-tray .squire-tray-build {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    padding: 4px 6px;
-    cursor: pointer;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.squire-tray .squire-tray-build:hover {
-    border-color: var(--squire-color-hover);
-    background: rgba(255, 255, 255, 0.05);
-}
 
 /* The one the character has ON. A left edge rather than a background wash: the
-   rows carry artwork, and a tint behind one of them fights the picture it is
-   trying to mark. */
+   rows carry artwork, and a tint behind one fights the picture it is marking. */
 .squire-tray .squire-tray-build.is-worn {
-    border-left-color: #7fd97f;
-}
-
-.squire-tray .squire-tray-build-image {
-    position: relative;
-    flex: 0 0 auto;
-    width: 32px;
-    height: 32px;
-    overflow: hidden;
-    border-radius: 4px;
-    /* A ground of its own, because a token image is usually transparent. */
-    background: rgb(8, 6, 4);
-}
-
-.squire-tray .squire-tray-build-image img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border: 0;
-}
-
-/* Build or costume, on the corner of the picture — the same two glyphs the
-   builder uses for the same two ideas. */
-.squire-tray .squire-tray-build-kind {
-    position: absolute;
-    right: 2px;
-    bottom: 1px;
-    color: #f4e7cd;
-    font-size: 0.6em;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
-}
-
-.squire-tray .squire-tray-build-text {
-    display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
-    min-width: 0;
-    gap: 1px;
-}
-
-.squire-tray .squire-tray-build-name {
-    overflow: hidden;
-    color: var(--squire-color-text, #f4e7cd);
-    font-size: 0.82em;
-    font-weight: 600;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-.squire-tray .squire-tray-build-meta {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    color: rgba(159, 146, 117, 0.9);
-    font-size: 0.7em;
+    border-left: 2px solid #7fd97f;
 }
 
 .squire-tray .squire-tray-build-worn {
-    flex: 0 0 auto;
     color: #7fd97f;
-    font-size: 0.7em;
+}
+
+/* Tiles restyle `border` as a whole, which would swallow the list's left-edge
+   worn mark. A full green edge is the same fact in the shape a card has. */
+.squire-tray .builds-panel.layout-tiles .squire-tray-build.is-worn {
+    border-color: #7fd97f;
+}
+
+/* The kind glyph sits where the d20 does on an item row, and inherits that
+   overlay's position and hover from `panel-item-roll-overlay`. It only needs
+   its own size: a shirt is a busier shape than a die at the same pixels.
+   List only — tiles take the 28px Favourites overlay size. */
+.squire-tray .builds-panel.layout-list .squire-tray-build .panel-item-roll-overlay {
+    font-size: 0.9em;
+}
+
+/* The name is not a sheet link on a build, so on a tile it stays inert —
+   otherwise it would eat the overlay click that wears the build. Favourites
+   takes events back because its name opens the item. The context line is the
+   same facts the tile caption already printed, so it stays in the list. */
+.squire-tray .builds-panel.layout-tiles .panel-item-label {
+    pointer-events: none;
+}
+
+.squire-tray .builds-panel.layout-tiles .panel-item-context {
+    display: none;
+}
+
+/* SQUARES. Favourites cannot be: a 2x1 span cannot express its shape through
+   aspect-ratio, so those rows are a stated 116px and go gently oblong when the
+   tray widens. A build has no size to set, so the square Favourites first
+   tried is the right answer here. `align-items: start` stops the grid stretch
+   from fighting the ratio. */
+.squire-tray .builds-panel.layout-tiles .panel-items {
+    grid-auto-rows: auto;
+    align-items: start;
+}
+
+.squire-tray .builds-panel.layout-tiles .panel-item {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
 }
 
 /* ---------------- THE PAPER DOLL ---------------- */
@@ -1631,7 +1598,7 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 26%;
+    width: 30%;
     aspect-ratio: 1;
     overflow: hidden;
     border-radius: 50%;
@@ -1639,11 +1606,16 @@
     z-index: 2;
 }
 
-/* Close to the edge, not against it: the inset is small enough that they read as
-   sitting ON the picture rather than floating in the middle of it, and large
-   enough that the ring is not clipped by the image's own rounded corner. */
-.squire-build-image-float-portrait { left: 3%; }
-.squire-build-image-float-token { right: 3%; }
+/* FLUSH WITH THE CORNERS. The armour class, the attunement plate and the weight
+   plate all sit 5px in from the picture's edge, so these take the same 5px and
+   their outer edges line up with that column — four marks and two circles
+   reading as one frame around the figure rather than six things each placed by
+   its own eye.
+
+   Pixels, not a percentage, because the thing being matched is stated in pixels:
+   a percentage would agree with it at exactly one window width. */
+.squire-build-image-float-portrait { left: 5px; }
+.squire-build-image-float-token { right: 5px; }
 
 .squire-build-image-float img {
     display: block;

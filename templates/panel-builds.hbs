@@ -5,32 +5,53 @@
     container rather than hiding it, so an unused feature costs no space and
     leaves no gap.
 
-    A row rather than a tile. The builder's rail uses square tiles because it is
-    a gallery you browse; this is a list you act on, and it sits in a column of
-    other lists that are all rows. Matching them is worth more here than matching
-    the window this came from.
+    THE SAME MARKUP THE FAVOURITES PANEL USES: `section-header` with a
+    `header-left` and `header-right`, then `panel-item` rows carrying
+    `panel-item-row`, an image container, a name, a tile-only detail line and
+    a `tray-buttons` strip. The tile layout is the Favourites grid, shared in
+    panel-favorites.css — re-shaping these rows in CSS keeps overlay-click,
+    the ⋯ and right-click working with no second template to keep in step.
 --}}
-<div class="panel-container-inner">
-    <div class="tray-title-small">
-        <span><i class="fa-solid fa-shirt"></i> Builds</span>
+{{#if builds.length}}
+<div class="builds-panel{{#if (eq layout 'tiles')}} layout-tiles{{else}} layout-list{{/if}}">
+<div class="section-header">
+    <div class="header-left">
+        <i class="fa-solid fa-shirt"></i> Builds
     </div>
+    {{!-- The same two-icon switch Favourites has, in the same place, doing the
+          same thing. A pair rather than one button that toggles: a single
+          button has to show either the state or the action, and is read as the
+          wrong one half the time. --}}
+    <div class="header-right">
+        <i class="fa-solid fa-list builds-layout-toggle{{#if (eq layout 'list')}} active{{/if}}"
+           data-layout="list" data-tooltip="Show builds as a list"></i>
+        <i class="fa-solid fa-grid-2 builds-layout-toggle{{#if (eq layout 'tiles')}} active{{/if}}"
+           data-layout="tiles" data-tooltip="Show builds as tiles"></i>
+    </div>
+</div>
 
-    <div class="squire-tray-builds">
-        {{#each builds}}
-        <div class="squire-tray-build{{#if this.worn}} is-worn{{/if}}"
-             data-build-id="{{this.id}}"
-             data-tooltip="<strong>{{this.name}}</strong><br>{{#if this.costume}}Costume &mdash; changes the portrait and token only{{else}}AC {{this.armorClass}} &middot; {{this.gearCount}} items{{/if}}<br><em>Click to {{#if this.costume}}wear{{else}}equip{{/if}} &middot; right-click to open the builder</em>">
-            <div class="squire-tray-build-image">
-                <img draggable="false" src="{{this.img}}" alt="{{this.name}}">
-                {{!-- The same two glyphs the builder uses everywhere for the two
-                      kinds of thing, so one mark means one thing wherever it
-                      appears in this module. --}}
-                <i class="fa-solid {{#if this.costume}}fa-masks-theater{{else}}fa-shirt{{/if}} squire-tray-build-kind"></i>
+<div class="panel-items">
+    {{#each builds}}
+    <div class="panel-item squire-tray-build{{#if this.worn}} is-worn{{/if}}"
+         data-build-id="{{this.id}}"
+         data-tooltip="<strong>{{this.name}}</strong><br>{{#if this.costume}}Costume &mdash; changes the portrait and token only{{else}}AC {{this.armorClass}} &middot; {{this.gearCount}} items{{/if}}<br><em>Click to {{#if this.costume}}wear{{else}}equip{{/if}} &middot; right-click for more</em>">
+        <div class="panel-item-row">
+            <div class="panel-item-image-container">
+                <img draggable="false" class="panel-item-image" src="{{this.img}}" alt="{{this.name}}"/>
+                {{!-- The runner overlay every other row uses for "this does
+                      something when you click it", so a build row answers a
+                      click the same way an item row does. --}}
+                <i class="fa-solid {{#if this.costume}}fa-masks-theater{{else}}fa-shirt{{/if}} squire-roll-overlay panel-item-roll-overlay"></i>
             </div>
 
-            <div class="squire-tray-build-text">
-                <span class="squire-tray-build-name">{{this.name}}</span>
-                <span class="squire-tray-build-meta">
+            <div class="panel-item-name">
+                <span class="panel-item-label">{{this.name}}</span>
+                {{!-- Kind. Drawn only by the tile layout, which hides the rest
+                      of the row's context behind a clipped two-line name; the
+                      list has the whole panel width and does not need a second
+                      line saying what the icons beside the name already say. --}}
+                <span class="panel-item-detail">{{this.detailLabel}}</span>
+                <span class="panel-item-context">
                     {{#if this.costume}}
                     <i class="fa-solid fa-masks-theater"></i> Costume
                     {{else}}
@@ -40,11 +61,17 @@
                 </span>
             </div>
 
-            {{#if this.worn}}
-            <i class="fa-solid fa-check squire-tray-build-worn"
-               data-tooltip="This is what the character is wearing"></i>
-            {{/if}}
+            <div class="tray-buttons">
+                {{#if this.worn}}
+                <i class="fa-solid fa-check squire-tray-build-worn"
+                   data-tooltip="This is what the character is wearing"></i>
+                {{/if}}
+                <i class="fa-solid fa-ellipsis squire-item-menu"
+                   data-tooltip="More &mdash; equip, edit, handle, favourite"></i>
+            </div>
         </div>
-        {{/each}}
     </div>
+    {{/each}}
 </div>
+</div>
+{{/if}}

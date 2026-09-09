@@ -20,20 +20,32 @@
     gap: 7px;
 }
 
-.squire-tray .favorites-layout-toggle {
+/* THE LIST / TILES SWITCH, shared with the Builds panel below the favourites —
+   the same control doing the same job in the same place, so it is one rule
+   rather than two that drift.
+
+   NOT DOUBLE-DIMMED. The colour used to carry an alpha of its own AND an
+   opacity on top, which multiplied out to about 0.31 of an already-muted tan on
+   a glyph smaller than a row icon: the off half of the switch was invisible
+   enough that it read as a single button, and the pair only works if you can
+   see there are two. The colour is solid now and the dimming is done once. */
+.squire-tray .favorites-layout-toggle,
+.squire-tray .builds-layout-toggle {
     cursor: pointer;
     padding: 2px 1px;
     font-size: 0.85em;
-    color: rgba(159, 146, 117, 0.9);
-    opacity: 0.35;
+    color: #9f9275;
+    opacity: 0.5;
     transition: color 0.2s ease, opacity 0.2s ease;
 }
 
-.squire-tray .favorites-layout-toggle.active {
+.squire-tray .favorites-layout-toggle.active,
+.squire-tray .builds-layout-toggle.active {
     opacity: 1;
 }
 
-.squire-tray .favorites-layout-toggle:hover {
+.squire-tray .favorites-layout-toggle:hover,
+.squire-tray .builds-layout-toggle:hover {
     color: var(--squire-color-hover);
     opacity: 1;
 }
@@ -65,6 +77,10 @@
 
 /* ---------------- TILE LAYOUT ----------------
 
+   Shared with the Builds panel. The same cards, the same overlay click, the
+   same caption over the art. Builds has no tile spans, so the data-span rules
+   below simply never match there.
+
    Borrowed from the merchant module's shop wall, with one deliberate change.
 
    What is borrowed: the tile IS the picture, not a card with a picture on it.
@@ -93,7 +109,8 @@
    fixes that from inside the grid: `align-self: start` shrinks the element but
    leaves the row, and the row height is exactly what the tiles need. So the
    headings step outside it. */
-.squire-tray .favorites-layout-tiles .favorites-group-items {
+.squire-tray .favorites-layout-tiles .favorites-group-items,
+.squire-tray .builds-panel.layout-tiles .panel-items {
     display: grid;
     /* Three across at the tray's 400px floor; `auto-fill` rather than
        `repeat(3, ...)` so a widened tray gets a fourth column instead of three
@@ -138,7 +155,8 @@
 
 /* The tile fills whatever cells it was given. No `aspect-ratio`: the grid owns
    the shape now, so a tile that stretches is a tile the user asked to stretch. */
-.squire-tray .favorites-layout-tiles .panel-item {
+.squire-tray .favorites-layout-tiles .panel-item,
+.squire-tray .builds-panel.layout-tiles .panel-item {
     position: relative;
     height: 100%;
     margin: 0;
@@ -174,13 +192,15 @@
     -webkit-line-clamp: 3;
 }
 
-.squire-tray .favorites-layout-tiles .panel-item:hover {
+.squire-tray .favorites-layout-tiles .panel-item:hover,
+.squire-tray .builds-panel.layout-tiles .panel-item:hover {
     border-color: rgba(255, 100, 0, 0.6);
 }
 
 /* The row's flex wrapper stops being a row and becomes the tile's frame; every
    child below positions itself against it. */
-.squire-tray .favorites-layout-tiles .panel-item-row {
+.squire-tray .favorites-layout-tiles .panel-item-row,
+.squire-tray .builds-panel.layout-tiles .panel-item-row {
     display: block;
     position: absolute;
     inset: 0;
@@ -191,7 +211,8 @@
 /* The image container is the whole tile rather than a 24px chip, which also
    means the d20 roll overlay it already carries covers the whole tile — the
    same hover-to-roll target the list has, just bigger. */
-.squire-tray .favorites-layout-tiles .panel-item-image-container {
+.squire-tray .favorites-layout-tiles .panel-item-image-container,
+.squire-tray .builds-panel.layout-tiles .panel-item-image-container {
     position: absolute;
     inset: 0;
     flex: none;
@@ -199,7 +220,8 @@
     height: auto;
 }
 
-.squire-tray .favorites-layout-tiles .panel-item-image {
+.squire-tray .favorites-layout-tiles .panel-item-image,
+.squire-tray .builds-panel.layout-tiles .panel-item-image {
     width: 100%;
     height: 100%;
     border-radius: 0;
@@ -213,7 +235,8 @@
 
    Sized in px, not em: the base rule is an absolute 16px, so an em here would
    be relative to the inherited font size rather than to that. */
-.squire-tray .favorites-layout-tiles .panel-item-roll-overlay {
+.squire-tray .favorites-layout-tiles .panel-item-roll-overlay,
+.squire-tray .builds-panel.layout-tiles .panel-item-roll-overlay {
     font-size: 28px;
 }
 
@@ -230,7 +253,8 @@
    A grid rather than a flex column because line two is two things at opposite
    ends: the kind on the left, the badges on the right. Stacking them in a
    column would put the badges under the words instead of beside them. */
-.squire-tray .favorites-layout-tiles .panel-item-name {
+.squire-tray .favorites-layout-tiles .panel-item-name,
+.squire-tray .builds-panel.layout-tiles .panel-item-name {
     position: absolute;
     right: 0;
     bottom: 0;
@@ -261,7 +285,8 @@
    a caption says which of its two lines is the answer. The colour is a warm
    cream rather than the row's flat #eee: over artwork, a neutral grey reads as
    something that failed to load. */
-.squire-tray .favorites-layout-tiles .panel-item-label {
+.squire-tray .favorites-layout-tiles .panel-item-label,
+.squire-tray .builds-panel.layout-tiles .panel-item-label {
     grid-area: name;
     display: -webkit-box;
     overflow: hidden;
@@ -282,7 +307,8 @@
    picture and the name together have not answered the question. One line, and
    an ellipsis rather than a wrap, so the caption is always exactly two lines
    tall and the grid below never shifts. */
-.squire-tray .favorites-layout-tiles .panel-item-detail {
+.squire-tray .favorites-layout-tiles .panel-item-detail,
+.squire-tray .builds-panel.layout-tiles .panel-item-detail {
     grid-area: detail;
     display: block;
     overflow: hidden;
@@ -295,7 +321,8 @@
 
 /* Action badge and quantity, at the right end of the detail line. Takes its own
    pointer events back because the quantity is click-to-edit. */
-.squire-tray .favorites-layout-tiles .panel-item-context {
+.squire-tray .favorites-layout-tiles .panel-item-context,
+.squire-tray .builds-panel.layout-tiles .panel-item-context {
     grid-area: badges;
     display: flex;
     gap: 3px;
@@ -308,7 +335,8 @@
    visible rather than shown on hover: on a touch device and for anyone reading
    rather than pointing, a control that only exists under the cursor does not
    exist. */
-.squire-tray .favorites-layout-tiles .tray-buttons {
+.squire-tray .favorites-layout-tiles .tray-buttons,
+.squire-tray .builds-panel.layout-tiles .tray-buttons {
     position: absolute;
     top: 3px;
     right: 3px;
@@ -321,7 +349,8 @@
     background: rgba(8, 6, 4, 0.72);
 }
 
-.squire-tray .favorites-layout-tiles .tray-buttons i {
+.squire-tray .favorites-layout-tiles .tray-buttons i,
+.squire-tray .builds-panel.layout-tiles .tray-buttons i {
     font-size: 0.72em;
 }
 

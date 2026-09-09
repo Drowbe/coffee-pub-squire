@@ -589,8 +589,16 @@ export class PanelManager {
         // Ensure viewMode is properly set
         PanelManager.viewMode = viewMode;
         
-        await this.renderPanels(trayElement);
+        // Listeners first, then panels — the same order updateTray uses.
+        // activateListeners used to run after renderPanels and clone the stacked
+        // column to drop old drag handlers. cloneNode does not copy listeners,
+        // so every panel that had already bound to those nodes was left talking
+        // to markup that was no longer on screen. Favourites and the sheet
+        // panels often survived because their renders are fire-and-forget and
+        // finished after the clone; Builds was awaited, so it was the one
+        // guaranteed to bind, then die. Bind the tray once, then fill it.
         this.activateListeners(trayElement);
+        await this.renderPanels(trayElement);
         
         // Populate handle with rich data immediately after creation
         await this.handleManager.updateHandle();
@@ -724,7 +732,15 @@ export class PanelManager {
             }
             this.controlPanel?.render(element);
             this.favoritesPanel?.render(element);
-            this.buildsPanel?.render(element);
+            // AWAITED, unlike its neighbours. None of these renders is awaited —
+            // they are fire and forget — which is survivable for a panel whose
+            // absence is obvious, and was not for this one: it draws nothing
+            // when a character has no favourite builds, so a render that threw
+            // looked exactly like a character with none. An unawaited async
+            // throw is an unhandled rejection nobody sees. Safe to await now
+            // that activateListeners no longer replaces the stacked DOM after
+            // this bind.
+            await this.buildsPanel?.render(element);
             this.spellsPanel?.render(element);
             this.weaponsPanel?.render(element);
             this.inventoryPanel?.render(element);
@@ -994,18 +1010,19 @@ export class PanelManager {
             });
         }
 
-        // Add drag and drop handlers for stacked panels
-        const stackedContainer = nativeTray.querySelector('.panel-containers.stacked');
-        
-        if (stackedContainer) {
-            // v13: Store handler references for cleanup (can't use namespaced events in native DOM)
-            // For now, we'll remove old handlers by cloning the container
-            const containerClone = stackedContainer.cloneNode(true);
-            stackedContainer.parentNode?.replaceChild(containerClone, stackedContainer);
-            const newStackedContainer = containerClone;
-            
-            // v13: Add new drag event listeners with native DOM
-            newStackedContainer.addEventListener('dragenter', (event) => {
+        // Drop onto the stacked column — delegated and bound once, the same
+        // as the tray's other root listeners. This used to clone the column
+        // on every activateListeners call to drop stale drag handlers.
+        // cloneNode copies markup and none of the click listeners the panels
+        // had just bound, so the on-screen rows were inert until something
+        // re-rendered them. A flag, like itemDragBound above, is the same
+        // cleanup without throwing the nodes away.
+        if (!nativeTray.dataset.itemDropBound) {
+            const stackedContainer = nativeTray.querySelector('.panel-containers.stacked');
+            if (!stackedContainer) return;
+            nativeTray.dataset.itemDropBound = 'true';
+
+            stackedContainer.addEventListener('dragenter', (event) => {
                 // A drag that started in the tray must not treat the tray as a
                 // drop target — the actor already owns the item (self-drop
                 // would duplicate it). No highlight, no sound, no preventDefault.
@@ -1021,18 +1038,18 @@ export class PanelManager {
                 }
             });
 
-            newStackedContainer.addEventListener('dragleave', (event) => {
+            stackedContainer.addEventListener('dragleave', (event) => {
                 event.preventDefault();
                 // Remove the style if we're leaving the container or entering a child element
                 const container = event.currentTarget;
                 const relatedTarget = event.relatedTarget;
                 // Check if we're actually leaving the container
-                if (!relatedTarget || !newStackedContainer.contains(relatedTarget)) {
+                if (!relatedTarget || !stackedContainer.contains(relatedTarget)) {
                     container.classList.remove('drop-target');
                 }
             });
 
-            newStackedContainer.addEventListener('dragover', (event) => {
+            stackedContainer.addEventListener('dragover', (event) => {
                 // Without preventDefault the browser refuses the drop here —
                 // exactly what we want for a drag that started in the tray.
                 if (PanelManager._trayItemDragActive) return;
@@ -1040,7 +1057,7 @@ export class PanelManager {
                 event.dataTransfer.dropEffect = 'copy';
             });
 
-            newStackedContainer.addEventListener('drop', async (event) => {
+            stackedContainer.addEventListener('drop', async (event) => {
                 if (PanelManager._trayItemDragActive) return;
                 event.preventDefault();
 
@@ -2110,6 +2127,7 @@ export async function _updateTrayFromSelection() {
             if (PanelManager.instance.characterPanel) PanelManager.instance.characterPanel.actor = actorToUse;
             if (PanelManager.instance.controlPanel) PanelManager.instance.controlPanel.actor = actorToUse;
             if (PanelManager.instance.favoritesPanel) PanelManager.instance.favoritesPanel.actor = actorToUse;
+            if (PanelManager.instance.buildsPanel) PanelManager.instance.buildsPanel.actor = actorToUse;
             if (PanelManager.instance.spellsPanel) PanelManager.instance.spellsPanel.actor = actorToUse;
             if (PanelManager.instance.weaponsPanel) PanelManager.instance.weaponsPanel.actor = actorToUse;
             if (PanelManager.instance.inventoryPanel) PanelManager.instance.inventoryPanel.actor = actorToUse;
