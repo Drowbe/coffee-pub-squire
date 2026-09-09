@@ -68,7 +68,7 @@ coffee-pub-squire/
 - Registers with Blacksmith via `BlacksmithModuleManager.registerModule()`
 - Hooks: `init`, `ready`, `canvasReady`, `setup`, `getActorDirectoryEntryContext`, etc.
 - Wraps `canvas.selectObjects` for multi-select / selection display
-- Registers socketlib module for cross-client operations (transfers, cleanup requests)
+- Registers the `gmRequest` ops for cross-client operations (transfers, GM-posted cards, cleanup requests)
 
 ### Panel Manager (manager-panel.js)
 
@@ -202,7 +202,7 @@ This avoids timing issues where Foundry system managers are not ready yet. The F
 
 - Use `postConsoleAndNotification` from Blacksmith utils; prefix messages with `SQUIRE | `
 - Target Foundry v13 API; use Application V2 patterns
-- Maintain compatibility with socketlib
+- Ask a GM through Blacksmith `gmRequest`, never a raw socket: it supplies a verified caller identity
 - Target D&D 5e version 5.5+
 
 ### References
@@ -215,5 +215,5 @@ This avoids timing issues where Foundry system managers are not ready yet. The F
 
 - FoundryVTT v13+
 - D&D 5e system 5.5+
-- Required: `coffee-pub-blacksmith`, `socketlib`
+- Required: `coffee-pub-blacksmith`
 - Recommended: `coffee-pub-bibliosoph`, `coffee-pub-crier`, `coffee-pub-monarch`, `coffee-pub-scribe`

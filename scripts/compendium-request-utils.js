@@ -5,6 +5,7 @@ import {
     compendiumRequest, compendiumApproved, compendiumDenied, compendiumFailed,
     retireCard, name, sentence
 } from './manager-cards.js';
+import { postGmCard } from './manager-gm-cards.js';
 
 /**
  * The ask-the-GM rung of acquisition access.
@@ -43,11 +44,6 @@ export class CompendiumRequestUtils {
     static async sendRequest(actor, entry) {
         if (!actor || !entry?.uuid) return false;
 
-        const socket = game.modules.get(MODULE.ID)?.socket;
-        if (!socket) {
-            ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
-            return false;
-        }
 
         if (!game.users.some(user => user.isGM && user.active)) {
             showSquireToast('No GM is online', {
@@ -58,7 +54,7 @@ export class CompendiumRequestUtils {
             return false;
         }
 
-        await socket.executeAsGM('createCompendiumRequestChat', {
+        await postGmCard('compendiumRequest', {
             actorUuid: actor.uuid,
             actorName: actor.name,
             itemUuid: entry.uuid,

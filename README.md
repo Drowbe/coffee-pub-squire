@@ -54,7 +54,6 @@ do, and let me do it with ease.
 - **The D&D 5e system.** Squire is built for it and does not work without it.
 - **[Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith)**, version 13.19.1 or
   later, installed and enabled. Squire will not run without it.
-- **[socketlib](https://github.com/manuelVo/foundryvtt-socketlib)**, installed and enabled.
 
 Optional: [Coffee Pub Librarian](https://github.com/Drowbe/coffee-pub-librarian), if you want the
 quests and codex Squire used to provide.
@@ -67,8 +66,12 @@ Inside Foundry VTT, add this manifest URL:
 https://github.com/Drowbe/coffee-pub-squire/releases/latest/download/module.json
 ```
 
-Then enable Squire in your world's module settings, with Coffee Pub Blacksmith and socketlib enabled
-alongside it.
+Then enable Squire in your world's module settings, with Coffee Pub Blacksmith enabled alongside it.
+
+Squire no longer needs socketlib. Everything that used it — item transfers, the cards a player cannot
+post for themselves, and sheet-cleanup approvals — now goes through Blacksmith, which tells the
+answering GM who is really asking. You can leave socketlib installed for other modules; Squire will
+not use it.
 
 ## Where to read more
 

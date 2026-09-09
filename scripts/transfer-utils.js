@@ -4,6 +4,7 @@ import {
     transferRequestGMApproval, transferRequestReceiver, transferRequestSender
 } from './manager-cards.js';
 import { requestItemTransfer, offerItemTransfer } from './manager-transfer-request.js';
+import { postGmCard } from './manager-gm-cards.js';
 
 export class TransferUtils {
     /**
@@ -114,26 +115,24 @@ export class TransferUtils {
         const gmUsers = game.users.filter(u => u.isGM);
         
         if (gmUsers.length > 0) {
-            // If current user is not a GM, use socketlib to have a GM create the message
+            // A player cannot whisper on somebody else's behalf, so a GM posts
+            // it for them.
             if (!game.user.isGM) {
-                const socket = game.modules.get(MODULE.ID)?.socket;
-                if (socket) {
-                    await socket.executeAsGM('createTransferRequestChat', {
-                        sourceActorId: sourceActor.id,
-                        sourceActorName: `${getActorDisplayName(sourceActor)} (${game.user.name})`,
-                        targetActorId: targetActor.id,
-                        targetActorName: getActorDisplayName(targetActor),
-                        itemId: item.id,
-                        itemName: item.name,
-                        quantity: quantity,
-                        hasQuantity: hasQuantity,
-                        isPlural: quantity > 1,
-                        isGMApproval: true,
-                        transferId,
-                        receiverIds: gmUsers.map(u => u.id),
-                        transferData
-                    });
-                }
+                await postGmCard('transferRequest', {
+                    sourceActorId: sourceActor.id,
+                    sourceActorName: `${getActorDisplayName(sourceActor)} (${game.user.name})`,
+                    targetActorId: targetActor.id,
+                    targetActorName: getActorDisplayName(targetActor),
+                    itemId: item.id,
+                    itemName: item.name,
+                    quantity: quantity,
+                    hasQuantity: hasQuantity,
+                    isPlural: quantity > 1,
+                    isGMApproval: true,
+                    transferId,
+                    receiverIds: gmUsers.map(u => u.id),
+                    transferData
+                });
             } else {
                 await transferRequestGMApproval({
                     sourceActorName: `${getActorDisplayName(sourceActor)} (${game.user.name})`,
@@ -164,26 +163,23 @@ export class TransferUtils {
         const targetUsers = game.users.filter(u => !u.isGM && targetActor.ownership[u.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
         
         if (targetUsers.length > 0) {
-            // If current user is not a GM, use socketlib to have a GM create the message
+            // As above: the sender cannot whisper to the receiver, so a GM does.
             if (!game.user.isGM) {
-                const socket = game.modules.get(MODULE.ID)?.socket;
-                if (socket) {
-                    await socket.executeAsGM('createTransferRequestChat', {
-                        sourceActorId: sourceActor.id,
-                        sourceActorName: getActorDisplayName(sourceActor),
-                        targetActorId: targetActor.id,
-                        targetActorName: getActorDisplayName(targetActor),
-                        itemId: item.id,
-                        itemName: item.name,
-                        quantity: quantity,
-                        hasQuantity: hasQuantity,
-                        isPlural: quantity > 1,
-                        isTransferReceiver: true,
-                        transferId,
-                        receiverIds: targetUsers.map(u => u.id),
-                        transferData
-                    });
-                }
+                await postGmCard('transferRequest', {
+                    sourceActorId: sourceActor.id,
+                    sourceActorName: getActorDisplayName(sourceActor),
+                    targetActorId: targetActor.id,
+                    targetActorName: getActorDisplayName(targetActor),
+                    itemId: item.id,
+                    itemName: item.name,
+                    quantity: quantity,
+                    hasQuantity: hasQuantity,
+                    isPlural: quantity > 1,
+                    isTransferReceiver: true,
+                    transferId,
+                    receiverIds: targetUsers.map(u => u.id),
+                    transferData
+                });
             } else {
                 await transferRequestReceiver({
                     sourceActorName: getActorDisplayName(sourceActor),
@@ -345,9 +341,6 @@ export class TransferUtils {
      * Send transfer completion messages for direct transfers
      */
     static async _sendTransferCompletionMessages(sourceActor, targetActor, item, quantity, hasQuantity) {
-        const socket = game.modules.get(MODULE.ID)?.socket;
-        if (!socket) return;
-
         // Get source and target users
         const sourceUsers = game.users.filter(user => 
             sourceActor.ownership && 
@@ -373,7 +366,7 @@ export class TransferUtils {
         ])];
 
         if (allUserIds.length > 0) {
-            await socket.executeAsGM('createTransferCompleteChat', {
+            await postGmCard('transferComplete', {
                 sourceActorId: sourceActor.id,
                 sourceActorName: getActorDisplayName(sourceActor),
                 targetActorId: targetActor.id,

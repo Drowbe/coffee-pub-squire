@@ -4,6 +4,7 @@ import {
     ammoRequest, ammoApproved, ammoDenied, ammoFailed,
     retireCard, name, sentence
 } from './manager-cards.js';
+import { postGmCard } from './manager-gm-cards.js';
 
 /**
  * Statblock usability checks and repairs.
@@ -526,11 +527,6 @@ export class StatblockUtility {
             return false;
         }
 
-        const socket = game.modules.get(MODULE.ID)?.socket;
-        if (!socket) {
-            ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
-            return false;
-        }
 
         if (!game.users.some(user => user.isGM && user.active)) {
             showSquireToast('No GM is online', {
@@ -542,7 +538,7 @@ export class StatblockUtility {
         }
 
         const ammoLabel = this.getAmmoLabel(issue.ammoType);
-        await socket.executeAsGM('createAmmoRequestChat', {
+        await postGmCard('ammoRequest', {
             actorUuid: actor.uuid,
             actorName: actor.name,
             weaponId: issue.itemId,

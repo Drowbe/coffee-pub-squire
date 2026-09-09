@@ -1,6 +1,7 @@
 import { MODULE } from './const.js';
 import { renderTemplate, showSquireToast } from './helpers.js';
 import { scanActor, applyCleanup } from './utility-cleanup.js';
+import { requestCleanupApproval } from './manager-cleanup-request.js';
 import { revertMerge, getSnapshot } from './utility-cleanup-merge.js';
 
 /**
@@ -100,6 +101,16 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
         this.restored = null;
         this._busy = false;
         this._answered = false;
+
+        // An approval window IS an answer that has not arrived yet, so it
+        // carries the promise for one. The player who asked is waiting on the
+        // return value of their own request — there is no push back to them —
+        // which is why every exit from this window has to settle this, closing
+        // it included.
+        this._settle = null;
+        this.answered = request
+            ? new Promise(resolve => { this._settle = resolve; })
+            : Promise.resolve(null);
 
         if (!request) CleanupWindow.open.set(actor.id, this);
     }
@@ -300,12 +311,6 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
 
     /** Hand the plan to a GM instead of writing it. */
     async _sendForApproval(plan) {
-        const socket = game.modules.get(MODULE.ID)?.socket;
-        if (!socket) {
-            ui.notifications.error('Socketlib is not ready. Please wait for Foundry to finish loading, then try again.');
-            return;
-        }
-
         if (!game.users.some(user => user.isGM && user.active)) {
             showSquireToast('No GM is online', {
                 subtitle: 'Cleanup needs GM approval.',
@@ -319,24 +324,24 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
         await this.render(false);
         try {
             // The actor's UUID, not its id: a token actor on a scene is not
-            // reachable through game.actors.get(). A Map does not survive a
-            // socket, so the uuid lookup travels as pairs.
-            await socket.executeAsGM('requestCleanupApproval', {
+            // reachable through game.actors.get(). A Map does not survive the
+            // wire, so the uuid lookup travels as pairs.
+            const payload = {
                 actorUuid: this.actor.uuid,
                 actorName: this.actor.name,
-                requesterId: game.user.id,
-                requesterName: game.user.name,
                 currency: plan.currency,
                 linkItemIds: plan.linkItemIds,
                 linkUuids: [...plan.linkUuids.entries()],
                 merges: plan.merges
-            });
-            showSquireToast('Sent to the GM', {
-                subtitle: 'Waiting for approval.',
-                icon: 'fa-solid fa-hourglass-half',
-                stackKey: `squire-cleanup-request-${this.actor.id}`
-            });
+            };
+
+            // Closed BEFORE the wait, not after it. The answer can be minutes
+            // away and this window has already done its job; the toasts that
+            // report it stand on their own. Not awaited for the same reason —
+            // the request outlives the window, which is why nothing below it
+            // touches `this`.
             await this.close();
+            requestCleanupApproval(payload);
         } catch (error) {
             console.error(`${MODULE.ID}: cleanup request failed:`, error);
             ui.notifications.error('The cleanup request could not be sent. See the console for details.');
@@ -345,29 +350,29 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
         }
     }
 
-    /** Tell the requester what happened. Never throws into the caller. */
-    async _notifyRequester(approved, summary = '') {
+    /**
+     * Settle the answer the requester is waiting on.
+     *
+     * This used to push the answer to the player over a socket, which was the
+     * module's last GM-to-player call and existed only because the request that
+     * started it was fire-and-forget. The request returns a value now, so the
+     * answer travels home the way it came and there is nothing to push.
+     *
+     * Once only, and never throws into the caller: whoever is exiting this
+     * window is in the middle of something else.
+     */
+    _notifyRequester(approved, summary = '') {
         if (!this.isApproval || this._answered) return;
         this._answered = true;
         try {
-            await game.modules.get(MODULE.ID)?.socket?.executeAsUser(
-                'cleanupRequestResolved',
-                this.request.requesterId,
-                { approved, actorName: this.actor?.name ?? '', summary }
-            );
+            this._settle?.({ approved, actorName: this.actor?.name ?? '', summary });
         } catch (error) {
-            console.error(`${MODULE.ID}: could not notify the requester:`, error);
+            console.error(`${MODULE.ID}: could not settle the cleanup answer:`, error);
         }
     }
 
     /** Player side: ask a GM to put the last merge back. */
     async _requestRestore() {
-        const socket = game.modules.get(MODULE.ID)?.socket;
-        if (!socket) {
-            ui.notifications.error('Socketlib is not ready. Please wait for Foundry to finish loading, then try again.');
-            return;
-        }
-
         if (!game.users.some(user => user.isGM && user.active)) {
             showSquireToast('No GM is online', {
                 subtitle: 'Restoring needs GM approval.',
@@ -380,19 +385,16 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
         this._busy = true;
         await this.render(false);
         try {
-            await socket.executeAsGM('requestCleanupApproval', {
+            const payload = {
                 type: 'restore',
                 actorUuid: this.actor.uuid,
-                actorName: this.actor.name,
-                requesterId: game.user.id,
-                requesterName: game.user.name
-            });
-            showSquireToast('Sent to the GM', {
-                subtitle: 'Waiting for approval to restore.',
-                icon: 'fa-solid fa-hourglass-half',
-                stackKey: `squire-restore-request-${this.actor.id}`
-            });
+                actorName: this.actor.name
+            };
+
+            // Closed before the wait, and not awaited — see the note in
+            // `_sendForApproval`. The answer arrives as a toast.
             await this.close();
+            requestCleanupApproval(payload);
         } catch (error) {
             console.error(`${MODULE.ID}: restore request failed:`, error);
             ui.notifications.error('The restore request could not be sent. See the console for details.');
@@ -555,10 +557,15 @@ export class CleanupWindow extends BlacksmithToolWindowBaseV2 {
  * summary that could quietly disagree with it.
  */
 export async function openCleanupApproval(request) {
+    // A dropped request still answers. The player is waiting on this call's
+    // return value now, so returning nothing would leave them waiting until the
+    // request timed out with no idea why.
+    const denied = reason => ({ approved: false, actorName: request?.actorName ?? '', summary: reason });
+
     const actor = await fromUuid(request?.actorUuid);
     if (!actor) {
         ui.notifications.warn(`Squire: ${request?.actorName ?? 'that character'} could not be found, so the cleanup request was dropped.`);
-        return null;
+        return denied('That character could not be found.');
     }
 
     // The request may have outlived the ownership that justified it — a
@@ -566,12 +573,16 @@ export async function openCleanupApproval(request) {
     const requester = game.users.get(request.requesterId);
     if (requester && !actor.testUserPermission(requester, 'OWNER')) {
         ui.notifications.warn(`Squire: ${request.requesterName} no longer owns ${actor.name}, so the cleanup request was dropped.`);
-        return null;
+        return denied('That character is no longer yours.');
     }
 
     const win = new CleanupWindow(actor, { request });
     await win.render(true);
-    return win;
+
+    // The GM's answer, whenever it comes — approve, deny, or closing the window,
+    // which counts as a denial. The caller is a `gmRequest` handler with a
+    // player waiting on the other end of it.
+    return win.answered;
 }
 
 /** Open, or focus what is already open for this actor. */

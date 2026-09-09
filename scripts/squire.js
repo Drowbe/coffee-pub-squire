@@ -1,30 +1,12 @@
 import { MODULE, SQUIRE, getHandleWidth } from './const.js';
 import { registerBuildApproval } from './manager-build-approval.js';
 import { registerItemTransfer } from './manager-transfer-request.js';
+import { registerGmCards } from './manager-gm-cards.js';
+import { registerCleanupApproval } from './manager-cleanup-request.js';
 import { PanelManager, _updateTrayFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings, migrateCompendiumAccessSetting } from './settings.js';
-import { getTransferBlocker, registerHelpers, showSquireToast, CONTAINER_ITEM_TYPES } from './helpers.js';
-import {
-    transferRequestGMApproval, transferRequestReceiver, transferComplete,
-    transferRejected, transferFailed, transferExpired,
-    applyRetire, name, sentence
-} from './manager-cards.js';
-
-/**
- * Which sentence an outcome card should carry.
- *
- * Every one of these messages is whispered to a single audience, so the
- * perspective is a property of the message rather than of whoever reads it —
- * which is why the cards need no per-reader gating and cannot show anybody an
- * empty body the way the old template's else-less branches could.
- */
-function transferPerspective(data) {
-    if (data.isTransferSender) return 'sender';
-    if (data.isTransferReceiver) return 'receiver';
-    if (data.isGMNotification) return 'gm';
-    return 'neutral';
-}
+import { registerHelpers, showSquireToast, CONTAINER_ITEM_TYPES } from './helpers.js';
 import { CompendiumRequestUtils } from './compendium-request-utils.js';
 import { StatblockUtility } from './utility-statblock.js';
 
@@ -142,6 +124,16 @@ Hooks.once('ready', async () => {
         if (!registerItemTransfer()) {
             console.warn(
                 'Coffee Pub Squire | GM-mediated transfers are unavailable: this Blacksmith has no gmRequest API.'
+            );
+        }
+
+        // The cards a player cannot post for themselves, and the sheet-cleanup
+        // approval. With these, socketlib is gone: every request in this module
+        // now runs on gmRequest, which elects one GM and returns their answer to
+        // whoever asked.
+        if (!registerGmCards() || !registerCleanupApproval()) {
+            console.warn(
+                'Coffee Pub Squire | GM-posted cards are unavailable: this Blacksmith has no gmRequest API.'
             );
         }
 
@@ -1025,261 +1017,6 @@ async function waitForBlacksmithWhenActive() {
   }
 }
 
-let socket;
-
-// Move socketlib registration to its own hook
-Hooks.once('socketlib.ready', () => {
-    try {
-        if (typeof socketlib === 'undefined') {
-            throw new Error("Global socketlib variable is not defined");
-        }
-
-        socket = socketlib.registerModule(MODULE.ID);
-        
-        if (!socket) {
-            throw new Error("Failed to register socket");
-        }
-        
-        // Store socket in module API for access from other files
-        game.modules.get(MODULE.ID).socket = socket;
-        
-        // HookManager is now exposed in the ready hook to ensure proper initialization order
-        
-        // Register socket functions with socket handlers
-        socket.register("createTransferRequestChat", async (data) => {
-            if (!game.user.isGM) return;
-            
-            try {
-                // Get the actual referenced objects
-                const sourceActor = game.actors.get(data.sourceActorId);
-                const targetActor = game.actors.get(data.targetActorId);
-                
-                if (!sourceActor || !targetActor) {
-                    console.error('Missing required actors for transfer request message:', { data });
-                    return;
-                }
-
-                // Which card this is decides which buttons it carries, so the
-                // two are chosen together rather than by flags read back out of
-                // a single shared composition.
-                const postRequest = data.isGMApproval ? transferRequestGMApproval : transferRequestReceiver;
-                await postRequest({
-                    sourceActorName: data.sourceActorName,
-                    targetActorName: data.targetActorName,
-                    itemName: data.itemName,
-                    quantity: data.quantity,
-                    hasQuantity: data.hasQuantity,
-                    isPlural: data.isPlural,
-                    transferId: data.transferId,
-                    speaker: { alias: "System" },
-                    whisper: data.receiverIds,
-                    flags: {
-                        transferId: data.transferId,
-                        type: 'transferRequest',
-                        isTransferReceiver: data.isTransferReceiver || false,
-                        isTransferSender: data.isTransferSender || false,
-                        isGMApproval: data.isGMApproval || false,
-                        data: data.transferData,
-                        targetUsers: data.receiverIds
-                    }
-                });
-            } catch (error) {
-                console.error('Error creating transfer request message:', error);
-            }
-        });
-        
-        
-        socket.register("createTransferCompleteChat", async (data) => {
-            if (!game.user.isGM) return;
-            
-            try {
-                // Get the actual referenced objects
-                const sourceActor = game.actors.get(data.sourceActorId);
-                const targetActor = game.actors.get(data.targetActorId);
-                
-                if (!sourceActor || !targetActor) {
-                    console.error('Missing required actors for transfer complete message:', { data });
-                    return;
-                }
-                
-                // Create the chat message as GM
-                await transferComplete({
-                    perspective: transferPerspective(data),
-                    sourceActorName: data.sourceActorName,
-                    targetActorName: data.targetActorName,
-                    itemName: data.itemName,
-                    quantity: data.quantity,
-                    hasQuantity: data.hasQuantity,
-                    isPlural: data.isPlural,
-                    whisper: data.receiverIds || [data.receiverId] || [],
-                    speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
-                });
-            } catch (error) {
-                console.error('Error creating transfer complete message:', error);
-            }
-        });
-
-        socket.register("createTransferRejectedChat", async (data) => {
-            if (!game.user.isGM) return;
-            
-            try {
-                // Get the actual referenced objects
-                const sourceActor = game.actors.get(data.sourceActorId);
-                const targetActor = game.actors.get(data.targetActorId);
-                
-                if (!sourceActor || !targetActor) {
-                    console.error('Missing required actors for transfer rejected message:', { data });
-                    return;
-                }
-                
-                // Whichever list the caller supplied. The old expression keyed
-                // off `isTransferSender`, so a caller that sent `receiverId`
-                // without that flag produced `undefined` — and an undefined
-                // whisper posts the card to the whole table, which is what a
-                // player rejecting a transfer has been doing.
-                const whisper = data.receiverIds
-                    ?? (data.receiverId ? [data.receiverId] : undefined);
-
-                // Create the chat message as GM
-                await transferRejected({
-                    perspective: transferPerspective(data),
-                    sourceActorName: data.sourceActorName,
-                    targetActorName: data.targetActorName,
-                    itemName: data.itemName,
-                    quantity: data.quantity,
-                    hasQuantity: data.hasQuantity,
-                    isPlural: data.isPlural,
-                    // Literal, not prose: this arrives in a socket payload, and
-                    // anything a client can put in a payload is untrusted text.
-                    reason: data.reason ? { literal: String(data.reason) } : null,
-                    whisper,
-                    speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
-                });
-            } catch (error) {
-                console.error('Error creating transfer rejected message:', error);
-            }
-        });
-
-        socket.register("createTransferExpiredChat", async (data) => {
-            if (!game.user.isGM) return;
-            
-            try {
-                // Get the actual referenced objects
-                const sourceActor = game.actors.get(data.sourceActorId);
-                const targetActor = game.actors.get(data.targetActorId);
-                
-                if (!sourceActor || !targetActor) {
-                    console.error('Missing required actors for transfer expired message:', { data });
-                    return;
-                }
-                
-                // Create the chat message as GM
-                await transferExpired({
-                    perspective: transferPerspective(data),
-                    sourceActorName: data.sourceActorName,
-                    targetActorName: data.targetActorName,
-                    itemName: data.itemName,
-                    quantity: data.quantity,
-                    hasQuantity: data.hasQuantity,
-                    isPlural: data.isPlural,
-                    whisper: data.receiverIds || [data.receiverId] || [],
-                    speaker: ChatMessage.getSpeaker({user: game.user}) // From GM
-                });
-            } catch (error) {
-                console.error('Error creating transfer expired message:', error);
-            }
-        });
-        
-        // Add socket handler for deleting transfer request messages
-        // Retiring a card rewrites the message, and a request card is authored
-        // by the GM even when a player is the one answering it. This is the hop
-        // that lets the receiver's Accept land on a message they cannot modify.
-        socket.register("retireCardMessage", async ({ messageId, text, tone, icon }) => {
-            if (!game.user.isGM) return;
-
-            try {
-                const message = game.messages.get(messageId);
-                if (message) await applyRetire(message, { text, tone, icon });
-            } catch (error) {
-                console.error('Error retiring card message:', { messageId, error });
-            }
-        });
-
-        socket.register("deleteSenderWaitingMessage", async (transferId) => {
-            if (!game.user.isGM) return;
-            
-            try {
-                const senderWaitingMessage = game.messages.find(msg => 
-                    msg.getFlag(MODULE.ID, 'transferId') === transferId && 
-                    msg.getFlag(MODULE.ID, 'isTransferSender') === true
-                );
-                if (senderWaitingMessage) {
-                    await senderWaitingMessage.delete();
-                }
-            } catch (error) {
-                console.error('Error deleting sender waiting message:', { transferId, error });
-            }
-        });
-
-        // A player asking the GM to restock ammunition. Players never write to
-        // their own inventory for this — see StatblockUtility.canRepairFor.
-        socket.register("createAmmoRequestChat", async (data) => {
-            if (!game.user.isGM) return;
-
-            try {
-                await StatblockUtility.createRequestChat(data);
-            } catch (error) {
-                console.error('Error creating ammo request message:', { data, error });
-            }
-        });
-
-        // A player asking the GM to tidy their sheet. Players never write to
-        // their own sheet for this — see CleanupWindow.needsApproval. The GM
-        // gets the same preview window the player was looking at, so the two
-        // are judging identical rows rather than a summary and its source.
-        socket.register("requestCleanupApproval", async (data) => {
-            if (!game.user.isGM) return;
-
-            try {
-                const { openCleanupApproval } = await import('./window-cleanup.js');
-                await openCleanupApproval(data);
-            } catch (error) {
-                console.error('Error opening the cleanup approval window:', { data, error });
-            }
-        });
-
-        // The answer, back to whoever asked.
-        socket.register("cleanupRequestResolved", async ({ approved, actorName, summary }) => {
-            const { showSquireToast } = await import('./helpers.js');
-            if (approved) {
-                showSquireToast(`Cleanup approved for ${actorName}`, {
-                    subtitle: summary || 'Your sheet has been tidied.',
-                    icon: 'fa-solid fa-broom'
-                });
-            } else {
-                showSquireToast(`Cleanup declined for ${actorName}`, {
-                    subtitle: 'The GM did not apply the changes.',
-                    icon: 'fa-solid fa-ban',
-                    color: '#e05c3c'
-                });
-            }
-        });
-
-        // Compendium add requests from players on the "ask the GM" access rung.
-        socket.register("createCompendiumRequestChat", async (data) => {
-            if (!game.user.isGM) return;
-
-            try {
-                await CompendiumRequestUtils.createRequestChat(data);
-            } catch (error) {
-                console.error('Error creating compendium request message:', { data, error });
-            }
-        });
-        
-    } catch (error) {
-        console.error('Error during socketlib initialization:', error);
-    }
-});
 
 
 
@@ -1563,12 +1300,6 @@ function cleanupModule() {
         // Clean up PanelManager
         if (PanelManager.cleanup) {
             PanelManager.cleanup();
-        }
-
-        // Clean up socket
-        if (socket) {
-            socket.close();
-            socket = null;
         }
 
         // Remove any remaining DOM elements

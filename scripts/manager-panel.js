@@ -1225,11 +1225,13 @@ export class PanelManager {
                                     // GM: approval request with Approve/Deny buttons
                                     const gmUsers = game.users.filter(u => u.isGM);
                                     if (gmUsers.length > 0) {
-                                        // If current user is not a GM, use socketlib to have a GM create the message
+                                        // A player cannot whisper on somebody
+                                        // else's behalf, so a GM posts it —
+                                        // which needs one to be ONLINE, not
+                                        // merely to exist.
                                         if (!game.user.isGM) {
-                                            const socket = game.modules.get(MODULE.ID)?.socket;
-                                            if (socket) {
-                                                await socket.executeAsGM('createTransferRequestChat', {
+                                            if (gmUsers.some(user => user.active)) {
+                                                await postGmCard('transferRequest', {
                                                     sourceActorId: sourceActor.id,
                                                     sourceActorName: `${getActorDisplayName(sourceActor)} (${game.user.name})`,
                                                     targetActorId: actor.id,
@@ -1269,11 +1271,13 @@ export class PanelManager {
                                     // Receiver: actionable message (with Accept/Reject buttons) - only if GM approval NOT required
                                     const targetUsers = game.users.filter(u => !u.isGM && actor.ownership[u.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
                                     if (targetUsers.length > 0) {
-                                        // If current user is not a GM, use socketlib to have a GM create the message
+                                        // A player cannot whisper on somebody
+                                        // else's behalf, so a GM posts it —
+                                        // which needs one to be ONLINE, not
+                                        // merely to exist.
                                         if (!game.user.isGM) {
-                                            const socket = game.modules.get(MODULE.ID)?.socket;
-                                            if (socket) {
-                                                await socket.executeAsGM('createTransferRequestChat', {
+                                            if (gmUsers.some(user => user.active)) {
+                                                await postGmCard('transferRequest', {
                                                     sourceActorId: sourceActor.id,
                                                     sourceActorName: getActorDisplayName(sourceActor),
                                                     targetActorId: actor.id,
@@ -1733,12 +1737,10 @@ export class PanelManager {
                 receiverIds
             };
 
-            const socket = game.modules.get(MODULE.ID)?.socket;
-            if (socket) {
-                await socket.executeAsGM('createTransferCompleteChat', payload);
-            } else {
-                // No socket: a player cannot whisper on someone else's behalf,
-                // so this only reaches whoever is looking. Better than silence.
+            // A player cannot whisper on someone else's behalf, so a GM posts
+            // it. If no GM can answer, post what we can from here — it reaches
+            // only whoever is looking, which is better than silence.
+            if (!await postGmCard('transferComplete', payload)) {
                 await transferComplete({
                     ...payload,
                     speaker: ChatMessage.getSpeaker({ actor: sourceActor }),

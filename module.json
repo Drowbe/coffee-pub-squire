@@ -110,11 +110,6 @@
         "compatibility": {
           "minimum": "13.19.1"
         }
-      },
-      {
-        "id": "socketlib",
-        "type": "module",
-        "manifest": "https://raw.githubusercontent.com/manuelVo/foundryvtt-socketlib/master/module.json"
       }
     ],
     "conflicts": [],

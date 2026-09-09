@@ -962,12 +962,10 @@ export class PartyPanel {
                 receiverIds
             };
 
-            const socket = game.modules.get(MODULE.ID)?.socket;
-            if (socket) {
-                await socket.executeAsGM('createTransferCompleteChat', payload);
-            } else {
-                // No socket: a player cannot whisper on someone else's behalf,
-                // so this only reaches whoever is looking. Better than silence.
+            // A player cannot whisper on someone else's behalf, so a GM posts
+            // it. If no GM can answer, post what we can from here — it reaches
+            // only whoever is looking, which is better than silence.
+            if (!await postGmCard('transferComplete', payload)) {
                 await transferComplete({
                     ...payload,
                     speaker: ChatMessage.getSpeaker({ actor: sourceActor }),
@@ -1034,13 +1032,14 @@ export class PartyPanel {
         const transferAgeSeconds = Math.floor(transferAge / 1000);
         
         if (transferAgeSeconds > timeoutSeconds) {
-            // Transfer has expired - tell everyone involved, then retire the card
-            const socket = game.modules.get(MODULE.ID)?.socket;
-            if (socket) {
+            // Transfer has expired - tell everyone involved, then retire the card.
+            // A GM posts each notice, because none of these people can whisper
+            // to the others; with no GM online there is nobody to post them.
+            if (game.users.some(user => user.isGM && user.active)) {
                 // Send expiration message to sender
                 const senderUser = game.users.get(transferData.sourceUserId);
                 if (senderUser && !senderUser.isGM) {
-                    await socket.executeAsGM('createTransferExpiredChat', {
+                    await postGmCard('transferExpired', {
                         sourceActorId: transferData.sourceActorId,
                         sourceActorName: transferData.sourceActorName,
                         targetActorId: transferData.targetActorId,
@@ -1059,7 +1058,7 @@ export class PartyPanel {
                 // Send expiration message to receiver
                 const receiverUsers = game.users.filter(user => user.character?.id === transferData.targetActorId && user.active && !user.isGM);
                 if (receiverUsers.length > 0) {
-                    await socket.executeAsGM('createTransferExpiredChat', {
+                    await postGmCard('transferExpired', {
                         sourceActorId: transferData.sourceActorId,
                         sourceActorName: transferData.sourceActorName,
                         targetActorId: transferData.targetActorId,
@@ -1078,7 +1077,7 @@ export class PartyPanel {
                 // Send expiration message to GMs
                 const gmUsers = game.users.filter(u => u.isGM);
                 if (gmUsers.length > 0) {
-                    await socket.executeAsGM('createTransferExpiredChat', {
+                    await postGmCard('transferExpired', {
                         sourceActorId: transferData.sourceActorId,
                         sourceActorName: transferData.sourceActorName,
                         targetActorId: transferData.targetActorId,
@@ -1163,11 +1162,8 @@ export class PartyPanel {
                     await senderWaitingMessage.delete();
                 }
             } else {
-                // Non-GM: ask GM to delete the sender's waiting message
-                const socket = game.modules.get(MODULE.ID)?.socket;
-                if (socket) {
-                    socket.executeAsGM('deleteSenderWaitingMessage', transferId);
-                }
+                // Non-GM: ask a GM to delete the sender's waiting message
+                await deleteWaitingCard(transferId);
             }
             
             // A failed accept has already said why — the op whispers its own
@@ -1176,12 +1172,10 @@ export class PartyPanel {
                 return;
             }
 
-            // Transfer succeeded - create success messages.
-            // Still socketlib: the completion CARD has not moved to gmRequest
-            // yet. Declared here because the accept above no longer opens a
-            // socket of its own.
-            const socket = game.modules.get(MODULE.ID)?.socket;
-            if (socket) {
+            // Transfer succeeded - create success messages. A GM posts them,
+            // because this card goes to the sender, the receiver and the GMs at
+            // once and none of those people can whisper to the others.
+            if (game.users.some(user => user.isGM && user.active)) {
                 // One card for everyone involved, same as the direct
                 // transfer path: three messages describing one event
                 // meant every GM read the sender's copy, the receiver's
@@ -1192,7 +1186,7 @@ export class PartyPanel {
                     ...gmUsers.map(u => u.id)
                 ])];
                 if (receiverIds.length > 0) {
-                    await socket.executeAsGM('createTransferCompleteChat', {
+                    await postGmCard('transferComplete', {
                         sourceActorId: sourceActor.id,
                         sourceActorName: getActorDisplayName(sourceActor),
                         targetActorId: targetActor.id,
@@ -1218,36 +1212,30 @@ export class PartyPanel {
                     await senderWaitingMessage.delete();
                 }
             } else {
-                // Non-GM: ask GM to delete the sender's waiting message
-                const socket = game.modules.get(MODULE.ID)?.socket;
-                if (socket) {
-                    socket.executeAsGM('deleteSenderWaitingMessage', transferId);
-                }
+                // Non-GM: ask a GM to delete the sender's waiting message
+                await deleteWaitingCard(transferId);
             }
             
             // Single rejection message for sender
             if (!game.user.isGM) {
-                const socket = game.modules.get(MODULE.ID)?.socket;
-                if (socket) {
-                    await socket.executeAsGM('createTransferRejectedChat', {
-                        sourceActorId: sourceActor.id,
-                        sourceActorName: getActorDisplayName(sourceActor),
-                        targetActorId: targetActor.id,
-                        targetActorName: getActorDisplayName(targetActor),
+                await postGmCard('transferRejected', {
+                    sourceActorId: sourceActor.id,
+                    sourceActorName: getActorDisplayName(sourceActor),
+                    targetActorId: targetActor.id,
+                    targetActorName: getActorDisplayName(targetActor),
                     itemId: item?.id || transferData.itemId,
                     itemName: item?.name || transferData.itemName,
-                        quantity: transferData.quantity,
-                        hasQuantity: true,
-                        isPlural: transferData.quantity > 1,
+                    quantity: transferData.quantity,
+                    hasQuantity: true,
+                    isPlural: transferData.quantity > 1,
                     isTransferSender: false,
-                        receiverId: senderUser.id,
-                        transferId
-                    });
-                }
+                    receiverId: senderUser.id,
+                    transferId
+                });
             } else {
                 // GM creates and sends the message directly. Neutral
-                // wording, matching the socket branch above: both post
-                // the same card, and only the route differs.
+                // wording, matching the branch above: both post the same
+                // card, and only the route differs.
                 await transferRejected({
                     sourceActorName: getActorDisplayName(sourceActor),
                     targetActorName: getActorDisplayName(targetActor),
@@ -1264,27 +1252,24 @@ export class PartyPanel {
             // Single rejection message for receiver - ONLY IF the receiver is not the sender
             if (receiverUsers.length > 0 && !receiverUsers.some(u => u.id === senderUser.id)) {
                 if (!game.user.isGM) {
-                    const socket = game.modules.get(MODULE.ID)?.socket;
-                    if (socket) {
-                        await socket.executeAsGM('createTransferRejectedChat', {
-                            sourceActorId: sourceActor.id,
-                            sourceActorName: getActorDisplayName(sourceActor),
-                            targetActorId: targetActor.id,
-                            targetActorName: getActorDisplayName(targetActor),
+                    await postGmCard('transferRejected', {
+                        sourceActorId: sourceActor.id,
+                        sourceActorName: getActorDisplayName(sourceActor),
+                        targetActorId: targetActor.id,
+                        targetActorName: getActorDisplayName(targetActor),
                         itemId: item?.id || transferData.itemId,
                         itemName: item?.name || transferData.itemName,
-                            quantity: transferData.quantity,
-                            hasQuantity: true,
-                            isPlural: transferData.quantity > 1,
-                            isTransferReceiver: true,
-                            receiverIds: receiverUsers.map(u => u.id),
-                            transferId
-                        });
-                    }
+                        quantity: transferData.quantity,
+                        hasQuantity: true,
+                        isPlural: transferData.quantity > 1,
+                        isTransferReceiver: true,
+                        receiverIds: receiverUsers.map(u => u.id),
+                        transferId
+                    });
                 } else {
-                    // GM creates and sends the message directly. The
-                    // socket branch above marks this one as the
-                    // receiver's copy, so this does too.
+                    // GM creates and sends the message directly. The branch
+                    // above marks this one as the receiver's copy, so this
+                    // does too.
                     await transferRejected({
                         perspective: 'receiver',
                         sourceActorName: getActorDisplayName(sourceActor),
@@ -1327,13 +1312,14 @@ export class PartyPanel {
         const transferAgeSeconds = Math.floor(transferAge / 1000);
         
         if (transferAgeSeconds > timeoutSeconds) {
-            // Transfer has expired - tell everyone involved, then retire the card
-            const socket = game.modules.get(MODULE.ID)?.socket;
-            if (socket) {
+            // Transfer has expired - tell everyone involved, then retire the card.
+            // A GM posts each notice, because none of these people can whisper
+            // to the others; with no GM online there is nobody to post them.
+            if (game.users.some(user => user.isGM && user.active)) {
                 // Send expiration message to sender
                 const senderUser = game.users.get(transferData.sourceUserId);
                 if (senderUser && !senderUser.isGM) {
-                    await socket.executeAsGM('createTransferExpiredChat', {
+                    await postGmCard('transferExpired', {
                         sourceActorId: transferData.sourceActorId,
                         sourceActorName: transferData.sourceActorName,
                         targetActorId: transferData.targetActorId,
@@ -1352,7 +1338,7 @@ export class PartyPanel {
                 // Send expiration message to receiver
                 const receiverUsers = game.users.filter(user => user.character?.id === transferData.targetActorId && user.active && !user.isGM);
                 if (receiverUsers.length > 0) {
-                    await socket.executeAsGM('createTransferExpiredChat', {
+                    await postGmCard('transferExpired', {
                         sourceActorId: transferData.sourceActorId,
                         sourceActorName: transferData.sourceActorName,
                         targetActorId: transferData.targetActorId,
@@ -1371,7 +1357,7 @@ export class PartyPanel {
                 // Send expiration message to GMs
                 const gmUsers = game.users.filter(u => u.isGM);
                 if (gmUsers.length > 0) {
-                    await socket.executeAsGM('createTransferExpiredChat', {
+                    await postGmCard('transferExpired', {
                         sourceActorId: transferData.sourceActorId,
                         sourceActorName: transferData.sourceActorName,
                         targetActorId: transferData.targetActorId,

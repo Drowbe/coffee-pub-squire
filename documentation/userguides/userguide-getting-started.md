@@ -10,7 +10,7 @@ page is in [the settings guide](userguide-settings.md).
 
 ## What Squire needs
 
-Coffee Pub Blacksmith, installed and enabled, and socketlib. Squire will not run without them.
+Coffee Pub Blacksmith, installed and enabled. Squire will not run without it.
 Everything below assumes the D&D 5e system.
 
 ## What appears when you enable it

@@ -151,8 +151,8 @@ export async function retireCard(message, { text, tone = 'positive', icon = null
     if (!doc) return null;
 
     if (!doc.canUserModify(game.user, 'update')) {
-        const socket = game.modules.get(MODULE.ID)?.socket;
-        if (socket) await socket.executeAsGM('retireCardMessage', { messageId: doc.id, text, tone, icon });
+        const { retireGmCard } = await import('./manager-gm-cards.js');
+        await retireGmCard(doc.id, { text, tone, icon });
         return null;
     }
     return applyRetire(doc, { text, tone, icon });
