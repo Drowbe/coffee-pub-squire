@@ -95,7 +95,7 @@ Buttons/cards are cloned before attaching listeners to avoid duplicates on re-re
 - **Chat buttons**: `_handleTransferButtons(message, html)` is invoked from the `renderChatMessage` hook. It attaches:
   - GM approve/deny on `.gm-approval-button`.
   - Accept/reject on `.transfer-request-button` (with `dataset.handlersAttached` to avoid duplicate handlers).
-  Handlers read `message.getFlag(MODULE.ID, 'data')`, check expiry, then call `acceptItemTransfer` / `withdrawItemTransfer`, or the remaining socketlib chat ops (`createTransferCompleteChat`, `createTransferRejectedChat`, `createTransferExpiredChat`), or create chat messages directly when GM.
+  Handlers read `message.getFlag(MODULE.ID, 'data')`, check expiry, then call `acceptItemTransfer` / `withdrawItemTransfer`, and post the outcome card with `postGmCard('transferComplete' | 'transferRejected' | 'transferExpired', …)` — or create the chat message directly when the answering client is a GM.
 
 ### Authorising a transfer (`manager-transfer-request.js`)
 
@@ -150,7 +150,7 @@ Actors resolve by **uuid**, never id: an unlinked token's actor shares the base 
   If user has ownership on both actors, calls `executeTransferWithPermissions`; otherwise creates transfer data, sends sender “waiting” message, then either GM approval message (if `transfersGMApproves`) or receiver accept/reject message. Used by Panel Party, Inventory, and Weapons panels.
 - **`executeTransferWithPermissions(sourceActor, targetActor, item, quantity, hasQuantity)`**  
   Direct transfer, or `requestItemTransfer` — the GIVE op, which checks that the caller owns the source.  
-- **Other helpers**: `_createTransferData`, `_isTargetPlayerOnline`, `_sendTransferSenderMessage`, `_sendTransferReceiverMessage`, `_sendGMTransferNotification`, etc., and the remaining socketlib handlers for creating chat messages.
+- **Other helpers**: `_createTransferData`, `_isTargetPlayerOnline`, `_sendTransferSenderMessage`, `_sendTransferReceiverMessage`, `_sendGMTransferNotification`, etc. Every card a player cannot post for themselves goes through `postGmCard` in `manager-gm-cards.js`; there is no socketlib anywhere in Squire.
 
 > **Note:** the request flow exists TWICE — here and inline in `manager-panel.js`'s tray drop handler,
 > which builds its own `transferData` and sends the same cards. They have to stay in step; recording
