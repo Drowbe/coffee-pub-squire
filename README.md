@@ -53,7 +53,7 @@ do, and let me do it with ease.
 - **Foundry VTT** version 13 or 14. Squire 12.1.14 was the last build compatible with v12, and there
   are no plans to maintain that line.
 - **The D&D 5e system.** Squire is built for it and does not work without it.
-- **[Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith)**, version 13.19.1 or
+- **[Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith)**, version 14.1.0 or
   later, installed and enabled. Squire will not run without it.
 
 Optional: [Coffee Pub Librarian](https://github.com/Drowbe/coffee-pub-librarian), if you want the

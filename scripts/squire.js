@@ -151,21 +151,57 @@ Hooks.once('ready', async () => {
                 'Blacksmith HookManager not available after waitForReady. Ensure coffee-pub-blacksmith is enabled and updated.'
             );
         }
-        const renderActorSheet5eHookId = getBlacksmithHookManager().registerHook({
-            name: 'renderActorSheet5e',
-            description: 'Coffee Pub Squire: Initialize tray when character sheet is rendered',
-            context: MODULE.ID,
-            priority: 2,
-            callback: async (app, html, data) => {
-                if (!app.actor) return;
-                const panelManager = getPanelManager();
-                if (panelManager?.instance?._suppressSheetRender) {
-                    panelManager.instance._suppressSheetRender = false;
-                    return;
-                }
-                await PanelManager.initialize(app.actor);
+        // `renderActorSheetV2`, NOT `renderActorSheet5e`.
+        //
+        // ApplicationV2 fires `render<ClassName>` for the class and each of its
+        // ancestors, and dnd5e's character sheet is `CharacterActorSheet` now.
+        // Measured on dnd5e 5.3.3 / Foundry 14.367: `renderCharacterActorSheet`,
+        // `renderBaseActorSheet`, `renderPrimarySheet5e`, `renderActorSheetV2`
+        // and `renderDocumentSheetV2` all fire — and `renderActorSheet5e` does
+        // NOT. Registering it succeeded and nothing ever called it, so the tray
+        // simply never initialised from a sheet and said nothing about why.
+        //
+        // Of the names that do fire, this is the least coupled: it is core's,
+        // not dnd5e's, so it survives the system renaming its own classes again.
+        // The kind of sheet is a question about the DOCUMENT, so it is asked of
+        // the document rather than inferred from which hook name fired.
+        //
+        // BOTH NAMES ARE REGISTERED, and that is not belt-and-braces for its own
+        // sake. The manifest says `minimum: 13`, and the v14 evidence above says
+        // nothing about v13 — where the older dnd5e that ships with it is what
+        // `renderActorSheet5e` was named for. Dropping the old name on v14
+        // evidence alone would have silently broken the version we still claim
+        // to support, which is the bug we just fixed pointing the other way.
+        //
+        // Registering both is safe rather than merely tolerable: whichever fires
+        // lands in `PanelManager.initialize`, which is guarded three times over
+        // and already absorbs the TWO calls `renderActorSheetV2` makes per sheet
+        // open on its own. A version where both fire costs one extra early
+        // return. Drop `renderActorSheet5e` when someone has measured a v13
+        // world and can say it is dead there too.
+        const sheetHookCallback = async (app, html, data) => {
+            // `html` is a native HTMLElement under ApplicationV2, never jQuery.
+            // Unused here, and it must stay that way unless it is treated as an
+            // element: `html.find(...)` would throw.
+            const actor = app?.document ?? app?.actor;
+            if (!actor) return;
+
+            const panelManager = getPanelManager();
+            if (panelManager?.instance?._suppressSheetRender) {
+                panelManager.instance._suppressSheetRender = false;
+                return;
             }
-        });
+            await PanelManager.initialize(actor);
+        };
+
+        const sheetHookIds = ['renderActorSheetV2', 'renderActorSheet5e'].map(name =>
+            getBlacksmithHookManager().registerHook({
+                name,
+                description: `Coffee Pub Squire: Initialize tray when an actor sheet is rendered (${name})`,
+                context: MODULE.ID,
+                priority: 2,
+                callback: sheetHookCallback
+            }));
 
         const canvasReadyHookId = getBlacksmithHookManager().registerHook({
             name: 'canvasReady',

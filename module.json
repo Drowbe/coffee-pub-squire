@@ -107,7 +107,7 @@
         "type": "module",
         "manifest": "https://github.com/Drowbe/coffee-pub-blacksmith/releases/latest/download/module.json",
         "compatibility": {
-          "minimum": "13.19.1"
+          "minimum": "14.1.0"
         }
       }
     ],

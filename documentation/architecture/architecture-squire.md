@@ -66,9 +66,37 @@ coffee-pub-squire/
 ### Main Module (squire.js)
 
 - Registers with Blacksmith via `BlacksmithModuleManager.registerModule()`
-- Hooks: `init`, `ready`, `canvasReady`, `setup`, `getActorDirectoryEntryContext`, etc.
+- Hooks: `init`, `ready`, `canvasReady`, `controlToken`, `closeGame`, `disableModule`, plus document CRUD — all through Blacksmith's HookManager except three native `Hooks.once`
 - Wraps `canvas.selectObjects` for multi-select / selection display
 - Registers the `gmRequest` ops for cross-client operations (transfers, GM-posted cards, cleanup requests)
+
+**The sheet hook is `renderActorSheetV2`, and the name matters.** ApplicationV2 fires
+`render<ClassName>` for a sheet's class and each of its ancestors. dnd5e's character sheet is
+`CharacterActorSheet` now, so on dnd5e 5.3.3 / Foundry 14.367 the hooks that fire are
+`renderCharacterActorSheet`, `renderBaseActorSheet`, `renderPrimarySheet5e`, `renderActorSheetV2` and
+`renderDocumentSheetV2` — and **`renderActorSheet5e`, which Squire used through 13.x, does not**.
+Registering a hook nobody calls succeeds silently, so the tray simply stopped initialising from a
+sheet and said nothing about why. Of the names that do fire this is core's rather than dnd5e's, which
+is why it was chosen: it survives the system renaming its own classes again.
+
+**Both names are registered.** The manifest says `minimum: 13`, and the evidence above is from v14
+only — v13 ships an older dnd5e, which is what `renderActorSheet5e` was named for. Dropping the old
+name on v14 evidence alone would have broken the version we still claim to support, in exactly the
+way v14 was broken and just as quietly. Whichever fires reaches the same guarded callback, so a
+version where both fire costs one extra early return. **Drop `renderActorSheet5e` when someone has
+measured a v13 world and can say it is dead there too** — not before.
+
+Two consequences worth keeping:
+
+- The callback reads `app?.document ?? app?.actor`. ApplicationV2 sheets carry `document`.
+- **`html` is a native `HTMLElement`, never jQuery.** It is unused, and must stay unused unless it is
+  treated as an element — `html.find(...)` would throw.
+
+**The one piece of core DOM Squire touches** is `document.querySelector('#ui-left')`, in
+`manager-panel.js` and `settings.js`: setting its `marginLeft` is how a pinned tray pushes Foundry's
+interface across rather than covering it. Both calls are null-guarded, which means a selector that
+stops resolving fails **silently** — the tray simply stops making room. If the tray ever overlaps the
+toolbar when pinned, check that selector before anything else.
 
 ### Panel Manager (manager-panel.js)
 
@@ -77,6 +105,26 @@ coffee-pub-squire/
 - Manages view modes: `player` and `party`. Notes, Codex and Quest moved to Librarian in 13.7.0
 - Handles multi-select, GM details, selection display
 - Uses `timer-utils` for tracked timeouts/intervals; cleans up on `cleanupModule`
+
+**`initialize(actor)` is called more often than you would expect, and is guarded three times over.**
+`renderActorSheetV2` fires **twice** for a single sheet open — measured on Foundry 14.367 — so
+anything with a side effect has to sit behind all three gates:
+
+1. A **100ms debounce** on `_lastInitTime`, which `force` bypasses for deliberate rebuilds.
+2. `_initializationInProgress`, set synchronously at the top of the `try` and cleared in a `finally`,
+   so a call arriving while another is mid-`await` returns rather than interleaving.
+3. The **same-actor gate**, which returns when the tray is already showing this actor.
+
+**Gate 3 is keyed on `uuid`, never `id`, and that is load-bearing.** An unlinked token's actor is
+synthetic — the base actor plus that token's delta — and it carries the BASE actor's id. Paste a
+goblin four times and all four report the same `.id`, so an id-keyed gate answered "same actor,
+nothing to do" every time a player selected a different one, and the tray never switched. The uuid is
+per token and is the only field that separates them. This is a recurring trap across the module: see
+`BuildWindow.idFor`, which had the same bug and the same fix.
+
+Everything with a side effect is downstream of those gates — the 30s cleanup interval (itself created
+only once), `syncFavorites(actor)`, and `StatblockUtility.autoFixIfEnabled(actor)` for NPCs. There are
+no socket sends anywhere in Squire.
 
 ### Handle Manager (manager-handle.js)
 

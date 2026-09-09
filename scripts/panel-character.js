@@ -349,7 +349,11 @@ export class CharacterPanel {
                         const TextEditor = getTextEditor();
                         let enrichedSource = biographyHtml;
                         if (TextEditor?.enrichHTML) {
-                            const enriched = await TextEditor.enrichHTML(biographyHtml, { async: true, secrets: false });
+                            // No `async: true`: enrichHTML has been async on its
+                            // own since v12 and the flag is a deprecated no-op.
+                            // It was doing nothing but adding a deprecation
+                            // warning to the console on every biography read.
+                            const enriched = await TextEditor.enrichHTML(biographyHtml, { secrets: false });
                             if (typeof enriched === 'string') enrichedSource = enriched;
                         }
 

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [unreleased]
+
+### Fixed
+
+- **On Foundry v14, opening a character sheet no longer brought the tray up.** Squire listened for `renderActorSheet5e`, and dnd5e's sheets are ApplicationV2 now: the class is `CharacterActorSheet`, and the hooks that fire are `renderCharacterActorSheet`, `renderBaseActorSheet`, `renderPrimarySheet5e`, `renderActorSheetV2` and `renderDocumentSheetV2`. The old name is not among them. Registering a hook nobody calls succeeds without complaint, so the tray simply never initialised from a sheet and nothing said why.
+  - It listens for **`renderActorSheetV2`** now — core's hook rather than the system's, so dnd5e renaming its own classes again cannot repeat this.
+  - **Both names are registered**, because Squire still supports Foundry v13 and the measurements above were taken on v14. Dropping the old name on v14 evidence alone would have broken v13 exactly the way v14 was broken, and just as quietly. Whichever fires reaches the same guarded path, so a version where both fire costs one extra early return.
+  - Measured rather than guessed: the Blacksmith session instrumented `Hooks.callAll` on a live v14 world (dnd5e 5.3.3, Foundry 14.367) and read off which hooks actually fired.
+
+- **A deprecated flag was warning on every biography read.** `enrichHTML` has been asynchronous on its own since Foundry v12, so the `async: true` passed alongside it did nothing but add a deprecation warning to the console each time a character's biography was enriched.
+
+### Changed
+
+- **Squire now requires Coffee Pub Blacksmith 14.1.0 or later**, the v14-verified release. Squire leans on Blacksmith for its window framework, its hook manager and every GM-mediated request, so the two move together.
+
 ## [14.0.0]
 
 ### Changed
