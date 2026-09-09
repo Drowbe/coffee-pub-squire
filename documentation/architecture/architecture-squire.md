@@ -201,19 +201,19 @@ This avoids timing issues where Foundry system managers are not ready yet. The F
 ### Standards
 
 - Use `postConsoleAndNotification` from Blacksmith utils; prefix messages with `SQUIRE | `
-- Target Foundry v13 API; use Application V2 patterns
+- Target the Foundry v13+ API; use Application V2 patterns, and the namespaced globals (`foundry.applications.*`) rather than the deprecated bare ones
 - Ask a GM through Blacksmith `gmRequest`, never a raw socket: it supplies a verified caller identity
 - Target D&D 5e version 5.5+
 
 ### References
 
-- [Foundry v13 API](https://foundryvtt.com/api/)
+- [Foundry API](https://foundryvtt.com/api/)
 - [Application V2 Guide](https://foundryvtt.wiki/en/development/guides/applicationV2-conversion-guide)
 - [D&D 5e System](https://github.com/foundryvtt/dnd5e/wiki)
 
 ## Technical Requirements
 
-- FoundryVTT v13+
+- FoundryVTT v13 or v14 (the manifest declares `minimum` 13, `verified` 14, `maximum` 14 -- v15 needs a bump)
 - D&D 5e system 5.5+
 - Required: `coffee-pub-blacksmith`
 - Recommended: `coffee-pub-bibliosoph`, `coffee-pub-crier`, `coffee-pub-monarch`, `coffee-pub-scribe`

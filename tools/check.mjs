@@ -208,6 +208,95 @@ function checkImports(files) {
 }
 
 // ============================================================================
+// 3b. CALLED BUT NEVER IMPORTED
+//
+// The check that would have caught `socket is not defined` and, two days later,
+// `deleteWaitingCard is not defined`. Both shipped the same way: a call site was
+// rewritten to use a helper from another module and the import was never added.
+//
+// `node --check` cannot see it — a free identifier is valid syntax and only
+// fails when the line RUNS, which for a chat-card button means in front of a
+// player. The evaluation pass cannot see it either: it imports three leaf
+// modules, and this happens in the big ones that need Foundry.
+//
+// This is not scope analysis, which would want a parser. It answers one narrow
+// question that covers the whole observed failure mode: if a file CALLS a bare
+// `name(...)` that some other module in scripts/ exports, does this file import
+// it or define it itself?
+//
+// Deliberately narrow to stay quiet. Only names another module exports are
+// considered, so locals, globals and Foundry's own API are never flagged, and a
+// call has to be bare — `foo(` and not `.foo(` — so methods do not count.
+// ============================================================================
+/**
+ * Code with the prose taken out.
+ *
+ * Comments and string literals are full of `someFunction()` written as prose —
+ * the first run of this check reported six of them and one real bug. Anything
+ * that is not executable is blanked here rather than being special-cased later.
+ */
+function codeOnly(text) {
+    return text
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ')
+        .replace(/`(?:\\.|[^`\\])*`/g, '``')
+        .replace(/'(?:\\.|[^'\\\n])*'/g, "''")
+        .replace(/"(?:\\.|[^"\\\n])*"/g, '""');
+}
+
+function checkFreeCalls(files) {
+    console.log('\nFree calls');
+    const sources = new Map(files.map(file => [file, codeOnly(readFileSync(file, 'utf8'))]));
+
+    // Every name any module exports, and where from.
+    const exported = new Map();
+    for (const [file, text] of sources) {
+        for (const [, name] of text.matchAll(/export\s+(?:async\s+)?(?:function|class|const|let|var)\s+([A-Za-z_$][\w$]*)/g)) {
+            if (!exported.has(name)) exported.set(name, []);
+            exported.get(name).push(rel(file));
+        }
+    }
+
+    for (const [file, text] of sources) {
+        checks += 1;
+
+        // What this file can legitimately reach by a bare name: anything it
+        // imports, and anything it declares at any depth.
+        const available = new Set();
+        for (const [, names] of text.matchAll(/import\s+\{([^}]+)\}\s+from/g)) {
+            for (const name of names.split(',')) {
+                available.add(name.trim().split(/\s+as\s+/).pop().trim());
+            }
+        }
+        for (const [, name] of text.matchAll(/\b(?:function|class|const|let|var)\s+([A-Za-z_$][\w$]*)/g)) {
+            available.add(name);
+        }
+        // Destructured locals — `const { openCleanupApproval } = await import(...)`.
+        for (const [, names] of text.matchAll(/(?:const|let|var)\s*\{([^}]+)\}\s*=/g)) {
+            for (const name of names.split(',')) available.add(name.trim().split(':').pop().trim());
+        }
+        // METHOD AND ACCESSOR DEFINITIONS, which are declarations rather than
+        // calls even though they read like one. `get needsApproval() {` was
+        // reported as a free call on the first run.
+        for (const [, name] of text.matchAll(/^\s*(?:static\s+)?(?:async\s+)?(?:get\s+|set\s+)?([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{/gm)) {
+            available.add(name);
+        }
+
+        const flagged = new Set();
+        for (const [, name] of text.matchAll(/(?<![.\w$])([A-Za-z_$][\w$]*)\s*\(/g)) {
+            if (available.has(name) || flagged.has(name)) continue;
+            if (!exported.has(name)) continue;
+            // A module never has to import what it exports itself.
+            if (exported.get(name).includes(rel(file))) continue;
+
+            flagged.add(name);
+            fail(rel(file), `calls ${name}() but never imports it — exported by ${exported.get(name).join(', ')}`);
+        }
+    }
+    console.log('  ok    every cross-module call is imported');
+}
+
+// ============================================================================
 // 4. TEMPLATES
 //
 // Handlebars blocks have to balance. Nothing checked this, and a half-applied
@@ -290,6 +379,7 @@ const docs = [
 checkSyntax(scripts);
 await checkEvaluation();
 checkImports(scripts);
+checkFreeCalls(scripts);
 checkTemplates(templates);
 checkStyles(styles);
 checkDocs(docs);

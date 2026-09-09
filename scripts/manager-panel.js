@@ -5,6 +5,7 @@ import {
     transferComplete
 } from './manager-cards.js';
 import { offerItemTransfer } from './manager-transfer-request.js';
+import { postGmCard } from './manager-gm-cards.js';
 import { ItemAcquisition } from './utility-item-acquisition.js';
 import { CharacterPanel } from './panel-character.js';
 import { GmPanel } from './panel-gm.js';

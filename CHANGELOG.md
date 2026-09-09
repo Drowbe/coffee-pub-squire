@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [unreleased]
+
+### Changed
+
+- **socketlib is no longer required.** Squire asked it to do one thing — run something on a GM's client — and Blacksmith now does that better, because it tells the answering GM who is really asking. Every one of the thirteen operations has moved across, and the dependency is gone from the manifest, the README and the setup guide. Leave socketlib installed for other modules if you use them; Squire will not touch it.
+  - **Six of those operations were the same operation.** Each asked a GM to post one chat card, differing only in which card and which fields it forwarded — so they are one now, over a whitelist of card names. The whitelist is what keeps it from being a general "run this on the GM's client with my arguments"; retiring a card and deleting one keep operations of their own, because they take a message rather than a card.
+  - **The cleanup approval was restructured rather than moved.** Its answer used to be pushed from the GM back to the player, which was the last thing standing in the way: Blacksmith elects a GM and has no way to push to a specific player, deliberately. But that push only existed because the question had been thrown over the wall with no way back. A request returns its answer now, so the approval window resolves the very call the player is already waiting on, and the push is gone rather than replaced.
+  - A cleanup or restore request that goes unanswered says **"still waiting"** rather than "declined". It is not a refusal — the window is open on the GM's screen and they may yet approve it.
+  - The manifest no longer declares `socket`. Squire opened no socket of its own even before this — that flag was there for socketlib — and what replaced it travels on Foundry's own query channel rather than on a socket at all.
+
+- **Squire says it runs on Foundry v14**, in the readme badges, the requirements list and the architecture notes — matching what the manifest has claimed since 13.11.0. The v13 badge is amber and the v14 one green, the same pair the rest of the suite carries.
+
+### Security
+
+- **A crafted call could move any item off any character in the world.** The GM-mediated transfer ran on a socketlib op that received nothing but the payload the caller wrote — two actor ids, an item id, a quantity — and moved the item with GM authority. It checked that the item still existed and that there was enough of it, and never that the person asking was entitled to give it away. It now runs on Blacksmith's `gmRequest`, which hands the handler the user **Foundry** says made the request, and every id is re-resolved and re-checked against that.
+  - **Two rules, because two different people start a transfer.** GIVING requires owning the source: you may give away what is yours. ACCEPTING cannot require it — the receiver owns the target and not the source, and is legitimately asking to move an item off somebody else's character.
+  - **So an offer is recorded, and it is recorded on the SENDER's actor.** That placement is the whole point. The receiver can write to the target actor, and players can create chat messages carrying any flags they like, so neither of those can prove an offer was ever made. The sender's own actor is the one place in this exchange the receiver cannot write. The accept handler reads the offer from there, checks it names this receiver and this item, and **takes the quantity from the offer rather than from the request** — so accepting an offer of one arrow cannot move the whole quiver. It is cleared on the way out so it cannot be replayed, and cleared again on a rejection.
+  - **Actors resolve by uuid now, not id.** An unlinked token's actor shares the base actor's id, so the old code could act on the prototype instead of the token on the canvas — a second bug living inside the first.
+  - A failure notice used to be whispered to whoever the payload named, which let a caller choose its own audience. It now goes to the owners of the two characters and the verified asker.
+  - Deleted with it: `handleTransferRequest`, `processTransferResponse` and `setTransferRequestFlag`, all of which were dead code, and with them the last socket call in the module that pushed to a specific player.
+
+### Fixed
+
+- **Clearing all favourites left the headings behind.** Clear All emptied the list of rows by reaching into the DOM rather than re-rendering, and it removed only the rows — not the category headings or the tile grids they sat in — so clearing while grouped or in tiles left a column of headings standing over nothing with "No favorites available" underneath. It now does the same repaint every other write to the favourites flag does, and the template's own empty state is what you see. That also removed **the last jQuery in the module**, which matters for Foundry v14.
+
 ## [13.11.1]
 
 ### Added
@@ -69,21 +94,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **The grid, the tiles and the caption** move to `styles/tray-tiles.css`, under a single `squire-tile-grid` class that a panel puts on its grid. Eighteen rules lived in `panel-favorites.css` carrying a second `.builds-panel.layout-tiles` selector bolted on beside the favourites one, so the Builds tile layout was defined inside another panel's stylesheet and its own file said nothing about it. Renaming or splitting the favourites tile system would have taken Builds with it, silently.
   - Nothing looks different. The rules and the values are the ones that were already there; what changed is that there is one of each. A panel that wants to differ still overrides from its own file, where the override is findable.
 
-- **socketlib is no longer required.** Squire asked it to do one thing — run something on a GM's client — and Blacksmith now does that better, because it tells the answering GM who is really asking. Every one of the thirteen operations has moved across, and the dependency is gone from the manifest, the README and the setup guide. Leave socketlib installed for other modules if you use them; Squire will not touch it.
-  - **Six of those operations were the same operation.** Each asked a GM to post one chat card, differing only in which card and which fields it forwarded — so they are one now, over a whitelist of card names. The whitelist is what keeps it from being a general "run this on the GM's client with my arguments"; retiring a card and deleting one keep operations of their own, because they take a message rather than a card.
-  - **The cleanup approval was restructured rather than moved.** Its answer used to be pushed from the GM back to the player, which was the last thing standing in the way: Blacksmith elects a GM and has no way to push to a specific player, deliberately. But that push only existed because the question had been thrown over the wall with no way back. A request returns its answer now, so the approval window resolves the very call the player is already waiting on, and the push is gone rather than replaced.
-  - A cleanup or restore request that goes unanswered says **"still waiting"** rather than "declined". It is not a refusal — the window is open on the GM's screen and they may yet approve it.
-
-
-### Security
-
-- **A crafted call could move any item off any character in the world.** The GM-mediated transfer ran on a socketlib op that received nothing but the payload the caller wrote — two actor ids, an item id, a quantity — and moved the item with GM authority. It checked that the item still existed and that there was enough of it, and never that the person asking was entitled to give it away. It now runs on Blacksmith's `gmRequest`, which hands the handler the user **Foundry** says made the request, and every id is re-resolved and re-checked against that.
-  - **Two rules, because two different people start a transfer.** GIVING requires owning the source: you may give away what is yours. ACCEPTING cannot require it — the receiver owns the target and not the source, and is legitimately asking to move an item off somebody else's character.
-  - **So an offer is recorded, and it is recorded on the SENDER's actor.** That placement is the whole point. The receiver can write to the target actor, and players can create chat messages carrying any flags they like, so neither of those can prove an offer was ever made. The sender's own actor is the one place in this exchange the receiver cannot write. The accept handler reads the offer from there, checks it names this receiver and this item, and **takes the quantity from the offer rather than from the request** — so accepting an offer of one arrow cannot move the whole quiver. It is cleared on the way out so it cannot be replayed, and cleared again on a rejection.
-  - **Actors resolve by uuid now, not id.** An unlinked token's actor shares the base actor's id, so the old code could act on the prototype instead of the token on the canvas — a second bug living inside the first.
-  - A failure notice used to be whispered to whoever the payload named, which let a caller choose its own audience. It now goes to the owners of the two characters and the verified asker.
-  - Deleted with it: `handleTransferRequest`, `processTransferResponse` and `setTransferRequestFlag`, all of which were dead code, and with them the last socket call in the module that pushed to a specific player.
-
 ### Fixed
 
 - **A shield could be put in a sheath.** Blacksmith gives a shield the same `off` grip it gives a dagger, and that grip leads with the sheath for the dagger's sake — so the automatic placer sheathed shields. A shield is now recognised on its own (`equipment` with an armour type of `shield`), goes to the Off Hand first and the Main Hand second, and is refused by the sheath outright, which only ever wanted weapons.
@@ -93,8 +103,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The build rows in the tray were inert until something re-rendered them.** `activateListeners` ran *after* the panels had drawn and cloned the tray's stacked column to drop stale drag handlers — and `cloneNode` copies markup, not listeners, so every panel that had already bound was left talking to nodes no longer on screen. The five sheet panels usually survived by accident, their renders being fire-and-forget and finishing after the clone; the Builds panel was the one that was awaited, so it was the one guaranteed to bind and then die. The tray is bound once and then filled, and the column is no longer thrown away.
 
 - **The Builds panel kept drawing the previous character** after a token switch, because it was the one panel missing from the list whose `actor` gets reassigned.
-
-- **Clearing all favourites left the headings behind.** Clear All emptied the list of rows by reaching into the DOM rather than re-rendering, and it removed only the rows — not the category headings or the tile grids they sat in — so clearing while grouped or in tiles left a column of headings standing over nothing with "No favorites available" underneath. It now does the same repaint every other write to the favourites flag does, and the template's own empty state is what you see. That also removed **the last jQuery in the module**, which matters for Foundry v14.
 
 - Removed a dead `is-worn` class from the build rows. Worn is said by the kind glyph in the corner, which goes to full strength for the build the character has on; the green edge that class used to drive is gone, and nothing had styled or read it since.
 

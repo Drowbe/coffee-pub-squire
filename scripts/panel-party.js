@@ -11,6 +11,7 @@ import {
 import {
     requestItemTransfer, acceptItemTransfer, withdrawItemTransfer
 } from './manager-transfer-request.js';
+import { postGmCard, deleteWaitingCard } from './manager-gm-cards.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {

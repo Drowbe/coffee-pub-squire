@@ -3,8 +3,9 @@
 ![Latest Release](https://img.shields.io/github/v/release/Drowbe/coffee-pub-squire)
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Drowbe/coffee-pub-squire/release.yml)
 ![GitHub all releases](https://img.shields.io/github/downloads/Drowbe/coffee-pub-squire/total)
+![Foundry v13](https://img.shields.io/badge/foundry-v13-yellow)
+![Foundry v14](https://img.shields.io/badge/foundry-v14-green)
 ![MIT License](https://img.shields.io/badge/license-MIT-blue)
-![Foundry v13](https://img.shields.io/badge/foundry-v13-green)
 
 Play your character without opening the character sheet.
 
@@ -49,8 +50,8 @@ do, and let me do it with ease.
 
 ## Requirements
 
-- **Foundry VTT** version 13. Squire 12.1.14 was the last build compatible with v12, and there are no
-  plans to maintain that line.
+- **Foundry VTT** version 13 or 14. Squire 12.1.14 was the last build compatible with v12, and there
+  are no plans to maintain that line.
 - **The D&D 5e system.** Squire is built for it and does not work without it.
 - **[Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith)**, version 13.19.1 or
   later, installed and enabled. Squire will not run without it.
