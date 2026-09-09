@@ -3,7 +3,8 @@ import { PanelManager } from './manager-panel.js';
 import { getNativeElement, renderTemplate, getBlacksmith, showSquireToast } from './helpers.js';
 import {
     getBuilds, getActiveBuildId, buildSummary, resolveTileImage, resolveImageSlots,
-    getHandleBuildIds, addBuildToHandle, removeBuildFromHandle, toggleBuildFavorite
+    getHandleBuildIds, addBuildToHandle, removeBuildFromHandle, toggleBuildFavorite,
+    moveBuildAmong
 } from './utility-builds.js';
 import { BuildWindow } from './window-build.js';
 import { getTileSpan, setTileSpan, tileSizeMenuEntry } from './utility-tile-spans.js';
@@ -167,6 +168,38 @@ export class BuildsPanel {
               callback: () => this._unfavourite(buildId) }
         ];
 
+        // Reordering, in the same four entries and the same order Favourites
+        // offers them, because this panel sits directly under that one and a
+        // row that means something different two panels apart is a row nobody
+        // can learn.
+        //
+        // Blacksmith's menu has no `condition` hook, so an entry that cannot
+        // apply is simply not pushed — the top build has no Move Up rather than
+        // a dead one that looks clickable. The rail's menu does the same.
+        const order = this._getBuilds().map(build => build.id);
+        const index = order.indexOf(buildId);
+
+        if (index > 0) {
+            items.push({ separator: true }, {
+                name: 'Move to Top', icon: 'fa-solid fa-angle-double-up',
+                callback: () => this._reorder(buildId, 0, order)
+            }, {
+                name: 'Move Up', icon: 'fa-solid fa-angle-up',
+                callback: () => this._reorder(buildId, index - 1, order)
+            });
+        }
+
+        if (index > -1 && index < order.length - 1) {
+            if (index === 0) items.push({ separator: true });
+            items.push({
+                name: 'Move Down', icon: 'fa-solid fa-angle-down',
+                callback: () => this._reorder(buildId, index + 1, order)
+            }, {
+                name: 'Move to Bottom', icon: 'fa-solid fa-angle-double-down',
+                callback: () => this._reorder(buildId, order.length - 1, order)
+            });
+        }
+
         // Tile size. Only in the tile layout, because offering to make a list
         // row two cells tall would be offering nothing.
         if (BuildsPanel.getLayout() === 'tiles') {
@@ -187,6 +220,28 @@ export class BuildsPanel {
             await BuildWindow.applyFromAnywhere(this.actor, buildId);
         } catch (error) {
             console.error('Coffee Pub Squire | Could not apply the build from the tray:', error);
+        }
+    }
+
+    /**
+     * Move a build within the list this panel is showing.
+     *
+     * It writes the ONE build order — the same one the builder's rail reads —
+     * rather than a panel order of its own. Favourites keeps a separate
+     * `favoritePanel` array because a bag of items has no inherent order to
+     * write into; builds have exactly one, and a second would be a second thing
+     * to keep in step and a surprise the first time the rail disagreed.
+     *
+     * The visible ids go with it, because this list is filtered to the
+     * favourites: moving one place in the underlying array can step over a
+     * build that is not on screen and look like nothing happened.
+     */
+    async _reorder(buildId, index, order) {
+        try {
+            await moveBuildAmong(this.actor, buildId, index, order);
+            await this.render(this.element);
+        } catch (error) {
+            console.error('Coffee Pub Squire | Could not reorder the build:', error);
         }
     }
 

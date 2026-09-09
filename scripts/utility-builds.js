@@ -818,6 +818,37 @@ export async function moveBuild(actor, buildId, delta) {
     await saveBuilds(actor, builds);
 }
 
+/**
+ * Move a build to a position AMONG a subset of the list.
+ *
+ * There is one build order — the rail's — and the tray panel writes that same
+ * order rather than keeping a second one of its own. But the panel shows only
+ * the FAVOURITED builds, so a plain one-place move can swap a build with one
+ * that is not on screen and look like it did nothing at all.
+ *
+ * So the caller passes the ids it is actually showing, in the order it is
+ * showing them, and an index into THAT list. The build lands where the build
+ * currently at that index sits, which is a visible change every time.
+ *
+ * Index-based rather than a delta, unlike `moveBuild`, because this serves four
+ * entries — top, up, down, bottom — and the same arithmetic favourites' reorder
+ * uses. Out of range is clamped rather than refused: `length - 1` is how a
+ * caller says "the end", and it should not have to be exact about it.
+ */
+export async function moveBuildAmong(actor, buildId, index, visibleIds) {
+    const builds = getBuilds(actor);
+    const from = builds.findIndex(build => build.id === buildId);
+    if (from === -1) return;
+
+    const visible = (visibleIds ?? []).filter(id => builds.some(build => build.id === id));
+    if (!visible.length) return;
+
+    const targetId = visible[Math.max(0, Math.min(index, visible.length - 1))];
+    if (!targetId || targetId === buildId) return;
+
+    await moveBuild(actor, buildId, builds.findIndex(build => build.id === targetId) - from);
+}
+
 export async function deleteBuild(actor, buildId) {
     await saveBuilds(actor, getBuilds(actor).filter(build => build.id !== buildId));
 }

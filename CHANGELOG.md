@@ -39,6 +39,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **The Light property is deliberately not enforced on the slot.** dnd5e gates the `offhand` *mode* on Light, and rightly — two-weapon fighting needs it. But the Off Hand *slot* means "what is in your other hand", and it takes a torch, a lantern, a holy symbol, a shield. You can hold a longsword in your left hand; you simply cannot two-weapon-fight with it. Light decides the mode, not the slot.
   - **A weapon with no hand modes is not restricted.** A dart is thrown-and-ranged, and dnd5e gives it `thrown` and `thrown-offhand` only — no `oneHanded` at all. Silence there means the system has not modelled the question, not that the answer is no.
 
+- **The Builds panel can be reordered**, with the same Move to Top / Move Up / Move Down / Move to Bottom the favourites above it offer, in that order. It was the one list in the tray you could not arrange.
+  - **It writes the one build order** — the same one the builder's rail shows — rather than keeping a panel order of its own. Favourites needs a separate list because a bag of items has no inherent order to write into; builds have exactly one, and a second would be a second thing to keep in step and a surprise the first time the two disagreed.
+  - **It steps over builds that are not favourited.** The panel is a filtered view, so moving one place in the underlying list could swap a build with one that is not on screen and look like it had done nothing. A move here always changes what you are looking at.
+  - An entry that cannot apply is not drawn — the top build has no Move Up rather than a dead one that looks clickable, which is what the rail's own menu does.
+
 ### Changed
 
 - **The build's three pictures are drawn as one thing.** Portrait and token used to flank the head as two more cells of the doll, which made them look like slots — and a slot is a drop target, which these are not: they hold an image path and take a click. They now sit on the main picture itself, left and right, vertically centred, so the three read as what they are: three views of one character, edited together.
