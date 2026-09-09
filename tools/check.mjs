@@ -88,6 +88,7 @@ function checkSyntax(files) {
 const EVALUABLE = [
     'scripts/const.js',
     'scripts/utility-builds.js',
+    'scripts/utility-tile-spans.js',
     'scripts/transfer-utils.js'
 ];
 

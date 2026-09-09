@@ -30,9 +30,15 @@
     </div>
 </div>
 
-<div class="builds-list panel-items">
+{{!-- `squire-tile-grid` is the shared tile layout in tray-tiles.css — the same
+      class the Favourites grid carries, so the two cannot drift. --}}
+<div class="builds-list panel-items{{#if (eq layout 'tiles')}} squire-tile-grid{{/if}}">
     {{#each builds}}
-    <div class="panel-item squire-tray-build{{#if this.worn}} is-worn{{/if}}"
+    {{!-- Worn is said by the kind glyph in the corner, which goes to full
+          strength when this is what the character has on. It was once said a
+          second time by a green edge on the row; the class that drove it is
+          gone with the rule. --}}
+    <div class="panel-item squire-tray-build"
          data-build-id="{{this.id}}"
          data-span="{{this.span}}"
          data-tooltip="<strong>{{this.name}}</strong><br>{{#if this.costume}}Costume &mdash; changes the portrait and token only{{else}}AC {{this.armorClass}} &middot; {{this.gearCount}} items{{/if}}<br><em>Click to {{#if this.costume}}wear{{else}}equip{{/if}} &middot; right-click for more</em>">

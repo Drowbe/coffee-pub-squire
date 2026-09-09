@@ -6,26 +6,13 @@ import {
     getHandleBuildIds, addBuildToHandle, removeBuildFromHandle, toggleBuildFavorite
 } from './utility-builds.js';
 import { BuildWindow } from './window-build.js';
+import { getTileSpan, setTileSpan, tileSizeMenuEntry } from './utility-tile-spans.js';
 
 /** Blacksmith addresses an open menu by id, so this is how it gets closed. */
 const BUILD_MENU_ID = 'squire-build-tray-menu';
 
-/**
- * The tile footprints a build can take, as `columns x rows`.
- *
- * Same four as Favourites, in the same order, so the Tile Size menu here is
- * the Tile Size menu there. Stored per actor in a `buildSpans` map rather
- * than on the build: it is a fact about this panel's layout, not about the
- * kit.
- */
-const BUILD_SPANS = ['1x1', '2x1', '1x2', '2x2'];
-
-const SPAN_ICONS = {
-    '1x1': 'fa-square',
-    '2x1': 'fa-rectangle-wide',
-    '1x2': 'fa-rectangle-vertical',
-    '2x2': 'fa-table-cells-large'
-};
+/** The actor flag this panel keeps its tile footprints in. */
+const BUILD_SPANS_FLAG = 'buildSpans';
 
 /**
  * THE FAVOURITE BUILDS, IN THE TRAY.
@@ -66,28 +53,13 @@ export class BuildsPanel {
         }
     }
 
-    /**
-     * How much of the tile grid one build takes, as `columns x rows`.
-     *
-     * Same shape as Favourites' `favoriteSpans`, and for the same reason: a
-     * layout choice about this panel, not a property of the kit. Keys for
-     * builds that are no longer favourited are ignored on read, so starring
-     * one again returns the size it had.
-     */
+    /** How much of the tile grid one build takes — see utility-tile-spans.js. */
     static getSpan(actor, buildId) {
-        const spans = actor?.getFlag(MODULE.ID, 'buildSpans') || {};
-        const span = spans[buildId];
-        return BUILD_SPANS.includes(span) ? span : '1x1';
+        return getTileSpan(actor, BUILD_SPANS_FLAG, buildId);
     }
 
     static async setSpan(actor, buildId, span) {
-        if (!actor || !buildId || !BUILD_SPANS.includes(span)) return;
-
-        const spans = { ...(actor.getFlag(MODULE.ID, 'buildSpans') || {}) };
-        if (span === '1x1') delete spans[buildId];
-        else spans[buildId] = span;
-
-        await actor.setFlag(MODULE.ID, 'buildSpans', spans);
+        await setTileSpan(actor, BUILD_SPANS_FLAG, buildId, span);
     }
 
     /** The favourited builds, with what the tray needs to draw each one. */
@@ -195,25 +167,16 @@ export class BuildsPanel {
               callback: () => this._unfavourite(buildId) }
         ];
 
-        // Tile size, as a flyout — the same four footprints Favourites
-        // offers, and only in the tile layout, because offering to make a
-        // list row two cells tall would be offering nothing.
+        // Tile size. Only in the tile layout, because offering to make a list
+        // row two cells tall would be offering nothing.
         if (BuildsPanel.getLayout() === 'tiles') {
-            const current = BuildsPanel.getSpan(this.actor, buildId);
-            items.push({ separator: true }, {
-                name: 'Tile Size',
-                icon: 'fa-solid fa-up-right-and-down-left-from-center',
-                description: current.replace('x', ' × '),
-                submenu: BUILD_SPANS.map(span => ({
-                    name: span.replace('x', ' × '),
-                    icon: `fa-solid ${SPAN_ICONS[span]}`,
-                    disabled: span === current,
-                    callback: async () => {
-                        await BuildsPanel.setSpan(this.actor, buildId, span);
-                        await this.render(this.element);
-                    }
-                }))
-            });
+            items.push({ separator: true }, tileSizeMenuEntry({
+                current: BuildsPanel.getSpan(this.actor, buildId),
+                onPick: async (span) => {
+                    await BuildsPanel.setSpan(this.actor, buildId, span);
+                    await this.render(this.element);
+                }
+            }));
         }
 
         return items;

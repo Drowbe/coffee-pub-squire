@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [13.11.0]
+## [unreleased]
 
 ### Added
 
@@ -38,6 +38,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Weapon eligibility comes from dnd5e's own `attackModes`.** A greatsword cannot go in one hand; a dagger cannot go in Both. That list is what the roll dialog offers, so the doll and the dice cannot disagree about what a weapon can do.
   - **The Light property is deliberately not enforced on the slot.** dnd5e gates the `offhand` *mode* on Light, and rightly — two-weapon fighting needs it. But the Off Hand *slot* means "what is in your other hand", and it takes a torch, a lantern, a holy symbol, a shield. You can hold a longsword in your left hand; you simply cannot two-weapon-fight with it. Light decides the mode, not the slot.
   - **A weapon with no hand modes is not restricted.** A dart is thrown-and-ranged, and dnd5e gives it `thrown` and `thrown-offhand` only — no `oneHanded` at all. Silence there means the system has not modelled the question, not that the answer is no.
+
+### Changed
+
+- **The build's three pictures are drawn as one thing.** Portrait and token used to flank the head as two more cells of the doll, which made them look like slots — and a slot is a drop target, which these are not: they hold an image path and take a click. They now sit on the main picture itself, left and right, vertically centred, so the three read as what they are: three views of one character, edited together.
+  - **Not in the corners.** Those carry the armour class, the attunement count and the weight, and they are the most readable places in this window. The middle of each edge is the quietest spot that is still obviously part of the same object.
+  - **All three now carry a faint ring** the gear slots do not. Being round was the only thing marking them out before, and the ammunition slot is round too.
+  - Sized as a share of the image rather than in pixels, so they hold their proportion at any window width, and small enough to leave the figure readable behind them.
+  - Row one is `Utility · Face · Head · Neck · Utility`. Face and Neck grouped beside the head — leaving them at the far edges left a helmet marooned between two holes, where three together read as a head — and the corners they vacated took a new **Utility** pair.
+
+- **Every list row has a `⋯` menu, and the rows got quieter.** A row used to carry a control per action — a feather to read the item, a share to send it, a heart, a shield, a sun, a lightbulb, a sack, a warning. Eight glyphs on a narrow row, most pressed once a session, with the two pressed constantly buried among them.
+  - **The rare ones moved into the menu; the toggles stayed out.** The test is how *often* a thing is done rather than how important it is: a toggle you flip every fight is worth a click, an action you take twice an evening is not. Favourite, equip and prepared keep their glyphs; the feather and the send-to are gone from the row.
+  - **The item's NAME now opens its sheet** — what the feather did. It underlines on hover rather than at rest, because a page of rows that all look like hyperlinks is worse than a page that says so when you ask.
+  - **It says what you right-clicked, at the top** — the item's picture, its name, and what kind of thing it is, as an `information` block rather than a disabled row. The menu opens near the cursor but not on it, and nine entries is tall enough to drift a long way from the row that opened it; by the time you have read down to Delete, the heading is the answer to "delete *what*".
+  - **Eight entries**: view details, copy UUID link, favourite, equip or prepare, add to handle, **Send to ▸** (a character, or the chat), move to container, delete. Sending to a person and sending to chat began as two rows at opposite ends of the menu, which made two halves of one sentence look like unrelated features; they are one idea with two destinations, which is what a flyout is for. Each is conditional on the item answering for it — a spell has no container and a feature cannot be sent, and an entry that does nothing is worse than one that is absent.
+  - **Move to Container is new**, as a flyout of the containers this character carries plus *Not in a container*. A container is never offered itself as a destination: dnd5e will let you do it and the result is a bag that has vanished into its own mouth.
+  - **Delete is new**, for owners, and asks first — naming the item, and warning when a container's contents will come out rather than go with it. It is the one entry here with no undo, in a list where everything else has one.
+  - **Right-click the row opens the same menu.** The `⋯` is the discoverable route and right-click is the fast one; two ways in that offered different things would be worse than one.
+  - **One builder for all five panels.** Weapons, Spells, Inventory, Features and Favourites show the same entries in the same order with the same words, from `manager-item-menu.js`. Five copies would be five things to keep in step, and this module has already paid for that lesson twice.
+  - Favourites keeps its own reorder and tile-size entries — they now follow the shared seven rather than replacing them, so a row does not mean something different there than two panels up.
+  - Deleted with the glyphs: the two send-to handlers and the two copies of `_openCharacterSelection` they called, plus a transfer guard left with nothing to guard.
+
+- **The tile layout is one thing now, not two copies of one thing.** Favourites and Builds both offer tiles, both draw them from the list's own row markup, and both let a tile take more than one cell — and all of that was written twice.
+  - **The footprints, the icons, the stored spans and the Tile Size menu** move to `scripts/utility-tile-spans.js`. The four values, the four glyphs, the read/write pair and the menu entry were duplicated between the two panels, differing only in which actor flag they stored under — which is now the one thing a caller passes in. Adding a fifth footprint or swapping an icon would have landed in one panel and not the other, and nothing linked them to say so.
+  - **The grid, the tiles and the caption** move to `styles/tray-tiles.css`, under a single `squire-tile-grid` class that a panel puts on its grid. Eighteen rules lived in `panel-favorites.css` carrying a second `.builds-panel.layout-tiles` selector bolted on beside the favourites one, so the Builds tile layout was defined inside another panel's stylesheet and its own file said nothing about it. Renaming or splitting the favourites tile system would have taken Builds with it, silently.
+  - Nothing looks different. The rules and the values are the ones that were already there; what changed is that there is one of each. A panel that wants to differ still overrides from its own file, where the override is findable.
+
+### Fixed
+
+- **A shield could be put in a sheath.** Blacksmith gives a shield the same `off` grip it gives a dagger, and that grip leads with the sheath for the dagger's sake — so the automatic placer sheathed shields. A shield is now recognised on its own (`equipment` with an armour type of `shield`), goes to the Off Hand first and the Main Hand second, and is refused by the sheath outright, which only ever wanted weapons.
+
+- **A slot holding something the rules now refuse is marked, never moved.** A greatsword in one hand, a shield in a sheath, or a build written before any of this existed keeps exactly what its author put there and gets the same amber warning a drifted slot gets, saying why and that it will stay put. Nothing in this window rearranges a plan somebody made. It catches both kinds of fault: an item a slot would refuse, and two hand slots filled that exclude each other — the second of which a drop can no longer produce but a saved build can still contain.
+
+- **The build rows in the tray were inert until something re-rendered them.** `activateListeners` ran *after* the panels had drawn and cloned the tray's stacked column to drop stale drag handlers — and `cloneNode` copies markup, not listeners, so every panel that had already bound was left talking to nodes no longer on screen. The five sheet panels usually survived by accident, their renders being fire-and-forget and finishing after the clone; the Builds panel was the one that was awaited, so it was the one guaranteed to bind and then die. The tray is bound once and then filled, and the column is no longer thrown away.
+
+- **The Builds panel kept drawing the previous character** after a token switch, because it was the one panel missing from the list whose `actor` gets reassigned.
+
+- Removed a dead `is-worn` class from the build rows. Worn is said by the kind glyph in the corner, which goes to full strength for the build the character has on; the green edge that class used to drive is gone, and nothing had styled or read it since.
+
+## [13.11.0]
+
+### Added
 
 - **A quick-cast slot warns when the build does not prepare the spell in it.** Take a spell out of the prepared column while a doll slot still asks for it and the slot is marked straight away — equipping the build would leave that slot uncastable, the column being what does the preparing.
   - **It shows while you are building, not after you equip.** This asks nothing about the character: it compares a build's slots against a build's own prepared list, so it needs no actor and appears on any build you are looking at. The first version routed it through drift, which exists only for the build being *worn* — meaning the one moment you could not see a broken build was while you were building it, and the warning arrived after equipping, which is exactly too late.
@@ -122,10 +163,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - There are no leftovers to report any more, by construction: every item is on the table with an answer the player chose. The one exception is the automatic first-run snapshot, which still cannot ask, so what it could not place is shown on the doll when the window opens.
 
 ### Fixed
-
-- **A shield could be put in a sheath.** Blacksmith gives a shield the same `off` grip it gives a dagger, and that grip leads with the sheath for the dagger's sake — so the automatic placer sheathed shields. A shield is now recognised on its own (`equipment` with an armour type of `shield`), goes to the Off Hand first and the Main Hand second, and is refused by the sheath outright, which only ever wanted weapons.
-
-- **A slot holding something the rules now refuse is marked, never moved.** A greatsword in one hand, a shield in a sheath, or a build written before any of this existed keeps exactly what its author put there and gets the same amber warning a drifted slot gets, saying why and that it will stay put. Nothing in this window rearranges a plan somebody made. It catches both kinds of fault: an item a slot would refuse, and two hand slots filled that exclude each other — the second of which a drop can no longer produce but a saved build can still contain.
 
 - **Transparent token art showed the picture behind it.** A token image usually has an alpha channel, and on a build tile it sat directly on the tile's own artwork — so the figure read as a hole cut in the tile rather than as a token. The preview circles in the rail and the build tiles on the tray handle now have a ground of their own.
   - The portrait circle gets it too. It is normally opaque, but a pair of circles that match only until one of them happens to have an alpha channel is worse than two that always agree.
@@ -237,24 +274,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Which slot each item lands in is cosmetic, deliberately.** Applying equips exactly the set the build names and unequips everything else, so any arrangement of the same items reproduces the same character — the placement only has to look sensible. It is a light heuristic (weapons to the hands, a shield to the off hand, armour to the chest, rings to the rings) and anything it cannot guess goes in the next free body slot rather than being dropped: a build missing the item you were looking at is worse than a build with a lantern in the neck slot, and the second is one drag from fixed.
 
 ### Changed
-
-- **The build's three pictures are drawn as one thing.** Portrait and token used to flank the head as two more cells of the doll, which made them look like slots — and a slot is a drop target, which these are not: they hold an image path and take a click. They now sit on the main picture itself, left and right, vertically centred, so the three read as what they are: three views of one character, edited together.
-  - **Not in the corners.** Those carry the armour class, the attunement count and the weight, and they are the most readable places in this window. The middle of each edge is the quietest spot that is still obviously part of the same object.
-  - **All three now carry a faint ring** the gear slots do not. Being round was the only thing marking them out before, and the ammunition slot is round too.
-  - Sized as a share of the image rather than in pixels, so they hold their proportion at any window width, and small enough to leave the figure readable behind them.
-  - Row one is `Utility · Face · Head · Neck · Utility`. Face and Neck grouped beside the head — leaving them at the far edges left a helmet marooned between two holes, where three together read as a head — and the corners they vacated took a new **Utility** pair.
-
-- **Every list row has a `⋯` menu, and the rows got quieter.** A row used to carry a control per action — a feather to read the item, a share to send it, a heart, a shield, a sun, a lightbulb, a sack, a warning. Eight glyphs on a narrow row, most pressed once a session, with the two pressed constantly buried among them.
-  - **The rare ones moved into the menu; the toggles stayed out.** The test is how *often* a thing is done rather than how important it is: a toggle you flip every fight is worth a click, an action you take twice an evening is not. Favourite, equip and prepared keep their glyphs; the feather and the send-to are gone from the row.
-  - **The item's NAME now opens its sheet** — what the feather did. It underlines on hover rather than at rest, because a page of rows that all look like hyperlinks is worse than a page that says so when you ask.
-  - **It says what you right-clicked, at the top** — the item's picture, its name, and what kind of thing it is, as an `information` block rather than a disabled row. The menu opens near the cursor but not on it, and nine entries is tall enough to drift a long way from the row that opened it; by the time you have read down to Delete, the heading is the answer to "delete *what*".
-  - **Eight entries**: view details, copy UUID link, favourite, equip or prepare, add to handle, **Send to ▸** (a character, or the chat), move to container, delete. Sending to a person and sending to chat began as two rows at opposite ends of the menu, which made two halves of one sentence look like unrelated features; they are one idea with two destinations, which is what a flyout is for. Each is conditional on the item answering for it — a spell has no container and a feature cannot be sent, and an entry that does nothing is worse than one that is absent.
-  - **Move to Container is new**, as a flyout of the containers this character carries plus *Not in a container*. A container is never offered itself as a destination: dnd5e will let you do it and the result is a bag that has vanished into its own mouth.
-  - **Delete is new**, for owners, and asks first — naming the item, and warning when a container's contents will come out rather than go with it. It is the one entry here with no undo, in a list where everything else has one.
-  - **Right-click the row opens the same menu.** The `⋯` is the discoverable route and right-click is the fast one; two ways in that offered different things would be worse than one.
-  - **One builder for all five panels.** Weapons, Spells, Inventory, Features and Favourites show the same entries in the same order with the same words, from `manager-item-menu.js`. Five copies would be five things to keep in step, and this module has already paid for that lesson twice.
-  - Favourites keeps its own reorder and tile-size entries — they now follow the shared seven rather than replacing them, so a row does not mean something different there than two panels up.
-  - Deleted with the glyphs: the two send-to handlers and the two copies of `_openCharacterSelection` they called, plus a transfer guard left with nothing to guard.
 
 - **`images/` moved to `assets/images/`.** The module now keeps everything it ships under one `assets/` folder — sounds and images together — which is where a Foundry module is expected to put them. Two references updated: the tray banner in `tray-shell.css`, and the release zip, where `assets/` now covers what `images/` used to.
   - **This breaks any saved path pointing into the old folder.** Squire itself stores none, but a world where somebody browsed to one of these files with a file picker — a scene background, a journal image, a token — is holding `modules/coffee-pub-squire/images/…` and will show a broken image after upgrading. Re-pick the file from `assets/images/`.
@@ -530,6 +549,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Builds moved out of the tray entirely.** The section above Favorites is gone, along with `panel-builds.js` and its template: it gave a lot of a narrow column to something touched rarely, and it split one feature across two places — a build was edited in its window and applied from the tray. A **shirt icon in the Character Sheet strip** opens the builder instead, sitting with the broom on the launcher side of the separator, because both open windows rather than changing what the column shows.
   - **The builder is now one window per actor with a rail down its left**, listing every build with its armour class, gear count and first few item pictures. Selecting one shows it on the doll; the rail also creates, duplicates, deletes and equips. It was one window per build, which made the second window a second copy of the same list — and the two would disagree the moment either created or deleted anything.
   - Applying lives in one place, `applySelected()`, reached by the rail, the handle and an open window alike. The handle borrows it through a detached instance that never renders, so the confirmation, the rules and the receipt cannot drift between the routes that trigger them.
+
 
 ## [13.10.0]
 

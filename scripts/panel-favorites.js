@@ -5,18 +5,14 @@ import { LightUtility } from './utility-lights.js';
 import { StatblockUtility } from './utility-statblock.js';
 import { QuantityEditor } from './utility-quantity.js';
 import { buildItemMenu } from './manager-item-menu.js';
+import { getTileSpan, setTileSpan, tileSizeMenuEntry } from './utility-tile-spans.js';
 
 // Universal actions every creature can take — the core-rules set plus common
 // table extras. When an actions compendium drops these onto NPC sheets they
 // all carry usable activities, which would flood auto-favorites with rules
 // reminders (see: 25 hearts on one CR 9 caster). Matched by lowercased name.
-/**
- * The tile footprints a favourite can take, as `columns x rows`.
- *
- * Width first, height second, the way CSS grid reads: `2x1` is two cells wide
- * and one tall. Order here is the order they appear in the context menu.
- */
-const FAVORITE_SPANS = ['1x1', '2x1', '1x2', '2x2'];
+/** The actor flag this panel keeps its tile footprints in. */
+const FAVORITE_SPANS_FLAG = 'favoriteSpans';
 
 /** Blacksmith addresses an open menu by id, so this is how it gets closed. */
 const FAVORITE_MENU_ID = 'squire-favorite-menu';
@@ -71,14 +67,6 @@ const CATEGORY_LABELS = {
     tool: 'Tools',
     loot: 'Loot',
     backpack: 'Containers'
-};
-
-/** The glyph for each footprint — the shape it makes, not an abstraction of it. */
-const SPAN_ICONS = {
-    '1x1': 'fa-square',
-    '2x1': 'fa-rectangle-wide',
-    '1x2': 'fa-rectangle-vertical',
-    '2x2': 'fa-table-cells-large'
 };
 
 const GENERIC_ACTIONS_DEFAULT = [
@@ -600,67 +588,29 @@ export class FavoritesPanel {
             });
         }
 
-        // Tile size, as a flyout. The four footprints are one question with four
-        // answers, and four sibling rows in the top level would have read as four
-        // unrelated commands. Only in the tile layout: offering to make a list
-        // row two cells tall would be offering nothing.
+        // Tile size. Only in the tile layout: offering to make a list row two
+        // cells tall would be offering nothing.
         if (FavoritesPanel.getLayout() === 'tiles') {
-            const current = FavoritesPanel.getSpan(this.actor, itemId);
             if (items.length) items.push({ separator: true });
-            items.push({
-                name: 'Tile Size',
-                icon: 'fa-solid fa-up-right-and-down-left-from-center',
-                description: current.replace('x', ' × '),
-                submenu: FAVORITE_SPANS.map(span => ({
-                    name: span.replace('x', ' × '),
-                    icon: `fa-solid ${SPAN_ICONS[span]}`,
-                    // The current size is shown but not clickable, so the menu
-                    // says which one you are on instead of leaving you to infer
-                    // it from the tile — and clicking it cannot be a silent
-                    // no-op that looks like a failure.
-                    disabled: span === current,
-                    callback: async () => {
-                        await FavoritesPanel.setSpan(this.actor, itemId, span);
-                        await this.render(this.element);
-                    }
-                }))
-            });
+            items.push(tileSizeMenuEntry({
+                current: FavoritesPanel.getSpan(this.actor, itemId),
+                onPick: async (span) => {
+                    await FavoritesPanel.setSpan(this.actor, itemId, span);
+                    await this.render(this.element);
+                }
+            }));
         }
 
         return items;
     }
 
-    /**
-     * How much of the tile grid one favourite takes, as `columns x rows`.
-     *
-     * Stored per actor in a `favoriteSpans` map rather than as a flag on the
-     * item, because it is a fact about this panel's layout and not about the
-     * longsword. Writing it to the item would also put a Squire key on a
-     * document that may be shared, moved or exported, to say something that
-     * means nothing outside this grid.
-     *
-     * Keys for items that are no longer favourites are simply ignored on read.
-     * They cost a few bytes, and clearing them on unfavourite would mean the
-     * heart silently discarding a layout choice that comes straight back the
-     * moment the item is favourited again.
-     */
+    /** How much of the tile grid one favourite takes — see utility-tile-spans.js. */
     static getSpan(actor, itemId) {
-        const spans = actor?.getFlag(MODULE.ID, 'favoriteSpans') || {};
-        const span = spans[itemId];
-        return FAVORITE_SPANS.includes(span) ? span : '1x1';
+        return getTileSpan(actor, FAVORITE_SPANS_FLAG, itemId);
     }
 
     static async setSpan(actor, itemId, span) {
-        if (!actor || !itemId || !FAVORITE_SPANS.includes(span)) return;
-
-        const spans = { ...(actor.getFlag(MODULE.ID, 'favoriteSpans') || {}) };
-        // 1x1 is the default, so it is stored as absence rather than as a value.
-        // Otherwise every tile anybody ever touched would sit in the map saying
-        // "ordinary", and the map would only ever grow.
-        if (span === '1x1') delete spans[itemId];
-        else spans[itemId] = span;
-
-        await actor.setFlag(MODULE.ID, 'favoriteSpans', spans);
+        await setTileSpan(actor, FAVORITE_SPANS_FLAG, itemId, span);
     }
 
     /**

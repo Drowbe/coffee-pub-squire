@@ -75,11 +75,14 @@
     background: rgba(159, 146, 117, 0.35);
 }
 
+
 /* ---------------- TILE LAYOUT ----------------
 
-   Shared with the Builds panel. The same cards, the same overlay click, the
-   same caption over the art. Builds has no tile spans, so the data-span rules
-   below simply never match there.
+   The grid, the tiles and the caption are in `tray-tiles.css`, keyed on
+   `squire-tile-grid` — shared with the Builds panel, which draws the same
+   cards, the same overlay click and the same caption over the art. That was
+   this file, carrying a second `.builds-panel.layout-tiles` selector on every
+   rule; Builds' tile layout is not this panel's business to define.
 
    Borrowed from the merchant module's shop wall, with one deliberate change.
 
@@ -96,48 +99,8 @@
    for sale. Every favourite is equally a thing you reach for, so they are equal
    squares in a plain grid and the browser places them.
 
-   The markup is the list's markup, unchanged. Every control on a row is
-   delegated from the panel, so re-shaping rows in CSS keeps rolling, equipping,
-   unfavouriting and drag-to-handle working with no second template to keep in
-   step. That is why this file is all positioning and no new elements. */
-
-/* The GROUP holds the grid, not the list. The list is a plain column of
-   headings and grids.
-
-   The heading used to be a grid item itself, which meant `grid-auto-rows`
-   stretched it to a tile's height — a section title in a 116px slab. Nothing
-   fixes that from inside the grid: `align-self: start` shrinks the element but
-   leaves the row, and the row height is exactly what the tiles need. So the
-   headings step outside it. */
-.squire-tray .favorites-layout-tiles .favorites-group-items,
-.squire-tray .builds-panel.layout-tiles .panel-items {
-    display: grid;
-    /* Three across at the tray's 400px floor; `auto-fill` rather than
-       `repeat(3, ...)` so a widened tray gets a fourth column instead of three
-       fatter squares. */
-    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
-    /* A FIXED row height, which is what lets a tile span two of them.
-       `aspect-ratio` on the tiles was the earlier answer and gave perfect
-       squares, but a 2x1 tile cannot express its shape that way: its width is
-       two columns PLUS the gap between them, and aspect-ratio cannot see the
-       gap. So the row height is stated instead, and 116px is the column width
-       at the tray's 400px floor. Widen the tray and the cells go gently oblong
-       — the same trade the merchant module's shop wall makes, and the reason
-       its rows are a stated height too. */
-    grid-auto-rows: 116px;
-    /* Backfills the hole a 2x2 leaves beside a column of 1x1s. Nothing computes
-       placement here — every favourite is equally a thing you reach for, so
-       there is no packing to protect and the browser can simply fill.
-
-       Safe under headings now, which it was not when one grid held everything:
-       dense lets a later tile fill an earlier hole, and with the headings inside
-       the grid an earlier hole could be ABOVE the heading that tile belonged
-       under. A grid per group makes that unreachable — there is no hole on the
-       far side of a heading to fall into, because the heading is not in here. */
-    grid-auto-flow: dense;
-    gap: 6px;
-    padding: 2px;
-}
+   What is left below is the part that is only true here: the category headings,
+   which no other tiled panel has, and the NEW tag. */
 
 /* Natural height, like the headings in every other panel — which is the whole
    point of them living outside the grid. The bottom margin is smaller than the
@@ -153,210 +116,9 @@
     margin-top: 0;
 }
 
-/* The tile fills whatever cells it was given. No `aspect-ratio`: the grid owns
-   the shape now, so a tile that stretches is a tile the user asked to stretch. */
-.squire-tray .favorites-layout-tiles .panel-item,
-.squire-tray .builds-panel.layout-tiles .panel-item {
-    position: relative;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 5px;
-    background: rgba(0, 0, 0, 0.35);
-}
-
-/* The four footprints, set from the context menu and carried on the row as
-   `data-span`. 1x1 needs no rule — it is one cell of each, which is what a grid
-   item is without being told otherwise. */
-.squire-tray .favorites-layout-tiles .panel-item[data-span="2x1"],
-.squire-tray .builds-panel.layout-tiles .panel-item[data-span="2x1"] {
-    grid-column: span 2;
-}
-
-.squire-tray .favorites-layout-tiles .panel-item[data-span="1x2"],
-.squire-tray .builds-panel.layout-tiles .panel-item[data-span="1x2"] {
-    grid-row: span 2;
-}
-
-.squire-tray .favorites-layout-tiles .panel-item[data-span="2x2"],
-.squire-tray .builds-panel.layout-tiles .panel-item[data-span="2x2"] {
-    grid-column: span 2;
-    grid-row: span 2;
-}
-
-/* A wider tile has room for a third line of name before it clips, and a taller
-   one has room for a bigger name. Only the two-cell-wide sizes get it: on a
-   single column the name is already using the full width it has. */
-.squire-tray .favorites-layout-tiles .panel-item[data-span="2x1"] .panel-item-label,
-.squire-tray .favorites-layout-tiles .panel-item[data-span="2x2"] .panel-item-label,
-.squire-tray .builds-panel.layout-tiles .panel-item[data-span="2x1"] .panel-item-label,
-.squire-tray .builds-panel.layout-tiles .panel-item[data-span="2x2"] .panel-item-label {
-    font-size: 0.95em;
-    -webkit-line-clamp: 3;
-}
-
-.squire-tray .favorites-layout-tiles .panel-item:hover,
-.squire-tray .builds-panel.layout-tiles .panel-item:hover {
-    border-color: rgba(255, 100, 0, 0.6);
-}
-
-/* The row's flex wrapper stops being a row and becomes the tile's frame; every
-   child below positions itself against it. */
-.squire-tray .favorites-layout-tiles .panel-item-row,
-.squire-tray .builds-panel.layout-tiles .panel-item-row {
-    display: block;
-    position: absolute;
-    inset: 0;
-    padding: 0;
-    gap: 0;
-}
-
-/* The image container is the whole tile rather than a 24px chip, which also
-   means the d20 roll overlay it already carries covers the whole tile — the
-   same hover-to-roll target the list has, just bigger. */
-.squire-tray .favorites-layout-tiles .panel-item-image-container,
-.squire-tray .builds-panel.layout-tiles .panel-item-image-container {
-    position: absolute;
-    inset: 0;
-    flex: none;
-    width: auto;
-    height: auto;
-}
-
-.squire-tray .favorites-layout-tiles .panel-item-image,
-.squire-tray .builds-panel.layout-tiles .panel-item-image {
-    width: 100%;
-    height: 100%;
-    border-radius: 0;
-    object-fit: cover;
-}
-
-/* The overlay is `inset: 0` on its container, so on a tile it becomes a
-   full-tile hover scrim with the d20 in the middle — and because the click
-   handler tests for the overlay element itself, hovering and clicking anywhere
-   on the tile rolls. That is the list's behaviour scaled up, not a new one.
-
-   Sized in px, not em: the base rule is an absolute 16px, so an em here would
-   be relative to the inherited font size rather than to that. */
-.squire-tray .favorites-layout-tiles .panel-item-roll-overlay,
-.squire-tray .builds-panel.layout-tiles .panel-item-roll-overlay {
-    font-size: 28px;
-}
-
 /* The detail line is a tile thing only — see the note on it in the template. */
 .squire-tray .panel-item-detail {
     display: none;
-}
-
-/* The caption: two lines, bottom-anchored on its gradient, over the art.
-   
-       [ Name                        ]   the big line
-       [ Weapon · 4 lb        ⓑ  x5  ]   the small one
-   
-   A grid rather than a flex column because line two is two things at opposite
-   ends: the kind on the left, the badges on the right. Stacking them in a
-   column would put the badges under the words instead of beside them. */
-.squire-tray .favorites-layout-tiles .panel-item-name,
-.squire-tray .builds-panel.layout-tiles .panel-item-name {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-        "name  name"
-        "detail badges";
-    gap: 1px 4px;
-    align-items: end;
-    min-width: 0;
-    padding: 16px 5px 4px;
-    background: linear-gradient(to top, rgba(8, 6, 4, 0.94) 55%, rgba(8, 6, 4, 0));
-    /* Inert as a block, so the gradient never eats a click meant for the roll
-       overlay beneath it. The two children that need events -- the name, which
-       carries the item card, and the badges, which are click-to-edit -- take
-       them back individually. */
-    pointer-events: none;
-}
-
-/* Two lines then clip. A tile is not wide enough to argue with a long name, and
-   letting one push the badges around would make every tile a different shape
-   inside.
-
-   Bigger, heavier and warmer than the line under it, which is the whole of how
-   a caption says which of its two lines is the answer. The colour is a warm
-   cream rather than the row's flat #eee: over artwork, a neutral grey reads as
-   something that failed to load. */
-.squire-tray .favorites-layout-tiles .panel-item-label,
-.squire-tray .builds-panel.layout-tiles .panel-item-label {
-    grid-area: name;
-    display: -webkit-box;
-    overflow: hidden;
-    color: #f4e7cd;
-    font-size: 0.86em;
-    font-weight: 700;
-    line-height: 1.15;
-    letter-spacing: 0.01em;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    /* The name is the tooltip target — Foundry's rich item card hangs off
-       `.panel-item-label`, and a card needs a pointer to hover. The caption
-       around it stays inert so the rest of the tile keeps rolling. */
-    pointer-events: auto;
-}
-
-/* Kind and weight. Quiet: it is the line you read second, and only when the
-   picture and the name together have not answered the question. One line, and
-   an ellipsis rather than a wrap, so the caption is always exactly two lines
-   tall and the grid below never shifts. */
-.squire-tray .favorites-layout-tiles .panel-item-detail,
-.squire-tray .builds-panel.layout-tiles .panel-item-detail {
-    grid-area: detail;
-    display: block;
-    overflow: hidden;
-    color: rgba(241, 231, 214, 0.6);
-    font-size: 0.62em;
-    line-height: 1.3;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-/* Action badge and quantity, at the right end of the detail line. Takes its own
-   pointer events back because the quantity is click-to-edit. */
-.squire-tray .favorites-layout-tiles .panel-item-context,
-.squire-tray .builds-panel.layout-tiles .panel-item-context {
-    grid-area: badges;
-    display: flex;
-    gap: 3px;
-    align-items: center;
-    margin-left: 0;
-    pointer-events: auto;
-}
-
-/* The row controls, top-right, on a plate so they survive a pale image. Always
-   visible rather than shown on hover: on a touch device and for anyone reading
-   rather than pointing, a control that only exists under the cursor does not
-   exist. */
-.squire-tray .favorites-layout-tiles .tray-buttons,
-.squire-tray .builds-panel.layout-tiles .tray-buttons {
-    position: absolute;
-    top: 3px;
-    right: 3px;
-    z-index: 2;
-    display: flex;
-    gap: 4px;
-    align-items: center;
-    padding: 2px 4px;
-    border-radius: 3px;
-    background: rgba(8, 6, 4, 0.72);
-}
-
-.squire-tray .favorites-layout-tiles .tray-buttons i,
-.squire-tray .builds-panel.layout-tiles .tray-buttons i {
-    font-size: 0.72em;
 }
 
 /* NEW rides just above the name, in the gradient's fade.

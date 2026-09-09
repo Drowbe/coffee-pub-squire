@@ -122,12 +122,16 @@
 
    It had a shape of its own at first, which meant a second set of rules for
    every one of those, and a second set is a set that drifts.
+
+   THE TILE LAYOUT IS IN `tray-tiles.css`, under `squire-tile-grid`, shared
+   with Favourites. Everything below that names `.layout-tiles` is this panel
+   OVERRIDING that shared layout, and each one says why.
    ========================================================================== */
 
 /* The kind glyph sits where the d20 does on an item row, and inherits that
    overlay's position and hover from `panel-item-roll-overlay`. It only needs
    its own size: a shirt is a busier shape than a die at the same pixels.
-   List only — tiles take the 28px Favourites overlay size. */
+   List only — tiles take the shared grid's 28px overlay. */
 .squire-tray .builds-panel.layout-list .squire-tray-build .panel-item-roll-overlay {
     font-size: 0.9em;
 }

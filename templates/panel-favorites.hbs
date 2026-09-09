@@ -48,8 +48,12 @@
         <div class="category-header favorites-category-header">{{this.label}}</div>
         {{/if}}
         {{!-- Each group carries its OWN grid, so a heading is never a grid item
-              and never inherits the fixed row height the tiles need. --}}
-        <div class="favorites-group-items">
+              and never inherits the fixed row height the tiles need.
+
+              `squire-tile-grid` is the shared tile layout in tray-tiles.css —
+              the same class the Builds panel puts on its grid, so the two
+              cannot drift. --}}
+        <div class="favorites-group-items{{#if (eq ../layout 'tiles')}} squire-tile-grid{{/if}}">
         {{#each this.items}}
         <div draggable="true" class="panel-item" 
              data-item-id="{{this.id}}" data-item-type="{{this.type}}"
