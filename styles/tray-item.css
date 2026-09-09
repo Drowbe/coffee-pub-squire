@@ -342,8 +342,7 @@
 }
 
 .tray-buttons .squire-build-kind:not(.faded) {
-    color: #9f9275;
-    opacity: 1;
+    color: #7fd97f;
 }
 
 .tray-buttons .fa-dagger:not(.faded) {
