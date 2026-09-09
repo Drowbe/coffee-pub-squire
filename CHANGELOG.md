@@ -79,6 +79,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **The Builds panel kept drawing the previous character** after a token switch, because it was the one panel missing from the list whose `actor` gets reassigned.
 
+- **Clearing all favourites left the headings behind.** Clear All emptied the list of rows by reaching into the DOM rather than re-rendering, and it removed only the rows — not the category headings or the tile grids they sat in — so clearing while grouped or in tiles left a column of headings standing over nothing with "No favorites available" underneath. It now does the same repaint every other write to the favourites flag does, and the template's own empty state is what you see. That also removed **the last jQuery in the module**, which matters for Foundry v14.
+
 - Removed a dead `is-worn` class from the build rows. Worn is said by the kind glyph in the corner, which goes to full strength for the build the character has on; the green edge that class used to drive is gone, and nothing had styled or read it since.
 
 ## [13.11.0]

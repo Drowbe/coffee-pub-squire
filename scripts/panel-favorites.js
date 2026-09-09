@@ -226,39 +226,16 @@ export class FavoritesPanel {
         // next auto-favorite pass doesn't undo the clear. Without this, simply
         // re-selecting the token would repopulate the whole list.
         await FavoritesPanel.markItemsAutoFavoriteSeen(actor, actor.items.map(i => i.id));
-        if (PanelManager.instance) {
-            // Update just the handle to reflect the cleared favorites
-            await PanelManager.instance.updateHandle();
-            
-            // Update panel data without full re-renders
-            if (PanelManager.instance.favoritesPanel) {
-                PanelManager.instance.favoritesPanel.favorites = [];
-                // Clear the favorites list from DOM
-                if (PanelManager.instance.favoritesPanel.element) {
-                    const $favoritesList = $(PanelManager.instance.favoritesPanel.element).find('.favorites-list');
-                    $favoritesList.find('.panel-item').remove();
-                    $favoritesList.append('<div class="tray-title-small" style="text-align: center; padding: 10px;">No favorites available</div>');
-                }
-            }
-            
-            // Update other panels' data
-            if (PanelManager.instance.inventoryPanel) {
-                PanelManager.instance.inventoryPanel.items = await PanelManager.instance.inventoryPanel._getItems();
-                PanelManager.instance.inventoryPanel._updateHeartIcons();
-            }
-            if (PanelManager.instance.weaponsPanel) {
-                PanelManager.instance.weaponsPanel.weapons = await PanelManager.instance.weaponsPanel._getWeapons();
-                PanelManager.instance.weaponsPanel._updateHeartIcons();
-            }
-            if (PanelManager.instance.spellsPanel) {
-                PanelManager.instance.spellsPanel.spells = await PanelManager.instance.spellsPanel._getSpells();
-                PanelManager.instance.spellsPanel._updateHeartIcons();
-            }
-            if (PanelManager.instance.featuresPanel) {
-                PanelManager.instance.featuresPanel.features = await PanelManager.instance.featuresPanel._getFeatures();
-                PanelManager.instance.featuresPanel._updateHeartIcons();
-            }
-        }
+
+        // The same repaint every other write to the flag does. This used to be a
+        // hand-rolled copy of it that reached into the DOM instead of rendering:
+        // it emptied `.favorites-list` of `.panel-item` and appended its own copy
+        // of the template's empty-state markup. Two faults, one of them visible —
+        // it removed the rows but not the category headings or the tile grids
+        // they sat in, so clearing while grouped or in tiles left a column of
+        // headings over nothing with the message underneath. The template has
+        // said "No favorites available" all along; rendering is how you get it.
+        await FavoritesPanel.refreshFavoritesUI(actor);
         return [];
     }
 
