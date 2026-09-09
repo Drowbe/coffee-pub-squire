@@ -170,15 +170,18 @@
 /* The four footprints, set from the context menu and carried on the row as
    `data-span`. 1x1 needs no rule — it is one cell of each, which is what a grid
    item is without being told otherwise. */
-.squire-tray .favorites-layout-tiles .panel-item[data-span="2x1"] {
+.squire-tray .favorites-layout-tiles .panel-item[data-span="2x1"],
+.squire-tray .builds-panel.layout-tiles .panel-item[data-span="2x1"] {
     grid-column: span 2;
 }
 
-.squire-tray .favorites-layout-tiles .panel-item[data-span="1x2"] {
+.squire-tray .favorites-layout-tiles .panel-item[data-span="1x2"],
+.squire-tray .builds-panel.layout-tiles .panel-item[data-span="1x2"] {
     grid-row: span 2;
 }
 
-.squire-tray .favorites-layout-tiles .panel-item[data-span="2x2"] {
+.squire-tray .favorites-layout-tiles .panel-item[data-span="2x2"],
+.squire-tray .builds-panel.layout-tiles .panel-item[data-span="2x2"] {
     grid-column: span 2;
     grid-row: span 2;
 }
@@ -187,7 +190,9 @@
    one has room for a bigger name. Only the two-cell-wide sizes get it: on a
    single column the name is already using the full width it has. */
 .squire-tray .favorites-layout-tiles .panel-item[data-span="2x1"] .panel-item-label,
-.squire-tray .favorites-layout-tiles .panel-item[data-span="2x2"] .panel-item-label {
+.squire-tray .favorites-layout-tiles .panel-item[data-span="2x2"] .panel-item-label,
+.squire-tray .builds-panel.layout-tiles .panel-item[data-span="2x1"] .panel-item-label,
+.squire-tray .builds-panel.layout-tiles .panel-item[data-span="2x2"] .panel-item-label {
     font-size: 0.95em;
     -webkit-line-clamp: 3;
 }

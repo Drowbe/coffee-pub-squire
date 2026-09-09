@@ -341,6 +341,11 @@
     color: var(--squire-color-hover);
 }
 
+.tray-buttons .squire-build-kind:not(.faded) {
+    color: #9f9275;
+    opacity: 1;
+}
+
 .tray-buttons .fa-dagger:not(.faded) {
     color: #ff4444;
 }

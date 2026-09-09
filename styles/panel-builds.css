@@ -124,22 +124,6 @@
    every one of those, and a second set is a set that drifts.
    ========================================================================== */
 
-/* The one the character has ON. A left edge rather than a background wash: the
-   rows carry artwork, and a tint behind one fights the picture it is marking. */
-.squire-tray .squire-tray-build.is-worn {
-    border-left: 2px solid #7fd97f;
-}
-
-.squire-tray .squire-tray-build-worn {
-    color: #7fd97f;
-}
-
-/* Tiles restyle `border` as a whole, which would swallow the list's left-edge
-   worn mark. A full green edge is the same fact in the shape a card has. */
-.squire-tray .builds-panel.layout-tiles .squire-tray-build.is-worn {
-    border-color: #7fd97f;
-}
-
 /* The kind glyph sits where the d20 does on an item row, and inherits that
    overlay's position and hover from `panel-item-roll-overlay`. It only needs
    its own size: a shirt is a busier shape than a die at the same pixels.
@@ -160,11 +144,15 @@
     display: none;
 }
 
-/* SQUARES. Favourites cannot be: a 2x1 span cannot express its shape through
-   aspect-ratio, so those rows are a stated 116px and go gently oblong when the
-   tray widens. A build has no size to set, so the square Favourites first
-   tried is the right answer here. `align-items: start` stops the grid stretch
-   from fighting the ratio. */
+.squire-tray .builds-panel.layout-tiles .panel-item-name {
+    padding-right: 54px;
+}
+
+/* 1x1 stays square. Spanned tiles use a ratio that matches the cells they
+   occupy, so Tile Size in the context menu means the same four footprints
+   Favourites offers. Favourites itself cannot be square: a 2x1 cannot
+   express its shape through aspect-ratio, so those rows are a stated 116px.
+   A build's default cell has no span, so the square is the right answer. */
 .squire-tray .builds-panel.layout-tiles .panel-items {
     grid-auto-rows: auto;
     align-items: start;
@@ -174,6 +162,47 @@
     width: 100%;
     height: auto;
     aspect-ratio: 1;
+}
+
+.squire-tray .builds-panel.layout-tiles .panel-item[data-span="2x1"] {
+    aspect-ratio: 2 / 1;
+}
+
+.squire-tray .builds-panel.layout-tiles .panel-item[data-span="1x2"] {
+    aspect-ratio: 1 / 2;
+}
+
+.squire-tray .builds-panel.layout-tiles .panel-item[data-span="2x2"] {
+    aspect-ratio: 1;
+}
+
+/* Portrait and token, lower-right of a tile. Squares rather than the rail's
+   circles: those are what wearing this would look like as a pair of faces on
+   a gallery tile; these are marks ON a card, and a circle at 22px is a
+   smudge. Hidden in the list — a row already has a 24px picture. */
+.squire-tray .squire-build-thumbs {
+    display: none;
+}
+
+.squire-tray .builds-panel.layout-tiles .squire-build-thumbs {
+    display: flex;
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    z-index: 2;
+    gap: 3px;
+    pointer-events: none;
+}
+
+.squire-tray .builds-panel.layout-tiles .squire-build-thumbs img {
+    display: block;
+    width: 22px;
+    height: 22px;
+    object-fit: cover;
+    border-radius: 3px;
+    background: rgb(8, 6, 4);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
 }
 
 /* ---------------- THE PAPER DOLL ---------------- */

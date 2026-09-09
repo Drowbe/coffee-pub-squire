@@ -30,10 +30,11 @@
     </div>
 </div>
 
-<div class="panel-items">
+<div class="builds-list panel-items">
     {{#each builds}}
     <div class="panel-item squire-tray-build{{#if this.worn}} is-worn{{/if}}"
          data-build-id="{{this.id}}"
+         data-span="{{this.span}}"
          data-tooltip="<strong>{{this.name}}</strong><br>{{#if this.costume}}Costume &mdash; changes the portrait and token only{{else}}AC {{this.armorClass}} &middot; {{this.gearCount}} items{{/if}}<br><em>Click to {{#if this.costume}}wear{{else}}equip{{/if}} &middot; right-click for more</em>">
         <div class="panel-item-row">
             <div class="panel-item-image-container">
@@ -53,19 +54,34 @@
                 <span class="panel-item-detail">{{this.detailLabel}}</span>
                 <span class="panel-item-context">
                     {{#if this.costume}}
-                    <i class="fa-solid fa-masks-theater"></i> Costume
+                    <span class="panel-item-badge context-count">Costume</span>
                     {{else}}
-                    <i class="fa-solid fa-shield"></i> {{this.armorClass}}
-                    <i class="fa-solid fa-shirt"></i> {{this.gearCount}}
+                    <span class="panel-item-badge context-count">AC {{this.armorClass}}</span>
+                    <span class="panel-item-badge context-count">{{this.gearCount}}</span>
                     {{/if}}
                 </span>
             </div>
 
+            {{!-- Portrait and token. Tiles only — a list row already has a
+                  24px face, and two more pictures on it would be a third
+                  thing the row is saying. Squares rather than the rail's
+                  circles, so they read as marks ON this card rather than as
+                  a second copy of the window. --}}
+            {{#if (or this.portrait this.token)}}
+            <div class="squire-build-thumbs">
+                {{#if this.portrait}}<img src="{{this.portrait}}" alt="">{{/if}}
+                {{#if this.token}}<img src="{{this.token}}" alt="">{{/if}}
+            </div>
+            {{/if}}
+
             <div class="tray-buttons">
-                {{#if this.worn}}
-                <i class="fa-solid fa-check squire-tray-build-worn"
-                   data-tooltip="This is what the character is wearing"></i>
-                {{/if}}
+                {{!-- Kind first, like the shield: full strength when this is
+                      what the character has on, faded when it is not. The
+                      heart is always on — everything in this list is a
+                      favourite, and clicking it takes the heart off. --}}
+                <i class="fa-solid {{#if this.costume}}fa-masks-theater{{else}}fa-shirt{{/if}} squire-build-kind{{#unless this.worn}} faded{{/unless}}"
+                   data-tooltip="{{#if this.worn}}This is what the character is wearing{{else}}Click to {{#if this.costume}}wear{{else}}equip{{/if}}{{/if}}"></i>
+                <i class="fa-solid fa-heart" title="Remove from Favorites"></i>
                 <i class="fa-solid fa-ellipsis squire-item-menu"
                    data-tooltip="More &mdash; equip, edit, handle, favourite"></i>
             </div>

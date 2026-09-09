@@ -250,7 +250,8 @@
 .squire-tray .features-list,
 .squire-tray .spells-list,
 .squire-tray .weapons-list,
-.squire-tray .favorites-list {
+.squire-tray .favorites-list,
+.squire-tray .builds-list {
     padding: 0px;
 }
 
