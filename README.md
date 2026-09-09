@@ -29,8 +29,10 @@ with item transfers, reputation, and the GM's party tools.
 - **Gear builds and costumes.** Plan a set of gear on a paper doll, prepare the spells that go with
   it, and put the whole thing on in one click -- with a sound, and optionally with the GM's approval.
   Costumes are the same idea for a portrait and a token: a disguise, a wild shape, a change of
-  clothes, changing how a character looks and touching no gear.
-- **Item transfers between characters.** Drag an item onto a party member, or use the send arrow.
+  clothes, changing how a character looks and touching no gear. Star the ones you use and they
+  appear in the tray, a click from being worn.
+- **Item transfers between characters.** Drag an item onto a party member, or use the `...` menu on
+  any row.
   Optionally routed through the GM for approval, with chat cards carrying each step.
 - **A party view.** Everyone on the scene with their health, plus per-scene party reputation and, for
   the GM, awarding experience, calling a vote, and deploying or clearing the party.

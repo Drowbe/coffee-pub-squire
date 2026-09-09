@@ -94,6 +94,7 @@ coffee-pub-squire/
 | Control | panel-control.js | Search, the three view modes (sheet / favourites / compendium quick-add), the section tabs, the action-cost chips and the two availability switches |
 | Compendium Search | panel-compendium-search.js | Quick-add search over Blacksmith's Compendiums API |
 | Favorites | panel-favorites.js | Pinned items, in their own view rather than the panel stack. Two layouts (list or tiles), three sort orders, and a per-item tile footprint set from Blacksmith's context menu |
+| Builds | panel-builds.js | The favourited gear builds and costumes, under Favorites. Always rendered and empty when nothing is starred, so it costs no space — the only panel in `ALWAYS_VISIBLE_PANELS`. Same layouts and tile footprints as Favorites; see `architecture-builds.md` |
 | Weapons | panel-weapons.js | Weapon attacks |
 | Spells | panel-spells.js | Spell slots, casting |
 | Features | panel-features.js | Class/race features |
@@ -122,6 +123,8 @@ Librarian's.
 - **Print**: `utility-print-character.js`
 - **Transfer**: `transfer-utils.js`
 - **Timers**: `timer-utils.js` (for cleanup)
+- **Item menu**: `manager-item-menu.js` — the one `⋯` / right-click menu every list panel shows. Weapons, Spells, Inventory, Features and Favourites get the same entries in the same order with the same words; `buildItemMenu` returns the entries so a panel can append its own, which is how Favourites adds reorder and tile size without replacing the shared set
+- **Tile spans**: `utility-tile-spans.js` — the four tile footprints, their icons and the Tile Size menu, shared by every panel with a tile layout. The CSS half is `styles/tray-tiles.css`, keyed on `squire-tile-grid`
 - **Cards**: `manager-cards.js` (chat cards composed from Blacksmith card parts)
 - **Notifications**: `manager-notifications.js` (transient menubar toasts for party-visible events; skips the initiating user)
 

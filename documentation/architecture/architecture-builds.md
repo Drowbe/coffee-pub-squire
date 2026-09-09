@@ -23,10 +23,14 @@ its effect on the sheet.
 | `scripts/window-build.js` | `BuildWindow` — the builder: rail, doll, prepared column, all editing |
 | `scripts/window-import.js` | `ImportWindow` — the slot-by-slot mapping screen for filling a build from the sheet |
 | `scripts/manager-build-approval.js` | Asking the GM before a player re-kits |
+| `scripts/panel-builds.js` | `BuildsPanel` — the favourited builds, in the tray |
+| `scripts/utility-tile-spans.js` | Tile footprints and the Tile Size menu, shared with the Favourites panel |
 | `templates/window-build.hbs` | The builder's markup |
 | `templates/window-import.hbs` | The import screen's markup |
+| `templates/panel-builds.hbs` | The tray panel's markup — the tray's own row markup, unchanged |
 | `templates/partials/handle-builds.hbs` | Build tiles and the worn build's actions, on the tray handle |
-| `styles/panel-builds.css` | Everything above |
+| `styles/panel-builds.css` | The builder, and what the tray panel does differently |
+| `styles/tray-tiles.css` | The tile grid itself, shared with the Favourites panel |
 | `assets/sounds/build-changeoutfit.mp3` | The default sound a build plays going on |
 
 ## The record
@@ -40,7 +44,7 @@ than special-cased at every use.
 | `id` | Random, stable, and what everything else keys on. Names are not unique |
 | `name` | Free text |
 | `mode` | `'gear'` or `'costume'` |
-| `slots` | Slot key → item id. 21 keys; see the doll below |
+| `slots` | Slot key → item id. 25 keys; see the doll below |
 | `spells` | Ordered item ids for the prepared column, up to 26 |
 | `images` | `portrait`, `token`, `main` — each a path or null |
 | `token` | `width`, `height`, `fit`, `scale` — costume only, each nullable |
@@ -65,6 +69,67 @@ The caster test is the class's `spellcasting.progression`: `full` and `pact` are
 `third` and `artificer` are martials who also cast. That is a different question from whether a
 character can *prepare*, which is `canPrepareSpells()` and decides the prepared column. A ranger gets
 a martial's doll and can still plan a prepared list.
+
+The grid is five columns wide and does not change width — every slot added has to come out of the
+space already there.
+
+| Row | Slots |
+|---|---|
+| 1 | Utility · Face · **Head** · Neck · Utility |
+| 2 | Back · *(picture)* · Chest |
+| 3 | Arms · *(picture)* · Hands |
+| 4 | Ring · *(picture)* · Ring |
+| 5 | Hip · Waist · Feet · Consumable · Hip |
+| 6 | *big* · Sheath · Thrown · Ammo · *big* |
+
+Two slots are named for what they are FOR rather than where they go, and both are deliberate:
+
+- **Utility**, a pair in the top corners, takes anything. Everything else on this doll is a place on
+  a body; these two admit that a character carries things a body has no place for — a spellbook, a
+  lantern, an instrument. A **pair** because that is the doll's rule throughout (Ring and Ring, Hip
+  and Hip); one would leave a corner filled and its opposite empty, which reads as an accident.
+- **Consumable** is the only TYPED slot in the core grid, and there is exactly **one** of it. A typed
+  slot buys intent and spends capacity, and of the things a character carries with nowhere to put
+  them — a potion, a holy symbol, a component pouch, thieves' tools, a wand — exactly one is a
+  consumable. The two Hips beside it stay generic, which is what makes them worth having two of.
+
+**Thrown** is strict: only weapons with the `thr` property. It is what earns dnd5e's `thrown` attack
+mode, and a weapon without the property will never be offered that mode however it is planned.
+
+### Hand rules
+
+You have two hands, and `HAND_CONFLICTS` is the whole of it: Both Hands excludes Main and Off, and
+either of those excludes Both. Enforced through **one exported map** in all three paths that place an
+item — the drop, the importer's placement, and the import window's dropdowns. Those paths diverging
+once already produced a shield in a sheath.
+
+**A deliberate drop evicts and says so first; the automatic placer declines and tries the item's next
+candidate slot.** Refusing a drop is the less useful answer — you put a greatsword on Both Hands, so
+putting down the sword and shield is what you meant — while evicting on a *guess* is presumptuous.
+
+What a slot will take comes from **dnd5e's own `attackModes`**, so the doll and the roll dialog cannot
+disagree about what a weapon can do. Two exceptions, both load-bearing:
+
+- **The Light property is not enforced on the slot.** dnd5e gates the `offhand` *mode* on Light, and
+  rightly — two-weapon fighting needs it. But the Off Hand *slot* means "what is in your other hand",
+  and it takes a torch, a lantern, a holy symbol, a shield.
+- **A weapon with no hand modes is not restricted.** A dart is thrown-and-ranged and gets `thrown` and
+  `thrown-offhand` only. Silence there means the system has not modelled the question, not that the
+  answer is no.
+
+`isShield()` recognises a shield on its own (`equipment` whose armour type is `shield`) rather than
+through Blacksmith's grip, which gives it the same `off` value it gives a dagger — and that grip leads
+with the sheath for the dagger's sake. A shield goes to Off Hand first, Main Hand second, and the
+sheath refuses it outright.
+
+**Equipping writes `dnd5e.last.<activityId>.attackMode`** per weapon to match its slot, which is what
+the roll dialog reads as its default. Written per activity because that is where dnd5e keeps it, and
+merged per item so a weapon with two attack activities is one update rather than two racing writes.
+It is a deliberate exception to this module's rule of writing only its own flags, and it is safe
+because it is self-correcting: dnd5e validates the remembered mode against the weapon's own
+`attackModes` and falls back to the first valid one, so a mode we get wrong is a default quietly
+ignored rather than a broken weapon. It writes the identical value dnd5e writes when a player picks a
+mode by hand.
 
 ### The prepared column
 
@@ -238,7 +303,44 @@ The rule this feature is the pilot for, and the one the rest of the module is mi
 An approval on a chat card works and is easy to miss in a busy log, which for a permission gate is the
 failure that matters.
 
+## The tray panel
+
+`BuildsPanel`, under the item favourites, listing the builds whose `favorite` flag is set. A build is
+planned in a window and worn from one, which is fine for making them and wrong for using them: the
+thing you do at a table is put a kit on, and that was three clicks behind a window nobody has open.
+
+**It disappears when it is empty, and that is the whole of its visibility rule.** Most characters
+never make a build, so the container is emptied rather than hidden — an unused feature costs no space
+and leaves no gap. It is in `ALWAYS_VISIBLE_PANELS` for exactly this reason: nothing else needs to
+decide whether to show it.
+
+**It is constructed like the Favourites panel it sits under** — the tray's own `panel-item` row
+markup, the same header layout switch, the same overlay click, the same `⋯` / right-click menu, the
+same tile CSS. A second shape here would be a second set of rules for hover, spacing, truncation and
+tiles, all of which already exist and all of which would drift. Deviating from that shape is what
+made this panel's listeners hard to reason about when they broke.
+
+Three things it does that are worth knowing:
+
+- **Applying goes through `BuildWindow.applyFromAnywhere`**, the same path the window uses, so the
+  confirmation, the GM approval, the sound, the undo toast and the tray refresh all behave
+  identically. A second way in must not mean a second set of rules.
+- **Reordering writes the ONE build order** — the same array the builder's rail reads — through
+  `moveBuildAmong()`. Favourites keeps a separate `favoritePanel` list because a bag of items has no
+  inherent order to write into; builds have exactly one, and a second would be a second thing to keep
+  in step. Because the panel is filtered to the favourites, it passes the ids it is showing and an
+  index into *that* list: moving one place in the underlying array could otherwise step over a build
+  that is not on screen and look like it did nothing.
+- **Tile footprints come from `utility-tile-spans.js`**, stored per actor in `buildSpans` — a fact
+  about this panel's layout, not about the kit, which is why it is not on the build. Keys for builds
+  that are no longer favourited are ignored on read, so starring one again returns the size it had.
+
+It refreshes on **every** build change rather than only when gear moves: favouriting is a flag write
+that changes nothing else in the tray, and it is precisely what makes this panel appear or vanish.
+
 ## The tray handle
+
+Not the same list as the tray panel above. A build can be in both, one, or neither.
 
 Two independent things, each with its own condition — they shared one gate once, and a player who had
 never dragged a build got no action strip either.

@@ -138,12 +138,32 @@ The **shirt** in the Character Sheet strip opens the builder. Down its left is e
 click one to work on it -- the list scrolls when it outgrows the space rather than stretching the
 window. **New Build** and **New Costume** start another of either kind, and right-click a tile for
 duplicate and delete. The rest
-of the window is that build: a figure of your character surrounded by slots -- head, face, neck, back, chest, arms, hands, rings, hips, waist, feet,
+of the window is that build: a figure of your character surrounded by slots -- head, face and neck across the top, then back, chest, arms, hands, rings, hips, waist and feet down the sides,
 and the three big slots along the bottom. Drag items from the tray into the slots to say what this
-build is made of. **What those big three hold depends on your character.** If you do not prepare
+build is made of.
+
+Three of those slots are not places on a body. The **two Utility slots** in the top corners take
+anything at all -- a spellbook, a lantern, an instrument, a bag of tricks -- because a character
+carries things a body has no place for. **Consumable**, at the end of the row above the big three,
+is for a potion, a scroll or an elixir. And **Thrown**, on the bottom row between the sheath and the
+ammunition, takes only weapons you can actually throw; putting a dagger there is how you tell Squire
+you mean to throw it rather than stab with it.
+
+**What those big three hold depends on your character.** If you do not prepare
 spells they are your main hand, both hands and off hand, and the row above them carries a quick-use
-slot at each end, a **sheath** for the dagger or hand axe you draw without thinking, and your
-ammunition. If you do prepare spells the emphasis flips: the big three become quick-cast slots for the
+slot at each end, a **sheath** for the dagger or hand axe you draw without thinking, your thrown
+weapon and your ammunition.
+
+**You only have two hands, and the builder holds you to it.** Put a greatsword in Both Hands and
+whatever was in your main and off hands comes out -- it tells you what it is doing before it does it,
+because you dropped a two-handed weapon there and putting the sword and shield down is what you
+meant. The slots also only take what a weapon can actually do: a greatsword will not go in one hand
+and a dagger will not go in Both. A **shield** belongs in your off hand and cannot be sheathed, which
+it once could.
+
+One thing this buys you at the table: when you roll an attack, the **Attack Mode** dropdown already
+says how you are holding that weapon -- one-handed, two-handed, off-hand or thrown -- to match the
+build you have on, whether you roll from the tray, the sheet or a macro. If you do prepare spells the emphasis flips: the big three become quick-cast slots for the
 spell or feature you reach for first, second and third, and your weapons move up into the smaller row. **The picture in the middle is the build's own.** Click it to choose one, right-click to reset. Until you set one it borrows the build's portrait, or your character's own face -- and once set it stays put no matter what outfit you put on, because it belongs to the build rather than the character. The two circles beside the head hold a **portrait** and a **token** image. Click either to pick a picture, right-click to reset it. Until you set one, each shows what your character already uses. Right-click a gear slot to empty it; right-click a build's tile to open, duplicate or delete it. Duplicating is the quick way to try a variant -- the same set with one thing swapped -- without building it again from nothing. The foot of the window totals what the gear weighs.
 
 **If your character has any spell worth preparing**, a column of twenty-six small squares runs down
@@ -340,8 +360,8 @@ Right-click a tile and open **Tile Size** to change how much room it takes: **1 
 Give the thing you reach for every round a big square and let the rest sit small around it. The same
 menu carries the move-up and move-down options it always has.
 
-Hovering an item's name shows Foundry's own card for it, in the tiles and in every list. The feather
-shows the same card, so you can see what opening the sheet will give you before you click it.
+Hovering an item's name shows Foundry's own card for it, in the tiles and in every list, so you can
+see what opening the sheet will give you before you click it.
 
 Favourites are shared with the character sheet in both directions: favourite something in the tray and
 it appears on the sheet, favourite it on the sheet and it appears in the tray, and removing it in
@@ -351,6 +371,40 @@ alone.
 To get a favourite onto the handle so it is reachable with the tray closed, drag it there. Dropping it
 on top of an existing icon inserts it above; dropping past the end adds it at the bottom. The handle
 shows as many as fit and hides the rest, so a short list is a usable list.
+
+### Every row's `...` menu
+
+Each row in Weapons, Spells, Feats, Inventory and Favourites carries a **`...`** at its right end, and
+right-clicking anywhere on the row opens the same menu. It says what you clicked at the top -- the
+picture, the name and what kind of thing it is -- because by the time you have read down to Delete,
+that heading is the answer to "delete *what*".
+
+Inside: **view details**, **copy UUID link**, favourite, equip or prepare, add to handle, **Send to**
+(a character, or the chat), **move to container**, and **delete**. Entries only appear when they can
+apply -- a spell has no container, a feature cannot be sent -- and Delete asks first, warning you when
+a bag's contents will spill out rather than go with it.
+
+**The item's name now opens its sheet**, which is what the little feather used to do. Rows used to
+carry a control for every action, most of them pressed once a session, with the two you press
+constantly buried among them; the rare ones moved into this menu and the toggles you flip every fight
+-- favourite, equipped, prepared -- stayed on the row.
+
+### Your builds, in the tray
+
+Star a build or a costume in the builder and it appears in a **Builds** panel just under your
+favourites, where you can put it on with a click without opening the builder at all. The panel is not
+there until you star something, so it costs you nothing if you never make a build.
+
+It works the way the favourites above it do. The two icons in its header switch between **list** and
+**tiles**; right-click a row for the same **Tile Size** choices, and to move a build up or down the
+list. Clicking the picture puts the build on; the shirt or masks icon in the corner does the same and
+shows at full strength for whatever you are wearing right now. The heart takes it off the list.
+
+Moving a build here moves it in the builder's rail too -- there is one order, and both places show it.
+
+This is **not** the same list as the build tiles on the tray handle. The handle costs screen space
+whether the tray is open or not; this is a panel in a column that already scrolls. A build can be in
+both, one, or neither.
 
 ### Choose a section
 
