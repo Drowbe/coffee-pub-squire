@@ -4,6 +4,7 @@ import {
     transferRequestSender, transferRequestGMApproval, transferRequestReceiver,
     transferComplete
 } from './manager-cards.js';
+import { offerItemTransfer } from './manager-transfer-request.js';
 import { ItemAcquisition } from './utility-item-acquisition.js';
 import { CharacterPanel } from './panel-character.js';
 import { GmPanel } from './panel-gm.js';
@@ -1187,7 +1188,21 @@ export class PanelManager {
                                 };
                                 
                                 const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
-                                
+
+                                // RECORD THE OFFER on the source actor before
+                                // anyone is invited to accept it — the receiver
+                                // owns the target and can forge anything that
+                                // lives there or on the card, but not this.
+                                // See manager-transfer-request.js. This path is
+                                // a second copy of the one in transfer-utils.js
+                                // and has to stay in step with it; the offer is
+                                // the newest thing they both have to do.
+                                const offered = await offerItemTransfer({
+                                    transferId, sourceActor, targetActor: actor,
+                                    item: sourceItem, quantity: selectedQuantity
+                                });
+                                if (!offered) return;
+
                                 // Sender: request sent message
                                 await transferRequestSender({
                                     targetActorName: actor.name,

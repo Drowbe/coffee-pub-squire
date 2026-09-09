@@ -84,21 +84,56 @@ Buttons/cards are cloned before attaching listeners to avoid duplicates on re-re
 
 ### Transfer Flow (Panel + TransferUtils)
 
-- **Direct drop with permissions**: If user is owner of both source and target actor, `_executeTransferWithPermissions` → `_completeItemTransfer` (or socketlib `executeAsGM('executeItemTransfer', …)`) and transfer-complete chat.
+**Who is allowed to ask** is in `manager-transfer-request.js`, and it is the part to read first — see *Authorising a transfer* below. Everything here is the choreography around it.
+
+- **Direct drop with permissions**: If user is owner of both source and target actor, `_executeTransferWithPermissions` → `_completeItemTransfer` (or `requestItemTransfer`, the GIVE op, when only one side is owned).
 - **Request flow**: If user lacks source or target permission, `TransferUtils.executeTransfer`:
   - Builds `transferData`; uses `transfersGMApproves` and `transferTimeout` settings.
+  - **Records the offer first** (`offerItemTransfer`) and abandons the request if that fails. Nobody is invited to accept an offer that cannot later be proved.
   - Sends “waiting” message to sender; if GM approval required, sends GM approval message; else sends receiver accept/reject message.
   - `_scheduleTransferExpiration(transferId, transferData)` uses `trackModuleTimeout`; on expiry, `_expireTransfer` deletes messages and sends expired chats.
 - **Chat buttons**: `_handleTransferButtons(message, html)` is invoked from the `renderChatMessage` hook. It attaches:
   - GM approve/deny on `.gm-approval-button`.
   - Accept/reject on `.transfer-request-button` (with `dataset.handlersAttached` to avoid duplicate handlers).
-  Handlers read `message.getFlag(MODULE.ID, 'data')`, check expiry, then call socketlib (`executeItemTransfer`, `createTransferCompleteChat`, `createTransferRejectedChat`, `createTransferExpiredChat`, `deleteTransferRequestMessage`, etc.) or create chat messages directly when GM.
+  Handlers read `message.getFlag(MODULE.ID, 'data')`, check expiry, then call `acceptItemTransfer` / `withdrawItemTransfer`, or the remaining socketlib chat ops (`createTransferCompleteChat`, `createTransferRejectedChat`, `createTransferExpiredChat`), or create chat messages directly when GM.
+
+### Authorising a transfer (`manager-transfer-request.js`)
+
+Four `gmRequest` ops — **give**, **offer**, **accept**, **withdraw**. Blacksmith supplies a verified
+caller identity from the socket envelope and nothing else; permission checks and domain rules are
+deliberately the calling module's, so they all live here.
+
+    payload   what the client claims. Untrusted. Ids only.
+    user      who Foundry says asked. The only trustworthy thing in the handler.
+
+**Two people can start a transfer and they need different rules.** GIVING requires ownership of the
+source: you may give away what is yours. ACCEPTING cannot require it — the receiver owns the target
+and not the source, and is legitimately asking to move an item off somebody else's character, which
+is indistinguishable from theft unless something proves the offer was made.
+
+So an offer is recorded in a `pendingTransfers` flag **on the source actor**, and that placement is
+the whole design:
+
+| Candidate record | Why not |
+|---|---|
+| The request chat message | Players may create chat messages and set flags on them, so a receiver could write their own offer. |
+| A flag on the target actor | The receiver owns the target. |
+| **A flag on the source actor** | The one thing in this exchange the receiver cannot write. |
+
+The accept handler reads the offer, checks it names this receiver and this item, checks its age
+against `transferTimeout`, and **takes the quantity from the offer rather than from the payload** —
+otherwise accepting an offer of one arrow would move the quiver. It clears the offer on the way out
+so it cannot be replayed; a rejection withdraws it; expiry needs no sweep of its own because the
+handler checks the age and stale entries are dropped whenever the flag is next written.
+
+Actors resolve by **uuid**, never id: an unlinked token's actor shares the base actor's id, so
+`game.actors.get(id)` would act on the prototype rather than the token on the canvas.
 
 ### Helpers and Cleanup
 
 - **`_calculateHealthbarStatus(hp)`** – Returns CSS class: `squire-tray-healthbar-dead` | `-critical` | `-bloodied` | `-injured` | `-healthy` from settings thresholds.
 - **`_showTransferQuantityTool(...)`** – Opens the shared fixed-recipient Transfer Tool and resolves its verified `api.quantitySplit` value (0 if cancelled).
-- **`_executeTransferWithPermissions`** – If both permissions, `_completeItemTransfer`; else socketlib `executeAsGM('executeItemTransfer', …)`.
+- **`_executeTransferWithPermissions`** – If both permissions, `_completeItemTransfer`; else `requestItemTransfer` (the GIVE op).
 - **`_completeItemTransfer`** – Create item on target, update/delete on source, set `newlyAddedItems` and `isNew` flag; create transfer-complete chat (socket or direct) for sender/receiver/GM.
 - **`destroy()`** – `_cleanupTransferTimers()`, `element = null`.
 
@@ -114,8 +149,12 @@ Buttons/cards are cloned before attaching listeners to avoid duplicates on re-re
 - **`executeTransfer({ sourceActor, targetActor, item, quantity, hasQuantity })`**  
   If user has ownership on both actors, calls `executeTransferWithPermissions`; otherwise creates transfer data, sends sender “waiting” message, then either GM approval message (if `transfersGMApproves`) or receiver accept/reject message. Used by Panel Party, Inventory, and Weapons panels.
 - **`executeTransferWithPermissions(sourceActor, targetActor, item, quantity, hasQuantity)`**  
-  Direct transfer (or socketlib `executeAsGM('executeItemTransfer', …)`).  
-- **Other helpers**: `_createTransferData`, `_isTargetPlayerOnline`, `_sendTransferSenderMessage`, `_sendTransferReceiverMessage`, `_sendGMTransferNotification`, etc., and socketlib handlers for executing transfers and creating chat messages.
+  Direct transfer, or `requestItemTransfer` — the GIVE op, which checks that the caller owns the source.  
+- **Other helpers**: `_createTransferData`, `_isTargetPlayerOnline`, `_sendTransferSenderMessage`, `_sendTransferReceiverMessage`, `_sendGMTransferNotification`, etc., and the remaining socketlib handlers for creating chat messages.
+
+> **Note:** the request flow exists TWICE — here and inline in `manager-panel.js`'s tray drop handler,
+> which builds its own `transferData` and sends the same cards. They have to stay in step; recording
+> the offer is the newest thing they both have to do. Merging them is not yet done.
 
 ## Hooks (squire.js)
 

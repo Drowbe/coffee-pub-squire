@@ -8,6 +8,9 @@ import {
     transferComplete, transferRejected, transferRequestSender,
     retireCard
 } from './manager-cards.js';
+import {
+    requestItemTransfer, acceptItemTransfer, withdrawItemTransfer
+} from './manager-transfer-request.js';
 
 // Helper function to safely get Blacksmith API
 function getBlacksmith() {
@@ -872,17 +875,11 @@ export class PartyPanel {
             await this._completeItemTransfer(sourceActor, targetActor, sourceItem, selectedQuantity, hasQuantity);
             return;
         } else {
-            const socket = game.modules.get(MODULE.ID)?.socket;
-            if (!socket) {
-                ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
-                return;
-            }
-            await socket.executeAsGM('executeItemTransfer', {
-                sourceActorId: sourceActor.id,
-                targetActorId: targetActor.id,
-                sourceItemId: sourceItem.id,
+            await requestItemTransfer({
+                sourceActor, targetActor,
+                item: sourceItem,
                 quantity: selectedQuantity,
-                hasQuantity: hasQuantity
+                hasQuantity
             });
             return;
         }
@@ -1130,22 +1127,27 @@ export class PartyPanel {
             ? { text: 'Accepted', tone: 'positive', icon: 'fa-solid fa-circle-check' }
             : { text: 'Rejected', tone: 'negative', icon: 'fa-solid fa-circle-xmark' });
 
+        // A rejection takes the offer off the table. An offer that outlives its
+        // answer is one that can still be accepted, and the card being retired
+        // only takes the BUTTONS away. Expiry needs no equivalent: the accept
+        // handler checks the offer's age, and stale ones are swept whenever the
+        // flag is next written.
+        if (!isAccept) {
+            await withdrawItemTransfer({ transferId, sourceActor, targetActor });
+        }
+
         if (isAccept) {
-            // Execute the transfer
-            const socket = game.modules.get(MODULE.ID)?.socket;
-            if (!socket) {
-                ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
-                return;
-            }
-            
-            const transferSucceeded = await socket.executeAsGM('executeItemTransfer', {
-                sourceActorId: sourceActor.id,
-                targetActorId: targetActor.id,
-                sourceItemId: item?.id || transferData.itemId,
-                quantity: transferData.quantity,
-                hasQuantity: true,
-                sourceUserId: senderUser.id,
-                targetUserId: game.user.id,
+            // ACCEPTING is not the same request as GIVING. We own the target and
+            // not the source, so we cannot simply ask for the item to be moved —
+            // that is the shape of a theft. What we send is the id of the offer,
+            // and the GM checks it against the record the SENDER wrote on their
+            // own actor: who it was offered to, which item, how many. The
+            // quantity comes from that record rather than from here, so
+            // accepting an offer of one arrow cannot move the whole quiver.
+            const transferSucceeded = await acceptItemTransfer({
+                transferId,
+                sourceActor,
+                targetActor,
                 itemName: item?.name || transferData.itemName
             });
             
@@ -1168,12 +1170,17 @@ export class PartyPanel {
                 }
             }
             
-            // If transfer failed, the socket handler already sent error messages - we're done
+            // A failed accept has already said why — the op whispers its own
+            // Transfer Failed card, or `acceptItemTransfer` raises a toast.
             if (!transferSucceeded) {
                 return;
             }
-            
-            // Transfer succeeded - create success messages
+
+            // Transfer succeeded - create success messages.
+            // Still socketlib: the completion CARD has not moved to gmRequest
+            // yet. Declared here because the accept above no longer opens a
+            // socket of its own.
+            const socket = game.modules.get(MODULE.ID)?.socket;
             if (socket) {
                 // One card for everyone involved, same as the direct
                 // transfer path: three messages describing one event

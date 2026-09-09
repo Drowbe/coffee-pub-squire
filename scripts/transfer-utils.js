@@ -3,6 +3,7 @@ import { getTransferBlocker, showSquireToast, getActorDisplayName } from './help
 import {
     transferRequestGMApproval, transferRequestReceiver, transferRequestSender
 } from './manager-cards.js';
+import { requestItemTransfer, offerItemTransfer } from './manager-transfer-request.js';
 
 export class TransferUtils {
     /**
@@ -40,7 +41,18 @@ export class TransferUtils {
         // Use same logic as drag-and-drop: if no permission to source OR target, use approval flow
         if (!hasSourcePermission || !hasTargetPermission) {
             const gmApprovalRequired = game.settings.get(MODULE.ID, 'transfersGMApproves');
-            
+
+            // RECORD THE OFFER FIRST, on the source actor, before anyone is
+            // invited to accept it. This is what lets the receiver's acceptance
+            // be proved rather than trusted: they own the target and can forge
+            // anything that lives there or on the request card, but they cannot
+            // write to the sender's actor. If it does not stick, nobody is
+            // asked — an offer that cannot be verified must not be offered.
+            const offered = await offerItemTransfer({
+                transferId, sourceActor, targetActor, item, quantity
+            });
+            if (!offered) return false;
+
             // Send waiting message to sender
             await this._sendTransferSenderMessage(sourceActor, targetActor, item, quantity, hasQuantity, transferId, transferData, gmApprovalRequired);
             
@@ -261,19 +273,9 @@ export class TransferUtils {
             // Direct transfer - user has permissions on both actors
             return this._completeItemTransfer(sourceActor, targetActor, item, quantity, hasQuantity);
         } else {
-            // Use socket for GM-mediated transfer
-            const socket = game.modules.get(MODULE.ID)?.socket;
-            if (!socket) {
-                ui.notifications.error('Socketlib socket is not ready. Please wait for Foundry to finish loading, then try again.');
-                return false;
-            }
-            return socket.executeAsGM('executeItemTransfer', {
-                sourceActorId: sourceActor.id,
-                targetActorId: targetActor.id,
-                sourceItemId: item.id,
-                quantity: quantity,
-                hasQuantity: hasQuantity
-            });
+            // Through a GM, who checks that we are entitled to give this away
+            // before doing it. See manager-transfer-request.js.
+            return requestItemTransfer({ sourceActor, targetActor, item, quantity, hasQuantity });
         }
     }
 

@@ -1,5 +1,6 @@
 import { MODULE, SQUIRE, getHandleWidth } from './const.js';
 import { registerBuildApproval } from './manager-build-approval.js';
+import { registerItemTransfer } from './manager-transfer-request.js';
 import { PanelManager, _updateTrayFromSelection, _updateSelectionDisplay } from './manager-panel.js';
 import { PartyPanel } from './panel-party.js';
 import { registerSettings, migrateCompendiumAccessSetting } from './settings.js';
@@ -132,6 +133,15 @@ Hooks.once('ready', async () => {
         if (!registerBuildApproval()) {
             console.warn(
                 'Coffee Pub Squire | Build approval is unavailable: this Blacksmith has no gmRequest API.'
+            );
+        }
+
+        // The transfer ops, for the same reason and on the same terms. These
+        // replaced a socketlib op that moved items as GM on the strength of a
+        // payload nobody had checked the sender of.
+        if (!registerItemTransfer()) {
+            console.warn(
+                'Coffee Pub Squire | GM-mediated transfers are unavailable: this Blacksmith has no gmRequest API.'
             );
         }
 
@@ -1036,123 +1046,6 @@ Hooks.once('socketlib.ready', () => {
         // HookManager is now exposed in the ready hook to ensure proper initialization order
         
         // Register socket functions with socket handlers
-        socket.register("executeItemTransfer", async (data) => {
-            if (!game.user.isGM) return false;
-            
-            try {
-                // Get actors and item
-                const sourceActor = game.actors.get(data.sourceActorId);
-                const targetActor = game.actors.get(data.targetActorId);
-                
-                if (!sourceActor || !targetActor) {
-                    console.error('Missing actor data for transfer:', { data });
-                    return false;
-                }
-                
-                // Get the item and validate it still exists
-                const sourceItem = sourceActor.items.get(data.sourceItemId);
-                if (!sourceItem) {
-                    console.error('Source item no longer exists for transfer:', { data });
-                    // Send error message to all relevant users
-                    const sourceUsers = game.users.filter(user => sourceActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
-                    const targetUsers = game.users.filter(user => targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
-                    const allUsers = [...new Set([...sourceUsers.map(u => u.id), ...targetUsers.map(u => u.id), data.sourceUserId, data.targetUserId])].filter(id => id);
-                    
-                    await transferFailed({
-                        reason: sentence(name(data.itemName || 'Unknown Item'),
-                                         ' no longer exists and cannot be transferred.'),
-                        speaker: { alias: "System" },
-                        whisper: allUsers
-                    });
-                    return false;
-                }
-
-                // A packed container can't be handed over: dnd5e keeps containment
-                // on the child as `system.container`, so the copy made below lands
-                // with an id its contents never point at and they stay orphaned on
-                // the source. The panels refuse this before the quantity dialog;
-                // this is the GM-side backstop for anything that reaches the socket.
-                const containerBlocker = getTransferBlocker(sourceItem, sourceActor);
-                if (containerBlocker) {
-                    const sourceUsers = game.users.filter(user => sourceActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
-                    const targetUsers = game.users.filter(user => targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
-                    const allUsers = [...new Set([...sourceUsers.map(u => u.id), ...targetUsers.map(u => u.id), data.sourceUserId, data.targetUserId])].filter(id => id);
-
-                    // Rebuilt from the blocker's parts rather than using its
-                    // ready-made `message`: that string has the item's name
-                    // baked into it, and a name reaching a card has to arrive
-                    // as a literal rather than as prose.
-                    const packedCount = containerBlocker.contentCount;
-                    await transferFailed({
-                        reason: sentence(name(sourceItem.name), ' still holds ',
-                                         `${packedCount} item${packedCount === 1 ? '' : 's'}`,
-                                         '. Unpack it before handing it over.'),
-                        speaker: { alias: "System" },
-                        whisper: allUsers
-                    });
-                    return false;
-                }
-                
-                // Validate against the live document, not the client's hasQuantity
-                // claim — a caller that reports an item as non-stackable would
-                // otherwise skip the check entirely.
-                const available = sourceItem.system?.quantity ?? 1;
-                if (data.quantity > available) {
-                    console.error('Insufficient quantity for transfer:', { 
-                        requested: data.quantity, 
-                        available, 
-                        data 
-                    });
-                    // Send error message to all relevant users
-                    const sourceUsers = game.users.filter(user => sourceActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
-                    const targetUsers = game.users.filter(user => targetActor.ownership[user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && user.active && !user.isGM);
-                    const allUsers = [...new Set([...sourceUsers.map(u => u.id), ...targetUsers.map(u => u.id), data.sourceUserId, data.targetUserId])].filter(id => id);
-                    
-                    await transferFailed({
-                        reason: sentence('Insufficient quantity. Only ', `${available} `,
-                                         name(`${sourceItem.name}${available !== 1 ? 's' : ''}`),
-                                         ` available, but ${data.quantity} requested.`),
-                        speaker: { alias: "System" },
-                        whisper: allUsers
-                    });
-                    return false;
-                }
-                
-                // Create a copy of the item data to transfer
-                const itemData = sourceItem.toObject();
-                
-                // Set the correct quantity on the new item if applicable
-                if (data.hasQuantity) {
-                    itemData.system.quantity = data.quantity;
-                }
-                
-                // Create the item on the target actor
-                const transferredItem = await targetActor.createEmbeddedDocuments('Item', [itemData]);
-                
-                // Reduce quantity or remove the item from source actor
-                if (data.hasQuantity && data.quantity < sourceItem.system.quantity) {
-                    // Just reduce the quantity
-                    await sourceItem.update({
-                        'system.quantity': sourceItem.system.quantity - data.quantity
-                    });
-                } else {
-                    // Remove the item entirely
-                    await sourceItem.delete();
-                }
-                
-                // Mark the item as newly added
-                if (game.modules.get('coffee-pub-squire')?.api?.PanelManager) {
-                    game.modules.get('coffee-pub-squire').api.PanelManager.newlyAddedItems.set(transferredItem[0].id, Date.now());
-                }
-                
-                return true; // Success
-                
-            } catch (error) {
-                console.error('Error executing item transfer:', error);
-                return false;
-            }
-        });
-        
         socket.register("createTransferRequestChat", async (data) => {
             if (!game.user.isGM) return;
             
@@ -1195,8 +1088,6 @@ Hooks.once('socketlib.ready', () => {
             }
         });
         
-        socket.register("setTransferRequestFlag", setTransferRequestFlag);
-        socket.register("processTransferResponse", processTransferResponse);
         
         socket.register("createTransferCompleteChat", async (data) => {
             if (!game.user.isGM) return;
@@ -1630,137 +1521,6 @@ Hooks.once('ready', async function() {
 // Hook registrations handled in ready hook
 
 /**
- * Handle an incoming transfer request notification from another player
- * @param {Object} transferData The transfer request data
- */
-async function handleTransferRequest(transferData) {
-    try {
-        // Get the actors and item involved
-        const sourceActor = game.actors.get(transferData.sourceActorId);
-        const targetActor = game.actors.get(transferData.targetActorId);
-        const sourceItem = sourceActor.items.get(transferData.sourceItemId);
-        
-        if (!sourceActor || !targetActor || !sourceItem) {
-            ui.notifications.error("Cannot process item transfer: Missing actor or item data");
-            return;
-        }
-        
-        const timestamp = transferData.timestamp;
-        
-        // Play notification sound
-        const blacksmith = getBlacksmith();
-        if (blacksmith) {
-            blacksmith.utils.playSound('notification', 0.7, false, false);
-        }
-        
-        const { showTransferApprovalTool } = await import('./window-transfer-tool.js');
-        const response = await showTransferApprovalTool({
-            sourceActor,
-            targetActor,
-            item: sourceItem,
-            requestedQuantity: transferData.selectedQuantity || transferData.quantity || 1
-        });
-        
-        // Send response back through socketlib
-        if (game.modules.get('socketlib')?.active) {
-            const socketlib = game.modules.get('socketlib').api;
-            const socket = socketlib.getSocketHandler(MODULE.ID);
-            
-            // Notify the requester of the response
-            socket.executeAsUser(
-                'processTransferResponse', 
-                transferData.requester, 
-                { 
-                    accepted: response,
-                    transferData: transferData
-                }
-            );
-            
-            // If accepted, find a GM to execute the transfer
-            if (response) {
-                // Transfer processing is now handled by the socket handler executeItemTransfer
-                // This legacy code path is no longer needed
-                showSquireToast('Transfer Accepted', {
-                    subtitle: `${transferData.selectedQuantity || transferData.quantity || 1} × ${sourceItem.name} accepted.`,
-                    image: sourceItem.img,
-                    color: '#5f8f3f'
-                });
-            }
-        } else {
-            // No socketlib - notify the user to coordinate manually
-            if (response) {
-                showSquireToast('Transfer Accepted', {
-                    subtitle: 'Socketlib is unavailable; the GM must complete the transfer manually.',
-                    image: sourceItem.img,
-                    color: '#b78325'
-                });
-            } else {
-                showSquireToast('Transfer Declined', {
-                    subtitle: `${sourceItem.name} was not transferred.`,
-                    image: sourceItem.img,
-                    color: '#9f3434'
-                });
-            }
-        }
-        
-        // Update the flag status if we have permission
-        if (targetActor.isOwner) {
-            try {
-                await targetActor.setFlag(MODULE.ID, `transferRequest_${timestamp}`, {
-                    ...transferData,
-                    status: response ? 'accepted' : 'rejected'
-                });
-            } catch (error) {
-                console.error('Error updating transfer request flag:', error);
-            }
-        } else if (game.modules.get('socketlib')?.active) {
-            // Ask a GM to update the flag
-            const socketlib = game.modules.get('socketlib').api;
-            const socket = socketlib.getSocketHandler(MODULE.ID);
-            
-            // Find a GM to handle this
-            const gmUsers = game.users.filter(u => u.isGM && u.active);
-            if (gmUsers.length > 0) {
-                const updatedFlagData = {
-                    ...transferData,
-                    status: response ? 'accepted' : 'rejected'
-                };
-                socket.executeAsGM('setTransferRequestFlag', targetActor.id, `transferRequest_${timestamp}`, updatedFlagData);
-            }
-        }
-        
-    } catch (error) {
-        console.error('Error handling transfer request:', error);
-        ui.notifications.error("Error processing transfer request");
-    }
-}
-
-/**
- * Process the response from a transfer request
- * @param {Object} responseData The response data
- */
-async function processTransferResponse(responseData) {
-    const { accepted, transferData } = responseData;
-    
-    // If we have the transfer data, try to get the real actor names
-    const targetActorName = game.actors.get(transferData.targetActorId)?.name || transferData.targetActorName;
-    
-    if (accepted) {
-        showSquireToast('Transfer Accepted', {
-            subtitle: `${targetActorName} accepted ${transferData.itemName || 'the item'}.`,
-            icon: 'fa-solid fa-right-left',
-            color: '#5f8f3f'
-        });
-    } else {
-        showSquireToast('Transfer Declined', {
-            subtitle: `${targetActorName} declined ${transferData.itemName || 'the item'}.`,
-            icon: 'fa-solid fa-xmark',
-            color: '#9f3434'
-        });
-    }
-}
-
-/**
  * Helper function to get an icon for item type
  */
 function getIconForItemType(itemType) {
@@ -1776,23 +1536,6 @@ function getIconForItemType(itemType) {
     }
 }
 
-/**
- * Handler for setting transfer request flags on actors (GM only)
- * @param {string} targetActorId The ID of the target actor
- * @param {string} flagKey The flag key to set
- * @param {Object} flagData The flag data to set
- */
-async function setTransferRequestFlag(targetActorId, flagKey, flagData) {
-    if (!game.user.isGM) return;
-    
-    const targetActor = game.actors.get(targetActorId);
-    if (!targetActor) {
-        console.error(`Could not find actor with ID ${targetActorId}:`, { targetActorId });
-        return;
-    }
-    
-    await targetActor.setFlag(MODULE.ID, flagKey, flagData);
-}
 
 
 // Add this to your Handlebars helpers
