@@ -1,7 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getPanelItemName, openCompendiumSearchWindow, setRowFilter, isRowVisible, getBlacksmith} from './helpers.js';
-import { ItemAcquisition } from './utility-item-acquisition.js';
+import { getNativeElement, renderTemplate, getPanelItemName, setRowFilter, isRowVisible} from './helpers.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
 /**
@@ -11,13 +10,10 @@ import { trackModuleTimeout } from './timer-utils.js';
  * 'favorites' the favourites list on its own, no search and no filters
  *
  * Two places, one at a time. There was a third, 'search', holding the tray's own
- * compendium quick-add; compendium search now opens Blacksmith's palette from
- * the titlebar overflow menu and is an action rather than a mode.
+ * compendium quick-add; compendium search now lives only in Blacksmith's
+ * menubar rather than being duplicated here.
  */
 const MODES = ['sheet', 'favorites'];
-
-/** Blacksmith addresses an open context menu by id. */
-const CONTROL_TOOLS_MENU_ID = 'squire-control-tools-menu';
 
 /** Every stacked panel, in tray order. */
 const PANEL_TYPES = ['favorites', 'builds', 'weapons', 'spells', 'features', 'inventory'];
@@ -206,6 +202,11 @@ export class ControlPanel {
                 label: TAB_LABELS[tab],
                 active: tab === this.activeTab
             })),
+            canCleanup: this._canCleanup(),
+            cleanupLabel: game.user.isGM ? 'Clean Up Sheet' : 'Request Sheet Cleanup',
+            cleanupTooltip: game.user.isGM
+                ? 'Clean up this sheet — consolidate coins, link items to their compendium entry, and merge duplicates'
+                : 'Tidy this sheet — consolidate coins, link items, and merge duplicates. Sends the plan to your GM to approve.'
         };
 
         const content = await renderTemplate(TEMPLATES.PANEL_CONTROL, templateData);
@@ -539,12 +540,18 @@ export class ControlPanel {
             && (game.user.isGM || game.settings.get(MODULE.ID, 'cleanupPlayerRequests'));
     }
 
-    /** Build the Blacksmith overflow menu from permissions at the moment it opens. */
-    _toolMenuItems() {
-        const items = [{
-            name: 'Gear Builds',
-            icon: 'fa-solid fa-shirt',
-            callback: async () => {
+    _activateListeners(html) {
+        // v13: Use native DOM methods instead of jQuery
+        const controlPanel = html.querySelector('[data-panel="control"]');
+        if (!controlPanel) return;
+
+        const buildsButton = controlPanel.querySelector('.control-builds');
+        if (buildsButton) {
+            const newButton = buildsButton.cloneNode(true);
+            buildsButton.parentNode?.replaceChild(newButton, buildsButton);
+            newButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
                 try {
                     const { BuildWindow } = await import('./window-build.js');
                     await BuildWindow.open(this.actor);
@@ -552,63 +559,23 @@ export class ControlPanel {
                     console.error('Coffee Pub Squire | Failed to open the builds window:', error);
                     ui.notifications.error('The builds window could not be opened. See the console for details.');
                 }
-            }
-        }];
-
-        if (this._canCleanup()) {
-            items.push({
-                name: game.user.isGM ? 'Clean Up Sheet' : 'Request Sheet Cleanup',
-                icon: 'fa-solid fa-broom',
-                callback: async () => {
-                    try {
-                        const { openCleanupWindow } = await import('./window-cleanup.js');
-                        await openCleanupWindow(this.actor);
-                    } catch (error) {
-                        console.error('Coffee Pub Squire | Failed to open the cleanup window:', error);
-                        ui.notifications.error('The cleanup window could not be opened. See the console for details.');
-                    }
-                }
             });
         }
 
-        if (ItemAcquisition.canAdd(this.actor)) {
-            items.push({
-                name: 'Search Compendiums',
-                icon: 'fa-solid fa-magnifying-glass',
-                callback: async () => {
-                    try {
-                        await openCompendiumSearchWindow();
-                    } catch (error) {
-                        console.error('Coffee Pub Squire | Failed to open compendium search:', error);
-                        ui.notifications.error('Compendium search could not be opened. See the console for details.');
-                    }
-                }
-            });
-        }
-
-        return items;
-    }
-
-    _activateListeners(html) {
-        // v13: Use native DOM methods instead of jQuery
-        const controlPanel = html.querySelector('[data-panel="control"]');
-        if (!controlPanel) return;
-
-        const toolsButton = controlPanel.querySelector('.control-tools-menu');
-        if (toolsButton) {
-            const newButton = toolsButton.cloneNode(true);
-            toolsButton.parentNode?.replaceChild(newButton, toolsButton);
-            newButton.addEventListener('click', (event) => {
+        const cleanupButton = controlPanel.querySelector('.control-cleanup');
+        if (cleanupButton) {
+            const newButton = cleanupButton.cloneNode(true);
+            cleanupButton.parentNode?.replaceChild(newButton, cleanupButton);
+            newButton.addEventListener('click', async (event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                const rect = newButton.getBoundingClientRect();
-                getBlacksmith()?.uiContextMenu?.show({
-                    id: CONTROL_TOOLS_MENU_ID,
-                    x: rect.left,
-                    y: rect.bottom + 2,
-                    zones: this._toolMenuItems(),
-                    className: 'squire-item-context-menu'
-                });
+                try {
+                    const { openCleanupWindow } = await import('./window-cleanup.js');
+                    await openCleanupWindow(this.actor);
+                } catch (error) {
+                    console.error('Coffee Pub Squire | Failed to open the cleanup window:', error);
+                    ui.notifications.error('The cleanup window could not be opened. See the console for details.');
+                }
             });
         }
 

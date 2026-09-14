@@ -4,9 +4,16 @@
     <span class="control-view-separator" aria-hidden="true"></span>
     <button class="control-mode-toggle" type="button" role="tab" data-mode="sheet">Everything</button>
 </div>
-<button class="control-tools-menu" type="button" aria-label="Character sheet tools" data-tooltip="Character Sheet Tools">
-    <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
-</button>
+<div class="control-title-actions">
+    <button class="control-builds" type="button" aria-label="Gear Builds" data-tooltip="Gear Builds">
+        <i class="fa-solid fa-shirt" aria-hidden="true"></i>
+    </button>
+    {{#if canCleanup}}
+    <button class="control-cleanup" type="button" aria-label="{{cleanupLabel}}" data-tooltip="{{cleanupTooltip}}">
+        <i class="fa-solid fa-broom" aria-hidden="true"></i>
+    </button>
+    {{/if}}
+</div>
 </div>
 <div class="control-search">
 <input type="text" class="global-search" placeholder="Search All Sections...">
