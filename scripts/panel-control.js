@@ -1,6 +1,6 @@
 import { MODULE, TEMPLATES } from './const.js';
 import { PanelManager } from './manager-panel.js';
-import { getNativeElement, renderTemplate, getPanelItemName, openCompendiumSearchWindow, setRowFilter, isRowVisible} from './helpers.js';
+import { getNativeElement, renderTemplate, getPanelItemName, openCompendiumSearchWindow, setRowFilter, isRowVisible, getBlacksmith} from './helpers.js';
 import { ItemAcquisition } from './utility-item-acquisition.js';
 import { trackModuleTimeout } from './timer-utils.js';
 
@@ -11,10 +11,13 @@ import { trackModuleTimeout } from './timer-utils.js';
  * 'favorites' the favourites list on its own, no search and no filters
  *
  * Two places, one at a time. There was a third, 'search', holding the tray's own
- * compendium quick-add; the magnifying glass opens Blacksmith's palette now and
- * is an action rather than a mode. See the note on `control-compendium` below.
+ * compendium quick-add; compendium search now opens Blacksmith's palette from
+ * the titlebar overflow menu and is an action rather than a mode.
  */
 const MODES = ['sheet', 'favorites'];
+
+/** Blacksmith addresses an open context menu by id. */
+const CONTROL_TOOLS_MENU_ID = 'squire-control-tools-menu';
 
 /** Every stacked panel, in tray order. */
 const PANEL_TYPES = ['favorites', 'builds', 'weapons', 'spells', 'features', 'inventory'];
@@ -198,30 +201,11 @@ export class ControlPanel {
         if (!this.element) return;
 
         const templateData = {
-            // The palette is Blacksmith's and a player can reach it from their
-            // menubar regardless, so this is a convenience link rather than a
-            // gate. It is still hidden from a player who may not add: an
-            // affordance Squire offers should not lead somewhere Squire's own
-            // rules would refuse.
-            canAddFromCompendiums: ItemAcquisition.canAdd(this.actor),
             tabs: PANEL_TABS.map(tab => ({
                 key: tab,
                 label: TAB_LABELS[tab],
                 active: tab === this.activeTab
             })),
-            // Owners, not just GMs. A player never writes to their own sheet
-            // here: applying sends the plan to the GM as an approval window, and
-            // the GM decides. `isOwner` rather than a player check, because the
-            // tray follows canvas selection and a player who can select another
-            // character's token must not be able to propose changes to it.
-            // A player's click asks; a GM's click does. The tooltip has to say
-            // which, or the same icon promises two different things.
-            cleanupTooltip: game.user.isGM
-                ? 'Clean up this sheet — consolidate coins, link items to their compendium entry, and merge duplicates'
-                : 'Tidy this sheet — consolidate coins, link items, and merge duplicates. Sends the plan to your GM to approve.',
-            canCleanup: this.actor?.type === 'character'
-                && this.actor?.isOwner
-                && (game.user.isGM || game.settings.get(MODULE.ID, 'cleanupPlayerRequests'))
         };
 
         const content = await renderTemplate(TEMPLATES.PANEL_CONTROL, templateData);
@@ -311,11 +295,13 @@ export class ControlPanel {
 
         const controlEl = this.element.querySelector('[data-panel="control"]');
 
-        // Two-way switch: the mode you are in is lit, the other dimmed.
+        // Two explicit tabs: the selected label carries both visible and
+        // assistive state, while the other remains a plainly available place.
         controlEl?.querySelectorAll('.control-mode-toggle').forEach(toggle => {
             const selected = toggle.dataset.mode === this._mode;
             toggle.classList.toggle('active', selected);
-            toggle.classList.toggle('faded', !selected);
+            toggle.setAttribute('aria-selected', String(selected));
+            toggle.tabIndex = selected ? 0 : -1;
         });
 
         // Favourites has nothing for the tabs and the filter bar to act on, so
@@ -547,48 +533,60 @@ export class ControlPanel {
         this._updateVisibility();
     }
 
-    /**
-     * The cleanup launcher. Separate from the mode toggles it sits beside: those
-     * switch what the panel shows, this opens a window that writes to the sheet.
-     */
-    /**
-     * The cleanup launcher.
-     *
-     * DELEGATED to the panel's stable container rather than bound to the icon,
-     * and bound once per container. The control panel replaces its own innerHTML
-     * on every render, so a listener attached to the icon dies with the node the
-     * next time anything re-renders the panel — which is what made this button
-     * silently do nothing. The handle solved the same problem the same way.
-     */
-    _activateCleanupListener(container) {
-        if (!container || container.dataset.cleanupBound === 'true') return;
-        container.dataset.cleanupBound = 'true';
+    _canCleanup() {
+        return this.actor?.type === 'character'
+            && this.actor?.isOwner
+            && (game.user.isGM || game.settings.get(MODULE.ID, 'cleanupPlayerRequests'));
+    }
 
-        container.addEventListener('click', async (event) => {
-            const button = event.target.closest('.control-cleanup');
-            if (!button) return;
-
-            event.preventDefault();
-            event.stopPropagation();
-            if (!this.actor) return;
-
-            try {
-                // Dynamic for lazy loading, not for timing. It used to be for
-                // timing: window-cleanup.js read its superclass off module.api at
-                // module scope, which a static import would have evaluated before
-                // Blacksmith published anything. It imports the class from
-                // Blacksmith's bridge module now, so evaluation order is no longer
-                // a hazard and this could be static — it stays dynamic because the
-                // cleanup window is a rarely-opened GM tool.
-                const { openCleanupWindow } = await import('./window-cleanup.js');
-                await openCleanupWindow(this.actor);
-            } catch (error) {
-                // An async click handler swallows its own rejection: without this
-                // a failure here is a button that silently does nothing.
-                console.error('Coffee Pub Squire | Failed to open the cleanup window:', error);
-                ui.notifications.error('The cleanup window could not be opened. See the console for details.');
+    /** Build the Blacksmith overflow menu from permissions at the moment it opens. */
+    _toolMenuItems() {
+        const items = [{
+            name: 'Gear Builds',
+            icon: 'fa-solid fa-shirt',
+            callback: async () => {
+                try {
+                    const { BuildWindow } = await import('./window-build.js');
+                    await BuildWindow.open(this.actor);
+                } catch (error) {
+                    console.error('Coffee Pub Squire | Failed to open the builds window:', error);
+                    ui.notifications.error('The builds window could not be opened. See the console for details.');
+                }
             }
-        });
+        }];
+
+        if (this._canCleanup()) {
+            items.push({
+                name: game.user.isGM ? 'Clean Up Sheet' : 'Request Sheet Cleanup',
+                icon: 'fa-solid fa-broom',
+                callback: async () => {
+                    try {
+                        const { openCleanupWindow } = await import('./window-cleanup.js');
+                        await openCleanupWindow(this.actor);
+                    } catch (error) {
+                        console.error('Coffee Pub Squire | Failed to open the cleanup window:', error);
+                        ui.notifications.error('The cleanup window could not be opened. See the console for details.');
+                    }
+                }
+            });
+        }
+
+        if (ItemAcquisition.canAdd(this.actor)) {
+            items.push({
+                name: 'Search Compendiums',
+                icon: 'fa-solid fa-magnifying-glass',
+                callback: async () => {
+                    try {
+                        await openCompendiumSearchWindow();
+                    } catch (error) {
+                        console.error('Coffee Pub Squire | Failed to open compendium search:', error);
+                        ui.notifications.error('Compendium search could not be opened. See the console for details.');
+                    }
+                }
+            });
+        }
+
+        return items;
     }
 
     _activateListeners(html) {
@@ -596,34 +594,21 @@ export class ControlPanel {
         const controlPanel = html.querySelector('[data-panel="control"]');
         if (!controlPanel) return;
 
-        // The tray root, not the panel: the panel's innerHTML is replaced on
-        // every render, the root is not.
-        this._activateCleanupListener(html);
-
-        // Builds opens its own window.
-        //
-        // Bound ONCE to the container, guarded by a dataset flag. The container
-        // outlives its own innerHTML — that is the whole reason to delegate from
-        // it — which also means an unguarded listener here would be added again
-        // on every render and stack up silently. The cleanup launcher above
-        // solved the same problem the same way.
-        if (controlPanel.dataset.buildsBound !== 'true') {
-            controlPanel.dataset.buildsBound = 'true';
-            controlPanel.addEventListener('click', async (event) => {
-                if (!event.target.closest('.control-builds')) return;
+        const toolsButton = controlPanel.querySelector('.control-tools-menu');
+        if (toolsButton) {
+            const newButton = toolsButton.cloneNode(true);
+            toolsButton.parentNode?.replaceChild(newButton, toolsButton);
+            newButton.addEventListener('click', (event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                if (!this.actor) return;
-
-                try {
-                    const { BuildWindow } = await import('./window-build.js');
-                    await BuildWindow.open(this.actor);
-                } catch (error) {
-                    // An async click handler swallows its own rejection, so a
-                    // failure here is an icon that silently does nothing.
-                    console.error('Coffee Pub Squire | Failed to open the builds window:', error);
-                    ui.notifications.error('The builds window could not be opened. See the console for details.');
-                }
+                const rect = newButton.getBoundingClientRect();
+                getBlacksmith()?.uiContextMenu?.show({
+                    id: CONTROL_TOOLS_MENU_ID,
+                    x: rect.left,
+                    y: rect.bottom + 2,
+                    zones: this._toolMenuItems(),
+                    className: 'squire-item-context-menu'
+                });
             });
         }
 
@@ -674,53 +659,10 @@ export class ControlPanel {
             });
         }
 
-        // Compendium search. An action, not a mode: it opens Blacksmith's
-        // palette as a window beside the tray, which is why it sits with the
-        // broom and the builds icon rather than among the mode toggles.
-        //
-        // Squire had its own quick-add column here and it was the worse tool at
-        // every point of comparison -- it took over the panel stack, so finding
-        // something and looking at what you already have were mutually
-        // exclusive; a button and a jump beat dragging for nothing; and two
-        // compendium searches a click apart left the user picking between them.
-        // The policy that used to justify keeping it now lives in
-        // ItemAcquisition and governs drops, so nothing was lost by deleting it.
-        //
-        // Delegated from the panel and guarded by a flag, the same as builds and
-        // cleanup above -- NOT bound to the icon. The icon lives inside
-        // `.control-mode-toggles`, and the mode-switch block below replaces that
-        // whole container with a clone on every render, so a listener on the
-        // icon is discarded a few lines later and the button silently does
-        // nothing. That is exactly the failure the two handlers above are
-        // written the way they are to avoid.
-        if (controlPanel.dataset.compendiumBound !== 'true') {
-            controlPanel.dataset.compendiumBound = 'true';
-            controlPanel.addEventListener('click', async (event) => {
-                if (!event.target.closest('.control-compendium')) return;
-                event.preventDefault();
-                event.stopPropagation();
-
-                try {
-                    // No seed. Blacksmith's palette takes an optional opening
-                    // state, and deliberately re-seeds an already-open window --
-                    // so passing one from a plain "open the search" button would
-                    // throw away a search the user was in the middle of typing.
-                    // With no seed it opens where they left it, and a second
-                    // click raises the window that is already up.
-                    await openCompendiumSearchWindow();
-                } catch (error) {
-                    // An async click handler swallows its own rejection: without
-                    // this a failure here is a button that silently does nothing.
-                    console.error('Coffee Pub Squire | Failed to open compendium search:', error);
-                    ui.notifications.error('Compendium search could not be opened. See the console for details.');
-                }
-            });
-        }
-
         // Sheet / favourites mode switch. Delegated on the container rather
         // than bound per icon, so the header markup can change without
         // rewiring.
-        const modeToggles = controlPanel.querySelector('.control-mode-toggles');
+        const modeToggles = controlPanel.querySelector('.control-view-tabs');
         if (modeToggles) {
             const newToggles = modeToggles.cloneNode(true);
             modeToggles.parentNode?.replaceChild(newToggles, modeToggles);
@@ -731,6 +673,16 @@ export class ControlPanel {
                 // Idempotent: clicking the mode you are already in is a no-op
                 // rather than a toggle, which is what a two-way switch means.
                 await this.setMode(toggle.dataset.mode);
+            });
+
+            newToggles.addEventListener('keydown', async (event) => {
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                event.preventDefault();
+                const mode = (event.key === 'ArrowLeft' || event.key === 'Home')
+                    ? 'favorites'
+                    : 'sheet';
+                await this.setMode(mode);
+                newToggles.querySelector(`[data-mode="${mode}"]`)?.focus();
             });
         }
 

@@ -229,73 +229,68 @@
     opacity: 1;
 }
 
-/* ---------- Sheet / favourites mode switch ---------- */
+/* ---------- Favorites / Everything view tabs ---------- */
 
-/* Lives in the title bar's right zone, the same slot the GM Details and
-   Character Summary chevrons occupy — so a right-edge icon consistently means
-   "this header has an action".
+.squire-tray [data-panel="control"] .control-titlebar {
+    cursor: default;
+}
 
-   The gap went from 4px to 7px when the heart made it three icons: at 4px a row
-   of three glyphs reads as one shape rather than as three targets, and these are
-   click targets barely wider than the glyph itself. The right pad keeps the last
-   icon off the panel edge. */
-.squire-tray [data-panel="control"] .control-mode-toggles {
+.squire-tray [data-panel="control"] .control-view-tabs {
     display: flex;
     align-items: center;
+    min-width: 0;
     gap: 7px;
-    padding-right: 2px;
 }
 
-/* A little room of its own around each glyph, so the hit area is bigger than the
-   ink and a near miss lands on nothing rather than on the neighbour. */
-.squire-tray [data-panel="control"] .control-mode-toggle,
-.squire-tray [data-panel="control"] .control-cleanup,
-.squire-tray [data-panel="control"] .control-compendium {
-    padding: 2px 1px;
+.squire-tray [data-panel="control"] .control-view-separator {
+    width: 1px;
+    height: 12px;
+    background: rgba(159, 146, 117, 0.45);
 }
 
-/* The mode toggles and the cleanup launcher are one cluster of header icons,
-   and they take the filter chips' vocabulary exactly: the chips' tan, on is full
-   opacity, off is dimmed, and nothing paints a background. They are the same
-   kind of control as the chips one row down, so looking like a different kind
-   was the defect.
-
-   THE DEFECT WAS A COMMA. The base selector used to end with one, with a comment
-   between it and the next line — which folded it into the `.active` rule, so
-   BOTH toggles were permanently drawn in the selected style, each sitting in its
-   own filled box, and there was no way to tell which mode you were in. The same
-   comma dropped `.control-cleanup` out of the list entirely: the broom had no
-   rule at all, only a `:hover` two files away.
-
-   This is what a trailing comma before a comment does, and CSS will not tell
-   you: the rule stays valid, so nothing fails — it just applies to the wrong
-   elements, permanently. */
 .squire-tray [data-panel="control"] .control-mode-toggle,
-.squire-tray [data-panel="control"] .control-cleanup,
-.squire-tray [data-panel="control"] .control-compendium {
-    cursor: pointer;
-    /* The chips' own tan — see .filter-chip above. */
-    color: rgba(159, 146, 117, 0.9);
+.squire-tray [data-panel="control"] .control-tools-menu {
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    padding: 2px 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    outline: none;
     background: none;
+    cursor: pointer;
     transition: color 0.2s ease, opacity 0.2s ease;
 }
 
-/* Off is dimmed, on is simply not dimmed — exactly what .filter-chip does, with
-   no second lit state to keep in sync.
-
-   Keyed on `.faded` rather than `:not(.active)` because panel-control.js sets
-   both classes explicitly. Before it has run, that leaves the pair reading as
-   enabled rather than as disabled, which is the better of the two wrong
-   answers. */
-.squire-tray [data-panel="control"] .control-mode-toggle.faded {
-    opacity: 0.4;
+.squire-tray [data-panel="control"] .control-mode-toggle {
+    border-bottom: 1px solid transparent;
+    color: rgba(159, 146, 117, 0.58);
+    font: inherit;
+    line-height: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
 }
 
 .squire-tray [data-panel="control"] .control-mode-toggle:hover,
-.squire-tray [data-panel="control"] .control-cleanup:hover,
-.squire-tray [data-panel="control"] .control-compendium:hover {
+.squire-tray [data-panel="control"] .control-tools-menu:hover {
     color: var(--squire-color-hover);
-    opacity: 1;
+}
+
+.squire-tray [data-panel="control"] .control-mode-toggle.active {
+    border-bottom-color: rgba(159, 146, 117, 0.9);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.squire-tray [data-panel="control"] .control-mode-toggle:focus-visible,
+.squire-tray [data-panel="control"] .control-tools-menu:focus-visible {
+    outline: 1px solid var(--squire-color-hover);
+    outline-offset: 2px;
+}
+
+.squire-tray [data-panel="control"] .control-tools-menu {
+    padding: 2px 3px;
+    color: rgba(159, 146, 117, 0.9);
 }
 
 /* With everything below the title hidden, the strip ends on a heading — and the

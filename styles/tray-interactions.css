@@ -94,14 +94,3 @@
 .panel-item-label {
     display: inline;
 }
-
-/* Cleanup launcher, in the Character Sheet title beside the mode toggles.
-   Same affordance as its neighbours — it belongs to that cluster — but it opens
-   a window rather than switching what the panel shows, hence the separator. */
-
-.squire-tray [data-panel="control"] .control-toggle-separator {
-    width: 1px;
-    align-self: stretch;
-    margin: 2px 2px;
-    background: rgba(159, 146, 117, 0.35);
-}

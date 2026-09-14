@@ -1,31 +1,12 @@
-<div class="tray-title-small">
-<span>Character Sheet</span>
-{{!--
-    The mode switch: favourites and the sheet.
-
-    The heart and the person are always both here. Favourites is a view rather
-    than a block pinned above the tabs, so there is always somewhere to switch
-    back FROM and both icons are needed to move between them.
-
-    Everything BEFORE the separator is an action, not a mode: it opens a WINDOW
-    rather than changing what this column shows. The magnifying glass is on that
-    side for exactly that reason -- it opens Blacksmith's compendium palette,
-    which sits beside the tray rather than replacing what the tray is showing.
-    Squire's own quick-add column used to be a third mode here, and being a mode
-    was half of what was wrong with it.
---}}
-<div class="control-mode-toggles">
-    <i class="fa-solid fa-shirt control-builds" data-tooltip="Gear Builds"></i>
-    {{#if canCleanup}}
-    <i class="fa-solid fa-broom control-cleanup" title="{{cleanupTooltip}}"></i>
-    {{/if}}
-    {{#if canAddFromCompendiums}}
-    <i class="fa-solid fa-magnifying-glass control-compendium" data-tooltip="Search Compendiums to Add Items"></i>
-    {{/if}}
-    <span class="control-toggle-separator"></span>
-    <i class="fa-solid fa-heart control-mode-toggle" data-mode="favorites" title="Show Favorites"></i>
-    <i class="fa-solid fa-user control-mode-toggle" data-mode="sheet" title="Show This Character's Items"></i>
+<div class="tray-title-small control-titlebar">
+<div class="control-view-tabs" role="tablist" aria-label="Character items view">
+    <button class="control-mode-toggle" type="button" role="tab" data-mode="favorites">Favorites</button>
+    <span class="control-view-separator" aria-hidden="true"></span>
+    <button class="control-mode-toggle" type="button" role="tab" data-mode="sheet">Everything</button>
 </div>
+<button class="control-tools-menu" type="button" aria-label="Character sheet tools" data-tooltip="Character Sheet Tools">
+    <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+</button>
 </div>
 <div class="control-search">
 <input type="text" class="global-search" placeholder="Search All Sections...">

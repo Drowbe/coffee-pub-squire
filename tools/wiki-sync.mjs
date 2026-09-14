@@ -7,9 +7,9 @@
  * are rewritten from repo paths (../api/foo.md) to wiki page names (foo); links to code files, or
  * to docs not in the publish set, are downgraded to plain text so the wiki has no broken red links.
  *
- * Source docs are never modified. The publish/downgrade decision is made fresh each run from the
- * PUBLISH list below, so adding a held doc to that list later auto-links every reference to it —
- * no source edits needed.
+ * Source docs are never modified. The publish/downgrade decision is made fresh each run from folder
+ * membership minus HOLD, so releasing a doc from HOLD -- or simply creating it -- auto-links every
+ * reference to it, with no source edits needed.
  *
  * Usage:
  *   node tools/wiki-sync.mjs build              # write reviewable pages to tools/.wiki-build/
@@ -54,7 +54,7 @@ function defaultBranch() {
 }
 const BRANCH = defaultBranch();
 const RAW_BASE = `https://raw.githubusercontent.com/${REPO_SLUG}/${BRANCH}/documentation/assets`;
-const ASSET_LINK = /(?:^|\/)assets\/([^/\\)]+)$/i;
+export const ASSET_LINK = /(?:^|\/)assets\/([^/\\)]+)$/i;
 
 // ---- What publishes: folder membership, not a hand-kept list. ----
 //
@@ -117,7 +117,23 @@ function label(rel) {
   if (rel === 'architecture/architecture-ownership.md') return 'Module ownership';
   const base = pageName(rel).replace(/^(api|architecture|design|global|userguide)-/, '');
   const spaced = base.replace(/-/g, ' ');
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  const titled = spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  // Sentence case mangles the acronyms that appear in guide names -- "Gm", "Api", "Ui".
+  //
+  // Done per word and case-insensitively, which a single case-sensitive regex could not be. Sentence
+  // casing capitalises only the LEADING character, so `\b(Api)\b` matched an acronym in first position
+  // and nothing after it: `architecture-blacksmith-api` gave "Blacksmith api". Plurals missed even in
+  // first position -- `apis-foo` gave "Apis foo". Found by the Herald session on 2026-09-09, which
+  // renamed its file to dodge it; this file is copied to every module, so the next one would not have
+  // known to.
+  const ACRONYMS = new Set(['gm', 'api', 'ui', 'npc', 'css', 'json', 'uuid', 'dc']);
+  return titled.split(' ').map((word) => {
+    const bare = word.toLowerCase();
+    if (ACRONYMS.has(bare)) return bare.toUpperCase();
+    const singular = bare.replace(/s$/, '');
+    if (bare !== singular && ACRONYMS.has(singular)) return `${singular.toUpperCase()}s`;
+    return word;
+  }).join(' ');
 }
 
 // ---- Fence-aware link rewriting ----
@@ -153,7 +169,14 @@ function siblingWikiUrl(target) {
   return `${HUB_WIKI}/${m[2]}${m[3] || ''}`;
 }
 
-const LINK = /\[([^\]]+)\]\(([^)]+)\)/g;
+// Alt text may be EMPTY. `![](assets/thing.webp)` is what someone writes for a decorative image and
+// what several markdown editors insert on paste -- and requiring non-empty text meant the publisher
+// skipped those links entirely, shipping a repo-relative path to the wiki where it resolves to
+// nothing. It renders correctly in the repo and in an editor, so the author sees it working
+// everywhere they look. Exported so check-docs-structure.mjs uses this definition rather than a
+// parallel one: the divergence between the two was what let this pass green.
+// (Raised by coffee-pub-librarian.)
+export const LINK = /\[([^\]]*)\]\(([^)]+)\)/g;
 const CODE_LINK = /\.(js|mjs|css|hbs|json|txt|webp|png)(#.*)?$/i;
 // CODE_PATH matches a directory name anywhere in the target, which is why the doc branch below runs
 // first: a documentation folder may share a name with a code folder -- `documentation/resources/` did,
@@ -165,10 +188,22 @@ function rewriteLinks(md, srcRel) {
   const lines = md.split(/\r?\n/);
   let inFence = false;
   const downgraded = [];
-  const rewritten = lines.map((line) => {
-    if (/^\s*```/.test(line)) { inFence = !inFence; return line; }
-    if (inFence) return line;
-    return line.replace(LINK, (whole, text, target) => {
+  // Group consecutive non-fenced lines into one string before matching. The LINK alt text may span
+  // a newline -- the house style wraps at 80-100 columns, so a long alt text is exactly what a
+  // careful author writes -- and matching per line skipped those links entirely, emitting a
+  // repo-relative path onto the wiki where it resolves to nothing. Silent: the checker passes,
+  // because the path itself is correct; only the rewrite is missed.
+  // (Found by coffee-pub-merchant on adoption.)
+  const blocks = [];
+  for (const line of lines) {
+    if (/^\s*```/.test(line)) { inFence = !inFence; blocks.push({ fenced: true, text: line }); continue; }
+    const last = blocks[blocks.length - 1];
+    if (last && last.fenced === false) last.text += "\n" + line;
+    else blocks.push({ fenced: false, text: line });
+  }
+  const rewritten = blocks.map((b) => {
+    if (b.fenced) return b.text;
+    return b.text.replace(LINK, (whole, text, target) => {
       if (/^(https?:|mailto:|#)/i.test(target)) return whole;        // external / same-page anchor
       // Checked BEFORE the code/asset downgrade: a cross-module doc path contains `documentation/`,
       // which is not a code path, but the ordering is stated rather than assumed because a future
@@ -216,18 +251,62 @@ function buildSidebar() {
   // userguide-artificer and architecture-artificer both reduce to "Artificer", in adjacent groups.
   // A label used more than once falls back to the full page name, which is always unique because it
   // is the filename. (Raised by coffee-pub-artificer on adoption.)
-  const labelCounts = new Map();
-  for (const rel of PUBLISH) labelCounts.set(label(rel), (labelCounts.get(label(rel)) || 0) + 1);
-  const uniqueLabel = (rel) => (labelCounts.get(label(rel)) > 1 ? pageName(rel) : label(rel));
+  // Labels need only be unique WITHIN a group, because the sidebar prints the group heading above
+  // them: "Gathering" under "Architecture" is unambiguous to a reader in a way it is not to a Set.
+  // Deduping globally fired hardest on compliance -- a feature documented once for users and once for
+  // whoever changes it is the standard working, not two files carelessly named, and the better a
+  // module documents a topic the more such pairs it has. (Raised by coffee-pub-artificer.)
+  const KIND_SUFFIX = { api: 'API', architecture: 'architecture', designsystem: 'design',
+                        userguides: 'guide', global: 'global', plans: 'plan' };
+  const labelsIn = (prefix) => {
+    const counts = new Map();
+    for (const rel of PUBLISH.filter((p) => p.startsWith(prefix))) {
+      counts.set(label(rel), (counts.get(label(rel)) || 0) + 1);
+    }
+    return counts;
+  };
+  const uniqueLabelIn = (rel, counts) => {
+    if ((counts.get(label(rel)) || 0) <= 1) return label(rel);
+    const kind = KIND_SUFFIX[rel.split('/')[0]];
+    return kind ? `${label(rel)} (${kind})` : pageName(rel);
+  };
 
-  const linksIn = (prefix) =>
-    PUBLISH.filter((p) => p.startsWith(prefix))
-      .map((rel) => `- [${uniqueLabel(rel)}](${pageName(rel)})`);
+  // User guides render in READING order, not alphabetically. Alphabetical put getting-started third
+  // in one module and buried the settings reference in the middle of the features. The order is:
+  // getting-started, then the feature guides, then player, gm, and settings -- shallowest first,
+  // reference last. Feature guides take their order from the links in home.md when that document
+  // lists them, because home.md is the router the author wrote in the order that made sense to them;
+  // otherwise they fall back to alphabetical. Nothing to configure, and no new file.
+  const homeOrder = (() => {
+    try {
+      const home = fs.readFileSync(path.join(DOCS, HOME_SRC), 'utf8');
+      return [...home.matchAll(/userguide-[a-z0-9-]+/g)].map((m) => m[0]);
+    } catch { return []; }
+  })();
+  const guideRank = (rel) => {
+    const name = pageName(rel);
+    if (name === 'userguide-getting-started') return [0, 0, name];
+    const tail = { 'userguide-player': 1, 'userguide-gm': 2, 'userguide-settings': 3 }[name];
+    if (tail) return [2, tail, name];
+    const i = homeOrder.indexOf(name);
+    return [1, i === -1 ? Number.MAX_SAFE_INTEGER : i, name];
+  };
+  const cmp = (a, b) => {
+    const [ax, ay, az] = guideRank(a), [bx, by, bz] = guideRank(b);
+    return ax - bx || ay - by || az.localeCompare(bz);
+  };
+  const linksIn = (prefix) => {
+    const rels = PUBLISH.filter((p) => p.startsWith(prefix));
+    if (prefix === 'userguides/') rels.sort(cmp);
+    const counts = labelsIn(prefix);
+    return rels.map((rel) => `- [${uniqueLabelIn(rel, counts)}](${pageName(rel)})`);
+  };
   // A group whose every document is held renders as a bare heading with nothing under it, which reads
   // as a broken sidebar rather than an empty category. Emit the heading only when it has links.
   const section = (title, links) => (links.length ? [`### ${title}`, links.join('\n'), ''] : []);
+  const rootCounts = labelsIn('');
   const topLevel = PUBLISH.filter((p) => !p.includes('/'))
-    .map((rel) => `- [${uniqueLabel(rel)}](${pageName(rel)})`);
+    .map((rel) => `- [${uniqueLabelIn(rel, rootCounts)}](${pageName(rel)})`);
   return [
     ...section('Getting started', ['- [Home](Home)', ...topLevel]),
     ...section('User guides', linksIn('userguides/')),
@@ -265,7 +344,8 @@ Missing documentation/${HOME_SRC} -- the wiki has no front door without it.`);
   if (unique.length) {
     console.log(`\n${unique.length} link(s) downgraded to plain text (target not in round 1):`);
     for (const d of unique) console.log('  ' + d);
-    console.log('These auto-become links again once their target is added to PUBLISH.');
+    console.log('A link to CODE is downgraded permanently and correctly -- that is the common case.');
+    console.log('A link to a DOCUMENT relinks itself once the file exists or leaves HOLD.');
   }
 }
 

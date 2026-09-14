@@ -10,24 +10,6 @@
    silence its minimisation.
    ========================================================================== */
 
-/* ---------------- THE LAUNCHER ---------------- */
-
-/* Builds opens a window, so its icon sits with the broom on the launcher side
-   of the Character Sheet strip's separator rather than with the three view
-   modes. It had a section of its own in the favourites view and gave a lot of a
-   narrow column to something touched rarely. */
-.squire-tray [data-panel="control"] .control-builds {
-    cursor: pointer;
-    padding: 2px 1px;
-    color: rgba(159, 146, 117, 0.9);
-    background: none;
-    transition: color 0.2s ease;
-}
-
-.squire-tray [data-panel="control"] .control-builds:hover {
-    color: var(--squire-color-hover);
-}
-
 /* ---------------- THE HANDLE STRIP ---------------- */
 
 /* Builds kept on the handle, above the favourites. Same footprint as a handle
