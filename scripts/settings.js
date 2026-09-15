@@ -707,6 +707,16 @@ export const registerSettings = function() {
         default: 'list'
     });
 
+    // The Builds panel's order — one of BUILD_SORTS in panel-builds.js, the
+    // same three states favoritesSort offers below and for the same reason.
+    // Defaults to manual, the order the `builds` flag holds.
+    game.settings.register(MODULE.ID, 'buildsSort', {
+        scope: 'user',
+        config: false,
+        type: String,
+        default: 'manual'
+    });
+
     game.settings.register(MODULE.ID, 'favoritesLayout', {
         scope: 'user',
         config: false,

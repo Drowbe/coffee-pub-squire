@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [Unreleased]
+
+### Changed
+
+- **The Builds panel is "Gear Configurations" now, and sorts three ways.** A build and a costume are both configurations of what the character has on, so the heading covers both rather than naming one and burying the other in a detail line. It picks up the same Manual / Alphabetical / By Category sort Favourites already offers — Category groups the list into Builds and Costumes headings. Reordering from the row menu is manual-order only, same as Favourites: under a sort, Move Up/Down would rewrite positions the screen isn't showing, so those entries simply aren't offered.
+
 ## [14.0.1]
 
 ### Fixed

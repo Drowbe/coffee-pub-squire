@@ -305,7 +305,9 @@ failure that matters.
 
 ## The tray panel
 
-`BuildsPanel`, under the item favourites, listing the builds whose `favorite` flag is set. A build is
+`BuildsPanel`, under the item favourites, listing the builds whose `favorite` flag is set. Headed
+**"Gear Configurations"** in the tray — a build and a costume are both configurations of what the
+character has on, and the heading has to cover both without implying one is the exception. A build is
 planned in a window and worn from one, which is fine for making them and wrong for using them: the
 thing you do at a table is put a kit on, and that was three clicks behind a window nobody has open.
 
@@ -316,9 +318,14 @@ decide whether to show it.
 
 **It is constructed like the Favourites panel it sits under** — the tray's own `panel-item` row
 markup, the same header layout switch, the same overlay click, the same `⋯` / right-click menu, the
-same tile CSS. A second shape here would be a second set of rules for hover, spacing, truncation and
-tiles, all of which already exist and all of which would drift. Deviating from that shape is what
-made this panel's listeners hard to reason about when they broke.
+same tile CSS, and the same three-way sort (`BuildsPanel.getSort()`, setting `buildsSort`: `manual`,
+`alpha`, `category`). Category groups the list into **Builds** and **Costumes** headings — gear before
+costumes, alphabetical within each — mirroring `FavoritesPanel._groupFavorites`. Reordering (the row
+menu's Move Up/Down/Top/Bottom) is manual-order only, same as Favourites: under a sort those entries
+would rewrite positions the screen is not showing, so they are not offered at all rather than offered
+and doing nothing. A second shape here would be a second set of rules for hover, spacing, truncation,
+tiles and sorting, all of which already exist and all of which would drift. Deviating from that shape
+is what made this panel's listeners hard to reason about when they broke.
 
 Three things it does that are worth knowing:
 

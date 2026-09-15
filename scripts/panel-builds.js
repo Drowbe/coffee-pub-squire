@@ -12,8 +12,38 @@ import { getTileSpan, setTileSpan, tileSizeMenuEntry } from './utility-tile-span
 /** Blacksmith addresses an open menu by id, so this is how it gets closed. */
 const BUILD_MENU_ID = 'squire-build-tray-menu';
 
+/** The sort flyout's own id — distinct from the row menu's above, since
+ *  either can be open and each has to close on its own. */
+const BUILD_SORT_MENU_ID = 'squire-build-sort-menu';
+
 /** The actor flag this panel keeps its tile footprints in. */
 const BUILD_SPANS_FLAG = 'buildSpans';
+
+/**
+ * How the list is ordered — the same three states Favourites offers, for the
+ * same reason: 'manual' is the order the `builds` flag holds (what the
+ * move-up/move-down entries write), the other two are views over it and never
+ * write back, so switching away from manual and back returns the hand-made
+ * order untouched.
+ */
+const BUILD_SORTS = ['manual', 'alpha', 'category'];
+
+const SORT_LABELS = {
+    manual: 'Manual',
+    alpha: 'Alphabetical',
+    category: 'By Category'
+};
+
+const SORT_ICONS = {
+    manual: 'fa-bars-sort',
+    alpha: 'fa-arrow-down-a-z',
+    category: 'fa-layer-group'
+};
+
+/** The 'category' sort's two groups, gear builds before costumes — builds are
+ *  the more frequent case and read first for the same reason weapons come
+ *  before spells in Favourites' own category order. */
+const CATEGORY_LABELS = { gear: 'Builds', costume: 'Costumes' };
 
 /**
  * THE FAVOURITE BUILDS, IN THE TRAY.
@@ -23,7 +53,9 @@ const BUILD_SPANS_FLAG = 'buildSpans';
  * kit on, and that was three clicks away behind a window nobody has open.
  *
  * So the ones marked FAVOURITE come out here, under the item favourites, where
- * they can be worn with a click.
+ * they can be worn with a click. Heading reads "Gear Configurations" — a build
+ * and a costume are both configurations of what the character has on, and the
+ * heading has to cover both without implying one is the exception.
  *
  * IT DISAPPEARS WHEN IT IS EMPTY, and that is the whole of its visibility rule.
  * Most characters never make a build; a permanent empty panel would be a
@@ -35,8 +67,8 @@ const BUILD_SPANS_FLAG = 'buildSpans';
  * in both, one, or neither.
  *
  * Constructed like the Favourites panel: same header switch, same overlay click,
- * same ⋯ / right-click menu, same tile CSS. A second shape here is a second set
- * of rules, and a second set is a set that drifts.
+ * same ⋯ / right-click menu, same tile CSS, same three-way sort. A second shape
+ * here is a second set of rules, and a second set is a set that drifts.
  */
 export class BuildsPanel {
     constructor(actor) {
@@ -52,6 +84,61 @@ export class BuildsPanel {
         } catch (error) {
             return 'list';
         }
+    }
+
+    /**
+     * The list's order: 'manual', 'alpha' or 'category'.
+     *
+     * Validated on read, like getLayout: a value from an older build or a
+     * hand-edited setting falls back to the hand-made order rather than to a
+     * sort nothing implements.
+     */
+    static getSort() {
+        try {
+            const stored = game.settings.get(MODULE.ID, 'buildsSort');
+            return BUILD_SORTS.includes(stored) ? stored : 'manual';
+        } catch (error) {
+            return 'manual';
+        }
+    }
+
+    /**
+     * Order a mapped builds list. Sorts a COPY — the flag is the manual order
+     * and no sort may write to it, which is what makes alphabetical and
+     * category lenses rather than one-way doors.
+     */
+    static _sortBuilds(builds, sort) {
+        if (sort === 'manual') return builds;
+
+        const byName = (a, b) =>
+            (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+
+        if (sort === 'alpha') return [...builds].sort(byName);
+
+        // category: gear before costume, then alphabetical within each.
+        return [...builds].sort((a, b) => {
+            if (a.costume !== b.costume) return a.costume ? 1 : -1;
+            return byName(a, b);
+        });
+    }
+
+    /**
+     * The sorted list as groups, ready for the template — the same shape
+     * Favourites hands its own. Only 'category' produces named groups; the
+     * other two return one unnamed group, so the template has one loop rather
+     * than a flat branch and a grouped branch kept identical by hand.
+     */
+    static _groupBuilds(builds, sort) {
+        if (sort !== 'category') return [{ label: null, items: builds }];
+
+        const groups = [];
+        for (const item of builds) {
+            const label = CATEGORY_LABELS[item.costume ? 'costume' : 'gear'];
+            const last = groups[groups.length - 1];
+            if (last?.label === label) last.items.push(item);
+            else groups.push({ label, items: [item] });
+        }
+        return groups;
     }
 
     /** How much of the tile grid one build takes — see utility-tile-spans.js. */
@@ -70,7 +157,7 @@ export class BuildsPanel {
         const activeId = getActiveBuildId(this.actor);
         const onHandle = new Set(getHandleBuildIds(this.actor));
 
-        return getBuilds(this.actor)
+        const list = getBuilds(this.actor)
             .filter(build => build.favorite)
             .map(build => {
                 const summary = buildSummary(this.actor, build);
@@ -99,6 +186,8 @@ export class BuildsPanel {
                         : `AC ${summary.armorClass.value} · ${summary.gearCount}`
                 };
             });
+
+        return BuildsPanel._sortBuilds(list, BuildsPanel.getSort());
     }
 
     async render(html) {
@@ -132,7 +221,13 @@ export class BuildsPanel {
         // — which is what every other panel here does.
         panel.innerHTML = await renderTemplate(TEMPLATES.PANEL_BUILDS, {
             builds,
-            layout: BuildsPanel.getLayout()
+            groups: BuildsPanel._groupBuilds(builds, BuildsPanel.getSort()),
+            layout: BuildsPanel.getLayout(),
+            // The icon IS the state, same as Favourites — the header shows
+            // which sort is on rather than a generic glyph you have to open a
+            // menu to interrogate.
+            sortIcon: SORT_ICONS[BuildsPanel.getSort()],
+            sortLabel: SORT_LABELS[BuildsPanel.getSort()]
         });
 
         this._activateListeners(this.element);
@@ -144,6 +239,7 @@ export class BuildsPanel {
         this._listenerController?.abort();
         this._listenerController = null;
         getBlacksmith()?.uiContextMenu?.close(BUILD_MENU_ID);
+        getBlacksmith()?.uiContextMenu?.close(BUILD_SORT_MENU_ID);
     }
 
     _buildMenuItems(buildId) {
@@ -173,13 +269,19 @@ export class BuildsPanel {
         // row that means something different two panels apart is a row nobody
         // can learn.
         //
+        // Manual-order only, like Favourites: the move entries write positions
+        // into the `builds` flag, and under a sort those positions are not what
+        // the screen is showing — "Move Up" would rewrite an order nobody is
+        // looking at and appear to do nothing at all.
+        //
         // Blacksmith's menu has no `condition` hook, so an entry that cannot
         // apply is simply not pushed — the top build has no Move Up rather than
         // a dead one that looks clickable. The rail's menu does the same.
+        const canReorder = BuildsPanel.getSort() === 'manual';
         const order = this._getBuilds().map(build => build.id);
         const index = order.indexOf(buildId);
 
-        if (index > 0) {
+        if (canReorder && index > 0) {
             items.push({ separator: true }, {
                 name: 'Move to Top', icon: 'fa-solid fa-angle-double-up',
                 callback: () => this._reorder(buildId, 0, order)
@@ -189,7 +291,7 @@ export class BuildsPanel {
             });
         }
 
-        if (index > -1 && index < order.length - 1) {
+        if (canReorder && index > -1 && index < order.length - 1) {
             if (index === 0) items.push({ separator: true });
             items.push({
                 name: 'Move Down', icon: 'fa-solid fa-angle-down',
@@ -362,6 +464,35 @@ export class BuildsPanel {
             } catch (error) {
                 console.error('Coffee Pub Squire | Could not switch the Builds layout:', error);
             }
+        }, { signal });
+
+        // Sort. A menu rather than a cycling button, same as Favourites: three
+        // states do not cycle legibly, and the same flyout vocabulary as Tile
+        // Size means one kind of "pick one of these" gesture in this panel.
+        panel.addEventListener('click', (event) => {
+            const toggle = event.target.closest('.builds-sort-toggle');
+            if (!toggle) return;
+            event.preventDefault();
+            event.stopPropagation();
+
+            const current = BuildsPanel.getSort();
+            const rect = toggle.getBoundingClientRect();
+
+            getBlacksmith()?.uiContextMenu?.show({
+                id: BUILD_SORT_MENU_ID,
+                x: rect.left,
+                y: rect.bottom + 2,
+                zones: BUILD_SORTS.map(sort => ({
+                    name: SORT_LABELS[sort],
+                    icon: `fa-solid ${SORT_ICONS[sort]}`,
+                    disabled: sort === current,
+                    callback: async () => {
+                        await game.settings.set(MODULE.ID, 'buildsSort', sort);
+                        await this.render(this.element);
+                    }
+                })),
+                className: 'squire-favorite-context-menu'
+            });
         }, { signal });
     }
 }

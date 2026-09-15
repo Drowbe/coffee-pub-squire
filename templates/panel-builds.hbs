@@ -1,22 +1,26 @@
 {{!--
-    THE FAVOURITE BUILDS.
+    THE FAVOURITE BUILDS — heading "Gear Configurations", because a build and
+    a costume are both configurations of what the character has on and the
+    heading has to cover both without implying one is the exception.
 
     Drawn only when there are some — see BuildsPanel.render, which empties the
     container rather than hiding it, so an unused feature costs no space and
     leaves no gap.
 
     THE SAME MARKUP THE FAVOURITES PANEL USES: `section-header` with a
-    `header-left` and `header-right`, then `panel-item` rows carrying
-    `panel-item-row`, an image container, a name, a tile-only detail line and
-    a `tray-buttons` strip. The tile layout is the Favourites grid, shared in
-    panel-favorites.css — re-shaping these rows in CSS keeps overlay-click,
-    the ⋯ and right-click working with no second template to keep in step.
+    `header-left` and `header-right`, then GROUPS (one unnamed group unless
+    sorted `category`) of `panel-item` rows carrying `panel-item-row`, an
+    image container, a name, a tile-only detail line and a `tray-buttons`
+    strip — same list/tiles switch, same three-way sort menu. The tile layout
+    is the Favourites grid, shared in panel-favorites.css — re-shaping these
+    rows in CSS keeps overlay-click, the ⋯ and right-click working with no
+    second template to keep in step.
 --}}
 {{#if builds.length}}
 <div class="builds-panel{{#if (eq layout 'tiles')}} layout-tiles{{else}} layout-list{{/if}}">
 <div class="section-header">
     <div class="header-left">
-        <i class="fa-solid fa-shirt"></i> Builds
+        <i class="fa-solid fa-shirt"></i> Gear Configurations
     </div>
     {{!-- The same two-icon switch Favourites has, in the same place, doing the
           same thing. A pair rather than one button that toggles: a single
@@ -24,16 +28,29 @@
           wrong one half the time. --}}
     <div class="header-right">
         <i class="fa-solid fa-list builds-layout-toggle{{#if (eq layout 'list')}} active{{/if}}"
-           data-layout="list" data-tooltip="Show builds as a list"></i>
+           data-layout="list" data-tooltip="Show as a list"></i>
         <i class="fa-solid fa-grid-2 builds-layout-toggle{{#if (eq layout 'tiles')}} active{{/if}}"
-           data-layout="tiles" data-tooltip="Show builds as tiles"></i>
+           data-layout="tiles" data-tooltip="Show as tiles"></i>
+        <span class="favorites-header-separator"></span>
+        {{!-- Sort opens a menu rather than being three more glyphs in the row —
+              same reasoning as Favourites' own sort control, right down to the
+              shared separator class either side of it. --}}
+        <i class="fa-solid {{sortIcon}} builds-sort-toggle" data-tooltip="Sort: {{sortLabel}}"></i>
     </div>
 </div>
 
-{{!-- `squire-tile-grid` is the shared tile layout in tray-tiles.css — the same
-      class the Favourites grid carries, so the two cannot drift. --}}
-<div class="builds-list panel-items{{#if (eq layout 'tiles')}} squire-tile-grid{{/if}}">
-    {{#each builds}}
+{{!-- Always groups, even when there is only one and it has no name — one copy
+      of the row markup rather than a flat branch and a grouped branch kept
+      identical by hand. Each group carries its OWN grid, so a heading is
+      never a grid item. `squire-tile-grid` is the shared tile layout in
+      tray-tiles.css — the same class the Favourites grid carries. --}}
+<div class="builds-list panel-items">
+{{#each groups}}
+{{#if this.label}}
+<div class="category-header">{{this.label}}</div>
+{{/if}}
+<div class="builds-group-items{{#if (eq ../layout 'tiles')}} squire-tile-grid{{/if}}">
+    {{#each this.items}}
     {{!-- Worn is said by the kind glyph in the corner, which goes to full
           strength when this is what the character has on. It was once said a
           second time by a green edge on the row; the class that drove it is
@@ -94,6 +111,8 @@
         </div>
     </div>
     {{/each}}
+</div>
+{{/each}}
 </div>
 </div>
 {{/if}}

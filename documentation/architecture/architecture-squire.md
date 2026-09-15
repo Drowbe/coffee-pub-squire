@@ -142,7 +142,7 @@ no socket sends anywhere in Squire.
 | Control | panel-control.js | Search, the three view modes (sheet / favourites / compendium quick-add), the section tabs, the action-cost chips and the two availability switches |
 | Compendium Search | panel-compendium-search.js | Quick-add search over Blacksmith's Compendiums API |
 | Favorites | panel-favorites.js | Pinned items, in their own view rather than the panel stack. Two layouts (list or tiles), three sort orders, and a per-item tile footprint set from Blacksmith's context menu |
-| Builds | panel-builds.js | The favourited gear builds and costumes, under Favorites. Always rendered and empty when nothing is starred, so it costs no space — the only panel in `ALWAYS_VISIBLE_PANELS`. Same layouts and tile footprints as Favorites; see `architecture-builds.md` |
+| Gear Configurations | panel-builds.js | The favourited gear builds and costumes, under Favorites — headed "Gear Configurations" in the tray. Always rendered and empty when nothing is starred, so it costs no space — the only panel in `ALWAYS_VISIBLE_PANELS`. Same layouts, tile footprints and three-way sort (manual/alphabetical/category) as Favorites, category grouping into Builds and Costumes; see `architecture-builds.md` |
 | Weapons | panel-weapons.js | Weapon attacks |
 | Spells | panel-spells.js | Spell slots, casting |
 | Features | panel-features.js | Class/race features |

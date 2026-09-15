@@ -110,6 +110,20 @@
    OVERRIDING that shared layout, and each one says why.
    ========================================================================== */
 
+/* The 'category' sort's group headings — the shared `.category-header` from
+   tray-headers.css, whose natural spacing suits the list layout. In tiles the
+   grid below already carries its own padding, so the same margins Favourites
+   applies to its own category headers apply here too: tighter, and the first
+   one loses its top margin so it does not double the panel header's own gap. */
+.squire-tray .builds-panel.layout-tiles .category-header {
+    margin-top: 10px;
+    margin-bottom: 4px;
+}
+
+.squire-tray .builds-panel .category-header:first-child {
+    margin-top: 0;
+}
+
 /* The kind glyph sits where the d20 does on an item row, and inherits that
    overlay's position and hover from `panel-item-roll-overlay`. It only needs
    its own size: a shirt is a busier shape than a die at the same pixels.
@@ -138,8 +152,13 @@
    occupy, so Tile Size in the context menu means the same four footprints
    Favourites offers. Favourites itself cannot be square: a 2x1 cannot
    express its shape through aspect-ratio, so those rows are a stated 116px.
-   A build's default cell has no span, so the square is the right answer. */
-.squire-tray .builds-panel.layout-tiles .panel-items {
+   A build's default cell has no span, so the square is the right answer.
+
+   Targets `.builds-group-items`, not `.panel-items` — the grid is per GROUP
+   now (see the 'category' sort), so `.panel-items` is plain flow and never
+   the grid container itself. A rule aimed at the outer wrapper would sit on
+   an element with no `display: grid` to act on and do nothing. */
+.squire-tray .builds-panel.layout-tiles .builds-group-items {
     grid-auto-rows: auto;
     align-items: start;
 }
