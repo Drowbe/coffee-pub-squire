@@ -200,12 +200,11 @@
         {{#if (eq railFilter "gear")}}
         <div class="squire-build-rail-global">
             <div class="squire-build-rail-global-label">Options</div>
-            {{!-- "Actions", because what it puts there depends on the character:
-                  a martial's three weapons, a caster's three spells. One word
-                  that is true of both beats a label that has to be rewritten per
-                  character to stay honest — the tooltip names the actual three. --}}
+            {{!-- "Actions", because what it puts there is everything the build
+                  fills in its two bottom rows — spells and weapons alike, now
+                  that every build has both. --}}
             <div class="blacksmith-toggle-row squire-build-rail-option"
-                 data-tooltip="Equipping a build also puts its {{#if dollIsCaster}}Primary, Secondary and Tertiary spells{{else}}Main Hand, Both Hands and Off Hand weapons{{/if}} on the tray handle, replacing whatever the last build put there. Items you dragged onto the handle yourself are never touched.">
+                 data-tooltip="Equipping a build also puts its Primary, Secondary and Tertiary spells and its Main Hand, Both Hands and Off Hand weapons on the tray handle, replacing whatever the last build put there. Items you dragged onto the handle yourself are never touched.">
                 <span class="blacksmith-toggle-label">Actions on Handle</span>
                 <label class="blacksmith-toggle">
                     <input type="checkbox" class="blacksmith-toggle-input squire-build-handle-input"
@@ -616,48 +615,16 @@
         </div>
     </div>
 
+    {{!-- Two rows now, always both present — see build-slot-row.hbs. It used
+          to be one row that changed meaning by class: a martial's three
+          weapons, or a caster's three spells. Player feedback was that this
+          hid half of what a build could plan; now everybody gets both. --}}
     <div class="squire-build-weapons">
-        {{#each weaponSlots}}
-        <div class="squire-build-slot{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}{{#if this.drifted}} is-drifted{{/if}}"
-             data-rarity="{{this.rarity}}"
-             data-slot="{{this.key}}"{{#if this.uuid}} data-item-uuid="{{this.uuid}}"{{/if}}
-             data-tooltip="{{#if this.filled}}{{this.name}}{{#if this.drifted}}<br><strong>Not equipped</strong>{{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}<strong>{{this.label}}</strong>{{#if this.hint}}<br>{{this.hint}}{{/if}}<br><em>Drag one in from the Squire tray or your character sheet</em>{{/if}}">
-            {{#if this.filled}}
-            {{!-- Drawn like a favourites tile: the artwork IS the slot, with the
-                  name over the bottom of it under a gradient. Same reasoning as
-                  there — a caption panel becomes a band of colour across every
-                  slot, and a text shadow vanishes on a pale icon. --}}
-            <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
-            {{!-- The slot's own glyph, kept in the corner once the artwork has
-                  covered the label. A full doll is otherwise sixteen pictures
-                  with no way to tell which hole each one is filling. --}}
-            <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
-            {{!-- This build is worn and this item is NOT on the character. The
-                  slot keeps its picture — the plan still says this — and the
-                  mark says the plan is not being met here. --}}
-            {{#if this.drifted}}
-            <i class="fa-solid fa-triangle-exclamation squire-build-slot-drift"
-               data-tooltip="{{this.name}} {{{this.driftReason}}}"></i>
-            {{/if}}
-            {{!-- Attunement, as a gem in the corner. Lit when attuned, hollow and
-                  warned when the item requires it and has not got it — the
-                  second is the one worth seeing, because that item will do
-                  nothing when the build is worn. --}}
-            {{#if this.attuned}}
-            <i class="fa-solid fa-gem squire-build-attunement is-attuned"></i>
-            {{else if this.needsAttunement}}
-            <i class="fa-regular fa-gem squire-build-attunement is-unattuned"></i>
-            {{/if}}
-            <span class="squire-build-slot-name">{{this.name}}</span>
-            {{else if this.missing}}
-            <i class="fa-solid fa-triangle-exclamation squire-build-slot-icon is-warning"></i>
-            <span class="squire-build-slot-label">{{this.label}}</span>
-            {{else}}
-            <i class="fa-solid {{this.icon}} squire-build-slot-icon"></i>
-            <span class="squire-build-slot-label">{{this.label}}</span>
-            {{/if}}
-        </div>
-        {{/each}}
+        {{> build-slot-row slots=abilitySlots}}
+    </div>
+
+    <div class="squire-build-weapons">
+        {{> build-slot-row slots=weaponSlots}}
     </div>
 
     </div>
@@ -668,8 +635,10 @@
           Twenty-six cells, two across, down the side of the doll — and its size
           is not a choice. A cell is half a gear slot, so two of them stack into
           exactly one body row and the column keeps the doll's gridlines the
-          whole way down; thirteen rows is what fits beside the body and the
-          weapons under it.
+          whole way down against the body grid; a spacer below the head cell
+          (.squire-build-pack-spacer) makes up the rest of the height against
+          the two rows below the body now, the same way a small honest gap
+          always sat under this column.
 
           A caster's, and only a caster's. It briefly held carried potions for
           everybody else, which was the one thing in this window that applying
@@ -723,6 +692,10 @@
             </div>
             {{/if}}
         </div>
+
+        {{!-- Closes the gap the doll's second weapon-sized row opened below the
+              body grid — see the CSS note on .squire-build-pack-spacer. --}}
+        <div class="squire-build-pack-spacer"></div>
 
         <div class="squire-build-pack-grid">
             {{#each pack}}

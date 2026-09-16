@@ -1,0 +1,54 @@
+{{!--
+    ONE ROW OF THREE SLOTS — the ability row and the weapon row share this,
+    rather than each carrying its own copy of the ~40 lines below. It used to
+    be one row that changed meaning by class; now there are two of them, always
+    both present, and a second copy of this markup is a second copy to keep in
+    step with the body grid's row above it.
+
+    Invoked with a named `slots` parameter, the same convention every other
+    partial in this module uses: `{{> build-slot-row slots=abilitySlots}}`.
+    No grid-row/grid-column here, unlike the body grid's slots — these sit in
+    their own 3-column `.squire-build-weapons` grid and are placed by array
+    order, not by an explicit position.
+--}}
+{{#each slots}}
+<div class="squire-build-slot{{#if this.filled}} is-filled{{/if}}{{#if this.missing}} is-missing{{/if}}{{#if this.drifted}} is-drifted{{/if}}"
+     data-rarity="{{this.rarity}}"
+     data-slot="{{this.key}}"{{#if this.uuid}} data-item-uuid="{{this.uuid}}"{{/if}}
+     data-tooltip="{{#if this.filled}}{{this.name}}{{#if this.drifted}}<br><strong>Not equipped</strong>{{/if}}<br><em>Right-click to clear</em>{{else if this.missing}}This item is no longer on the sheet<br><em>Right-click to clear</em>{{else}}<strong>{{this.label}}</strong>{{#if this.hint}}<br>{{this.hint}}{{/if}}<br><em>Drag one in from the Squire tray or your character sheet</em>{{/if}}">
+    {{#if this.filled}}
+    {{!-- Drawn like a favourites tile: the artwork IS the slot, with the
+          name over the bottom of it under a gradient. Same reasoning as
+          there — a caption panel becomes a band of colour across every
+          slot, and a text shadow vanishes on a pale icon. --}}
+    <img class="squire-build-slot-image" src="{{this.img}}" alt="{{this.name}}">
+    {{!-- The slot's own glyph, kept in the corner once the artwork has
+          covered the label. A full doll is otherwise sixteen pictures
+          with no way to tell which hole each one is filling. --}}
+    <i class="fa-solid {{this.icon}} squire-build-slot-hint"></i>
+    {{!-- This build is worn and this item is NOT on the character. The
+          slot keeps its picture — the plan still says this — and the
+          mark says the plan is not being met here. --}}
+    {{#if this.drifted}}
+    <i class="fa-solid fa-triangle-exclamation squire-build-slot-drift"
+       data-tooltip="{{this.name}} {{{this.driftReason}}}"></i>
+    {{/if}}
+    {{!-- Attunement, as a gem in the corner. Lit when attuned, hollow and
+          warned when the item requires it and has not got it — the
+          second is the one worth seeing, because that item will do
+          nothing when the build is worn. --}}
+    {{#if this.attuned}}
+    <i class="fa-solid fa-gem squire-build-attunement is-attuned"></i>
+    {{else if this.needsAttunement}}
+    <i class="fa-regular fa-gem squire-build-attunement is-unattuned"></i>
+    {{/if}}
+    <span class="squire-build-slot-name">{{this.name}}</span>
+    {{else if this.missing}}
+    <i class="fa-solid fa-triangle-exclamation squire-build-slot-icon is-warning"></i>
+    <span class="squire-build-slot-label">{{this.label}}</span>
+    {{else}}
+    <i class="fa-solid {{this.icon}} squire-build-slot-icon"></i>
+    <span class="squire-build-slot-label">{{this.label}}</span>
+    {{/if}}
+</div>
+{{/each}}

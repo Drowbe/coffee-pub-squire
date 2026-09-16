@@ -105,6 +105,15 @@ const SLOT_RULES = {
     // inventing one refused more real cases than the imaginary ones it caught.
     // Only Both Hands is constrained, and only to `weapon`, because nothing else
     // is ever wielded in two.
+    //
+    // The doll's four corners. A character carries things a body has no place
+    // for — a spellbook, a lantern, an instrument — and unlike every other slot
+    // here there is no physical-object test worth applying: the whole point is
+    // that it is 100% up to the player, spell and feat included.
+    anything: {
+        test: () => true,
+        refusal: () => ''
+    }
 };
 
 /**
@@ -177,11 +186,11 @@ export const BUILD_CORE_SLOTS = [
     // A PAIR, at the edges, because that is the doll's rule: Ring and Ring,
     // Hip and Hip. One would have left a corner empty and the other filled,
     // which reads as an accident rather than a decision.
-    { key: 'utility1', label: 'Utility', icon: 'fa-toolbox',       row: 1, column: 1, hint: HINTS.utility },
+    { key: 'utility1', label: 'Utility', icon: 'fa-toolbox',       row: 1, column: 1, accepts: 'anything', hint: HINTS.utility },
     { key: 'face',  label: 'Face',  icon: 'fa-mask',              row: 1, column: 2, hint: 'Masks, goggles, spectacles, veils.' },
     { key: 'head',  label: 'Head',  icon: 'fa-helmet-battle',     row: 1, column: 3, hint: 'Helms, hats, circlets, crowns.' },
     { key: 'neck',  label: 'Neck',  icon: 'fa-gem',               row: 1, column: 4, hint: 'Amulets, necklaces, periapts, holy symbols.' },
-    { key: 'utility2', label: 'Utility', icon: 'fa-toolbox',       row: 1, column: 5, hint: HINTS.utility },
+    { key: 'utility2', label: 'Utility', icon: 'fa-toolbox',       row: 1, column: 5, accepts: 'anything', hint: HINTS.utility },
     { key: 'back',  label: 'Back',  icon: 'fa-backpack',          row: 2, column: 1, hint: 'Cloaks, capes, mantles, packs.' },
     { key: 'chest', label: 'Chest', icon: 'fa-vest',              row: 2, column: 5, hint: 'Armour, robes, tunics — the thing your AC comes from.' },
     { key: 'arms',  label: 'Arms',  icon: 'fa-shirt-long-sleeve', row: 3, column: 1, hint: 'Bracers, vambraces, sleeves.' },
@@ -203,52 +212,55 @@ export const BUILD_CORE_SLOTS = [
 
 
 /*
- * THE LAST ROW AND THE BIG THREE, WHICH DEPEND ON WHO IS WEARING THE DOLL.
+ * THE LAST ROW, AND THE TWO ROWS BELOW IT.
  *
- * The doll used to end in three big weapon slots for everybody, which quietly
- * said that what a character does is hit things. That is true of half a party.
- * A wizard's three most important choices are spells, and their weapons are an
- * afterthought — so the two zones SWAP.
+ * The doll used to end in three big slots that changed meaning by class — a
+ * martial's were weapons, a caster's were spells, and row 6's corners swapped
+ * to match. Feedback from actual play was that this was confusing rather than
+ * economical: a martial who picked up a scroll, or a caster who drew a blade,
+ * had nowhere obvious to plan it. So the doll is ONE shape for everybody now:
  *
- *   MARTIAL   row 6:  Primary  Sheath  Thrown  Ammo  Secondary
- *             big:    Main Hand   Both Hands   Off Hand
- *
- *   CASTER    row 6:  Main  Sheath  Thrown  Ammo  Off Hand
- *             big:    Primary   Secondary   Tertiary
+ *   row 6:    Utility  Sheath  Thrown  Ammo  Utility
+ *   abilities: Primary   Secondary   Tertiary
+ *   weapons:   Main Hand   Both Hands   Off Hand
  *
  * THROWN sits in the middle, between the sheath and the ammunition, which is the
  * company it keeps: three things that are carried rather than worn, and spent or
  * drawn rather than wielded. Feet moved up to row 5 to make room.
  *
- * The keys are the same set in both; only their size and place change. A caster
- * has no Both Hands slot and a martial has no Tertiary — five columns is five
- * columns, and the slot each layout drops is the one that layout cares least
- * about. Nothing is deleted from a build that changes category: the flag keeps
- * every key, so multiclassing into a caster and back finds the weapons where
- * they were left.
+ * Row 6's corners used to be whichever of Primary/Secondary or Main Hand/Off
+ * Hand this character's class called for; they are Utility now, the same
+ * unrestricted slot the top corners are — a character was never short of places
+ * to put a spell or a weapon, only places for everything else.
+ *
+ * The keys are UNCHANGED from before the split was removed: `spell1/2/3` and
+ * `mainhand`/`bothhands`/`offhand` are the exact same flag keys a martial's or
+ * caster's build already had values in, just always drawn in the same two rows
+ * now instead of conditionally. No build needs migrating for this — see
+ * getBuilds().
  */
 /* The sheath is ROUND, like the ammunition beside it. It was square on the
    argument that a sheathed weapon is wielded and ammunition is only spent — but
    in the row as drawn the two of them are the pair that are not worn and not
    held, and a matched pair of circles says that far better than a distinction
    nobody was reading. */
-const ROW_SIX_MARTIAL = [
-    { key: 'spell1', label: 'Primary',   icon: 'fa-bolt',       row: 6, column: 1, accepts: 'ability', hint: HINTS.ability },
-    { key: 'sheath', label: 'Sheath',    icon: 'fa-dagger',     row: 6, column: 2, round: true, accepts: 'weapon', hint: HINTS.weapon },
-    { key: 'thrown', label: 'Thrown',    icon: 'fa-bullseye-arrow', row: 6, column: 3, round: true, accepts: 'thrown', hint: HINTS.thrown },
-    { key: 'ammo',   label: 'Ammo',      icon: 'fa-bow-arrow',  row: 6, column: 4, round: true, accepts: 'ammo', hint: HINTS.ammo },
-    { key: 'spell2', label: 'Secondary', icon: 'fa-bolt',       row: 6, column: 5, accepts: 'ability', hint: HINTS.ability }
+const ROW_SIX = [
+    { key: 'utility3', label: 'Utility', icon: 'fa-toolbox', row: 6, column: 1, accepts: 'anything', hint: HINTS.utility },
+    { key: 'sheath',   label: 'Sheath',  icon: 'fa-dagger',  row: 6, column: 2, round: true, accepts: 'weapon', hint: HINTS.weapon },
+    { key: 'thrown',   label: 'Thrown',  icon: 'fa-bullseye-arrow', row: 6, column: 3, round: true, accepts: 'thrown', hint: HINTS.thrown },
+    { key: 'ammo',     label: 'Ammo',    icon: 'fa-bow-arrow', row: 6, column: 4, round: true, accepts: 'ammo', hint: HINTS.ammo },
+    { key: 'utility4', label: 'Utility', icon: 'fa-toolbox', row: 6, column: 5, accepts: 'anything', hint: HINTS.utility }
 ];
 
-const ROW_SIX_CASTER = [
-    { key: 'mainhand', label: 'Main Hand', icon: 'fa-sword',          row: 6, column: 1, hint: HINTS.mainhand },
-    { key: 'sheath',   label: 'Sheath',    icon: 'fa-dagger',         row: 6, column: 2, round: true, accepts: 'weapon', hint: HINTS.weapon },
-    { key: 'thrown',   label: 'Thrown',    icon: 'fa-bullseye-arrow', row: 6, column: 3, round: true, accepts: 'thrown', hint: HINTS.thrown },
-    { key: 'ammo',     label: 'Ammo',      icon: 'fa-bow-arrow',      row: 6, column: 4, round: true, accepts: 'ammo', hint: HINTS.ammo },
-    { key: 'offhand',  label: 'Off Hand',  icon: 'fa-shield-halved',  row: 6, column: 5, hint: HINTS.offhand }
+/** The quick-cast row, below row 6. Always present now — see the note above. */
+const ABILITY_ROW = [
+    { key: 'spell1', label: 'Primary',   icon: 'fa-bolt', accepts: 'ability', hint: HINTS.ability },
+    { key: 'spell2', label: 'Secondary', icon: 'fa-bolt', accepts: 'ability', hint: HINTS.ability },
+    { key: 'spell3', label: 'Tertiary',  icon: 'fa-bolt', accepts: 'ability', hint: HINTS.ability }
 ];
 
-const BIG_MARTIAL = [
+/** The weapon row, below the ability row. Always present now — see the note above. */
+const WEAPON_ROW = [
     { key: 'mainhand',  label: 'Main Hand',  icon: 'fa-sword', hint: HINTS.mainhand },
     // An axe rather than crossed swords: `fa-swords` reads as dual-wielding,
     // which is the opposite of what this slot means.
@@ -256,38 +268,14 @@ const BIG_MARTIAL = [
     { key: 'offhand',   label: 'Off Hand',   icon: 'fa-shield-halved', hint: HINTS.offhand }
 ];
 
-const BIG_CASTER = [
-    { key: 'spell1', label: 'Primary',   icon: 'fa-bolt', accepts: 'ability', hint: HINTS.ability },
-    { key: 'spell2', label: 'Secondary', icon: 'fa-bolt', accepts: 'ability', hint: HINTS.ability },
-    { key: 'spell3', label: 'Tertiary',  icon: 'fa-bolt', accepts: 'ability', hint: HINTS.ability }
-];
-
-/**
- * Whether this character's CLASS makes them a caster, for the doll's shape.
- *
- * dnd5e grades spellcasting on the class item: `full` and `pact` are casters,
- * `half` and `third` and `artificer` are martials who also cast. That grading is
- * exactly the distinction this window needs and it is already in the data.
- *
- * The test used to be "prepares anything", which is a different question and got
- * a ranger wrong — a ranger prepares spells and is not a spellcaster, so they
- * were handed a wizard's doll with three quick-cast slots where their weapons
- * should be. In modern rules half the martial classes cast something; having
- * spells says nothing about what a character LEADS with, and what they lead with
- * is the only thing this layout is about.
- */
-function isCasterClass(actor) {
-    return Object.values(actor?.classes ?? {})
-        .some(cls => ['full', 'pact'].includes(cls?.system?.spellcasting?.progression));
-}
-
 /**
  * Whether this character has a prepared list worth planning.
  *
- * A DIFFERENT question from the one above, and deliberately a looser one. The
- * doll's shape is about what they LEAD with; this is about whether there is
- * anything to plan — so a ranger, a paladin and an eldritch knight get the
- * column on a martial's doll, which is the correct answer for every one of them.
+ * Not the same question as whether the doll's ability row can HOLD a spell —
+ * every character's can, that row is unconditional now — this is about
+ * whether there is a PREPARED LIST behind it. A ranger, a paladin and an
+ * eldritch knight all prepare spells without being what dnd5e calls a caster,
+ * so this asks the sheet directly rather than inferring from class.
  *
  * THREE clauses, and the third is the one that matters. The first two ask about
  * the character's SHAPE: do they have a class that prepares, or spell slots to
@@ -310,29 +298,31 @@ export function canPrepareSpells(actor) {
 }
 
 /**
- * Which doll this character gets.
+ * The doll's shape — the same for every character now. Kept as a function
+ * (rather than the arrays themselves) because callers already ask for it this
+ * way, and a single choke point is cheaper than updating call sites for no
+ * behavioural gain.
  */
-export function getDollLayout(actor) {
-    const caster = isCasterClass(actor);
+export function getDollLayout() {
     return {
-        caster,
-        body: [...BUILD_CORE_SLOTS, ...(caster ? ROW_SIX_CASTER : ROW_SIX_MARTIAL)],
-        big: caster ? BIG_CASTER : BIG_MARTIAL
+        body: [...BUILD_CORE_SLOTS, ...ROW_SIX],
+        abilities: ABILITY_ROW,
+        weapons: WEAPON_ROW
     };
 }
 
-/** Every slot either layout can show, for validation and for the stored shape. */
+/** Every slot the doll can show, for validation and for the stored shape. */
 const ALL_SLOT_DEFINITIONS = [
-    ...BUILD_CORE_SLOTS, ...ROW_SIX_MARTIAL, ...ROW_SIX_CASTER, ...BIG_MARTIAL, ...BIG_CASTER
+    ...BUILD_CORE_SLOTS, ...ROW_SIX, ...ABILITY_ROW, ...WEAPON_ROW
 ];
 
 /**
  * The slot keys that hold a SPELL rather than a piece of gear.
  *
- * A caster's big three are Primary, Secondary and Tertiary; a martial gets two
- * of the same on the small row. They take an item like every other slot and the
- * thing they take cannot be equipped, which is a distinction the drift check has
- * to make or it asks the wrong question about three slots in six.
+ * The ability row is Primary, Secondary and Tertiary. They take an item like
+ * every other slot and the thing they take cannot be equipped, which is a
+ * distinction the drift check has to make or it asks the wrong question about
+ * three slots in the doll.
  */
 const SPELL_SLOT_KEYS = new Set(
     ALL_SLOT_DEFINITIONS.filter(slot => slot.accepts === 'ability').map(slot => slot.key));
@@ -1309,8 +1299,7 @@ function weaponRefusesHand(item, slotKey) {
 export function refuseSlotDrop(slotKey, item, build = null) {
     if (!item) return null;
 
-    // The first definition wins, and every duplicate key across the two layouts
-    // carries the same rule — a sheath is a sheath in either doll.
+    // Every key in ALL_SLOT_DEFINITIONS is unique — the doll is one shape now.
     const definition = ALL_SLOT_DEFINITIONS.find(slot => slot.key === slotKey);
     if (!definition) return null;
 
@@ -2620,8 +2609,8 @@ function favoriteIds(actor) {
  * do not.
  */
 export function planImport(actor, build) {
-    const layout = getDollLayout(actor);
-    const slots = [...layout.body, ...layout.big];
+    const layout = getDollLayout();
+    const slots = [...layout.body, ...layout.abilities, ...layout.weapons];
     const equipped = (actor?.items ?? []).filter(item => item.system?.equipped && !isUnplannable(item));
 
     const signals = {
@@ -2729,7 +2718,7 @@ export function planImport(actor, build) {
         'spell1', 'spell2', 'spell3'
     ];
 
-    const byKey = new Map([...layout.body, ...layout.big].map(slot => [slot.key, slot]));
+    const byKey = new Map([...layout.body, ...layout.abilities, ...layout.weapons].map(slot => [slot.key, slot]));
     const order = READING_ORDER
         .filter(key => byKey.has(key))
         .map(key => {
@@ -2776,7 +2765,7 @@ export async function pullFromSheet(actor, buildId, { gear = false, prepared = f
     const build = getBuild(actor, buildId);
     if (!build || (!gear && !prepared && !empty)) return null;
 
-    const layout = getDollLayout(actor);
+    const layout = getDollLayout();
     const next = { ...build };
 
     // Emptied FIRST, and independently of what is then taken. Each half an
@@ -2810,7 +2799,7 @@ export async function pullFromSheet(actor, buildId, { gear = false, prepared = f
             handle: new Set(actor?.getFlag?.(MODULE.ID, 'favoriteHandle') ?? [])
         };
         const merit = item => itemMerit(item, signals);
-        const exists = new Set([...layout.body, ...layout.big].map(slot => slot.key));
+        const exists = new Set([...layout.body, ...layout.abilities, ...layout.weapons].map(slot => slot.key));
 
         const place = (key, item) => {
             if (!key || !exists.has(key) || slots[key]) return false;
@@ -2893,9 +2882,10 @@ export async function pullFromSheet(actor, buildId, { gear = false, prepared = f
  * The picture that stands for a build wherever one is shown small.
  *
  * For a COSTUME its own image, which is the entire content of a costume. For a
- * build the character's headline choice — the spell a caster leads with, the
- * weapon anybody else does — falling back to the build's picture when that slot
- * is empty.
+ * build the character's headline choice — Main Hand first, since a filled
+ * weapon is the more generically recognisable pick, falling back to Primary
+ * when there is no weapon and then to the build's own picture when there is
+ * neither.
  *
  * Here rather than in the window, because the rail's tiles and the tray handle
  * both need it and two copies of this would be two answers to "what does this
@@ -2906,7 +2896,7 @@ export function resolveTileImage(actor, build) {
 
     const headline = build.mode === 'costume'
         ? null
-        : actor?.items?.get(build.slots?.[getDollLayout(actor).caster ? 'spell1' : 'mainhand']);
+        : actor?.items?.get(build.slots?.mainhand ?? build.slots?.spell1);
 
     return headline?.img ?? resolveMainImage(actor, build).path;
 }
@@ -3094,38 +3084,21 @@ export async function setActiveBuildId(actor, buildId) {
 }
 
 /**
- * What the applied build puts on the handle: the BIG THREE, whatever they are.
+ * What the applied build puts on the handle: everything filled in the ability
+ * row and the weapon row — Primary/Secondary/Tertiary and Main Hand/Both
+ * Hands/Off Hand, up to six icons.
  *
- * A martial's are Main Hand, Both Hands and Off Hand; a caster's are their
- * Primary, Secondary and Tertiary spells. Same three slots the doll gives that
- * character, so the strip shows what their build is actually built around
- * instead of a fixed idea of what a build is for — and a wizard, who has no
- * business keeping a greatsword to hand, gets the three things they will
- * actually reach for.
- *
- * `layout.big` and NOTHING ELSE, for two reasons that happen to agree.
- *
- * THREE IS THE BUDGET. The handle is a narrow vertical strip that also carries
- * health, conditions and hand-placed favourites, and five or more build icons on
- * it is more than it should be asked to hold — the key items are enough, and a
- * strip that lists everything usable stops being a strip you can read at a
- * glance. That is a decision about the handle, not about builds, so adding
- * "just one more" slot here later is reopening it rather than extending it.
- *
- * It also fixes a bug. This used to add every body slot that accepted a weapon
- * or an ability, which sounds like the same idea and behaved like a different
- * one: a caster's Main Hand and Off Hand carry no `accepts` at all — they are on
- * the doll's small row and take what the layout says — so those two were
- * silently dropped while the sheath was kept. Three predictable icons beat five
- * that vary by a property nobody reading the strip can see.
- *
- * Armour, rings and a belt were never here: they would be icons that do nothing
- * when pressed. Ammunition is not either, being spent by the weapon that fires
- * it rather than used on its own.
+ * It used to cap at three, back when a character had only one of the two rows
+ * — a martial's Main/Both/Off, or a caster's Primary/Secondary/Tertiary — and
+ * never both. Now that every build always has both rows, a cap would silently
+ * drop things the player actually equipped, which reads as a bug rather than
+ * as restraint. `buildsUpdateHandle` is the real switch against a busy strip:
+ * a player who does not want any of this there turns the whole feature off,
+ * rather than this function guessing how much of it is too much.
  *
  * DERIVED, never stored. The alternative is a second list that has to be kept in
  * step with the build, and would go stale the moment somebody edited the build
- * it was copied from. Recomputing costs three map lookups.
+ * it was copied from.
  */
 export function getHandleBuildActions(actor) {
     if (!game.settings.get(MODULE.ID, 'buildsUpdateHandle')) return [];
@@ -3133,7 +3106,8 @@ export function getHandleBuildActions(actor) {
     const build = getBuild(actor, getActiveBuildId(actor));
     if (!build || build.mode === 'costume') return [];
 
-    return getDollLayout(actor).big
+    const layout = getDollLayout();
+    return [...layout.abilities, ...layout.weapons]
         .map(slot => actor?.items?.get(build.slots?.[slot.key]))
         .filter(Boolean)
         .map(item => ({ id: item.id, name: item.name, img: item.img }));

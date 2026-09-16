@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The Gear Builds doll is one shape for every character now**, instead of swapping between a martial's and a caster's. Row 6's corners are two more Utility slots (four now, all four accepting anything — spells and features included, which they used to refuse). Below row 6, an always-present **ability row** (Primary/Secondary/Tertiary) and an always-present **weapon row** (Main Hand/Both Hands/Off Hand) replace the single "big three" that used to change meaning by class — a martial who picks up a scroll or a caster who draws a blade now has a slot waiting for it. The window is one row taller to fit. No migration needed: every reused slot key kept its name, so existing builds land in the new layout with nothing missing.
+  - The tray handle now shows everything a worn build fills in those two rows (up to six icons), not a fixed three — `buildsUpdateHandle` is still the switch to turn the whole feature off.
+  - Fixed a bug along the way: a build's AC/gear-count/attunement badge was double-counting seven slot keys that used to be listed twice across the old caster/martial layouts. Existing builds' numbers will drop slightly and correctly.
+
 - **The Builds panel is "Gear Configurations" now, and sorts three ways.** A build and a costume are both configurations of what the character has on, so the heading covers both rather than naming one and burying the other in a detail line. It picks up the same Manual / Alphabetical / By Category sort Favourites already offers — Category groups the list into Builds and Costumes headings. Reordering from the row menu is manual-order only, same as Favourites: under a sort, Move Up/Down would rewrite positions the screen isn't showing, so those entries simply aren't offered.
 
 ## [14.0.1]

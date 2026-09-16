@@ -1080,9 +1080,8 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         // The doll still resolves, as sixteen empty slots, and the template hides
         // it behind `hasBuilds`; resolveSlots reading a null build is exactly the
         // "never filled" case it already handles.
-        // Which doll this character gets — a caster's weapons are small and
-        // their spells are the big three, and a martial's are the other way up.
-        const layout = getDollLayout(this.actor);
+        // The doll's shape — the same for every character now.
+        const layout = getDollLayout();
         // The drift marks belong to the build being SHOWN only when that is
         // also the one being worn. Looking at another build, its slots describe
         // a plan nobody is wearing, and "not equipped" would be true of all of
@@ -1090,11 +1089,12 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
         const shownDrift = build && build.id === activeId ? drift : null;
 
         const bodySlots = resolveSlots(this.actor, build, layout.body, shownDrift);
-        const weaponSlots = resolveSlots(this.actor, build, layout.big, shownDrift);
+        const abilitySlots = resolveSlots(this.actor, build, layout.abilities, shownDrift);
+        const weaponSlots = resolveSlots(this.actor, build, layout.weapons, shownDrift);
 
-        // Counted across BOTH grids: a build's attunement cost is the whole set,
-        // and a sword is as capable of demanding attunement as an amulet.
-        const attunement = attunementSummary(this.actor, [...bodySlots, ...weaponSlots]);
+        // Counted across ALL THREE grids: a build's attunement cost is the whole
+        // set, and a sword is as capable of demanding attunement as an amulet.
+        const attunement = attunementSummary(this.actor, [...bodySlots, ...abilitySlots, ...weaponSlots]);
         const imageSlots = resolveImageSlots(this.actor, build);
 
         // The prepared column, for the characters that have one. It carries no
@@ -1195,13 +1195,6 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 // says which of the two it is showing.
                 tokenSettings: resolveTokenSettings(this.actor, build),
                 updatesHandle: game.settings.get(MODULE.ID, 'buildsUpdateHandle'),
-                // The DOLL's idea of a caster, which is the class's spellcasting
-                // progression — deliberately not `isCaster` below, which asks
-                // whether this build plans prepared spells. The handle strip is
-                // the doll's big row, so the label has to follow the same
-                // question the layout does or it will promise weapons to a
-                // wizard whose build happens not to plan a spell list.
-                dollIsCaster: layout.caster,
                 // The file's own name, not its path. A tooltip is not the place
                 // for `modules/whatever/assets/sounds/...`, and the last segment
                 // is the part somebody chose.
@@ -1213,6 +1206,7 @@ export class BuildWindow extends BlacksmithToolWindowBaseV2 {
                 // the one thing here that should not.
                 mainImage: resolveMainImage(this.actor, build),
                 bodySlots,
+                abilitySlots,
                 weaponSlots,
                 attunement: { ...attunement, over: attunement.used > attunement.max },
                 // What the character has on that this build does not name. These

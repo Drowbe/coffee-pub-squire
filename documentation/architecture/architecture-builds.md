@@ -44,7 +44,7 @@ than special-cased at every use.
 | `id` | Random, stable, and what everything else keys on. Names are not unique |
 | `name` | Free text |
 | `mode` | `'gear'` or `'costume'` |
-| `slots` | Slot key → item id. 25 keys; see the doll below |
+| `slots` | Slot key → item id. 27 keys; see the doll below |
 | `spells` | Ordered item ids for the prepared column, up to 26 |
 | `images` | `portrait`, `token`, `main` — each a path or null |
 | `token` | `width`, `height`, `fit`, `scale` — costume only, each nullable |
@@ -59,16 +59,18 @@ it.
 
 ### The doll
 
-`getDollLayout(actor)` returns the slots this character gets, and it differs by kind of caster:
+`getDollLayout()` returns the slots — the same shape for every character now:
 
-- **Body** — 16 core slots shared by everyone, plus a row of four that differs.
-- **Big three** — a martial gets Main Hand, Both Hands, Off Hand; a **full or pact caster** gets
-  Primary, Secondary, Tertiary spells.
+- **Body** — 16 core slots plus a row of five, all shared by everyone.
+- **Abilities** — Primary, Secondary, Tertiary: a spell or a feature, always present.
+- **Weapons** — Main Hand, Both Hands, Off Hand, always present.
 
-The caster test is the class's `spellcasting.progression`: `full` and `pact` are casters, `half`,
-`third` and `artificer` are martials who also cast. That is a different question from whether a
-character can *prepare*, which is `canPrepareSpells()` and decides the prepared column. A ranger gets
-a martial's doll and can still plan a prepared list.
+This used to differ by kind of caster — a martial's row-6 corners and "big three" were weapons, a
+caster's were spells, and each character only ever had one of the two extra rows. Player feedback was
+that this hid half of what a build could plan (a martial who picked up a scroll, a caster who drew a
+blade, had nowhere obvious to put it), so the doll is one shape now and both rows are always drawn.
+Whether a character can *prepare* from the ability row is a separate question, `canPrepareSpells()`,
+which decides the prepared column and nothing about the doll's shape.
 
 The grid is five columns wide and does not change width — every slot added has to come out of the
 space already there.
@@ -80,18 +82,32 @@ space already there.
 | 3 | Arms · *(picture)* · Hands |
 | 4 | Ring · *(picture)* · Ring |
 | 5 | Hip · Waist · Feet · Consumable · Hip |
-| 6 | *big* · Sheath · Thrown · Ammo · *big* |
+| 6 | Utility · Sheath · Thrown · Ammo · Utility |
+| *abilities* | Primary · Secondary · Tertiary |
+| *weapons* | Main Hand · Both Hands · Off Hand |
+
+The last two rows sit outside the 5-column body grid, each in its own row of thirds — same as before
+the unification, just two of them stacked now instead of one that changed meaning by class.
 
 Two slots are named for what they are FOR rather than where they go, and both are deliberate:
 
-- **Utility**, a pair in the top corners, takes anything. Everything else on this doll is a place on
-  a body; these two admit that a character carries things a body has no place for — a spellbook, a
-  lantern, an instrument. A **pair** because that is the doll's rule throughout (Ring and Ring, Hip
-  and Hip); one would leave a corner filled and its opposite empty, which reads as an accident.
+- **Utility**, all four of them (the original pair in the top corners, plus row 6's corners, which
+  used to be whichever of the doll's two extra rows this character's class didn't get), takes
+  **anything** — including a spell or a feature, unlike every other slot here. Everything else on this
+  doll is a place on a body, or a rule grounded in a dnd5e field; these four admit that a character
+  carries and reaches for things a body has no place for, and that is entirely up to the player. A
+  **pair at each end** because that is the doll's rule throughout (Ring and Ring, Hip and Hip); one
+  filled and its opposite empty reads as an accident.
 - **Consumable** is the only TYPED slot in the core grid, and there is exactly **one** of it. A typed
   slot buys intent and spends capacity, and of the things a character carries with nowhere to put
   them — a potion, a holy symbol, a component pouch, thieves' tools, a wand — exactly one is a
   consumable. The two Hips beside it stay generic, which is what makes them worth having two of.
+
+**No migration needed for existing builds.** `spell1/2/3`, `mainhand`/`bothhands`/`offhand` and
+`sheath`/`thrown`/`ammo` are the exact same flag keys the caster/martial split already wrote — only
+where they are drawn changed, not their name or their `accepts` rule. The two brand-new corners
+(`utility3`, `utility4`) simply arrive as `null` on every existing build through `getBuilds()`'s normal
+key back-fill, same as any other slot added after a build was made.
 
 **Thrown** is strict: only weapons with the `thr` property. It is what earns dnd5e's `thrown` attack
 mode, and a weapon without the property will never be offered that mode however it is planned.
@@ -191,9 +207,9 @@ rail says **Last worn** with a warning triangle rather than "modified".
 A build naming no spells has no opinion about the prepared list, so it cannot drift from it. That test
 reads the list from the same place `applyBuild` does, so the two can never disagree.
 
-**Slots are split by what they hold.** `SPELL_SLOT_KEYS` marks the quick-cast slots, and their
+**Slots are split by what they hold.** `SPELL_SLOT_KEYS` marks the quick-cast ability row, and their
 contents are compared against what is *prepared* rather than what is *equipped*. Comparing every slot
-against the equipped items meant a caster's big three were permanently drifted — a spell can never be
+against the equipped items meant a filled ability row was permanently drifted — a spell can never be
 equipped — and each one inflated the difference count beside **Last worn**.
 
 ### A build that disagrees with itself
@@ -354,10 +370,11 @@ never dragged a build got no action strip either.
 
 - **Build tiles**, from the `handleBuilds` flag. Dragged there from the rail, clicked to apply,
   right-clicked to remove. Not the same list as favourites: this one costs screen space.
-- **The worn build's actions**, derived from `layout.big` and never stored. **Three**, whatever the
-  character is: a martial's weapons or a caster's spells. Three is a budget on a narrow strip that
-  already carries health, conditions and hand-placed favourites — adding a fourth slot reopens that
-  decision rather than extending it.
+- **The worn build's actions**, derived from the ability and weapon rows and never stored. Up to
+  **six** — everything filled in Primary/Secondary/Tertiary and Main Hand/Both Hands/Off Hand. Used to
+  cap at three, back when a character had only one of the two rows; now that both are always live, a
+  cap would silently drop things the player actually equipped. `buildsUpdateHandle` is the switch
+  against a busy strip, not a count here.
 
 ## Window chrome
 

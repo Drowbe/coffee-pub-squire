@@ -139,20 +139,23 @@ click one to work on it -- the list scrolls when it outgrows the space rather th
 window. **New Build** and **New Costume** start another of either kind, and right-click a tile for
 duplicate and delete. The rest
 of the window is that build: a figure of your character surrounded by slots -- head, face and neck across the top, then back, chest, arms, hands, rings, hips, waist and feet down the sides,
-and the three big slots along the bottom. Drag items from the tray into the slots to say what this
-build is made of.
+a row of Utility, Sheath, Thrown and Ammo slots beneath those, and two more rows of three slots each
+along the bottom -- one for spells and features, one for weapons. Drag items from the tray into the
+slots to say what this build is made of.
 
-Three of those slots are not places on a body. The **two Utility slots** in the top corners take
-anything at all -- a spellbook, a lantern, an instrument, a bag of tricks -- because a character
-carries things a body has no place for. **Consumable**, at the end of the row above the big three,
-is for a potion, a scroll or an elixir. And **Thrown**, on the bottom row between the sheath and the
-ammunition, takes only weapons you can actually throw; putting a dagger there is how you tell Squire
-you mean to throw it rather than stab with it.
+Several of those slots are not places on a body. The **four Utility slots** -- a pair in the top
+corners and a pair in the row above the two bottom rows -- take **anything at all**, spells and
+features included, because a character carries and reaches for things a body has no place for: a
+spellbook, a lantern, an instrument, a bag of tricks. **Consumable**, in the row of five below the
+core grid, is for a potion, a scroll or an elixir. And **Thrown**, on that same row between the
+sheath and the ammunition, takes only weapons you can actually throw; putting a dagger there is how
+you tell Squire you mean to throw it rather than stab with it.
 
-**What those big three hold depends on your character.** If you do not prepare
-spells they are your main hand, both hands and off hand, and the row above them carries a quick-use
-slot at each end, a **sheath** for the dagger or hand axe you draw without thinking, your thrown
-weapon and your ammunition.
+**The bottom two rows are always both there, whatever your character is.** The **ability row** --
+Primary, Secondary, Tertiary -- is for the spell or feature you reach for first, second and third.
+The **weapon row** -- Main Hand, Both Hands, Off Hand -- is where your gear goes. A martial who picks
+up a scroll and a caster who draws a blade both have a slot waiting for it; nothing here changes
+shape depending on what your character is built to do.
 
 **You only have two hands, and the builder holds you to it.** Put a greatsword in Both Hands and
 whatever was in your main and off hands comes out -- it tells you what it is doing before it does it,
@@ -163,8 +166,7 @@ it once could.
 
 One thing this buys you at the table: when you roll an attack, the **Attack Mode** dropdown already
 says how you are holding that weapon -- one-handed, two-handed, off-hand or thrown -- to match the
-build you have on, whether you roll from the tray, the sheet or a macro. If you do prepare spells the emphasis flips: the big three become quick-cast slots for the
-spell or feature you reach for first, second and third, and your weapons move up into the smaller row. **The picture in the middle is the build's own.** Click it to choose one, right-click to reset. Until you set one it borrows the build's portrait, or your character's own face -- and once set it stays put no matter what outfit you put on, because it belongs to the build rather than the character. The two circles beside the head hold a **portrait** and a **token** image. Click either to pick a picture, right-click to reset it. Until you set one, each shows what your character already uses. Right-click a gear slot to empty it; right-click a build's tile to open, duplicate or delete it. Duplicating is the quick way to try a variant -- the same set with one thing swapped -- without building it again from nothing. The foot of the window totals what the gear weighs.
+build you have on, whether you roll from the tray, the sheet or a macro. **The picture in the middle is the build's own.** Click it to choose one, right-click to reset. Until you set one it borrows the build's portrait, or your character's own face -- and once set it stays put no matter what outfit you put on, because it belongs to the build rather than the character. The two circles beside the head hold a **portrait** and a **token** image. Click either to pick a picture, right-click to reset it. Until you set one, each shows what your character already uses. Right-click a gear slot to empty it; right-click a build's tile to open, duplicate or delete it. Duplicating is the quick way to try a variant -- the same set with one thing swapped -- without building it again from nothing. The foot of the window totals what the gear weighs.
 
 **If your character has any spell worth preparing**, a column of twenty-six small squares runs down
 the right of the doll, past a dividing rule, starting level with the top of the neck slot. That is your prepared list
@@ -187,8 +189,8 @@ A character with nothing to prepare has no such column, and their window is narr
 much. Their build is the doll. Cantrips, innate and at-will spells do not count towards this -- none
 of them is ever prepared, so having only those is the same as having none.
 
-**A quick-cast slot warns if the build does not prepare the spell in it.** Put a spell in one of the
-big three and then leave it out of the prepared column, and the slot is marked straight away: equipping
+**A quick-cast slot warns if the build does not prepare the spell in it.** Put a spell in the
+ability row and then leave it out of the prepared column, and the slot is marked straight away: equipping
 the build would prepare the column and leave that slot uncastable. The warning shows while you are
 building rather than after you equip, and it does not appear for a spell that needs no preparing --
 an innate spell in a quick-cast slot is exactly where it belongs.
@@ -204,9 +206,9 @@ has, so you can see at a glance whether the set actually fits.
 
 Most slots will take anything you could wear or carry -- a helm, a cloak, a belt and a pair of boots
 look identical to the game, so Squire does not pretend to tell them apart. The ones it *can* check, it
-does: the ammo slots take ammunition, Both Hands takes a weapon, and nothing that is not a physical
-object -- a spell, a feat, a class feature -- goes anywhere. If a slot turns
-something down it says what it was expecting.
+does: the ammo slots take ammunition, Both Hands takes a weapon, and outside the Utility slots and the
+ability row nothing that is not a physical object -- a spell, a feat, a class feature -- goes
+anywhere. If a slot turns something down it says what it was expecting.
 
 Under a costume's picture are three settings for how the token is **drawn**: its **dimensions** in grid
 spaces, the **image fit** mode, and the **scale**. A costume changes what your character looks like, and

@@ -1085,7 +1085,8 @@ Hooks.once('init', async function() {
         { name: 'handle-favorites', path: 'handle-favorites.hbs' },
         { name: 'handle-builds', path: 'handle-builds.hbs' },
         { name: 'handle-conditions', path: 'handle-conditions.hbs' },
-        { name: 'action-badge', path: 'action-badge.hbs' }
+        { name: 'action-badge', path: 'action-badge.hbs' },
+        { name: 'build-slot-row', path: 'build-slot-row.hbs' }
     ];
     
     for (const partial of partials) {
