@@ -635,17 +635,20 @@
           Twenty-six cells, two across, down the side of the doll — and its size
           is not a choice. A cell is half a gear slot, so two of them stack into
           exactly one body row and the column keeps the doll's gridlines the
-          whole way down against the body grid; a spacer below the head cell
-          (.squire-build-pack-spacer) makes up the rest of the height against
-          the two rows below the body now, the same way a small honest gap
-          always sat under this column.
+          whole way down against the body grid. It comes up short of the
+          doll's full height now that the doll has two rows below the body
+          instead of one, and that is left alone rather than padded to match:
+          `.squire-build-columns` top-aligns both columns (`align-items:
+          start`) precisely so the cells stay square, so the honest remainder
+          simply grows — it does not misalign anything above it.
 
-          A caster's, and only a caster's. It briefly held carried potions for
-          everybody else, which was the one thing in this window that applying
-          could not enforce — there is no carried state in the system to set, so
-          those cells looked exactly like the ones around them and did nothing.
-          A martial's build is the doll, and their window is narrower by this
-          column rather than padded out with it.
+          Only for characters who can PREPARE something. It briefly held
+          carried potions for everybody else, which was the one thing in this
+          window that applying could not enforce — there is no carried state
+          in the system to set, so those cells looked exactly like the ones
+          around them and did nothing. A character with nothing to prepare
+          has no column at all, and their window is narrower by it rather
+          than padded out with an empty one.
 
           Cells past the limit are dimmed and refuse drops: they are not empty,
           they are cells this character does not have YET, and drawing them is
@@ -692,10 +695,6 @@
             </div>
             {{/if}}
         </div>
-
-        {{!-- Closes the gap the doll's second weapon-sized row opened below the
-              body grid — see the CSS note on .squire-build-pack-spacer. --}}
-        <div class="squire-build-pack-spacer"></div>
 
         <div class="squire-build-pack-grid">
             {{#each pack}}

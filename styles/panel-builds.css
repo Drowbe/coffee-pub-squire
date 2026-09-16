@@ -1108,19 +1108,6 @@
     overflow: hidden;
 }
 
-/* Closes the gap the second weapon-sized row below the doll opened up.
-   Thirteen rows of square cells plus the head above them come up short of
-   `--squire-doll-height` by design — see the note below — and that shortfall
-   used to be a deliberate fifteen pixels. Left alone once the doll grew a
-   second row below the body grid, it would have become well over a hundred
-   pixels and read as broken rather than as an honest remainder. One weapon
-   row's worth of height, the same size the doll itself just grew by, restores
-   that small gap instead of an empty one. */
-.squire-build-pack-spacer {
-    flex: 0 0 auto;
-    height: calc(var(--squire-weapon) + var(--squire-gap));
-}
-
 /* Thirteen rows of SQUARE cells, sized by the column's width and nothing else.
 
    It was made to stretch to the column's full height once, so the bottom edge

@@ -327,6 +327,20 @@ const ALL_SLOT_DEFINITIONS = [
 const SPELL_SLOT_KEYS = new Set(
     ALL_SLOT_DEFINITIONS.filter(slot => slot.accepts === 'ability').map(slot => slot.key));
 
+/**
+ * The slot keys that take ANYTHING — the four Utility slots.
+ *
+ * Drift asks "is what this slot names still true of the character", and that
+ * question only makes sense for a slot that claimed something in the first
+ * place. Every other slot claims its item will be equipped or prepared;
+ * Utility claims nothing beyond "the player put this here" — a spellbook, an
+ * instrument, a spell nobody intends to cast from the doll, gear the player
+ * never meant to wear. Checking it against "equipped" would mark most of what
+ * belongs here as drifted on the day it was placed.
+ */
+const UTILITY_SLOT_KEYS = new Set(
+    ALL_SLOT_DEFINITIONS.filter(slot => slot.accepts === 'anything').map(slot => slot.key));
+
 /** Every slot key, for validating what arrives from a dataset or a stored flag. */
 export const BUILD_SLOT_KEYS = [...new Set(ALL_SLOT_DEFINITIONS.map(slot => slot.key))];
 
@@ -977,9 +991,13 @@ export function resolveSlots(actor, build, slotDefinitions, drift = null) {
             // Two marks from two questions, and only one of them needs the
             // character. `unplanned` is about the build alone and shows always;
             // the drift check is about the worn build and shows only then.
-            drifted: !!itemId && (!!illegal || unplanned || !!(SPELL_SLOT_KEYS.has(definition.key)
+            //
+            // Utility is exempt from both questions. It never claimed its item
+            // would be equipped or prepared, so neither "not equipped" nor
+            // "not prepared" is a fact this slot can disagree with.
+            drifted: !!itemId && (!!illegal || unplanned || (!UTILITY_SLOT_KEYS.has(definition.key) && !!(SPELL_SLOT_KEYS.has(definition.key)
                 ? drift?.notPrepared?.has(itemId)
-                : drift?.notEquipped?.has(itemId))),
+                : drift?.notEquipped?.has(itemId)))),
             // The tooltip's whole sentence. "Not equipped" is nonsense about a
             // spell, and a mark that misnames its own reason teaches the wrong
             // lesson about the window.
@@ -3024,12 +3042,22 @@ export function buildDrift(actor, build, state = null) {
 
     // SPLIT BY WHAT THE SLOT HOLDS. Every slot id used to go into one set and be
     // compared against the equipped items, so a spell in a quick-cast slot could
-    // never satisfy it — a caster's big three were permanently marked drifted,
+    // never satisfy it — the ability row's slots were permanently marked drifted,
     // and each one added to the "N differences" count. The question a spell slot
-    // asks is whether the spell is PREPARED.
+    // asks is whether the spell is PREPARED. Utility asks nothing: it never
+    // claimed equipped OR prepared, so its contents are dropped from the
+    // "not equipped" check entirely (though still counted so an equipped
+    // Utility item is not also flagged as an unplanned extra).
     const slotEntries = Object.entries(build?.slots ?? {}).filter(([, id]) => id);
     const wantGear = new Set(
         slotEntries.filter(([key]) => !SPELL_SLOT_KEYS.has(key)).map(([, id]) => id));
+    // Utility stays IN `wantGear` — an item sitting there is still named by
+    // this build, so it must not read as an unplanned extra if it happens to
+    // be equipped — but drops out of the narrower set `notEquipped` checks
+    // below, because Utility never claimed the item would be equipped in the
+    // first place.
+    const wantEquippedGear = new Set(
+        slotEntries.filter(([key]) => !SPELL_SLOT_KEYS.has(key) && !UTILITY_SLOT_KEYS.has(key)).map(([, id]) => id));
     const slotSpells = new Set(
         slotEntries.filter(([key]) => SPELL_SLOT_KEYS.has(key)).map(([, id]) => id));
     // Only if the build names any. One that names none has no opinion about the
@@ -3042,7 +3070,7 @@ export function buildDrift(actor, build, state = null) {
 
     // Slotted, but not on the character: either taken off, or gone from the
     // sheet entirely. Both mean the plan is not being met.
-    const notEquipped = [...wantGear].filter(id => !gear.has(id));
+    const notEquipped = [...wantEquippedGear].filter(id => !gear.has(id));
 
     // Two sources, one answer. A spell named by the prepared column is checked
     // only when that column is in use; a spell put in a doll slot is checked

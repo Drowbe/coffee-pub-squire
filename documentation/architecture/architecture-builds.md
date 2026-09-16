@@ -212,6 +212,12 @@ contents are compared against what is *prepared* rather than what is *equipped*.
 against the equipped items meant a filled ability row was permanently drifted — a spell can never be
 equipped — and each one inflated the difference count beside **Last worn**.
 
+**`UTILITY_SLOT_KEYS` marks the four Utility slots, and their contents are compared against nothing.**
+A Utility slot never claimed its item would be equipped or prepared — it is, deliberately, wherever
+the player put a thing that has nowhere else to go — so neither question applies. An equipped item
+sitting in Utility still counts toward what the build accounts for (it will not also read as an
+unplanned extra), but nothing in Utility can ever be marked **Not equipped**.
+
 ### A build that disagrees with itself
 
 Separate from drift, and the distinction is the point. Drift asks *has the character moved away from
